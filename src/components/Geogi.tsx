@@ -1,0 +1,103 @@
+import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
+import { useState } from 'react';
+
+interface GeogiProps {
+  message: string;
+  show: boolean;
+  onClose?: () => void;
+  position?: 'bottom-right' | 'top-left' | 'center';
+  autoHide?: boolean;
+}
+
+export function Geogi({ message, show, onClose, position = 'bottom-right', autoHide = false }: GeogiProps) {
+  const [dismissed, setDismissed] = useState(false);
+
+  const handleClose = () => {
+    setDismissed(true);
+    onClose?.();
+  };
+
+  const positionClasses = {
+    'bottom-right': 'bottom-24 right-4',
+    'top-left': 'top-4 left-4',
+    'center': 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+  };
+
+  return (
+    <AnimatePresence>
+      {show && !dismissed && (
+        <motion.div
+          className={`fixed ${positionClasses[position]} z-40 max-w-sm`}
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+        >
+          <div className="bg-white rounded-2xl shadow-lg border border-border p-4 relative">
+            {onClose && (
+              <button
+                onClick={handleClose}
+                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            
+            <div className="flex items-start gap-3">
+              <motion.div
+                className="flex-shrink-0"
+                animate={{
+                  rotate: [0, 5, -5, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-2xl">🐉</span>
+                </div>
+              </motion.div>
+              
+              <div className="flex-1 pt-1">
+                <p className="font-semibold text-sm mb-1">Geogi sagt:</p>
+                <p className="text-sm text-muted-foreground">{message}</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+interface GeogiAvatarProps {
+  size?: 'sm' | 'md' | 'lg';
+  animated?: boolean;
+}
+
+export function GeogiAvatar({ size = 'md', animated = true }: GeogiAvatarProps) {
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-base',
+    md: 'w-12 h-12 text-2xl',
+    lg: 'w-16 h-16 text-3xl',
+  };
+
+  return (
+    <motion.div
+      className={`${sizeClasses[size]} bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md`}
+      animate={animated ? {
+        rotate: [0, 5, -5, 0],
+      } : {}}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+    >
+      <span>{size === 'sm' ? '🐉' : size === 'md' ? '🐉' : '🐉'}</span>
+    </motion.div>
+  );
+}
