@@ -13,6 +13,7 @@ import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
+import { ARView } from './components/ARView';
 
 interface Station {
   id: number;
@@ -43,7 +44,7 @@ interface Path {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -68,6 +69,24 @@ export default function App() {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
     setShowOnboarding(false);
   };
+
+  // Expose function to open AR view from console
+  useEffect(() => {
+    (window as any).openARView = () => {
+      setCurrentView('ar');
+      console.log('🚀 AR View geöffnet!');
+    };
+    (window as any).closeARView = () => {
+      setCurrentView('home');
+      console.log('✅ AR View geschlossen');
+    };
+    
+    // Cleanup
+    return () => {
+      delete (window as any).openARView;
+      delete (window as any).closeARView;
+    };
+  }, []);
 
   // Mock paths data - now only ONE path
   const [paths, setPaths] = useState<Path[]>([
@@ -457,6 +476,11 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      {/* AR View */}
+      {currentView === 'ar' && (
+        <ARView onNavigateHome={() => setCurrentView('home')} />
+      )}
     </div>
   );
 }
