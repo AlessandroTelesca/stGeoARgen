@@ -13,8 +13,7 @@ import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
-import { ARView } from './components/ARView';
-
+import { ARView } from './ARbackend/ARView';
 interface Station {
   id: number;
   title: string;

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, User, Settings, Trophy, LogOut, Menu, Gift } from 'lucide-react';
 import { GeogiAvatar } from '../components/Geogi';
+import '../components/ARComponents/ARComponents.css';
 
 /**
  * ARView Component
@@ -203,29 +204,12 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
   return (
     <div 
       ref={containerRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        backgroundColor: '#000',
-        zIndex: 9999
-      }}
+      className="ar-container"
     >
       {/* Video-Hintergrund für Kamera-Stream */}
       <video
         ref={videoRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: 0
-        }}
+        className="ar-video"
         playsInline
         muted
       />
@@ -233,47 +217,13 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
       {/* Three.js Canvas wird hier durch den Renderer eingefügt */}
       
       {/* UI Overlay */}
-      <div 
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 20,
-          pointerEvents: 'none'
-        }}
-      >
+      <div className="ar-ui-overlay">
         {/* Top Bar - nur Home Button und Profil */}
-        <div 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            padding: '16px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            pointerEvents: 'auto'
-          }}
-        >
+        <div className="ar-top-bar">
           {/* Home Button */}
           <motion.button
             onClick={handleNavigateHome}
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: 'none',
-              cursor: 'pointer'
-            }}
+            className="ar-home-button"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -283,27 +233,16 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
           {/* Profile Button */}
           <motion.button
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 16px',
-              borderRadius: '28px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
+            className="ar-profile-button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <GeogiAvatar size="sm" />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 600, fontSize: '14px', color: '#000' }}>Max</div>
-              <div style={{ fontSize: '11px', color: '#666' }}>Max@gmail.com</div>
+              <div className="ar-profile-name">Max</div>
+              <div className="ar-profile-email">Max@gmail.com</div>
             </div>
-            <div style={{ fontSize: '11px', color: '#666' }}>123 👑</div>
+            <div className="ar-profile-points">123 👑</div>
             <motion.div
               animate={{ rotate: profileMenuOpen ? 180 : 0 }}
               transition={{ duration: 0.2 }}
@@ -317,55 +256,26 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
         </div>
 
         {/* Bottom Bar - Progress Stations */}
-        <div 
-          style={{
-            position: 'absolute',
-            bottom: '24px',
-            left: '16px',
-            right: '16px',
-            pointerEvents: 'auto'
-          }}
-        >
+        <div className="ar-bottom-bar">
           <motion.div 
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '20px',
-              padding: '20px 16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-            }}
+            className="ar-progress-container"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             {/* Stations Row */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              gap: '8px',
-              marginBottom: '12px'
-            }}>
+            <div className="ar-stations-row">
               {stations.map((status, index) => {
                 const isLastStation = index === stations.length - 1;
                 return (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', flex: index < stations.length - 1 ? 1 : 'initial' }}>
+                  <div key={index} className={`ar-station-wrapper ${index < stations.length - 1 ? 'ar-station-wrapper-flex' : ''}`}>
                     {/* Station Circle */}
                     <motion.div
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: 
-                          status === 'completed' ? '#10b981' :
-                          status === 'current' ? '#10b981' :
-                          '#e5e7eb',
-                        boxShadow: status === 'current' ? '0 0 0 3px rgba(16, 185, 129, 0.3)' : 'none',
-                        position: 'relative'
-                      }}
+                      className={`ar-station-circle ${
+                        status === 'completed' ? 'ar-station-completed' :
+                        status === 'current' ? 'ar-station-current' :
+                        'ar-station-locked'
+                      }`}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.3 + index * 0.05 }}
@@ -379,12 +289,7 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
                         <Gift style={{ width: '22px', height: '22px', color: 'white' }} />
                       )}
                       {status === 'current' && (
-                        <div style={{
-                          width: '14px',
-                          height: '14px',
-                          borderRadius: '50%',
-                          backgroundColor: 'white'
-                        }} />
+                        <div className="ar-station-current-dot" />
                       )}
                       {status === 'locked' && !isLastStation && (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
@@ -399,14 +304,9 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
                     
                     {/* Connecting Line */}
                     {index < stations.length - 1 && (
-                      <div style={{
-                        flex: 1,
-                        height: '4px',
-                        marginLeft: '6px',
-                        marginRight: '6px',
-                        backgroundColor: index < progress.current - 1 ? '#10b981' : '#e5e7eb',
-                        borderRadius: '2px'
-                      }} />
+                      <div className={`ar-station-line ${
+                        index < progress.current - 1 ? 'ar-station-line-completed' : 'ar-station-line-locked'
+                      }`} />
                     )}
                   </div>
                 );
@@ -414,13 +314,13 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
             </div>
             
             {/* Info Row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#333' }}>
+            <div className="ar-info-row">
+              <span className="ar-station-text">
                 Station {progress.current}/{progress.total}
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}>
+              <div className="ar-points-badge">
                 <Trophy style={{ width: '16px', height: '16px' }} />
-                <span style={{ fontSize: '13px', fontWeight: 700 }}>{progress.points} Punkte</span>
+                <span className="ar-points-text">{progress.points} Punkte</span>
               </div>
             </div>
           </motion.div>
@@ -432,12 +332,7 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
             <>
               {/* Backdrop */}
               <motion.div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  pointerEvents: 'auto'
-                }}
+                className="ar-menu-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -446,127 +341,50 @@ export const ARView = ({ onNavigateHome }: ARViewProps) => {
 
               {/* Menu Panel */}
               <motion.div
-                style={{
-                  position: 'absolute',
-                  top: '88px',
-                  right: '16px',
-                  width: '280px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  backdropFilter: 'blur(20px)',
-                  borderRadius: '20px',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
-                  overflow: 'hidden',
-                  pointerEvents: 'auto'
-                }}
+                className="ar-menu-panel"
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               >
                 {/* Menu Items */}
-                <div style={{ padding: '8px' }}>
+                <div className="ar-menu-items">
                   <button
                     onClick={() => {
                       setProfileMenuOpen(false);
                     }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    className="ar-menu-item"
                   >
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      backgroundColor: '#f0fdf4',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
+                    <div className="ar-menu-icon ar-menu-icon-primary">
                       <User style={{ width: '20px', height: '20px', color: '#10b981' }} />
                     </div>
-                    <span style={{ fontWeight: 500, color: '#1f2937', fontSize: '15px' }}>Profil</span>
+                    <span className="ar-menu-text">Profil</span>
                   </button>
 
                   <button
                     onClick={() => {
                       setProfileMenuOpen(false);
                     }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    className="ar-menu-item"
                   >
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      backgroundColor: '#f0fdf4',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
+                    <div className="ar-menu-icon ar-menu-icon-primary">
                       <Settings style={{ width: '20px', height: '20px', color: '#10b981' }} />
                     </div>
-                    <span style={{ fontWeight: 500, color: '#1f2937', fontSize: '15px' }}>Einstellungen</span>
+                    <span className="ar-menu-text">Einstellungen</span>
                   </button>
 
-                  <div style={{ margin: '8px 0', borderTop: '1px solid #e5e7eb' }} />
+                  <div className="ar-menu-divider" />
 
                   <button
                     onClick={() => {
                       setProfileMenuOpen(false);
                     }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    className="ar-menu-item ar-menu-item-logout"
                   >
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      backgroundColor: '#fee2e2',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
+                    <div className="ar-menu-icon ar-menu-icon-danger">
                       <LogOut style={{ width: '20px', height: '20px', color: '#dc2626' }} />
                     </div>
-                    <span style={{ fontWeight: 500, color: '#dc2626', fontSize: '15px' }}>Abmelden</span>
+                    <span className="ar-menu-text-danger">Abmelden</span>
                   </button>
                 </div>
               </motion.div>

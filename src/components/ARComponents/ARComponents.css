@@ -1,0 +1,283 @@
+/* ARView Component Styles */
+
+.ar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000;
+  z-index: 9999;
+}
+
+.ar-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.ar-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ar-ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Top Bar */
+.ar-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: auto;
+}
+
+.ar-home-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.ar-profile-button {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 28px;
+  border: none;
+  cursor: pointer;
+}
+
+.ar-profile-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #000;
+}
+
+.ar-profile-email {
+  font-size: 11px;
+  color: #666;
+}
+
+.ar-profile-points {
+  font-size: 11px;
+  color: #666;
+}
+
+/* Bottom Bar */
+.ar-bottom-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 16px;
+  right: 16px;
+  pointer-events: auto;
+}
+
+.ar-progress-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ar-stations-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ar-station-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.ar-station-wrapper-flex {
+  flex: 1;
+}
+
+.ar-station-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ar-station-completed {
+  background-color: #10b981;
+}
+
+.ar-station-current {
+  background-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+.ar-station-locked {
+  background-color: #e5e7eb;
+}
+
+.ar-station-current-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.ar-station-line {
+  flex: 1;
+  height: 4px;
+  margin-left: 6px;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+
+.ar-station-line-completed {
+  background-color: #10b981;
+}
+
+.ar-station-line-locked {
+  background-color: #e5e7eb;
+}
+
+.ar-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ar-station-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.ar-points-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #10b981;
+}
+
+.ar-points-text {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Profile Menu */
+.ar-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+}
+
+.ar-menu-panel {
+  position: absolute;
+  top: 88px;
+  right: 16px;
+  width: 280px;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.ar-menu-items {
+  padding: 8px;
+}
+
+.ar-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.ar-menu-item:hover {
+  background-color: #f3f4f6;
+}
+
+.ar-menu-item-logout:hover {
+  background-color: #fef2f2;
+}
+
+.ar-menu-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ar-menu-icon-primary {
+  background-color: #f0fdf4;
+}
+
+.ar-menu-icon-danger {
+  background-color: #fee2e2;
+}
+
+.ar-menu-text {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 15px;
+}
+
+.ar-menu-text-danger {
+  font-weight: 500;
+  color: #dc2626;
+  font-size: 15px;
+}
+
+.ar-menu-divider {
+  margin: 8px 0;
+  border-top: 1px solid #e5e7eb;
+}
