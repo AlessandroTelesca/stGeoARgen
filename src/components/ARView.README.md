@@ -13,18 +13,8 @@ Die `ARView` Komponente ist eine eigenständige AR-Komponente, die einen 3D-Wür
 
 ## Verwendung
 
-### Console Commands
-Die ARView wird über Console Commands gesteuert. Öffne die Browser-Konsole (F12) und nutze folgenden Befehl:
-
-```javascript
-// AR-Ansicht öffnen
-openARView()
-
-// Weitere AR-Befehle siehe AR-CONSOLE-COMMANDS.md
-```
-
-### Direktes Testen (Alternative)
-Falls du die ARView direkt testen möchtest, kannst du sie temporär in deine `App.tsx` einbinden:
+### Direktes Testen
+Um die ARView zu testen, kannst du sie temporär in deine `App.tsx` einbinden:
 
 ```tsx
 import { ARView } from './components/ARView';
@@ -33,6 +23,9 @@ function App() {
   return <ARView />;
 }
 ```
+
+### Als Standalone-Seite
+Oder erstelle eine eigene Test-Route/Seite nur für die ARView.
 
 ## Tests ausführen
 

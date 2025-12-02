@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { ARView } from '../ARView';
+import { ARView } from '../ARComponents/klosterweiher/ARView';
 
 /**
  * Test Suite für ARView Component
