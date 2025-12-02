@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 
-interface GeogiProps {
+interface GeorgiProps {
   message: string;
   show: boolean;
   onClose?: () => void;
@@ -10,7 +10,7 @@ interface GeogiProps {
   autoHide?: boolean;
 }
 
-export function Geogi({ message, show, onClose, position = 'bottom-right', autoHide = false }: GeogiProps) {
+export function Georgi({ message, show, onClose, position = 'bottom-right', autoHide = false }: GeorgiProps) {
   const [dismissed, setDismissed] = useState(false);
 
   const handleClose = () => {
@@ -62,7 +62,7 @@ export function Geogi({ message, show, onClose, position = 'bottom-right', autoH
               </motion.div>
               
               <div className="flex-1 pt-1">
-                <p className="font-semibold text-sm mb-1">Geogi sagt:</p>
+                <p className="font-semibold text-sm mb-1">Georgi sagt:</p>
                 <p className="text-sm text-muted-foreground">{message}</p>
               </div>
             </div>
@@ -73,12 +73,12 @@ export function Geogi({ message, show, onClose, position = 'bottom-right', autoH
   );
 }
 
-interface GeogiAvatarProps {
+interface GeorgiAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
 }
 
-export function GeogiAvatar({ size = 'md', animated = true }: GeogiAvatarProps) {
+export function GeorgiAvatar({ size = 'md', animated = true }: GeorgiAvatarProps) {
   const sizeClasses = {
     sm: 'w-8 h-8 text-base',
     md: 'w-12 h-12 text-2xl',

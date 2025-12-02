@@ -1,7 +1,7 @@
 import { Menu, X, Home, Map, QrCode, Settings, Gift } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GeogiAvatar } from './Geogi';
+import { GeorgiAvatar } from './Georgi';
 
 interface HeaderProps {
   title: string;
@@ -30,7 +30,7 @@ export function Header({ title, onNavigate, currentView }: HeaderProps) {
       <header className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <GeogiAvatar size="sm" animated={false} />
+            <GeorgiAvatar size="sm" animated={false} />
             <h1 className="font-semibold">{title}</h1>
           </div>
 
@@ -111,9 +111,9 @@ export function Header({ title, onNavigate, currentView }: HeaderProps) {
 
                 <div className="mb-6">
                   <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-primary/10 to-primary-light/10 rounded-xl border border-primary/20">
-                    <GeogiAvatar size="md" />
+                    <GeorgiAvatar size="md" />
                     <div>
-                      <p className="font-semibold">Geogi</p>
+                      <p className="font-semibold">Georgi</p>
                       <p className="text-xs text-muted-foreground">Dein Guide</p>
                     </div>
                   </div>

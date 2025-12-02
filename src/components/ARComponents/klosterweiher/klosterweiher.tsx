@@ -1,15 +1,54 @@
-import React from 'react';
-import * as AR from '../../../ARbackend/ARVisualizer';
+import { useEffect, useRef } from 'react';
+import { initAR, ARSession } from '../../../ARbackend/ARVisualizer';
+import '../ARComponents.css';
 
-const KlosterweiherPage: React.FC = () => {
-    return (
-        <div>
-            <h1>Klosterweiher AR Component</h1>
-        </div>
-    );
+  interface ARViewProps {
+  onNavigateHome?: () => void;
+  }
+
+export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const sessionRef = useRef<ARSession | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !videoRef.current) return;
+
+    initAR(containerRef.current, videoRef.current, {
+      onError: (e) => console.error("AR init failed", e)
+    }).then((session) => {
+      sessionRef.current = session;
+    });
+
+    return () => {
+      sessionRef.current?.stop();
+    };
+  }, []);
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+      <div
+        ref={containerRef}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden'
+        }}
+      />
+      
+      {/* Video background */}
+      <video
+        ref={videoRef}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+        playsInline
+        muted
+      />
+    </div>
+  );
 };
-
-export default KlosterweiherPage;
-
-let ARObject = new AR.ARVisualizer();
-ARObject.startVisualization();

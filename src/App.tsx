@@ -13,7 +13,9 @@ import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
-import { ARView } from './ARbackend/ARView';
+import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
+
+
 interface Station {
   id: number;
   title: string;
@@ -71,19 +73,19 @@ export default function App() {
 
   // Expose function to open AR view from console
   useEffect(() => {
-    (window as any).openARView = () => {
+    (window as any).openKlosterweiherView = () => {
       setCurrentView('ar');
-      console.log('🚀 AR View geöffnet!');
+      console.log('AR View geöffnet!');
     };
-    (window as any).closeARView = () => {
+    (window as any).closeKlosterweiherView = () => {
       setCurrentView('home');
-      console.log('✅ AR View geschlossen');
+      console.log('AR View geschlossen');
     };
     
     // Cleanup
     return () => {
-      delete (window as any).openARView;
-      delete (window as any).closeARView;
+      delete (window as any).openKlosterweiherView;
+      delete (window as any).closeKlosterweiherView;
     };
   }, []);
 
@@ -478,7 +480,7 @@ export default function App() {
 
       {/* AR View */}
       {currentView === 'ar' && (
-        <ARView onNavigateHome={() => setCurrentView('home')} />
+        <KlosterweiherView onNavigateHome={() => setCurrentView('home')} />
       )}
     </div>
   );

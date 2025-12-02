@@ -2,7 +2,7 @@ import { X, QrCode, CheckCircle2, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Geogi } from './Geogi';
+import { Georgi } from './Georgi';
 import { Trophy } from 'lucide-react';
 import { MapPin, Clock, Target } from 'lucide-react';
 
@@ -32,7 +32,7 @@ interface StationDetailProps {
 
 export function StationDetail({ station, onClose, onComplete }: StationDetailProps) {
   const [showAR, setShowAR] = useState(false);
-  const [showGeogi, setShowGeogi] = useState(true);
+  const [showGeorgi, setShowGeorgi] = useState(true);
 
   const handleNavigateToStation = () => {
     // Open Google Maps with directions to the station
@@ -187,11 +187,11 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
         </div>
       </div>
 
-      {/* Geogi Helper */}
-      <Geogi
+      {/* Georgi Helper */}
+      <Georgi
         message="Nutze die Navigation, um zur Station zu gelangen und scanne vor Ort den QR-Code!"
-        show={showGeogi && station.status !== 'completed'}
-        onClose={() => setShowGeogi(false)}
+        show={showGeorgi && station.status !== 'completed'}
+        onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />
     </motion.div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
-import { GeogiAvatar } from './Geogi';
+import { GeorgiAvatar } from './Georgi';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -11,21 +11,21 @@ interface OnboardingProps {
 const steps = [
   {
     id: 1,
-    title: 'Hallo, ich bin Geogi!',
+    title: 'Hallo, ich bin Georgi!',
     description: 'Ich bin dein Drachen-Guide und begleite dich auf deiner Entdeckungsreise durch St.Georgen. Gemeinsam erkunden wir die Stadt auf einem spannenden touristischen Themenpfad!',
-    geogiMessage: 'Hey! Schön, dass du da bist. Lass mich dir zeigen, wie alles funktioniert!',
+    georgiMessage: 'Hey! Schön, dass du da bist. Lass mich dir zeigen, wie alles funktioniert!',
   },
   {
     id: 2,
     title: 'QR-Codes scannen',
     description: 'An jeder Station findest du einen QR-Code. Scanne ihn, um AR-Erlebnisse freizuschalten, spannende Infos zu erhalten und Quizfragen zu beantworten.',
-    geogiMessage: 'Mit deiner Kamera kannst du die QR-Codes scannen. Probier es aus!',
+    georgiMessage: 'Mit deiner Kamera kannst du die QR-Codes scannen. Probier es aus!',
   },
   {
     id: 3,
     title: 'Punkte sammeln & Belohnung',
     description: 'Beantworte Quizfragen richtig und sammle Punkte. Wenn du alle Stationen abgeschlossen hast, wartet eine besondere Belohnung auf dich!',
-    geogiMessage: 'Sammle alle Punkte und sichere dir einen tollen Gutschein!',
+    georgiMessage: 'Sammle alle Punkte und sichere dir einen tollen Gutschein!',
   },
 ];
 
@@ -107,17 +107,17 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               }}
               className="flex-1 flex flex-col items-center justify-center p-8 text-center"
             >
-              {/* Geogi Avatar */}
+              {/* Georgi Avatar */}
               <motion.div
                 className="mb-6"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               >
-                <GeogiAvatar size="xl" animated />
+                <GeorgiAvatar size="xl" animated />
               </motion.div>
 
-              {/* Geogi Speech Bubble */}
+              {/* Georgi Speech Bubble */}
               <motion.div
                 className="bg-primary/10 border-2 border-primary/20 rounded-2xl p-4 mb-6 relative max-w-xs"
                 initial={{ opacity: 0, y: 10 }}
@@ -127,7 +127,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 {/* Speech bubble tail */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-primary/20" />
                 <p className="text-sm text-foreground italic">
-                  "{step.geogiMessage}"
+                  "{step.georgiMessage}"
                 </p>
               </motion.div>
 

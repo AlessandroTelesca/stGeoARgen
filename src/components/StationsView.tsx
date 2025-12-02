@@ -1,7 +1,7 @@
 import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { Geogi } from './Geogi';
+import { Georgi } from './Georgi';
 import { Badge } from './ui/badge';
 
 interface Station {
@@ -96,14 +96,14 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Geogi Mentor */}
+        {/* Georgi Mentor */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <Geogi size={48} />
+            <Georgi size={48} />
             <div className="flex-1">
               <p className="text-sm">
                 {completedStations === totalStations

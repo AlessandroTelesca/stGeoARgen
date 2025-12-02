@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { MapPin, Trophy, Clock, TrendingUp, ChevronRight, Star, Award } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Geogi } from './Geogi';
+import { Georgi } from './Georgi';
 import { useState, useEffect } from 'react';
 
 interface PathDetail {
@@ -23,11 +23,11 @@ interface PathsOverviewProps {
 }
 
 export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
-  const [showGeogi, setShowGeogi] = useState(false);
+  const [showGeorgi, setShowGeorgi] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowGeogi(true);
+      setShowGeorgi(true);
     }, 500);
     return () => clearTimeout(timer);
   }, []);
@@ -304,11 +304,11 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
         )}
       </div>
 
-      {/* Geogi Helper */}
-      <Geogi
+      {/* Georgi Helper */}
+      <Georgi
         message="Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!"
-        show={showGeogi}
-        onClose={() => setShowGeogi(false)}
+        show={showGeorgi}
+        onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />
     </div>
