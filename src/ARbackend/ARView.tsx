@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, User, Settings, Trophy, LogOut, Menu, Gift } from 'lucide-react';
-import { GeogiAvatar } from '../../Geogi';
+import { GeogiAvatar } from '../components/Geogi';
 
 /**
  * ARView Component
