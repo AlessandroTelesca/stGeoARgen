@@ -6,6 +6,11 @@ export interface ARSession {
 
 export interface ARInitOptions {
   onError?: (err: unknown) => void;
+  /**
+   * Called when the cube is hit by a pointer (mouse or touch)
+   * @param intersection The intersection object from Three.js
+   */
+  onCubeHit?: (intersection: THREE.Intersection) => void;
 }
 
 export const initAR = async (
@@ -17,8 +22,11 @@ export const initAR = async (
   let scene: THREE.Scene | null = null;
   let camera: THREE.PerspectiveCamera | null = null;
   let cube: THREE.Mesh | null = null;
+  let cubeSpawned = false;
   let animationId: number | null = null;
   let stream: MediaStream | null = null;
+  let raycaster: THREE.Raycaster;
+  let pointer: THREE.Vector2;
 
   // Initialize Camera
   const initCamera = async () => {
@@ -58,25 +66,12 @@ export const initAR = async (
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     renderer.domElement.style.zIndex = '10';
-    renderer.domElement.style.pointerEvents = 'none';
+    // Enable pointer events for hit-testing
+    renderer.domElement.style.pointerEvents = 'auto';
 
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
-      wireframe: false,
-      transparent: true,
-      opacity: 0.8,
-    });
-
-    const edges = new THREE.EdgesGeometry(geometry);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    const wireframe = new THREE.LineSegments(edges, lineMaterial);
-
-    cube = new THREE.Mesh(geometry, material);
-    cube.add(wireframe);
-    scene.add(cube);
+    // Cube will be created on first pointer event (tap/click)
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
@@ -84,6 +79,68 @@ export const initAR = async (
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
+
+    // Initialize raycaster and pointer
+    raycaster = new THREE.Raycaster();
+    pointer = new THREE.Vector2();
+
+    // Pointer event handler
+    const handlePointer = (clientX: number, clientY: number) => {
+      if (!renderer || !camera) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      if (!cubeSpawned) {
+        // Intersect with a plane at z=0 in world space
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        const intersection = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(plane, intersection)) {
+          // Create and add the cube at the intersection point
+          const geometry = new THREE.BoxGeometry(2, 2, 2);
+          const material = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            wireframe: false,
+            transparent: true,
+            opacity: 0.8,
+          });
+          const edges = new THREE.EdgesGeometry(geometry);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          cube = new THREE.Mesh(geometry, material);
+          cube.add(wireframe);
+          cube.position.copy(intersection);
+          scene?.add(cube);
+          cubeSpawned = true;
+        }
+        return;
+      }
+
+      if (cube) {
+        const intersects = raycaster.intersectObject(cube, true);
+        if (intersects.length > 0) {
+          options.onCubeHit?.(intersects[0]);
+        }
+      }
+    };
+
+    // Mouse event
+    const onMouseDown = (event: MouseEvent) => {
+      handlePointer(event.clientX, event.clientY);
+    };
+    // Touch event
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length > 0) {
+        handlePointer(event.touches[0].clientX, event.touches[0].clientY);
+      }
+    };
+
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('touchstart', onTouchStart);
+
+    // Store for cleanup
+    (renderer.domElement as any)._arPointerHandlers = { onMouseDown, onTouchStart };
   };
 
   const animate = () => {
@@ -117,6 +174,12 @@ export const initAR = async (
     if (stream) stream.getTracks().forEach((t) => t.stop());
 
     if (renderer) {
+      // Remove pointer event listeners
+      const handlers = (renderer.domElement as any)._arPointerHandlers;
+      if (handlers) {
+        renderer.domElement.removeEventListener('mousedown', handlers.onMouseDown);
+        renderer.domElement.removeEventListener('touchstart', handlers.onTouchStart);
+      }
       renderer.dispose();
       if (renderer.domElement.parentNode)
         renderer.domElement.parentNode.removeChild(renderer.domElement);
