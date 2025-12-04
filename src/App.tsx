@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathView } from './components/PathView';
@@ -14,6 +15,7 @@ import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
+import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 
 
 interface Station {
@@ -45,7 +47,9 @@ interface Path {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar'>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -71,23 +75,55 @@ export default function App() {
     setShowOnboarding(false);
   };
 
+  // Sync state with URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/klosterweiher') {
+      setCurrentView('ar-klosterweiher');
+    } else if (path === '/phonomuseum') {
+      setCurrentView('ar-phonomuseum');
+    } else if (path === '/settings') {
+      setCurrentView('settings');
+    } else if (path === '/points') {
+      setCurrentView('points');
+    } else if (path === '/stations') {
+      setCurrentView('stations');
+    } else if (path === '/progress') {
+      setCurrentView('progress');
+    } else if (path === '/rewards') {
+      setCurrentView('rewards');
+    } else if (path === '/' || path === '/home') {
+      setCurrentView('home');
+    }
+  }, [location.pathname]);
+
   // Expose function to open AR view from console
   useEffect(() => {
     (window as any).openKlosterweiherView = () => {
-      setCurrentView('ar');
-      console.log('AR View geöffnet!');
+      navigate('/klosterweiher');
+      console.log('Klosterweiher AR View geöffnet!');
     };
     (window as any).closeKlosterweiherView = () => {
-      setCurrentView('home');
-      console.log('AR View geschlossen');
+      navigate('/');
+      console.log('Klosterweiher AR View geschlossen');
+    };
+    (window as any).openPhonomuseumView = () => {
+      navigate('/phonomuseum');
+      console.log('Phonomuseum AR View geöffnet!');
+    };
+    (window as any).closePhonomuseumView = () => {
+      navigate('/');
+      console.log('Phonomuseum AR View geschlossen');
     };
     
     // Cleanup
     return () => {
       delete (window as any).openKlosterweiherView;
       delete (window as any).closeKlosterweiherView;
+      delete (window as any).openPhonomuseumView;
+      delete (window as any).closePhonomuseumView;
     };
-  }, []);
+  }, [navigate]);
 
   // Mock paths data - now only ONE path
   const [paths, setPaths] = useState<Path[]>([
@@ -261,7 +297,7 @@ export default function App() {
 
   const handleNavigate = (view: string) => {
     if (view === 'home') {
-      setCurrentView('home');
+      navigate('/');
       setSelectedPathId(null);
       setSelectedStationId(null);
     } else if (view === 'path') {
@@ -272,15 +308,15 @@ export default function App() {
     } else if (view === 'qr-scanner') {
       setShowQRScanner(true);
     } else if (view === 'settings') {
-      setCurrentView('settings');
+      navigate('/settings');
     } else if (view === 'points') {
-      setCurrentView('points');
+      navigate('/points');
     } else if (view === 'stations') {
-      setCurrentView('stations');
+      navigate('/stations');
     } else if (view === 'progress') {
-      setCurrentView('progress');
+      navigate('/progress');
     } else if (view === 'rewards') {
-      setCurrentView('rewards');
+      navigate('/rewards');
     }
   };
 
@@ -478,9 +514,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* AR View */}
-      {currentView === 'ar' && (
-        <KlosterweiherView onNavigateHome={() => setCurrentView('home')} />
+      {/* AR Views */}
+      {currentView === 'ar-klosterweiher' && (
+        <KlosterweiherView onNavigateHome={() => navigate('/')} />
+      )}
+      
+      {currentView === 'ar-phonomuseum' && (
+        <PhonomuseumView onNavigateHome={() => navigate('/')} />
       )}
     </div>
   );
