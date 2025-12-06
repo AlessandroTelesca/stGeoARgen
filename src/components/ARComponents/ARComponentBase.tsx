@@ -1,20 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, RefObject } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, User, Settings, Trophy, LogOut, Gift } from 'lucide-react';
 import { GeorgiAvatar } from '../Georgi';
-import { initAR, ARSession } from '../../ARbackend/ARVisualizer';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
   onNavigateHome?: () => void;
   closeARViewKey?: string; // Key for window.closeXXXView function
+  containerRef: RefObject<HTMLDivElement>;
+  videoRef: RefObject<HTMLVideoElement>;
 }
 
-export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView' }: ARComponentBaseProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const sessionRef = useRef<ARSession | null>(null);
-  
+export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
   
@@ -24,20 +21,6 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
     if (i === progress.current - 1) return 'current';
     return 'locked';
   });
-
-  useEffect(() => {
-    if (!containerRef.current || !videoRef.current) return;
-
-    initAR(containerRef.current, videoRef.current, {
-      onError: (e) => console.error("AR init failed", e)
-    }).then((session) => {
-      sessionRef.current = session;
-    });
-
-    return () => {
-      sessionRef.current?.stop();
-    };
-  }, []);
 
   const handleNavigateHome = () => {
     if (onNavigateHome) {

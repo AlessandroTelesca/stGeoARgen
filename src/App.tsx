@@ -16,6 +16,7 @@ import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
+import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
 
 
 interface Station {
@@ -49,7 +50,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -82,6 +83,8 @@ export default function App() {
       setCurrentView('ar-klosterweiher');
     } else if (path === '/phonomuseum') {
       setCurrentView('ar-phonomuseum');
+    } else if (path === '/glockenspiel') {
+      setCurrentView('ar-glockenspiel');
     } else if (path === '/settings') {
       setCurrentView('settings');
     } else if (path === '/points') {
@@ -115,6 +118,14 @@ export default function App() {
       navigate('/');
       console.log('Phonomuseum AR View geschlossen');
     };
+    (window as any).openGlockenspielView = () => {
+      navigate('/glockenspiel');
+      console.log('Glockenspiel AR View geöffnet!');
+    };
+    (window as any).closeGlockenspielView = () => {
+      navigate('/');
+      console.log('Glockenspiel AR View geschlossen');
+    };
     
     // Cleanup
     return () => {
@@ -122,6 +133,8 @@ export default function App() {
       delete (window as any).closeKlosterweiherView;
       delete (window as any).openPhonomuseumView;
       delete (window as any).closePhonomuseumView;
+      delete (window as any).openGlockenspielView;
+      delete (window as any).closeGlockenspielView;
     };
   }, [navigate]);
 
@@ -521,6 +534,10 @@ export default function App() {
       
       {currentView === 'ar-phonomuseum' && (
         <PhonomuseumView onNavigateHome={() => navigate('/')} />
+      )}
+      
+      {currentView === 'ar-glockenspiel' && (
+        <GlockenspielView onNavigateHome={() => navigate('/')} />
       )}
     </div>
   );
