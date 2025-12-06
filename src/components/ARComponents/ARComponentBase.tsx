@@ -1,4 +1,4 @@
-import { useRef, useState, RefObject } from 'react';
+import { useRef, useState, useEffect, RefObject } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, User, Settings, Trophy, LogOut, Gift } from 'lucide-react';
 import { GeorgiAvatar } from '../Georgi';
@@ -11,9 +11,35 @@ interface ARComponentBaseProps {
   videoRef: RefObject<HTMLVideoElement>;
 }
 
+// Dummy Stationen in St. Georgen im Schwarzwald, Richtige Koordinaten noch einfügen!
+const STATIONS = [
+  { id: 1, name: 'Rathaus', lat: 48.1246, lng: 8.3341 },
+  { id: 2, name: 'Stadtkirche', lat: 48.1251, lng: 8.3355 },
+  { id: 3, name: 'Marktplatz', lat: 48.1248, lng: 8.3347 },
+  { id: 4, name: 'Phonomuseum', lat: 48.1243, lng: 8.3338 },
+  { id: 5, name: 'Klosterweiher', lat: 48.1239, lng: 8.3352 },
+];
+
+// Haversine-Formel zur Berechnung der Distanz zwischen zwei Koordinaten
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371e3; // Erdradius in Metern
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distanz in Metern
+};
+
 export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearestStation, setNearestStation] = useState<typeof STATIONS[0] | null>(null);
   
   // Station status: completed, current, locked
   const stations = Array.from({ length: progress.total }, (_, i) => {
@@ -27,6 +53,68 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
       onNavigateHome();
     } else if ((window as any)[closeARViewKey]) {
       (window as any)[closeARViewKey]();
+    }
+  };
+
+  // Get user location and calculate nearest station
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          setUserLocation({ lat: userLat, lng: userLng });
+
+          // Finde nächste Station
+          let minDistance = Infinity;
+          let nearest = STATIONS[0];
+
+          STATIONS.forEach((station) => {
+            const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearest = station;
+            }
+          });
+
+          setNearestStation(nearest);
+          console.log(`Nächste Station: ${nearest.name} (${Math.round(minDistance)}m entfernt)`);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          // Fallback: erste Station als nächste Station
+          setNearestStation(STATIONS[0]);
+        }
+      );
+    } else {
+      console.error('Geolocation wird nicht unterstützt');
+      // Fallback: erste Station als nächste Station
+      setNearestStation(STATIONS[0]);
+    }
+  }, []);
+
+  const handleNavigateToNextStation = () => {
+    if (!nearestStation) {
+      console.error('Keine Station gefunden');
+      return;
+    }
+
+    const nextStationLat = nearestStation.lat;
+    const nextStationLng = nearestStation.lng;
+    
+    // Detect device and open appropriate maps app
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // Open Apple Maps
+      window.location.href = `maps://maps.apple.com/?daddr=${nextStationLat},${nextStationLng}&dirflg=w`;
+    } else if (isAndroid) {
+      // Open Google Maps
+      window.location.href = `google.navigation:q=${nextStationLat},${nextStationLng}&mode=w`;
+    } else {
+      // Fallback to Google Maps in browser
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${nextStationLat},${nextStationLng}&travelmode=walking`, '_blank');
     }
   };
 
@@ -61,17 +149,15 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           <motion.button
             onClick={handleNavigateHome}
             className="ar-home-button"
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Home style={{ width: '28px', height: '28px', color: '#000' }} />
+            <Home style={{ width: '28px', height: '28px', color: '#0C690F' }} />
           </motion.button>
 
           {/* Profile Button */}
           <motion.button
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
             className="ar-profile-button"
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <GeorgiAvatar size="sm" />
@@ -163,6 +249,23 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           </motion.div>
         </div>
 
+        {/* Navigation Button - Above Progress Bar Right */}
+        <motion.button
+          onClick={handleNavigateToNextStation}
+          className="ar-navigate-button"
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="ar-navigate-button-content">
+            <span className="material-icons" style={{ fontSize: '28px', color: 'white' }}>
+              arrow_forward
+            </span>
+            <span className="ar-navigate-button-text">Zur nächsten Station</span>
+          </div>
+        </motion.button>
+
         {/* Profile Dropdown Menu */}
         <AnimatePresence>
           {profileMenuOpen && (
@@ -193,7 +296,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
                     className="ar-menu-item"
                   >
                     <div className="ar-menu-icon ar-menu-icon-primary">
-                      <User style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                      <User style={{ width: '20px', height: '20px', color: '#0C690F' }} />
                     </div>
                     <span className="ar-menu-text">Profil</span>
                   </button>
@@ -205,7 +308,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
                     className="ar-menu-item"
                   >
                     <div className="ar-menu-icon ar-menu-icon-primary">
-                      <Settings style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                      <Settings style={{ width: '20px', height: '20px', color: '#0C690F' }} />
                     </div>
                     <span className="ar-menu-text">Einstellungen</span>
                   </button>

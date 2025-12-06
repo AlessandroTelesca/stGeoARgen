@@ -100,9 +100,11 @@
 /* Bottom Bar */
 .ar-bottom-bar {
   position: absolute;
-  bottom: 24px;
-  left: 16px;
-  right: 16px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 
@@ -142,12 +144,12 @@
 }
 
 .ar-station-completed {
-  background-color: #10b981;
+  background-color: #0C690F;
 }
 
 .ar-station-current {
-  background-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  background-color: #0C690F;
+  box-shadow: 0 0 0 3px rgba(12, 105, 15, 0.3);
 }
 
 .ar-station-locked {
@@ -170,7 +172,7 @@
 }
 
 .ar-station-line-completed {
-  background-color: #10b981;
+  background-color: #0C690F;
 }
 
 .ar-station-line-locked {
@@ -193,7 +195,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #10b981;
+  color: #0C690F;
 }
 
 .ar-points-text {
@@ -280,4 +282,54 @@
 .ar-menu-divider {
   margin: 8px 0;
   border-top: 1px solid #e5e7eb;
+}
+
+/* Navigation Button - Above Progress Bar */
+.ar-navigate-button {
+  position: absolute;
+  bottom: calc(140px + max(24px, env(safe-area-inset-bottom)));
+  right: 16px;
+  padding: 0;
+  background-color: #0C690F;
+  box-shadow: 0 8px 20px rgba(12, 105, 15, 0.4);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 25;
+  color: white;
+  transition: all 0.2s ease;
+  border-radius: 32px;
+}
+
+.ar-navigate-button-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+}
+
+.ar-navigate-button-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+
+.ar-navigate-button:active {
+  background-color: #094d0b;
+  transform: scale(0.95);
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .ar-navigate-button {
+    bottom: calc(130px + max(24px, env(safe-area-inset-bottom)));
+  }
+  
+  .ar-navigate-button-text {
+    font-size: 14px;
+  }
 }

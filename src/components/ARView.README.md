@@ -3,6 +3,19 @@
 ## Überblick
 Die `ARView` Komponente ist eine eigenständige AR-Komponente, die einen 3D-Würfel in einem AR-Space anzeigt. Sie ist **nicht** an die restliche App eingebunden und kann unabhängig verwendet oder getestet werden.
 
+## AR View öffnen (Browser Console)
+
+```javascript
+// Glockenspiel AR View
+openGlockenspielView()
+
+// Phonomuseum AR View
+openPhonomuseumView()
+
+// Klosterweiher AR View
+openKlosterWeiherView()
+```
+
 ## Features
 - ✅ Kamera-Stream als Hintergrund (Rückkamera)
 - ✅ 3D-Würfel mit Three.js
