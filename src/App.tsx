@@ -434,7 +434,11 @@ export default function App() {
           stations={selectedPath.stations}
           onStationClick={handleStationClick}
           onBack={handleBackToDashboard}
-          userProgress={getPathProgress(selectedPath)}
+          userProgress={{
+            completedStations: getPathProgress(selectedPath).completedStations,
+            totalStations: getPathProgress(selectedPath).totalStations,
+            points: getPathProgress(selectedPath).earnedPoints,
+          }}
         />
       )}
 
