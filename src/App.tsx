@@ -100,43 +100,6 @@ export default function App() {
     }
   }, [location.pathname]);
 
-  // Expose function to open AR view from console
-  useEffect(() => {
-    (window as any).openKlosterweiherView = () => {
-      navigate('/klosterweiher');
-      console.log('Klosterweiher AR View geöffnet!');
-    };
-    (window as any).closeKlosterweiherView = () => {
-      navigate('/');
-      console.log('Klosterweiher AR View geschlossen');
-    };
-    (window as any).openPhonomuseumView = () => {
-      navigate('/phonomuseum');
-      console.log('Phonomuseum AR View geöffnet!');
-    };
-    (window as any).closePhonomuseumView = () => {
-      navigate('/');
-      console.log('Phonomuseum AR View geschlossen');
-    };
-    (window as any).openGlockenspielView = () => {
-      navigate('/glockenspiel');
-      console.log('Glockenspiel AR View geöffnet!');
-    };
-    (window as any).closeGlockenspielView = () => {
-      navigate('/');
-      console.log('Glockenspiel AR View geschlossen');
-    };
-    
-    // Cleanup
-    return () => {
-      delete (window as any).openKlosterweiherView;
-      delete (window as any).closeKlosterweiherView;
-      delete (window as any).openPhonomuseumView;
-      delete (window as any).closePhonomuseumView;
-      delete (window as any).openGlockenspielView;
-      delete (window as any).closeGlockenspielView;
-    };
-  }, [navigate]);
 
   // Mock paths data - now only ONE path
   const [paths, setPaths] = useState<Path[]>([
