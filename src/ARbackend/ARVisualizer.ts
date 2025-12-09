@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export interface ARSession {
   stop: () => void;
@@ -6,19 +7,12 @@ export interface ARSession {
 
 export interface ARInitOptions {
   onError?: (err: unknown) => void;
-  /**
-   * Called when the cube is hit by a pointer (mouse or touch)
-   * @param intersection The intersection object from Three.js
-   */
-  onCubeHit?: (intersection: THREE.Intersection) => void;
 }
 
 export class ARVisualizer implements ARSession {
-  private renderer: THREE.WebGLRenderer | null = null;
-  private scene: THREE.Scene | null = null;
-  private camera: THREE.PerspectiveCamera | null = null;
-  private cube: THREE.Mesh | null = null;
-  private cubeSpawned = false;
+  protected renderer: THREE.WebGLRenderer | null = null;
+  protected scene: THREE.Scene | null = null;
+  protected camera: THREE.PerspectiveCamera | null = null;
   private animationId: number | null = null;
   private stream: MediaStream | null = null;
   private raycaster: THREE.Raycaster;
@@ -63,7 +57,7 @@ export class ARVisualizer implements ARSession {
     }
   }
 
-  private initThree(): void {
+  protected initThree(): void {
     this.scene = new THREE.Scene();
 
     this.camera = new THREE.PerspectiveCamera(
@@ -115,53 +109,60 @@ export class ARVisualizer implements ARSession {
     (this.renderer.domElement as any)._arPointerHandlers = { onMouseDown, onTouchStart };
   }
 
-  private handlePointer(clientX: number, clientY: number): void {
-    if (!this.renderer || !this.camera) return;
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    this.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointer, this.camera);
+  /**
+   * Load a GLTF/GLB model and add it to the scene. Returns the loaded root object.
+   */
+  protected loadGLTFModel(
+    url: string,
+    options: {
+      position?: THREE.Vector3 | [number, number, number];
+      rotation?: THREE.Euler | [number, number, number];
+      scale?: number | [number, number, number];
+    } = {}
+  ): Promise<THREE.Object3D> {
+    if (!this.scene) return Promise.reject(new Error('Scene not initialized'));
 
-    if (!this.cubeSpawned) {
-      // Intersect with a plane at z=0 in world space
-      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-      const intersection = new THREE.Vector3();
-      if (this.raycaster.ray.intersectPlane(plane, intersection)) {
-        // Create and add the cube at the intersection point
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const material = new THREE.MeshBasicMaterial({
-          color: 0x00ff00,
-          wireframe: false,
-          transparent: true,
-          opacity: 0.8,
-        });
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-        const wireframe = new THREE.LineSegments(edges, lineMaterial);
-        this.cube = new THREE.Mesh(geometry, material);
-        this.cube.add(wireframe);
-        this.cube.position.copy(intersection);
-        this.scene?.add(this.cube);
-        this.cubeSpawned = true;
-      }
-      return;
-    }
+    const toVector3 = (value: THREE.Vector3 | [number, number, number]): THREE.Vector3 =>
+      Array.isArray(value) ? new THREE.Vector3(...value) : value;
 
-    if (this.cube) {
-      const intersects = this.raycaster.intersectObject(this.cube, true);
-      if (intersects.length > 0) {
-        this.options.onCubeHit?.(intersects[0]);
-      }
-    }
+    const toEuler = (value: THREE.Euler | [number, number, number]): THREE.Euler =>
+      Array.isArray(value) ? new THREE.Euler(...value) : value;
+
+    const loader = new GLTFLoader();
+
+    return new Promise<THREE.Object3D>((resolve, reject) => {
+      loader.load(
+        url,
+        (gltf) => {
+          const model = gltf.scene;
+
+          if (options.position) model.position.copy(toVector3(options.position));
+          if (options.rotation) model.rotation.copy(toEuler(options.rotation));
+
+          if (options.scale) {
+            if (Array.isArray(options.scale)) {
+              model.scale.set(options.scale[0], options.scale[1], options.scale[2]);
+            } else {
+              model.scale.setScalar(options.scale);
+            }
+          }
+
+          this.scene?.add(model);
+          resolve(model);
+        },
+        undefined,
+        (err) => reject(err)
+      );
+    });
+  }
+
+  protected handlePointer(clientX: number, clientY: number): void {
+    // Intentionally left blank: pointer events are kept for future interactions
+    // Subclasses can override this method to handle pointer/tap events
   }
 
   private animate = (): void => {
     this.animationId = requestAnimationFrame(this.animate);
-
-    if (this.cube) {
-      this.cube.rotation.x += 0.01;
-      this.cube.rotation.y += 0.01;
-    }
 
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
@@ -189,12 +190,6 @@ export class ARVisualizer implements ARSession {
       this.renderer.dispose();
       if (this.renderer.domElement.parentNode)
         this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-    }
-
-    if (this.cube) {
-      this.cube.geometry.dispose();
-      if (Array.isArray(this.cube.material)) this.cube.material.forEach((m) => m.dispose());
-      else this.cube.material.dispose();
     }
 
     window.removeEventListener('resize', this.handleResize);
