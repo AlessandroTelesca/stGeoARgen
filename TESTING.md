@@ -17,7 +17,8 @@ This project uses **Vitest** as the testing framework with **React Testing Libra
 ### Configuration Files
 
 - **vitest.config.ts** - Main Vitest configuration
-- **src/test/setup.ts** - Test environment setup and global mocks
+- **tests/setup.ts** - Test environment setup and global mocks
+- **tests/vitest.d.ts** - TypeScript type declarations for testing-library matchers
 
 ## Running Tests
 
@@ -45,23 +46,36 @@ npm test:coverage -- --run
 
 ### Test Files Created
 
-1. **Component Tests**
-   - `src/components/Header.test.tsx` - Header component tests
-   - `src/components/Dashboard.test.tsx` - Dashboard component tests
-   - `src/components/Settings.test.tsx` - Settings component tests
-   - `src/components/ProgressBar.test.tsx` - ProgressBar component tests
-   - `src/components/StationCard.test.tsx` - StationCard component data tests
-   - `src/components/PathCard.test.tsx` - PathCard component data tests
+1. **Component Tests** (in `tests/components/`)
+   - `Dashboard.test.tsx` - Dashboard component tests
+   - `Header.test.tsx` - Header component tests
+   - `Settings.test.tsx` - Settings component tests
+   - `ProgressBar.test.tsx` - ProgressBar component tests
+   - `ProgressView.test.tsx` - ProgressView component tests
+   - `StationCard.test.tsx` - StationCard component tests
+   - `Stations.test.tsx` - StationDetail and StationsView tests
+   - `PathCard.test.tsx` - PathCard component tests
+   - `PathsOverview.test.tsx` - PathsOverview component tests
+   - `PathView.test.tsx` - PathView component tests
+   - `PointsView.test.tsx` - PointsView component tests
+   - `QRScanner.test.tsx` - QRScanner component tests
+   - `Onboarding.test.tsx` - Onboarding component tests
+   - `Georgi.test.tsx` - Georgi assistant component tests
+   - `Rewards.test.tsx` - RewardDialog and RewardsView tests
+   - `ARComponents.test.tsx` - AR component tests
 
-2. **Utility Tests**
-   - `src/components/ui/utils.test.ts` - Class merging utility (cn) tests
-   - `src/test/basic.test.ts` - Basic JavaScript operations tests
+2. **Utility Tests** (in `tests/utils/`)
+   - `utils.test.ts` - Utility function tests
+
+3. **Basic Tests** (in `tests/`)
+   - `basic.test.ts` - Basic JavaScript operations tests
 
 ### Current Test Coverage
 
-**25 passing tests** across 8 test files:
-- 6 component test files
-- 2 utility test files
+**59 passing tests** across 18 test files covering:
+- 16 component test files
+- 1 utility test file
+- 1 basic test file
 
 ## Writing New Tests
 
@@ -133,11 +147,19 @@ describe('myUtil', () => {
 
 ## Setup Utilities
 
-The test setup file (`src/test/setup.ts`) provides:
+The test setup file (`tests/setup.ts`) provides:
 
-- **Jest DOM matchers** - Enhanced assertions for DOM elements
+- **Jest DOM matchers** - Enhanced assertions for DOM elements (via `@testing-library/jest-dom/vitest`)
 - **window.matchMedia mock** - Mocks CSS media queries for responsive components
 - **Automatic cleanup** - Cleans up React DOM after each test
+
+### TypeScript Configuration
+
+TypeScript type support for testing-library matchers is provided via `tests/vitest.d.ts`, which extends Vitest's `Assertion` interface with `@testing-library/jest-dom` matchers. This ensures full IDE autocomplete and type checking for assertions like:
+- `toBeInTheDocument()`
+- `toBeDisabled()` / `toBeEnabled()`
+- `toHaveClass()`
+- And other testing-library custom matchers
 
 ## Debugging Tests
 
@@ -198,11 +220,12 @@ it('handles async operations', async () => {
 
 To expand test coverage:
 
-1. **Add tests for AR components** - Test ARVisualizer.ts and AR component logic
+1. **Add more AR component tests** - Expand ARComponents.test.tsx coverage
 2. **Add integration tests** - Test component interactions and data flow
 3. **Add snapshot tests** - For stable component rendering
 4. **Add E2E tests** - Consider Playwright or Cypress for user workflows
 5. **Increase coverage** - Aim for >80% coverage on critical paths
+6. **Test AR backend** - Add tests for ARVisualizer.ts and AR-specific logic
 
 ## Resources
 
