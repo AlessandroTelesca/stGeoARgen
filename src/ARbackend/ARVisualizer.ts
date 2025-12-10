@@ -1,3 +1,4 @@
+/// <reference path="../types/webxr.d.ts" />
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -7,6 +8,7 @@ export interface ARSession {
 
 export interface ARInitOptions {
   onError?: (err: unknown) => void;
+  useWebXR?: boolean; // Enable WebXR for real plane detection
 }
 
 export class ARVisualizer implements ARSession {
@@ -14,47 +16,37 @@ export class ARVisualizer implements ARSession {
   protected scene: THREE.Scene | null = null;
   protected camera: THREE.PerspectiveCamera | null = null;
   private animationId: number | null = null;
-  private stream: MediaStream | null = null;
   private raycaster: THREE.Raycaster;
   private pointer: THREE.Vector2;
   private container: HTMLDivElement;
-  private videoElement: HTMLVideoElement;
   private options: ARInitOptions;
+  protected isGroundDetected: boolean = false;
+  private xrSession: XRSession | null = null;
+  private xrRefSpace: XRReferenceSpace | null = null;
+  private xrHitTestSource: XRHitTestSource | null = null;
+  protected detectedPlanePosition: THREE.Vector3 | null = null;
 
   constructor(
     container: HTMLDivElement,
-    videoElement: HTMLVideoElement,
     options: ARInitOptions = {}
   ) {
     this.container = container;
-    this.videoElement = videoElement;
     this.options = options;
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
   }
 
   async init(): Promise<void> {
-    await this.initCamera();
-    this.initThree();
-    this.animate();
-    window.addEventListener('resize', this.handleResize);
-  }
-
-  private async initCamera(): Promise<void> {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-      this.videoElement.srcObject = this.stream;
-      await this.videoElement.play();
-    } catch (err) {
-      this.options.onError?.(err);
-      throw err;
+    if (!this.options.useWebXR || !('xr' in navigator)) {
+      throw new Error('WebXR is required but not available');
     }
+
+    const isSupported = await (navigator as any).xr?.isSessionSupported('immersive-ar');
+    if (!isSupported) {
+      throw new Error('WebXR AR not supported on this device');
+    }
+
+    await this.initWebXR();
   }
 
   protected initThree(): void {
@@ -110,6 +102,90 @@ export class ARVisualizer implements ARSession {
   }
 
   /**
+   * Initialize WebXR session for real AR plane detection (like Amazon AR).
+   */
+  private async initWebXR(): Promise<void> {
+    try {
+      const xr = (navigator as any).xr;
+      if (!xr) throw new Error('WebXR not supported');
+
+      // Request AR session with hit-test feature for plane detection
+      this.xrSession = await xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: this.container }
+      });
+
+      // Initialize Three.js for WebXR
+      this.initThree();
+      this.renderer!.xr.enabled = true;
+      this.renderer!.xr.setSession(this.xrSession);
+
+      // Get reference space
+      if (this.xrSession) {
+        this.xrRefSpace = await this.xrSession.requestReferenceSpace('local');
+
+        // Set up hit test source for plane detection
+        const viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
+        if (this.xrSession.requestHitTestSource) {
+          this.xrHitTestSource = await this.xrSession.requestHitTestSource({ space: viewerSpace }) || null;
+        }
+
+        // Start XR animation loop
+        this.xrSession.requestAnimationFrame(this.onXRFrame);
+      }
+
+      console.log('WebXR AR session started - real plane detection active!');
+    } catch (err) {
+      console.error('WebXR initialization failed:', err);
+      this.options.onError?.(err);
+      throw err;
+    }
+  }
+
+  /**
+   * WebXR animation frame - handles real-time plane detection.
+   */
+  private onXRFrame = (time: number, frame: XRFrame) => {
+    if (!this.xrSession || !this.xrHitTestSource) return;
+
+    const session = this.xrSession;
+    session.requestAnimationFrame(this.onXRFrame);
+
+    // Get hit test results (detected planes)
+    const hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
+
+    if (hitTestResults.length > 0 && this.xrRefSpace) {
+      // Ground plane detected!
+      const hit = hitTestResults[0];
+      const pose = hit.getPose(this.xrRefSpace);
+
+      if (pose) {
+        const position = pose.transform.position;
+        this.detectedPlanePosition = new THREE.Vector3(position.x, position.y, position.z);
+        
+        if (!this.isGroundDetected) {
+          this.isGroundDetected = true;
+          console.log('Real ground plane detected via WebXR!', this.detectedPlanePosition);
+          this.onGroundDetected();
+        }
+      }
+    }
+
+    // Render scene
+    if (this.renderer && this.scene && this.camera) {
+      this.renderer.render(this.scene, this.camera);
+    }
+  };
+
+  /**
+   * Override this method to handle when ground is detected.
+   */
+  protected onGroundDetected(): void {
+    // Subclasses can override this
+  }
+
+  /**
    * Load a GLTF/GLB model and add it to the scene. Returns the loaded root object.
    */
   protected loadGLTFModel(
@@ -161,14 +237,6 @@ export class ARVisualizer implements ARSession {
     // Subclasses can override this method to handle pointer/tap events
   }
 
-  private animate = (): void => {
-    this.animationId = requestAnimationFrame(this.animate);
-
-    if (this.renderer && this.scene && this.camera) {
-      this.renderer.render(this.scene, this.camera);
-    }
-  };
-
   private handleResize = (): void => {
     if (!this.camera || !this.renderer) return;
     this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -177,8 +245,14 @@ export class ARVisualizer implements ARSession {
   };
 
   stop(): void {
+    // Stop WebXR session
+    if (this.xrSession) {
+      this.xrSession.end();
+      this.xrSession = null;
+      this.xrHitTestSource = null;
+    }
+
     if (this.animationId) cancelAnimationFrame(this.animationId);
-    if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
 
     if (this.renderer) {
       // Remove pointer event listeners
@@ -199,10 +273,9 @@ export class ARVisualizer implements ARSession {
 // Backwards compatibility wrapper
 export const initAR = async (
   container: HTMLDivElement,
-  videoElement: HTMLVideoElement,
   options: ARInitOptions = {}
 ): Promise<ARSession> => {
-  const visualizer = new ARVisualizer(container, videoElement, options);
+  const visualizer = new ARVisualizer(container, options);
   await visualizer.init();
   return visualizer;
 };
