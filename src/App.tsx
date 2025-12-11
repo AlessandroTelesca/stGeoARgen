@@ -286,13 +286,13 @@ export default function App() {
     } else if (view === 'settings') {
       navigate('/settings');
     } else if (view === 'points') {
-      navigate('/points');
+      setCurrentView('points');
     } else if (view === 'stations') {
-      navigate('/stations');
+      setCurrentView('stations');
     } else if (view === 'progress') {
-      navigate('/progress');
+      setCurrentView('progress');
     } else if (view === 'rewards') {
-      navigate('/rewards');
+      setCurrentView('rewards');
     }
   };
 

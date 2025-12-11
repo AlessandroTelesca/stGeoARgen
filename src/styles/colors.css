@@ -1,46 +1,117 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* ============================================
+   stGeoARgen - Complete Design System
+   Unified colors, typography & theme
+   ============================================ */
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* ========== Typography ========== */
   --font-size: 16px;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  
+  /* ========== Brand Primary Green ========== */
+  --color-primary: #0C690F;
+  --primary: #0C690F;  /* Tailwind/Shadcn compatibility */
+  --primary-foreground: #ffffff;
+  --color-primary-hover: #094d0b;
+  --color-primary-light: #f0fdf4;
+  --color-primary-dark: #053705;
+  
+  /* Primary variations for Tailwind */
+  --primary-light: #0f8013;
+  --primary-lighter: #12a617;
+  --primary-dark: #094d0b;
+  --primary-darker: #063807;
+  
+  /* ========== Green Shades (Monochromatic) ========== */
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #0C690F;
+  --color-green-600: #0a5a0d;
+  --color-green-700: #094d0b;
+  --color-green-800: #073f09;
+  --color-green-900: #053705;
+  
+  /* ========== Neutrals - Whites ========== */
+  --color-white: #FFFFFF;
+  --color-white-95: rgba(255, 255, 255, 0.95);
+  --color-white-90: rgba(255, 255, 255, 0.90);
+  --color-white-80: rgba(255, 255, 255, 0.80);
+  --color-white-70: rgba(255, 255, 255, 0.70);
+  
+  /* ========== Neutrals - Grays ========== */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* ========== Neutrals - Blacks ========== */
+  --color-black: #000000;
+  --color-black-90: rgba(0, 0, 0, 0.90);
+  --color-black-80: rgba(0, 0, 0, 0.80);
+  --color-black-70: rgba(0, 0, 0, 0.70);
+  --color-black-60: rgba(0, 0, 0, 0.60);
+  --color-black-50: rgba(0, 0, 0, 0.50);
+  --color-black-40: rgba(0, 0, 0, 0.40);
+  --color-black-30: rgba(0, 0, 0, 0.30);
+  --color-black-20: rgba(0, 0, 0, 0.20);
+  --color-black-15: rgba(0, 0, 0, 0.15);
+  --color-black-10: rgba(0, 0, 0, 0.10);
+  
+  /* ========== Backgrounds & Foregrounds (Tailwind) ========== */
   --background: #f8f9fa;
   --foreground: #1a1a1a;
   --card: #ffffff;
   --card-foreground: #1a1a1a;
   --popover: #ffffff;
   --popover-foreground: #1a1a1a;
-  --primary: #0C690F;
-  --primary-foreground: #ffffff;
-  --primary-light: #0f8013;
-  --primary-lighter: #12a617;
-  --primary-dark: #094d0b;
-  --primary-darker: #063807;
+  
+  /* ========== Secondary & Muted (Tailwind) ========== */
   --secondary: #f1f5f1;
   --secondary-foreground: #0C690F;
   --muted: #e9ecef;
   --muted-foreground: #6c757d;
   --accent: #0C690F;
   --accent-foreground: #ffffff;
-  --destructive: #dc3545;
+  
+  /* ========== Status Colors ========== */
+  --color-danger: #dc2626;
+  --destructive: #dc3545;  /* Tailwind compatibility */
   --destructive-foreground: #ffffff;
+  --color-danger-light: #fee2e2;
+  --color-danger-hover: #fef2f2;
+  
   --warning: #ffc107;
   --warning-foreground: #1a1a1a;
   --success: #0C690F;
   --success-foreground: #ffffff;
+  
+  /* ========== Borders & Inputs (Tailwind) ========== */
   --border: #dee2e6;
   --input: transparent;
   --input-background: #ffffff;
   --switch-background: #ced4da;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
   --ring: #0C690F;
+  
+  /* ========== Charts (Tailwind) ========== */
   --chart-1: #0C690F;
   --chart-2: #0f8013;
   --chart-3: #12a617;
   --chart-4: #094d0b;
   --chart-5: #063807;
-  --radius: 0.75rem;
+  
+  /* ========== Sidebar (Tailwind) ========== */
   --sidebar: #ffffff;
   --sidebar-foreground: #1a1a1a;
   --sidebar-primary: #0C690F;
@@ -49,8 +120,19 @@
   --sidebar-accent-foreground: #0C690F;
   --sidebar-border: #dee2e6;
   --sidebar-ring: #0C690F;
+  
+  /* ========== Shadows ========== */
+  --shadow-primary: 0 8px 20px rgba(12, 105, 15, 0.4);
+  --shadow-primary-light: 0 0 0 3px rgba(12, 105, 15, 0.3);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.2);
+  
+  /* ========== Border Radius (Tailwind) ========== */
+  --radius: 0.75rem;
 }
 
+/* ========== Dark Mode ========== */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -88,6 +170,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* ========== Tailwind Theme Integration ========== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -129,6 +212,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ========== Base Styles ========== */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -140,9 +224,7 @@
   }
 }
 
-/**
- * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
- */
+/* ========== Typography Defaults ========== */
 @layer base {
   :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
     h1 {

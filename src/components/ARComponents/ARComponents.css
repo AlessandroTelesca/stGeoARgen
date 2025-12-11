@@ -7,7 +7,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #000;
+  background-color: var(--color-black);
   z-index: 9999;
 }
 
@@ -58,9 +58,9 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--color-white-95);
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,9 +69,9 @@
 }
 
 .ar-profile-button {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--color-white-95);
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -84,17 +84,17 @@
 .ar-profile-name {
   font-weight: 600;
   font-size: 14px;
-  color: #000;
+  color: var(--color-black);
 }
 
 .ar-profile-email {
   font-size: 11px;
-  color: #666;
+  color: var(--color-gray-600);
 }
 
 .ar-profile-points {
   font-size: 11px;
-  color: #666;
+  color: var(--color-gray-600);
 }
 
 /* Bottom Bar */
@@ -109,11 +109,11 @@
 }
 
 .ar-progress-container {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--color-white-95);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 20px 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
 }
 
 .ar-stations-row {
@@ -144,16 +144,16 @@
 }
 
 .ar-station-completed {
-  background-color: #0C690F;
+  background-color: var(--color-primary);
 }
 
 .ar-station-current {
-  background-color: #0C690F;
-  box-shadow: 0 0 0 3px rgba(12, 105, 15, 0.3);
+  background-color: var(--color-primary);
+  box-shadow: var(--shadow-primary-light);
 }
 
 .ar-station-locked {
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
 }
 
 .ar-station-current-dot {
@@ -172,11 +172,11 @@
 }
 
 .ar-station-line-completed {
-  background-color: #0C690F;
+  background-color: var(--color-primary);
 }
 
 .ar-station-line-locked {
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
 }
 
 .ar-info-row {
@@ -188,14 +188,14 @@
 .ar-station-text {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-gray-800);
 }
 
 .ar-points-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #0C690F;
+  color: var(--color-primary);
 }
 
 .ar-points-text {
@@ -207,7 +207,7 @@
 .ar-menu-backdrop {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--color-black-30);
   pointer-events: auto;
 }
 
@@ -219,7 +219,7 @@
   background-color: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
 }
@@ -243,11 +243,11 @@
 }
 
 .ar-menu-item:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
 }
 
 .ar-menu-item-logout:hover {
-  background-color: #fef2f2;
+  background-color: var(--color-danger-hover);
 }
 
 .ar-menu-icon {
@@ -260,28 +260,28 @@
 }
 
 .ar-menu-icon-primary {
-  background-color: #f0fdf4;
+  background-color: var(--color-primary-light);
 }
 
 .ar-menu-icon-danger {
-  background-color: #fee2e2;
+  background-color: var(--color-danger-light);
 }
 
 .ar-menu-text {
   font-weight: 500;
-  color: #1f2937;
+  color: var(--color-gray-800);
   font-size: 15px;
 }
 
 .ar-menu-text-danger {
   font-weight: 500;
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: 15px;
 }
 
 .ar-menu-divider {
   margin: 8px 0;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-gray-200);
 }
 
 /* Navigation Button - Above Progress Bar */
@@ -290,8 +290,8 @@
   bottom: calc(140px + max(24px, env(safe-area-inset-bottom)));
   right: 16px;
   padding: 0;
-  background-color: #0C690F;
-  box-shadow: 0 8px 20px rgba(12, 105, 15, 0.4);
+  background-color: var(--color-primary);
+  box-shadow: var(--shadow-primary);
   border: none;
   cursor: pointer;
   display: flex;
@@ -299,7 +299,7 @@
   justify-content: center;
   pointer-events: auto;
   z-index: 25;
-  color: white;
+  color: var(--color-white);
   transition: all 0.2s ease;
   border-radius: 32px;
 }
@@ -314,12 +314,12 @@
 .ar-navigate-button-text {
   font-size: 15px;
   font-weight: 600;
-  color: white;
+  color: var(--color-white);
   white-space: nowrap;
 }
 
 .ar-navigate-button:active {
-  background-color: #094d0b;
+  background-color: var(--color-primary-hover);
   transform: scale(0.95);
 }
 

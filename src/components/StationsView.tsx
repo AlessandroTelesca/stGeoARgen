@@ -140,8 +140,8 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             transition={{ delay: 0.2 }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-success" />
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
               </div>
             </div>
             <p className="text-xl mb-1">{completedStations}</p>
