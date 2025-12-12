@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { ARComponentBase } from '../ARComponentBase';
-import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
+import { WebXRVisualizer } from '../../../ARbackend/WebXRVisualizer';
 import gsap from 'gsap';
 
 
@@ -9,7 +9,7 @@ interface ARViewProps {
   onNavigateHome?: () => void;
 }
 
-class KlosterweiherARSession extends ARVisualizer {
+class KlosterweiherARSession extends WebXRVisualizer {
   // You can override methods or add custom functionality here
   // For example:
   // private initThree(): void {
