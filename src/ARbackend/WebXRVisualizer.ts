@@ -9,6 +9,7 @@ export interface WebXRSession {
 export interface ARInitOptions {
   onError?: (err: unknown) => void;
   useWebXR?: boolean; // Enable WebXR for real plane detection
+  domOverlayRoot?: HTMLElement; // DOM element to use for overlay (must contain UI)
 }
 
 export class WebXRVisualizer implements WebXRSession {
@@ -68,7 +69,6 @@ export class WebXRVisualizer implements WebXRSession {
     this.renderer.domElement.style.left = '0';
     this.renderer.domElement.style.width = '100%';
     this.renderer.domElement.style.height = '100%';
-    this.renderer.domElement.style.zIndex = '10';
     // Enable pointer events for hit-testing
     this.renderer.domElement.style.pointerEvents = 'auto';
 
@@ -110,11 +110,17 @@ export class WebXRVisualizer implements WebXRSession {
       if (!xr) throw new Error('WebXR not supported');
 
       // Request AR session with hit-test feature for plane detection
-      this.xrSession = await xr.requestSession('immersive-ar', {
+      const sessionInit: any = {
         requiredFeatures: ['hit-test'],
         optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: this.container }
-      });
+      };
+      
+      // Use provided dom overlay root or fallback to container
+      if (this.options.domOverlayRoot) {
+        sessionInit.domOverlay = { root: this.options.domOverlayRoot };
+      }
+      
+      this.xrSession = await xr.requestSession('immersive-ar', sessionInit);
 
       // Initialize Three.js for WebXR
       this.initThree();

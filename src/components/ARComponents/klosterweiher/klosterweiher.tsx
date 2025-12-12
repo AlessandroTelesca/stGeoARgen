@@ -132,6 +132,7 @@ class KlosterweiherARSession extends WebXRVisualizer {
 
 export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<KlosterweiherARSession | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -145,7 +146,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
   }, []);
 
   const startAR = async () => {
-    if (!containerRef.current || isStarting || hasStarted) return;
+    if (!containerRef.current || !overlayRootRef.current || isStarting || hasStarted) return;
     setIsStarting(true);
     setError(null);
 
@@ -154,6 +155,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
         containerRef.current,
         {
           useWebXR: true,
+          domOverlayRoot: overlayRootRef.current,
           onError: (e) => console.error('AR init failed', e),
         }
       );
@@ -177,6 +179,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
         closeARViewKey="closeARView"
         containerRef={containerRef as React.RefObject<HTMLDivElement>}
         videoRef={null as any}
+        overlayRootRef={overlayRootRef}
       />
 
       {!hasStarted && (

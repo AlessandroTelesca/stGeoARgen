@@ -11,6 +11,7 @@ interface ARComponentBaseProps {
   closeARViewKey?: string; // Key for window.closeXXXView function
   containerRef: RefObject<HTMLDivElement>;
   videoRef: RefObject<HTMLVideoElement>;
+  overlayRootRef?: RefObject<HTMLDivElement | null>;
 }
 
 // Dummy Stationen in St. Georgen im Schwarzwald, Richtige Koordinaten noch einfügen!
@@ -37,7 +38,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c; // Distanz in Metern
 };
 
-export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef }: ARComponentBaseProps) => {
+export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -121,7 +122,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
   };
 
   return (
-    <div className="ar-container">
+    <div className="ar-container" ref={overlayRootRef}>
       {/* Video-Hintergrund für Kamera-Stream */}
       <video
         ref={videoRef}
@@ -138,7 +139,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           width: '100%',
           height: '100%',
           overflow: 'hidden',
-          zIndex: 10,
+          zIndex: 5,
           pointerEvents: 'none'
         }}
       />
