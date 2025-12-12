@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { ARComponentBase } from '../ARComponentBase';
-import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
+import { WebXRVisualizer } from '../../../ARbackend/WebXRVisualizer';
 import gsap from 'gsap';
 
 
@@ -9,7 +9,7 @@ interface ARViewProps {
   onNavigateHome?: () => void;
 }
 
-class KlosterweiherARSession extends ARVisualizer {
+class KlosterweiherARSession extends WebXRVisualizer {
   // You can override methods or add custom functionality here
   // For example:
   // private initThree(): void {
@@ -28,13 +28,16 @@ class KlosterweiherARSession extends ARVisualizer {
   protected initThree(): void {
     super.initThree();
 
-    // Add rod model
+    // Add rod model (initially hidden)
     this.loadGLTFModel(this.rodUrl, {
       position: new THREE.Vector3(5.5, -6, -6),
       rotation: new THREE.Euler(-1, 0, 0),
       scale: 1.2,
     }).then((model) => {
       this.rod = model || null;
+      if (this.rod) {
+        this.rod.visible = false; // Hide until ground is detected
+      }
     }).catch((err) => console.error('Rod model failed to load', err));
 
     // Add fish model
@@ -47,8 +50,21 @@ class KlosterweiherARSession extends ARVisualizer {
     }).catch((err) => console.error('Fish model failed to load', err));
   }
 
+  // Override to handle WebXR ground detection automatically
+  protected onGroundDetected(): void {
+    if (this.rod) {
+      this.rod.visible = true;
+    }
+    console.log('Ground plane scanned and detected! Fishing rod ready.');
+  }
+
   protected handlePointer(clientX: number, clientY: number): void {
-    // Rotate the rod when tapped
+    // Only allow rod control after ground is detected via WebXR
+    if (!this.isGroundDetected) {
+      console.log('Waiting for ground plane detection...');
+      return;
+    }
+
     this.controlrod();
   }
 
@@ -116,28 +132,99 @@ class KlosterweiherARSession extends ARVisualizer {
 
 export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<KlosterweiherARSession | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Cleanup on unmount
   useEffect(() => {
-    if (!containerRef.current || !videoRef.current) return;
-
-    const session = new KlosterweiherARSession(
-      containerRef.current,
-      videoRef.current,
-      {
-        onError: (e) => console.error("AR init failed", e)
-      }
-    );
-    
-    session.init().then(() => {
-      sessionRef.current = session;
-    });
-
     return () => {
       sessionRef.current?.stop();
     };
   }, []);
 
-  return <ARComponentBase onNavigateHome={onNavigateHome} closeARViewKey="closeARView" containerRef={containerRef as React.RefObject<HTMLDivElement>} videoRef={videoRef as React.RefObject<HTMLVideoElement>} />;
+  const startAR = async () => {
+    if (!containerRef.current || !overlayRootRef.current || isStarting || hasStarted) return;
+    setIsStarting(true);
+    setError(null);
+
+    try {
+      const session = new KlosterweiherARSession(
+        containerRef.current,
+        {
+          useWebXR: true,
+          domOverlayRoot: overlayRootRef.current,
+          onError: (e) => console.error('AR init failed', e),
+        }
+      );
+
+      await session.init(); // Must be called from user gesture to satisfy WebXR security
+      sessionRef.current = session;
+      setHasStarted(true);
+    } catch (e: any) {
+      const msg = e?.message || 'Failed to start AR';
+      setError(msg);
+      console.error('AR start failed', e);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  return (
+    <>
+      <ARComponentBase
+        onNavigateHome={onNavigateHome}
+        closeARViewKey="closeARView"
+        containerRef={containerRef as React.RefObject<HTMLDivElement>}
+        videoRef={null as any}
+        overlayRootRef={overlayRootRef}
+      />
+
+      {!hasStarted && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            background: 'rgba(0,0,0,0.5)',
+            pointerEvents: 'auto',
+          }}
+        >
+          <div
+            style={{
+              padding: '16px',
+              background: '#fff',
+              borderRadius: '12px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+              minWidth: '240px',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ margin: '0 0 12px 0', fontWeight: 700 }}>Start AR to scan the ground</p>
+            {error && <p style={{ color: '#b00020', margin: '0 0 8px 0' }}>{error}</p>}
+            <button
+              onClick={startAR}
+              disabled={isStarting}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#0c690f',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {isStarting ? 'Starting...' : 'Start AR'}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
