@@ -214,7 +214,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
                 padding: '10px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                background: '#2563eb',
+                background: '#0c690f',
                 color: '#fff',
                 fontWeight: 700,
                 cursor: 'pointer',
