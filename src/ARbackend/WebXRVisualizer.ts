@@ -17,8 +17,6 @@ export class WebXRVisualizer implements WebXRSession {
   protected scene: THREE.Scene | null = null;
   protected camera: THREE.PerspectiveCamera | null = null;
   private animationId: number | null = null;
-  private raycaster: THREE.Raycaster;
-  private pointer: THREE.Vector2;
   private container: HTMLDivElement;
   private options: ARInitOptions;
   protected isGroundDetected: boolean = false;
@@ -33,8 +31,6 @@ export class WebXRVisualizer implements WebXRSession {
   ) {
     this.container = container;
     this.options = options;
-    this.raycaster = new THREE.Raycaster();
-    this.pointer = new THREE.Vector2();
   }
 
   async init(): Promise<void> {
@@ -74,7 +70,7 @@ export class WebXRVisualizer implements WebXRSession {
 
     this.container.appendChild(this.renderer.domElement);
 
-    // Cube will be created on first pointer event (tap/click)
+    // Pointer events are used for hit-testing or interaction in the AR scene
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
@@ -153,23 +149,22 @@ export class WebXRVisualizer implements WebXRSession {
    * WebXR animation frame - handles real-time plane detection.
    */
   private onXRFrame = (time: number, frame: XRFrame) => {
-    if (!this.xrSession || !this.xrHitTestSource) return;
+    // Use the session associated with the current frame to avoid stale references
+    const session = frame?.session ?? this.xrSession;
 
-    const session = this.xrSession;
-    session.requestAnimationFrame(this.onXRFrame);
+    if (!session || !this.xrHitTestSource) return;
 
     // Get hit test results (detected planes)
     const hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
 
     if (hitTestResults.length > 0 && this.xrRefSpace) {
-      // Ground plane detected!
       const hit = hitTestResults[0];
       const pose = hit.getPose(this.xrRefSpace);
 
       if (pose) {
         const position = pose.transform.position;
         this.detectedPlanePosition = new THREE.Vector3(position.x, position.y, position.z);
-        
+
         if (!this.isGroundDetected) {
           this.isGroundDetected = true;
           console.log('Real ground plane detected via WebXR!', this.detectedPlanePosition);
@@ -178,10 +173,12 @@ export class WebXRVisualizer implements WebXRSession {
       }
     }
 
-    // Render scene
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
     }
+
+    // Only schedule the next frame if the session is still valid
+    this.animationId = session.requestAnimationFrame(this.onXRFrame);
   };
 
   /**
@@ -252,13 +249,16 @@ export class WebXRVisualizer implements WebXRSession {
 
   stop(): void {
     // Stop WebXR session
-    if (this.xrSession) {
-      this.xrSession.end();
+    const session = this.xrSession;
+    if (session) {
+      if (this.animationId !== null) {
+        session.cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
+      session.end();
       this.xrSession = null;
       this.xrHitTestSource = null;
     }
-
-    if (this.animationId) cancelAnimationFrame(this.animationId);
 
     if (this.renderer) {
       // Remove pointer event listeners
