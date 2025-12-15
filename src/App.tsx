@@ -17,6 +17,7 @@ import { RewardsView } from './components/RewardsView';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
+import { getStationCoordinates } from './data/stationsConfig';
 
 
 interface Station {
@@ -79,6 +80,7 @@ export default function App() {
   // Sync state with URL
   useEffect(() => {
     const path = location.pathname;
+    
     if (path === '/klosterweiher') {
       setCurrentView('ar-klosterweiher');
     } else if (path === '/phonomuseum') {
@@ -113,82 +115,50 @@ export default function App() {
       stations: [
         {
           id: 1,
-          title: 'Historisches Rathaus',
-          description: 'Entdecke die Geschichte des St.Georgener Rathauses',
-          longDescription: 'Das historische Rathaus von St.Georgen ist ein bedeutendes Wahrzeichen der Stadt und Zeugnis ihrer reichen Geschichte. Hier erfährst du mehr über die Architektur und die wichtigsten historischen Ereignisse.',
+          title: 'Glockenspiel',
+          description: 'Erlebe das historische Glockenspiel in AR',
+          longDescription: 'Das Glockenspiel ist ein faszinierendes historisches Instrument. Entdecke in der AR-Experience, wie die Mechanik funktioniert und höre die traditionellen Melodien.',
           imageUrl: 'https://images.unsplash.com/photo-1637255854315-ef173df43eaa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnZXJtYW4lMjBibGFjayUyMGZvcmVzdCUyMHRvd258ZW58MXx8fHwxNzYyMzUzMDI0fDA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
-          latitude: 48.1242,
-          longitude: 8.3336,
+          latitude: getStationCoordinates(1)?.lat || 48.1242,
+          longitude: getStationCoordinates(1)?.lng || 8.3336,
           quiz: {
-            question: 'In welchem Jahrhundert wurde das Rathaus erbaut?',
-            options: ['16. Jahrhundert', '18. Jahrhundert', '19. Jahrhundert', '20. Jahrhundert'],
-            correctAnswer: 2,
-          },
-        },
-        {
-          id: 2,
-          title: 'Stadtkirche',
-          description: 'Erlebe die beeindruckende Architektur der Stadtkirche',
-          longDescription: 'Die Stadtkirche ist das religiöse Zentrum von St.Georgen und beeindruckt durch ihre prächtige Architektur und historische Bedeutung. Erfahre mehr über die Kunstwerke und die Geschichte dieses sakralen Ortes.',
-          imageUrl: 'https://images.unsplash.com/photo-1567426685971-1372f0a04693?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMGNodXJjaCUyMHRvd2VyfGVufDF8fHx8MTc2MjM1MzAyNHww&ixlib=rb-4.1.0&q=80&w=1080',
-          status: 'available',
-          points: 40,
-          latitude: 48.1250,
-          longitude: 8.3340,
-          quiz: {
-            question: 'Welcher architektonische Stil prägt die Stadtkirche?',
-            options: ['Romanik', 'Gotik', 'Barock', 'Moderne'],
+            question: 'Wie viele Glocken hat das Glockenspiel?',
+            options: ['12 Glocken', '18 Glocken', '24 Glocken', '30 Glocken'],
             correctAnswer: 1,
           },
         },
         {
           id: 3,
-          title: 'Heimatmuseum',
-          description: 'Tauche ein in die Kultur und Geschichte der Region',
-          longDescription: 'Das Heimatmuseum präsentiert die Kultur, Handwerk und Geschichte von St.Georgen und der Schwarzwald-Region. Interaktive Ausstellungen erwecken die Vergangenheit zum Leben.',
+          title: 'Phonomuseum',
+          description: 'Entdecke historische Musikinstrumente in AR',
+          longDescription: 'Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.',
           imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 60,
-          latitude: 48.1245,
-          longitude: 8.3345,
+          latitude: getStationCoordinates(3)?.lat || 48.1245,
+          longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
-            question: 'Was war das traditionelle Handwerk in St.Georgen?',
-            options: ['Töpferei', 'Uhrmacherei', 'Weberei', 'Glasbläserei'],
+            question: 'Wann wurde der Phonograph erfunden?',
+            options: ['1857', '1877', '1897', '1917'],
             correctAnswer: 1,
           },
         },
         {
-          id: 4,
-          title: 'Marktbrunnen',
-          description: 'Erforsche den historischen Brunnen am Marktplatz',
-          longDescription: 'Der Marktbrunnen ist ein beliebter Treffpunkt und historisches Monument. Er symbolisiert die Bedeutung des Wassers für die Stadt und diente früher als zentrale Wasserversorgung.',
-          imageUrl: 'https://images.unsplash.com/photo-1559713511-53cab8a50cc7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b3duJTIwc3F1YXJlJTIwZm91bnRhaW58ZW58MXx8fHwxNzYyMzUzMDI1fDA&ixlib=rb-4.1.0&q=80&w=1080',
-          status: 'available',
-          points: 30,
-          latitude: 48.1248,
-          longitude: 8.3338,
-          quiz: {
-            question: 'Wann wurde der Brunnen restauriert?',
-            options: ['1980', '1995', '2005', '2015'],
-            correctAnswer: 2,
-          },
-        },
-        {
           id: 5,
-          title: 'Aussichtspunkt Hörnle',
-          description: 'Genieße einen atemberaubenden Panoramablick',
-          longDescription: 'Der Aussichtspunkt Hörnle bietet einen spektakulären Blick über St.Georgen und die umliegende Schwarzwald-Landschaft. Ein beliebtes Ziel für Wanderer und Naturliebhaber.',
+          title: 'Klosterweiher',
+          description: 'Erkunde die Natur am historischen Klosterweiher',
+          longDescription: 'Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.',
           imageUrl: 'https://images.unsplash.com/photo-1587991993507-ff688501c2b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBwYXJrJTIwcGF0aHxlbnwxfHx8fDE3NjIyNzYzODd8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 45,
-          latitude: 48.1260,
-          longitude: 8.3350,
+          latitude: getStationCoordinates(5)?.lat || 48.1260,
+          longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
-            question: 'Auf welcher Höhe liegt der Aussichtspunkt?',
-            options: ['650m', '750m', '850m', '950m'],
-            correctAnswer: 2,
+            question: 'Welche Tierart ist am Klosterweiher besonders häufig zu sehen?',
+            options: ['Frösche', 'Enten', 'Reiher', 'Biber'],
+            correctAnswer: 1,
           },
         },
       ],
