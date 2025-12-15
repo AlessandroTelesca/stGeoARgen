@@ -4,6 +4,7 @@ import { ARTopBar } from './ARTopBar';
 import { ARProgressBar } from './ARProgressBar';
 import { ARNavigationButton } from './ARNavigationButton';
 import { ARProfileMenu } from './ARProfileMenu';
+import { STATIONS_COORDINATES } from '../../data/stationsConfig';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
@@ -14,17 +15,11 @@ interface ARComponentBaseProps {
   overlayRootRef?: RefObject<HTMLDivElement | null>;
 }
 
-// Dummy Stationen in St. Georgen im Schwarzwald, Richtige Koordinaten noch einfügen!
-const STATIONS = [
-  { id: 1, name: 'Rathaus', lat: 48.1246, lng: 8.3341 },
-  { id: 2, name: 'Stadtkirche', lat: 48.1251, lng: 8.3355 },
-  { id: 3, name: 'Marktplatz', lat: 48.1248, lng: 8.3347 },
-  { id: 4, name: 'Phonomuseum', lat: 48.1243, lng: 8.3338 },
-  { id: 5, name: 'Klosterweiher', lat: 48.1239, lng: 8.3352 },
-];
+// Export Stations aus zentraler Config
+export const STATIONS = STATIONS_COORDINATES;
 
 // Haversine-Formel zur Berechnung der Distanz zwischen zwei Koordinaten
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371e3; // Erdradius in Metern
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
@@ -36,6 +31,50 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c; // Distanz in Metern
+};
+
+// Custom Hook für Station Proximity Check (50m Radius)
+export const useStationProximity = (stationLat: number, stationLng: number, radiusMeters: number = 50) => {
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation wird von deinem Browser nicht unterstützt.');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        setUserLocation({ lat: userLat, lng: userLng });
+
+        // Calculate distance to station
+        const dist = calculateDistance(userLat, userLng, stationLat, stationLng);
+        setDistance(dist);
+        setLocationError(null);
+
+        console.log(`[Proximity] Distanz zur Station: ${Math.round(dist)}m (Genauigkeit: ±${Math.round(position.coords.accuracy)}m)`);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationError('Standortzugriff verweigert. Bitte erlaube den Standortzugriff in den Einstellungen.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000, // Alle 5 Sekunden neue Position anfordern
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [stationLat, stationLng]);
+
+  const isWithinRadius = distance !== null && distance <= radiusMeters;
+
+  return { userLocation, distance, locationError, isWithinRadius };
 };
 
 export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef }: ARComponentBaseProps) => {
@@ -61,6 +100,15 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
 
   // Get user location and calculate nearest station
   useEffect(() => {
+    // Filter out completed stations (all stations before current)
+    const incompleteStations = STATIONS.filter((station, index) => index >= progress.current - 1);
+    
+    if (incompleteStations.length === 0) {
+      console.log('Alle Stationen abgeschlossen!');
+      setNearestStation(STATIONS[STATIONS.length - 1]); // Fallback zur letzten Station
+      return;
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -68,11 +116,11 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           const userLng = position.coords.longitude;
           setUserLocation({ lat: userLat, lng: userLng });
 
-          // Finde nächste Station
+          // Finde nächste NICHT-ABGESCHLOSSENE Station
           let minDistance = Infinity;
-          let nearest = STATIONS[0];
+          let nearest = incompleteStations[0];
 
-          STATIONS.forEach((station) => {
+          incompleteStations.forEach((station) => {
             const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
             if (distance < minDistance) {
               minDistance = distance;
@@ -85,16 +133,16 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
         },
         (error) => {
           console.error('Geolocation error:', error);
-          // Fallback: erste Station als nächste Station
-          setNearestStation(STATIONS[0]);
+          // Fallback: erste nicht-abgeschlossene Station
+          setNearestStation(incompleteStations[0]);
         }
       );
     } else {
       console.error('Geolocation wird nicht unterstützt');
-      // Fallback: erste Station als nächste Station
-      setNearestStation(STATIONS[0]);
+      // Fallback: erste nicht-abgeschlossene Station
+      setNearestStation(incompleteStations[0]);
     }
-  }, []);
+  }, [progress.current]);
 
   const handleNavigateToNextStation = () => {
     if (!nearestStation) {

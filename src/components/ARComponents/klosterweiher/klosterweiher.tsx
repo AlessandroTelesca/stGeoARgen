@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { ARComponentBase } from '../ARComponentBase';
+import { ARProximityGate } from '../ARProximityGate';
 import { WebXRVisualizer } from '../../../ARbackend/WebXRVisualizer';
+import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import gsap from 'gsap';
 
 
@@ -134,6 +136,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<KlosterweiherARSession | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +154,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
     setError(null);
 
     try {
+      console.log('[KlosterweiherView] Initializing AR session...');
       const session = new KlosterweiherARSession(
         containerRef.current,
         {
@@ -161,18 +165,19 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
       );
 
       await session.init(); // Must be called from user gesture to satisfy WebXR security
+      console.log('[KlosterweiherView] AR session initialized');
       sessionRef.current = session;
       setHasStarted(true);
     } catch (e: any) {
       const msg = e?.message || 'Failed to start AR';
       setError(msg);
-      console.error('AR start failed', e);
+      console.error('[KlosterweiherView] AR start failed', e);
     } finally {
       setIsStarting(false);
     }
   };
 
-  return (
+  const arContent = (
     <>
       <ARComponentBase
         onNavigateHome={onNavigateHome}
@@ -182,7 +187,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
         overlayRootRef={overlayRootRef}
       />
 
-      {!hasStarted && (
+      {isAuthorized && !hasStarted && (
         <div
           style={{
             position: 'fixed',
@@ -226,5 +231,17 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
         </div>
       )}
     </>
+  );
+
+  // Wrap with Proximity Gate - checks if user is within 100m of station
+  return (
+    <ARProximityGate
+      stationId={AR_VIEW_STATION_MAP['klosterweiher']}
+      stationName="Klosterweiher"
+      onNavigateBack={onNavigateHome}
+      onAccessGranted={() => setIsAuthorized(true)}
+    >
+      {arContent}
+    </ARProximityGate>
   );
 };

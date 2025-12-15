@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ARComponentBase } from '../ARComponentBase';
+import { ARProximityGate } from '../ARProximityGate';
 import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
+import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -19,10 +21,13 @@ export const PhonomuseumView = ({ onNavigateHome }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   useEffect(() => {
-    if (!containerRef.current || !videoRef.current) return;
+    // Only initialize AR session after authorization
+    if (!isAuthorized || !containerRef.current || !videoRef.current) return;
 
+    console.log('[PhonomuseumView] Initializing AR session...');
     const session = new PhonomuseumARSession(
       containerRef.current,
       videoRef.current,
@@ -32,13 +37,32 @@ export const PhonomuseumView = ({ onNavigateHome }: ARViewProps) => {
     );
     
     session.init().then(() => {
+      console.log('[PhonomuseumView] AR session initialized');
       sessionRef.current = session;
+    }).catch(err => {
+      console.error('[PhonomuseumView] AR init error:', err);
     });
 
     return () => {
+      console.log('[PhonomuseumView] Cleaning up AR session');
       sessionRef.current?.stop();
     };
-  }, []);
+  }, [isAuthorized]);
 
-  return <ARComponentBase onNavigateHome={onNavigateHome} closeARViewKey="closePhonomuseumView" containerRef={containerRef as React.RefObject<HTMLDivElement>} videoRef={videoRef as React.RefObject<HTMLVideoElement>} />;
+  // Wrap with Proximity Gate - checks if user is within 100m of station
+  return (
+    <ARProximityGate
+      stationId={AR_VIEW_STATION_MAP['phonomuseum']}
+      stationName="Phonomuseum"
+      onNavigateBack={onNavigateHome}
+      onAccessGranted={() => setIsAuthorized(true)}
+    >
+      <ARComponentBase 
+        onNavigateHome={onNavigateHome} 
+        closeARViewKey="closePhonomuseumView" 
+        containerRef={containerRef as React.RefObject<HTMLDivElement>} 
+        videoRef={videoRef as React.RefObject<HTMLVideoElement>} 
+      />
+    </ARProximityGate>
+  );
 };

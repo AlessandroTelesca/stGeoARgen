@@ -1,10 +1,13 @@
-import { X, QrCode, CheckCircle2, Navigation } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React from 'react';
+import { X, CheckCircle2, Navigation, Play, AlertCircle } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Georgi } from './Georgi';
 import { Trophy } from 'lucide-react';
 import { MapPin, Clock, Target } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useStationProximity } from './ARComponents/ARComponentBase';
 
 interface QuizQuestion {
   question: string;
@@ -30,9 +33,36 @@ interface StationDetailProps {
   onComplete: (stationId: number, earnedPoints: number) => void;
 }
 
+// Station ID to AR Route mapping
+const STATION_AR_ROUTES: Record<number, string> = {
+  1: '/glockenspiel',    // Historisches Rathaus
+  3: '/phonomuseum',     // Heimatmuseum
+  5: '/klosterweiher',   // Aussichtspunkt Hörnle
+};
+
 export function StationDetail({ station, onClose, onComplete }: StationDetailProps) {
-  const [showAR, setShowAR] = useState(false);
   const [showGeorgi, setShowGeorgi] = useState(true);
+  const navigate = useNavigate();
+
+  // Proximity check - only for stations with AR routes
+  const RADIUS_METERS = 100;
+  const hasARRoute = !!STATION_AR_ROUTES[station.id];
+  const { distance, isWithinRadius, locationError } = useStationProximity(
+    station.latitude,
+    station.longitude,
+    RADIUS_METERS
+  );
+
+  // Log access status
+  React.useEffect(() => {
+    if (hasARRoute && distance !== null) {
+      if (isWithinRadius) {
+        console.log(`[StationDetail] ✅ Access granted - Station ${station.id} (${station.title}) within radius`);
+      } else {
+        console.log(`[StationDetail] ❌ Access denied - Station ${station.id} (${station.title}) ${Math.round(distance)}m away (requires ≤100m)`);
+      }
+    }
+  }, [hasARRoute, distance, isWithinRadius, station.id, station.title]);
 
   const handleNavigateToStation = () => {
     // Open Google Maps with directions to the station
@@ -40,12 +70,15 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
     window.open(mapsUrl, '_blank');
   };
 
-  const handleARScan = () => {
-    setShowAR(true);
-    setTimeout(() => {
-      setShowAR(false);
+  const handleStartARExperience = () => {
+    // Navigate to AR view - proximity check happens there
+    const arRoute = STATION_AR_ROUTES[station.id];
+    if (arRoute) {
+      navigate(arRoute);
+    } else {
+      // Fallback: Mark as completed if no AR route
       onComplete(station.id, station.points);
-    }, 3000);
+    }
   };
 
   return (
@@ -96,19 +129,50 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
             </p>
           </div>
 
-          {/* AR Scanner Section */}
-          {!showAR && station.status !== 'completed' && (
+          {/* Location Error */}
+          {hasARRoute && locationError && station.status !== 'completed' && (
+            <motion.div
+              className="bg-warning/10 border border-warning/30 rounded-2xl p-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+                <div className="w-full">
+                  <h3 className="font-semibold mb-1 text-warning">Standortzugriff erforderlich</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {locationError}
+                  </p>
+                  <button
+                    onClick={handleNavigateToStation}
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  >
+                    <Navigation className="w-5 h-5" />
+                    <span>Zur Station navigieren</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Distance Check - Too Far (Echtzeit-Anzeige) */}
+          {hasARRoute && !locationError && distance !== null && !isWithinRadius && station.status !== 'completed' && (
             <motion.div
               className="bg-black text-white rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
+              key={Math.round(distance)} // Re-animate on distance change
             >
-              <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
-                <QrCode className="w-10 h-10 text-black" />
+              <div className="w-20 h-20 bg-warning/20 border-2 border-warning rounded-full mx-auto mb-4 flex items-center justify-center">
+                <MapPin className="w-10 h-10 text-warning" />
               </div>
-              <h3 className="font-semibold mb-2">QR-Code scannen</h3>
-              <p className="text-sm opacity-90 mb-6">
-                Scanne den QR-Code vor Ort, um das AR-Erlebnis zu starten und mehr über diesen Ort zu erfahren.
+              <h3 className="font-semibold mb-2">Zu weit entfernt</h3>
+              <div className="inline-block bg-warning/20 text-warning px-4 py-2 rounded-lg mb-4">
+                <p className="text-2xl font-bold">{Math.round(distance)}m</p>
+                <p className="text-xs opacity-75">Entfernung zur Station</p>
+              </div>
+              <p className="text-sm opacity-75 mb-6">
+                Nähere dich auf mindestens 100 Meter, um das AR-Erlebnis freizuschalten.
               </p>
               <div className="space-y-3">
                 <button
@@ -118,42 +182,67 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
                   <Navigation className="w-5 h-5" />
                   <span>Zur Station navigieren</span>
                 </button>
-                
-                {/* Demo Button */}
+              </div>
+            </motion.div>
+          )}
+
+          {/* AR Experience Button - Within Radius */}
+          {hasARRoute && !locationError && isWithinRadius && station.status !== 'completed' && (
+            <motion.div
+              className="bg-primary text-white rounded-2xl p-6 text-center"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="w-20 h-20 bg-white/20 border-2 border-white rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Play className="w-10 h-10 text-white" />
+              </div>
+              <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-3">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-sm font-semibold">In Reichweite ({Math.round(distance!)}m)</span>
+              </div>
+              <h3 className="font-semibold mb-2">AR-Erlebnis verfügbar!</h3>
+              <p className="text-sm opacity-90 mb-6">
+                Du bist nah genug an der Station. Starte jetzt das AR-Erlebnis und entdecke mehr über diesen Ort.
+              </p>
+              <div className="space-y-3">
                 <button
-                  onClick={() => {
-                    onComplete(station.id, station.points);
-                  }}
-                  className="w-full bg-primary/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  onClick={handleStartARExperience}
+                  className="w-full bg-white text-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
                 >
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>Als Erledigt markieren (Demo)</span>
+                  <Play className="w-5 h-5" />
+                  <span>AR-Erlebnis starten</span>
+                </button>
+                <button
+                  onClick={handleNavigateToStation}
+                  className="w-full bg-white/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span>Navigation zur Station</span>
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* AR View Simulation */}
-          <AnimatePresence>
-            {showAR && (
-              <motion.div
-                className="fixed inset-0 bg-black z-50 flex items-center justify-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+          {/* No AR available - fallback */}
+          {station.status !== 'completed' && !STATION_AR_ROUTES[station.id] && (
+            <motion.div
+              className="bg-muted rounded-2xl p-6 text-center"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <h3 className="font-semibold mb-2">Informationsstation</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Diese Station hat kein AR-Erlebnis. Besuche sie vor Ort für mehr Informationen.
+              </p>
+              <button
+                onClick={handleNavigateToStation}
+                className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
-                <div className="text-white text-center">
-                  <div className="w-32 h-32 border-4 border-white rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse">
-                    <QrCode className="w-16 h-16" />
-                  </div>
-                  <h3 className="font-semibold mb-2">AR-Modus aktiv</h3>
-                  <p className="text-sm opacity-80">
-                    Scanne die Umgebung...
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <Navigation className="w-5 h-5" />
+                <span>Navigation zur Station</span>
+              </button>
+            </motion.div>
+          )}
 
           {/* Completed State */}
           {station.status === 'completed' && (
@@ -189,7 +278,13 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
 
       {/* Georgi Helper */}
       <Georgi
-        message="Nutze die Navigation, um zur Station zu gelangen und scanne vor Ort den QR-Code!"
+        message={
+          hasARRoute && isWithinRadius && !locationError
+            ? "Super! Du bist nah genug. Starte das AR-Erlebnis!"
+            : hasARRoute && distance !== null
+            ? `Du bist noch ${Math.round(distance)}m entfernt. Nutze die Navigation!`
+            : "Besuche diese Station vor Ort für mehr Informationen!"
+        }
         show={showGeorgi && station.status !== 'completed'}
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"
