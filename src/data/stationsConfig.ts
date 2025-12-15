@@ -15,7 +15,7 @@ export const STATIONS_COORDINATES: StationCoordinates[] = [
   { 
     id: 1, 
     name: 'Glockenspiel', 
-    lat: 48.134599538155655, // Testweise: Dein Zuhause
+    lat: 48.134599538155655, // Testweise: Mein Zuhause
     lng: 8.245808734754021 
   },
   { 
