@@ -18,6 +18,10 @@ interface ARComponentBaseProps {
 // Export Stations aus zentraler Config
 export const STATIONS = STATIONS_COORDINATES;
 
+// Globales Flag zum kompletten Abschalten von Geolocation
+const DISABLE_GEO = true;
+const MOCK_LOCATION = { lat: 48.0, lng: 11.0 };
+
 // Haversine-Formel zur Berechnung der Distanz zwischen zwei Koordinaten
 export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371e3; // Erdradius in Metern
@@ -40,6 +44,13 @@ export const useStationProximity = (stationLat: number, stationLng: number, radi
   const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (DISABLE_GEO) {
+      setUserLocation(MOCK_LOCATION);
+      setDistance(0);
+      setLocationError(null);
+      return;
+    }
+
     if (!navigator.geolocation) {
       setLocationError('Geolocation wird von deinem Browser nicht unterstützt.');
       return;
@@ -106,6 +117,12 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
     if (incompleteStations.length === 0) {
       console.log('Alle Stationen abgeschlossen!');
       setNearestStation(STATIONS[STATIONS.length - 1]); // Fallback zur letzten Station
+      return;
+    }
+
+    if (DISABLE_GEO) {
+      setUserLocation(MOCK_LOCATION);
+      setNearestStation(incompleteStations[0]);
       return;
     }
 

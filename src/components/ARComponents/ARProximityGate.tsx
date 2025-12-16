@@ -23,7 +23,7 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
   // Get coordinates from central config
   const stationCoords = getStationCoordinates(stationId);
   
-  const RADIUS_METERS = 10000000; //!!!!! meters set to 100000 for testing !!!!!! Should be 100 in production
+  const RADIUS_METERS = 100;
   const { distance, isWithinRadius, locationError, userLocation } = useStationProximity(
     stationCoords?.lat || 0,
     stationCoords?.lng || 0,
