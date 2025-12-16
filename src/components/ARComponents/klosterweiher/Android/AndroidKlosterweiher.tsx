@@ -11,7 +11,7 @@ interface ARViewProps {
   onNavigateHome?: () => void;
 }
 
-class KlosterweiherARSession extends WebXRVisualizer {
+class AndroidKlosterweiherARSession extends WebXRVisualizer {
   // You can override methods or add custom functionality here
   // For example:
   // private initThree(): void {
@@ -132,10 +132,10 @@ class KlosterweiherARSession extends WebXRVisualizer {
 
 }
 
-export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
+export const AndroidKlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
-  const sessionRef = useRef<KlosterweiherARSession | null>(null);
+  const sessionRef = useRef<AndroidKlosterweiherARSession | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -155,7 +155,7 @@ export const KlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
 
     try {
       console.log('[KlosterweiherView] Initializing AR session...');
-      const session = new KlosterweiherARSession(
+      const session = new AndroidKlosterweiherARSession(
         containerRef.current,
         {
           useWebXR: true,

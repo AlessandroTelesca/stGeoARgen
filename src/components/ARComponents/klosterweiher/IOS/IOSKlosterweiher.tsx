@@ -1,11 +1,11 @@
-// TODO implement IOS fallback AR using mindar and schild for image-tracking
+// TODO implement IOS fallback AR using mindar for image-tracking
 import React from 'react';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
 }
 
-export const IOSKlosterweiherPlaceholder: React.FC<ARViewProps> = ({ onNavigateHome }) => {
+export const IOSKlosterweiherView: React.FC<ARViewProps> = ({ onNavigateHome }) => {
   return (
     <div className="flex h-full flex-col items-center justify-center p-6 text-center">
       <h2 className="mb-2 text-2xl font-semibold">AR on iOS</h2>
@@ -24,4 +24,4 @@ export const IOSKlosterweiherPlaceholder: React.FC<ARViewProps> = ({ onNavigateH
   );
 };
 
-export default IOSKlosterweiherPlaceholder;
+export default IOSKlosterweiherView;

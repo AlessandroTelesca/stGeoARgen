@@ -1,27 +1,35 @@
 import React from 'react';
-import { KlosterweiherView as AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
-import { IOSKlosterweiherPlaceholder } from './IOS/IOSKlosterweiher';
+import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
+import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
-// Simple platform detection using userAgent
-const isIOS = () => {
-	if (typeof navigator === 'undefined') return false;
-	const ua = navigator.userAgent || navigator.vendor || (window as any).opera || '';
-	return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && (navigator as any).maxTouchPoints > 1);
-};
 
-// Wrapper component that chooses the platform-specific implementation
-export const Klosterweiher = ({ onNavigateHome }: { onNavigateHome?: () => void }) => {
-	const ios = isIOS();
+export const KlosterweiherView = ({ onNavigateHome }: { onNavigateHome?: () => void }) => {
 
-	if (ios) {
-		// iOS fallback (image tracking to be implemented in IOSKlosterweiher)
+    // Detect device and open appropriate maps app
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isNotMobile = !isIOS && !isAndroid;
+    
+    if (isIOS) {
+		console.log("Device is iOS, rendering IOSKlosterweiher");
 		return (
-			<IOSKlosterweiherPlaceholder />
+			<IOSKlosterweiherView />
 		);
-	}
-
-	// Default to Android/WebXR implementation
-	return <AndroidKlosterweiherView onNavigateHome={onNavigateHome} />;
+    } else if (isAndroid) {
+		console.log("Device is Android, rendering AndroidKlosterweiher");
+		return <AndroidKlosterweiherView onNavigateHome={onNavigateHome} />;
+    } else if (isNotMobile) {
+		return (
+			<div className="flex items-center justify-center h-screen p-4">
+				<div className="text-center">
+					<h2 className="text-xl font-bold mb-4">Not mobile devices are Not Supported</h2>
+					<p>Please access this AR experience on a mobile device (Android or iOS).</p>
+				</div>
+			</div>
+		);
+    }
+    
+    return null;
 };
 
-export default Klosterweiher;
+export default KlosterweiherView;
