@@ -19,11 +19,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   //   // Add custom Klosterweiher-specific 3D objects
   // }
 
-  private rodUrl = new URL('./models/Angel.glb', import.meta.url).href;
-  private fishUrl = new URL('./models/Fisch.glb', import.meta.url).href;
+  private rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
+  private fishUrl = new URL('./../models/Fisch.glb', import.meta.url).href;
+  private waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
 
   public fish: THREE.Object3D | null = null;
   public rod: THREE.Object3D | null = null;
+  public water: THREE.Object3D | null = null;
 
   public tapCount = 0;
 
@@ -38,6 +40,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     }).then((model) => {
       this.rod = model || null;
       if (this.rod) {
+        this.rod.parent = this.camera
         this.rod.visible = false; // Hide until ground is detected
       }
     }).catch((err) => console.error('Rod model failed to load', err));
@@ -49,7 +52,21 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       scale: 3,
     }).then((model) =>{
       this.fish = model || null;
+      if (this.fish) {
+        this.fish.parent = this.camera;
+        this.fish.visible = false;
+      }
     }).catch((err) => console.error('Fish model failed to load', err));
+
+    // Add water model
+    this.loadGLTFModel(this.waterUrl, {
+      scale: 10,
+    }).then((model) =>{
+      this.water = model || null;
+            if (this.water) {
+        this.water.visible = false;
+      }
+    }).catch((err) => console.error('Water model failed to load', err));
   }
 
   // Override to handle WebXR ground detection automatically
@@ -57,7 +74,16 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     if (this.rod) {
       this.rod.visible = true;
     }
-    console.log('Ground plane scanned and detected! Fishing rod ready.');
+    
+    // Place water on the ground
+    if (this.water) {
+      this.water.position.y = -500;
+      this.water.scale.x = 20;
+      this.water.scale.z = 20;
+      this.water.visible = true;
+    }
+    
+    console.log('Ground plane scanned and detected! Fishing rod and fish placed.');
   }
 
   protected handlePointer(clientX: number, clientY: number): void {
@@ -112,6 +138,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       duration: 1,
     });
 
+    this.fish.visible = true;
     tl.to(this.rod.rotation, {
       x: 0,
       duration: 0.5,
