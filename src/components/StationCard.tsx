@@ -10,18 +10,18 @@ interface StationCardProps {
   imageUrl: string;
   status: 'locked' | 'available' | 'completed';
   points: number;
+  distance?: number | null;
   onClick: () => void;
 }
 
-export function StationCard({ title, description, imageUrl, status, points, onClick }: StationCardProps) {
+export function StationCard({ title, description, imageUrl, status, points, distance, onClick }: StationCardProps) {
   const isLocked = false; // Stations are never locked - user can start anywhere
   const isCompleted = status === 'completed';
 
   return (
     <motion.button
       onClick={onClick}
-      className="w-full text-left bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all"
-      whileHover={{ y: -2 }}
+      className="w-full text-left bg-white rounded-2xl overflow-hidden border border-border shadow-sm transition-all"
       whileTap={{ scale: 0.98 }}
     >
       <div className="relative h-40 overflow-hidden">
@@ -60,7 +60,14 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span>{isCompleted ? 'Abgeschlossen' : 'Verfügbar'}</span>
+            <span>
+              {isCompleted 
+                ? 'Abgeschlossen' 
+                : distance !== undefined && distance !== null
+                  ? `${distance < 1 ? Math.round(distance * 1000) + ' m' : distance.toFixed(1) + ' km'}`
+                  : 'Verfügbar'
+              }
+            </span>
           </div>
           {!isCompleted && (
             <span className="text-xs font-medium text-primary">Jetzt starten →</span>
