@@ -153,24 +153,26 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
 
           {/* Danger Zone */}
           <div>
-            <h3 className="font-semibold mb-3 text-sm text-destructive uppercase tracking-wider">
+            <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
               Gefahrenzone
             </h3>
             
-            <div className="bg-white rounded-xl border border-destructive/20">
+            <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
                 onClick={() => {
                   if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
                     onResetProgress();
                   }
                 }}
-                className="w-full p-4 flex items-center gap-3 hover:bg-destructive/5 transition-colors rounded-xl"
+                className="w-full p-4 flex items-center gap-3 transition-colors rounded-xl"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <div className="w-10 h-10 bg-destructive/10 rounded-lg flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-destructive" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
+                  <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-destructive">Fortschritt zurücksetzen</p>
+                  <p className="font-medium" style={{ color: '#dc2626' }}>Fortschritt zurücksetzen</p>
                   <p className="text-sm text-muted-foreground">
                     Alle Punkte und abgeschlossenen Stationen löschen
                   </p>
