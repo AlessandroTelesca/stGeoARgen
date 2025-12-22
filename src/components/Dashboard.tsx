@@ -23,9 +23,10 @@ interface DashboardProps {
   onNavigateToPaths?: () => void;
   onOpenQRScanner?: () => void;
   onNavigate?: (view: string) => void;
+  username?: string | null;
 }
 
-export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate }: DashboardProps) {
+export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate, username }: DashboardProps) {
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
   
@@ -54,7 +55,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-2">{getGreeting()}!</h2>
+          <h2 className="text-2xl font-bold mb-2">{getGreeting()}, Gast!</h2>
           <p className="text-muted-foreground">
             Bereit für ein neues Abenteuer in St.Georgen?
           </p>
@@ -248,7 +249,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + index * 0.1 }}
               >
-                <PathCard {...path} onClick={() => onNavigateToPaths?.()} />
+                <PathCard {...path} onClick={() => onPathSelect(path.id)} />
               </motion.div>
             ))}
           </div>

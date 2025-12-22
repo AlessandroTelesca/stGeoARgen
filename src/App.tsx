@@ -8,6 +8,7 @@ import { PathSelection } from './components/PathSelection';
 import { PathView } from './components/PathView';
 import { StationDetail } from './components/StationDetail';
 import { Settings } from './components/Settings';
+import { Profile } from './components/Profile';
 import { QRScanner } from './components/QRScanner';
 import { Onboarding } from './components/Onboarding';
 import { PointsView } from './components/PointsView';
@@ -52,13 +53,24 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+
+  // Handle login
+  const handleLogin = () => {
+    setUsername('Jonas');
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    setUsername(null);
+  };
 
   // Check if user has seen onboarding
   useEffect(() => {
@@ -90,6 +102,8 @@ export default function App() {
       setCurrentView('ar-glockenspiel');
     } else if (path === '/settings') {
       setCurrentView('settings');
+    } else if (path === '/profile') {
+      setCurrentView('profile');
     } else if (path === '/points') {
       setCurrentView('points');
     } else if (path === '/stations') {
@@ -263,6 +277,10 @@ export default function App() {
       setShowQRScanner(true);
     } else if (view === 'settings') {
       navigate('/settings');
+      setCurrentView('settings');
+    } else if (view === 'profile') {
+      navigate('/profile');
+      setCurrentView('profile');
     } else if (view === 'points') {
       setCurrentView('points');
     } else if (view === 'stations') {
@@ -337,6 +355,7 @@ export default function App() {
     if (currentView === 'home') return 'St.GeoARgen';
     if (currentView === 'paths') return 'Themenpfade';
     if (currentView === 'settings') return 'Einstellungen';
+    if (currentView === 'profile') return 'Profil';
     if (currentView === 'points') return 'Punkte';
     if (currentView === 'stations') return 'Stationen';
     if (currentView === 'progress') return 'Fortschritt';
@@ -363,6 +382,9 @@ export default function App() {
           title={getPageTitle()}
           onNavigate={handleNavigate}
           currentView={currentView}
+          username={username}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
         />
       )}
 
@@ -375,6 +397,7 @@ export default function App() {
           onNavigateToPaths={handleNavigateToPaths}
           onOpenQRScanner={handleOpenQRScanner}
           onNavigate={handleNavigate}
+          username={username}
         />
       )}
 
@@ -403,7 +426,26 @@ export default function App() {
       )}
 
       {currentView === 'settings' && (
-        <Settings onResetProgress={handleResetProgress} />
+        <Settings 
+          onResetProgress={handleResetProgress} 
+          onBack={handleBackToDashboard}
+          onNavigateToProfile={() => {
+            setCurrentView('profile');
+            navigate('/profile');
+          }}
+        />
+      )}
+
+      {currentView === 'profile' && (
+        <Profile 
+          username={username} 
+          onBack={handleBackToDashboard} 
+          onBackToSettings={() => {
+            setCurrentView('settings');
+            navigate('/settings');
+          }}
+          onLogout={handleLogout} 
+        />
       )}
 
       {currentView === 'points' && (
@@ -485,15 +527,33 @@ export default function App() {
 
       {/* AR Views */}
       {currentView === 'ar-klosterweiher' && (
-        <KlosterweiherView onNavigateHome={() => navigate('/')} />
+        <KlosterweiherView
+          onNavigateHome={() => navigate('/')}
+          username={username}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onNavigateProfile={() => navigate('/profile')}
+        />
       )}
       
       {currentView === 'ar-phonomuseum' && (
-        <PhonomuseumView onNavigateHome={() => navigate('/')} />
+        <PhonomuseumView
+          onNavigateHome={() => navigate('/')}
+          username={username}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onNavigateProfile={() => navigate('/profile')}
+        />
       )}
       
       {currentView === 'ar-glockenspiel' && (
-        <GlockenspielView onNavigateHome={() => navigate('/')} />
+        <GlockenspielView
+          onNavigateHome={() => navigate('/')}
+          username={username}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onNavigateProfile={() => navigate('/profile')}
+        />
       )}
     </div>
   );

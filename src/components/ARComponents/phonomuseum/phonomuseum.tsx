@@ -6,6 +6,10 @@ import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
+  username?: string | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
+  onNavigateProfile?: () => void;
 }
 
 class PhonomuseumARSession extends ARVisualizer {
@@ -17,7 +21,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-export const PhonomuseumView = ({ onNavigateHome }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -61,7 +65,11 @@ export const PhonomuseumView = ({ onNavigateHome }: ARViewProps) => {
         onNavigateHome={onNavigateHome} 
         closeARViewKey="closePhonomuseumView" 
         containerRef={containerRef as React.RefObject<HTMLDivElement>} 
-        videoRef={videoRef as React.RefObject<HTMLVideoElement>} 
+        videoRef={videoRef as React.RefObject<HTMLVideoElement>}
+        username={username}
+        onLogin={onLogin}
+        onLogout={onLogout}
+        onNavigateProfile={onNavigateProfile}
       />
     </ARProximityGate>
   );

@@ -13,6 +13,10 @@ interface ARComponentBaseProps {
   containerRef: RefObject<HTMLDivElement>;
   videoRef: RefObject<HTMLVideoElement>;
   overlayRootRef?: RefObject<HTMLDivElement | null>;
+  username?: string | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
+  onNavigateProfile?: () => void;
 }
 
 // Export Stations aus zentraler Config
@@ -88,7 +92,7 @@ export const useStationProximity = (stationLat: number, stationLng: number, radi
   return { userLocation, distance, locationError, isWithinRadius };
 };
 
-export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef }: ARComponentBaseProps) => {
+export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef, username, onLogin, onLogout, onNavigateProfile }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -215,6 +219,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           onNavigateHome={handleNavigateHome}
           onProfileClick={() => setProfileMenuOpen(!profileMenuOpen)}
           profileMenuOpen={profileMenuOpen}
+          username={username || null}
         />
 
         <ARProgressBar progress={progress} stations={stations} />
@@ -224,15 +229,16 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
         <ARProfileMenu
           isOpen={profileMenuOpen}
           onClose={() => setProfileMenuOpen(false)}
-          onProfileClick={() => {
-            // TODO: Handle profile click
+          username={username || null}
+          onLogin={() => {
+            onLogin?.();
+            setProfileMenuOpen(false);
           }}
-          onSettingsClick={() => {
-            // TODO: Handle settings click
+          onLogout={() => {
+            onLogout?.();
+            setProfileMenuOpen(false);
           }}
-          onLogoutClick={() => {
-            // TODO: Handle logout click
-          }}
+          onNavigateProfile={onNavigateProfile}
         />
       </div>
     </div>

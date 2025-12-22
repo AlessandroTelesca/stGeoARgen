@@ -9,6 +9,10 @@ import gsap from 'gsap';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
+  username?: string | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
+  onNavigateProfile?: () => void;
 }
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
@@ -159,7 +163,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
 }
 
-export const AndroidKlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
+export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<AndroidKlosterweiherARSession | null>(null);
@@ -212,6 +216,10 @@ export const AndroidKlosterweiherView = ({ onNavigateHome }: ARViewProps) => {
         containerRef={containerRef as React.RefObject<HTMLDivElement>}
         videoRef={null as any}
         overlayRootRef={overlayRootRef}
+        username={username}
+        onLogin={onLogin}
+        onLogout={onLogout}
+        onNavigateProfile={onNavigateProfile}
       />
 
       {isAuthorized && !hasStarted && (

@@ -1,33 +1,31 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, LogIn, UserPlus, LogOut } from 'lucide-react';
 
 interface ARProfileMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onProfileClick: () => void;
-  onSettingsClick: () => void;
-  onLogoutClick: () => void;
+  username: string | null;
+  onLogin: () => void;
+  onLogout: () => void;
+  onNavigateProfile?: () => void;
 }
 
 export const ARProfileMenu = ({
   isOpen,
   onClose,
-  onProfileClick,
-  onSettingsClick,
-  onLogoutClick,
+  username,
+  onLogin,
+  onLogout,
+  onNavigateProfile,
 }: ARProfileMenuProps) => {
-  const handleProfileClick = () => {
-    onProfileClick();
+  const handleLogin = () => {
+    onLogin();
     onClose();
   };
 
-  const handleSettingsClick = () => {
-    onSettingsClick();
-    onClose();
-  };
-
-  const handleLogoutClick = () => {
-    onLogoutClick();
+  const handleLogout = () => {
+    onLogout();
     onClose();
   };
 
@@ -51,31 +49,89 @@ export const ARProfileMenu = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            style={{ width: '280px', padding: '16px' }}
           >
-            {/* Menu Items */}
-            <div className="ar-menu-items">
-              <button onClick={handleProfileClick} className="ar-menu-item">
-                <div className="ar-menu-icon ar-menu-icon-primary">
-                  <User style={{ width: '20px', height: '20px', color: '#0C690F' }} />
-                </div>
-                <span className="ar-menu-text">Profil</span>
-              </button>
-
-              <button onClick={handleSettingsClick} className="ar-menu-item">
-                <div className="ar-menu-icon ar-menu-icon-primary">
-                  <Settings style={{ width: '20px', height: '20px', color: '#0C690F' }} />
-                </div>
-                <span className="ar-menu-text">Einstellungen</span>
-              </button>
-
-              <div className="ar-menu-divider" />
-
-              <button onClick={handleLogoutClick} className="ar-menu-item ar-menu-item-logout">
-                <div className="ar-menu-icon ar-menu-icon-danger">
-                  <LogOut style={{ width: '20px', height: '20px', color: '#dc2626' }} />
-                </div>
-                <span className="ar-menu-text-danger">Abmelden</span>
-              </button>
+            {/* Action buttons - no duplicate profile display */}
+            <div style={{
+              padding: '8px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              {!username ? (
+                <>
+                  <button
+                    onClick={handleLogin}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <LogIn style={{ width: '16px', height: '16px' }} />
+                    Anmelden
+                  </button>
+                  <button
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <UserPlus style={{ width: '16px', height: '16px' }} />
+                    Registrieren
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#dc2626',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <LogOut style={{ width: '16px', height: '16px' }} />
+                  Abmelden
+                </button>
+              )}
             </div>
           </motion.div>
         </>

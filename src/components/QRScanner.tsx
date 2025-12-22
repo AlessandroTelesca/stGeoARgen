@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { X, QrCode } from 'lucide-react';
+import jsQR from 'jsqr';
 
 interface QRScannerProps {
   onClose: () => void;
@@ -12,42 +13,90 @@ const VALID_AR_VIEWS = ['glockenspiel', 'phonomuseum', 'klosterweiher'];
 
 export function QRScanner({ onClose, onScan }: QRScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [isScanning, setIsScanning] = useState(true);
 
-  // Starte Kamera sofort beim Öffnen
+  // Starte Kamera und QR-Code Scanning
   useEffect(() => {
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
+          video: { facingMode: 'environment', width: 1280, height: 720 } 
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
+          
+          // Warte bis Video bereit ist
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play();
+            startScanning();
+          };
         }
       } catch (err) {
         console.error('Kamera konnte nicht gestartet werden:', err);
       }
     };
 
+    const startScanning = () => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      if (!video || !canvas) return;
+
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
+
+      const scan = () => {
+        if (!isScanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+          animationFrameRef.current = requestAnimationFrame(scan);
+          return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          console.log('QR Code detected:', code.data);
+          
+          // Check if it's a valid AR view
+          const arView = VALID_AR_VIEWS.find(view => 
+            code.data.toLowerCase().includes(view)
+          );
+          
+          if (arView) {
+            setIsScanning(false);
+            onScan(arView);
+            return;
+          }
+        }
+
+        animationFrameRef.current = requestAnimationFrame(scan);
+      };
+
+      scan();
+    };
+
     startCamera();
 
     return () => {
+      setIsScanning(false);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
     };
-  }, []);
-
-  // Simuliere QR-Code Scan (später durch echte Library ersetzen)
-  useEffect(() => {
-    // TODO: Hier QR-Code Scanner Library integrieren (z.B. jsQR oder html5-qrcode)
-    // Beispiel: Wenn QR-Code mit Text "glockenspiel" gescannt wird:
-    // const scannedText = ... // Von QR-Code Scanner
-    // if (VALID_AR_VIEWS.includes(scannedText)) {
-    //   onScan(scannedText);
-    // }
   }, [onScan]);
 
   return (
@@ -84,7 +133,14 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
           ref={videoRef}
           autoPlay
           playsInline
+          muted
           className="w-full h-full object-cover"
+        />
+        
+        {/* Hidden canvas for QR code processing */}
+        <canvas
+          ref={canvasRef}
+          className="hidden"
         />
         
         {/* Scanning Overlay */}

@@ -1,23 +1,62 @@
-import { Bell, Globe, HelpCircle, Info, Shield, Trash2 } from 'lucide-react';
+import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
 interface SettingsProps {
   onResetProgress: () => void;
+  onBack?: () => void;
+  onNavigateToProfile?: () => void;
 }
 
-export function Settings({ onResetProgress }: SettingsProps) {
+export function Settings({ onResetProgress, onBack, onNavigateToProfile }: SettingsProps) {
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('de');
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-20">
+      {/* Back Button */}
+      {onBack && (
+        <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Zurück</span>
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-3xl mx-auto px-4 py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <h2 className="text-2xl font-bold mb-6">Einstellungen</h2>
+
+          {/* Account Settings */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
+              Account
+            </h3>
+            
+            <div className="bg-white rounded-xl border border-border">
+              <button
+                onClick={onNavigateToProfile}
+                className="w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors"
+              >
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-medium">Profil verwalten</p>
+                  <p className="text-sm text-muted-foreground">Account-Informationen & Sicherheit</p>
+                </div>
+              </button>
+            </div>
+          </div>
 
           {/* General Settings */}
           <div className="mb-6">

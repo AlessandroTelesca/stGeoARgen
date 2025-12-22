@@ -1,15 +1,15 @@
 import { RefObject } from 'react';
 import { motion } from 'motion/react';
-import { Home } from 'lucide-react';
-import { GeorgiAvatar } from '../Georgi';
+import { Home, User } from 'lucide-react';
 
 interface ARTopBarProps {
   onNavigateHome: () => void;
   onProfileClick: () => void;
   profileMenuOpen: boolean;
+  username: string | null;
 }
 
-export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen }: ARTopBarProps) => {
+export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen, username }: ARTopBarProps) => {
   return (
     <div className="ar-top-bar">
       {/* Home Button */}
@@ -27,12 +27,23 @@ export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen }: AR
         className="ar-profile-button"
         whileTap={{ scale: 0.98 }}
       >
-        <GeorgiAvatar size="sm" />
-        <div style={{ textAlign: 'left' }}>
-          <div className="ar-profile-name">Max</div>
-          <div className="ar-profile-email">Max@gmail.com</div>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          background: 'linear-gradient(to bottom right, #0C690F, #0e7a11)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          flexShrink: 0
+        }}>
+          <User style={{ width: '20px', height: '20px', color: 'white' }} />
         </div>
-        <div className="ar-profile-points">123 👑</div>
+        <div style={{ textAlign: 'left', flex: 1 }}>
+          <div className="ar-profile-name">{username || 'Gast'}</div>
+          <div className="ar-profile-email">{username ? 'Angemeldet' : 'Nicht angemeldet'}</div>
+        </div>
         <motion.div
           animate={{ rotate: profileMenuOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}

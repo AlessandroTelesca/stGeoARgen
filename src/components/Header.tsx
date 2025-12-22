@@ -1,22 +1,35 @@
-import { Menu, X, Home, Map, QrCode, Settings, Gift } from 'lucide-react';
+import { Menu, X, Home, Map, QrCode, Settings, Gift, User, ChevronDown, LogIn, UserPlus, LogOut, MapPin, TrendingUp, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GeorgiAvatar } from './Georgi';
 
 interface HeaderProps {
   title: string;
   onNavigate: (view: string) => void;
   currentView: string;
+  username: string | null;
+  onLogin: () => void;
+  onLogout: () => void;
 }
 
-export function Header({ title, onNavigate, currentView }: HeaderProps) {
+export function Header({ title, onNavigate, currentView, username, onLogin, onLogout }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const handleLogin = () => {
+    onLogin();
+    setUserDropdownOpen(false);
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    setUserDropdownOpen(false);
+  };
 
   const menuItems = [
     { id: 'home', label: 'Startseite', Icon: Home },
     { id: 'paths', label: 'Themenpfade', Icon: Map },
     { id: 'rewards', label: 'Belohnungen', Icon: Gift },
-    { id: 'qr-scanner', label: 'QR-Code Scanner', Icon: QrCode },
+    { id: 'qr-scanner', label: 'QR Scanner', Icon: QrCode },
     { id: 'settings', label: 'Einstellungen', Icon: Settings },
   ];
 
@@ -25,13 +38,30 @@ export function Header({ title, onNavigate, currentView }: HeaderProps) {
     setMenuOpen(false);
   };
 
+  const getViewIcon = () => {
+    const iconMap: Record<string, JSX.Element> = {
+      'home': <span className="text-xl">🐉</span>,
+      'paths': <Map className="w-5 h-5 text-white" />,
+      'path': <Map className="w-5 h-5 text-white" />,
+      'settings': <Settings className="w-5 h-5 text-white" />,
+      'profile': <User className="w-5 h-5 text-white" />,
+      'points': <Trophy className="w-5 h-5 text-white" />,
+      'stations': <MapPin className="w-5 h-5 text-white" />,
+      'progress': <TrendingUp className="w-5 h-5 text-white" />,
+      'rewards': <Gift className="w-5 h-5 text-white" />,
+    };
+    return iconMap[currentView] || <span className="text-xl">🐉</span>;
+  };
+
   return (
     <>
       <header className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <GeorgiAvatar size="sm" animated={false} />
-            <h1 className="font-semibold">{title}</h1>
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md">
+              {getViewIcon()}
+            </div>
+            <h1 className="text-sm text-muted-foreground">{title}</h1>
           </div>
 
           <button
@@ -109,14 +139,64 @@ export function Header({ title, onNavigate, currentView }: HeaderProps) {
                   </button>
                 </div>
 
+                {/* User Section - styled like StationsView Georgi banner */}
                 <div className="mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-primary/10 to-primary-light/10 rounded-xl border border-primary/20">
-                    <GeorgiAvatar size="md" />
-                    <div>
-                      <p className="font-semibold">Georgi</p>
-                      <p className="text-xs text-muted-foreground">Dein Guide</p>
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    className="w-full bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3 hover:border-primary/50 transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                      <User className="w-6 h-6 text-white" />
                     </div>
-                  </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold">{username || 'Gast'}</p>
+                      <p className="text-xs text-muted-foreground">{username ? 'Angemeldet' : 'Nicht angemeldet'}</p>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: userDropdownOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
+                  </button>
+                  
+                  <AnimatePresence>
+                    {userDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-2 p-2 bg-white rounded-xl border border-border space-y-1">
+                          {!username ? (
+                            <>
+                              <button
+                                onClick={handleLogin}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                              >
+                                <LogIn className="w-4 h-4" />
+                                Anmelden
+                              </button>
+                              <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium">
+                                <UserPlus className="w-4 h-4" />
+                                Registrieren
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-red-600"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              Abmelden
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <nav className="space-y-2">

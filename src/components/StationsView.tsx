@@ -1,7 +1,7 @@
 import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { Georgi } from './Georgi';
+import { GeorgiAvatar } from './Georgi';
 import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 
@@ -29,6 +29,8 @@ interface StationsViewProps {
       imageUrl: string;
       status: 'locked' | 'available' | 'completed';
       points: number;
+      latitude: number;
+      longitude: number;
     }>;
   }>;
   onStationClick: (pathId: string, stationId: number) => void;
@@ -169,7 +171,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <Georgi size={48} />
+            <GeorgiAvatar size="lg" />
             <div className="flex-1">
               <p className="text-sm">
                 {completedStations === totalStations
