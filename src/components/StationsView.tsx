@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { Georgi } from './Georgi';
 import { Badge } from './ui/badge';
+import { useStationProximity } from './ARComponents/ARComponentBase';
 
 interface Station {
   id: number;
@@ -13,6 +14,8 @@ interface Station {
   points: number;
   pathTitle: string;
   pathId: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface StationsViewProps {
@@ -42,6 +45,8 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
       ...station,
       pathTitle: path.title,
       pathId: path.id,
+      latitude: station.latitude,
+      longitude: station.longitude,
     }))
   );
 
@@ -78,6 +83,67 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
       case 'locked':
         return 'border-border bg-muted/30 opacity-60';
     }
+  };
+
+  // Station Item Component with distance
+  const StationItem = ({ station, index }: { station: Station; index: number }) => {
+    const { distance } = useStationProximity(station.latitude, station.longitude, 100);
+    
+    return (
+      <motion.button
+        onClick={() => station.status !== 'locked' && onStationClick(station.pathId, station.id)}
+        disabled={station.status === 'locked'}
+        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(station.status)} ${
+          station.status !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
+        }`}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.7 + index * 0.05 }}
+        whileHover={station.status !== 'locked' ? { scale: 1.01 } : {}}
+        whileTap={station.status !== 'locked' ? { scale: 0.99 } : {}}
+      >
+        <div className="flex gap-4">
+          {/* Image */}
+          <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative">
+            <img
+              src={station.imageUrl}
+              alt={station.title}
+              className="w-full h-full object-cover"
+            />
+            {station.status === 'completed' && (
+              <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-success" />
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h4 className="truncate font-semibold">{station.title}</h4>
+              {getStatusIcon(station.status)}
+            </div>
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+              {station.description}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className="text-xs">
+                {station.pathTitle}
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                {station.points} Punkte
+              </Badge>
+              {station.status !== 'completed' && distance !== null && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {Math.round(distance)}m
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.button>
+    );
   };
 
   return (
@@ -235,49 +301,11 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             </div>
           ) : (
             filteredStations.map((station, index) => (
-              <motion.button
-                key={`${station.pathId}-${station.id}`}
-                onClick={() => station.status !== 'locked' && onStationClick(station.pathId, station.id)}
-                disabled={station.status === 'locked'}
-                className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(station.status)} ${
-                  station.status !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
-                }`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + index * 0.05 }}
-                whileHover={station.status !== 'locked' ? { scale: 1.01 } : {}}
-                whileTap={station.status !== 'locked' ? { scale: 0.99 } : {}}
-              >
-                <div className="flex gap-4">
-                  {/* Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    <img
-                      src={station.imageUrl}
-                      alt={station.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="truncate">{station.title}</h4>
-                      {getStatusIcon(station.status)}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                      {station.description}
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
-                        {station.pathTitle}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {station.points} Punkte
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </motion.button>
+              <StationItem 
+                key={`${station.pathId}-${station.id}`} 
+                station={station} 
+                index={index} 
+              />
             ))
           )}
         </motion.div>

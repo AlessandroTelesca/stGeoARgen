@@ -2,6 +2,7 @@ import { MapPin, CheckCircle2, QrCode, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Trophy } from 'lucide-react';
+import { useStationProximity } from './ARComponents/ARComponentBase';
 
 interface StationCardProps {
   id: number;
@@ -11,16 +12,24 @@ interface StationCardProps {
   status: 'locked' | 'available' | 'completed';
   points: number;
   onClick: () => void;
+  latitude: number;
+  longitude: number;
 }
 
-export function StationCard({ title, description, imageUrl, status, points, onClick }: StationCardProps) {
+export function StationCard({ title, description, imageUrl, status, points, onClick, latitude, longitude }: StationCardProps) {
   const isLocked = false; // Stations are never locked - user can start anywhere
   const isCompleted = status === 'completed';
+  
+  // Get distance to station
+  const { distance } = useStationProximity(latitude, longitude, 100);
+  const isInRange = distance !== null && distance <= 100;
 
   return (
     <motion.button
       onClick={onClick}
-      className="w-full text-left bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all"
+      className={`w-full text-left bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
+        isInRange && !isCompleted ? 'border-2 border-primary ring-2 ring-primary/20' : 'border border-border'
+      }`}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -37,7 +46,14 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
           </div>
         )}
         
-        {!isCompleted && (
+        {!isCompleted && isInRange && (
+          <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 font-semibold text-xs">
+            <MapPin className="w-3.5 h-3.5" />
+            In Reichweite
+          </div>
+        )}
+        
+        {!isCompleted && !isInRange && (
           <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md">
             <Play className="w-5 h-5 text-primary" />
           </div>
@@ -60,7 +76,9 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span>{isCompleted ? 'Abgeschlossen' : 'Verfügbar'}</span>
+            <span>
+              {isCompleted ? 'Abgeschlossen' : distance !== null ? `${Math.round(distance)}m entfernt` : 'Standort wird ermittelt...'}
+            </span>
           </div>
           {!isCompleted && (
             <span className="text-xs font-medium text-primary">Jetzt starten →</span>

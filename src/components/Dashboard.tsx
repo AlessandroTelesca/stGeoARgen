@@ -58,7 +58,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
         </motion.div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <motion.button
             onClick={() => onNavigate?.('points')}
             className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
@@ -78,29 +78,11 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           </motion.button>
 
           <motion.button
-            onClick={() => onNavigate?.('stations')}
-            className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold mb-1">{totalCompletedStations}</p>
-            <p className="text-sm text-muted-foreground">Stationen</p>
-          </motion.button>
-
-          <motion.button
             onClick={onNavigateToPaths}
             className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -112,32 +94,17 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             <p className="text-2xl font-bold mb-1">{totalStations}</p>
             <p className="text-sm text-muted-foreground">Gesamt Stationen</p>
           </motion.button>
-
-          <motion.button
-            onClick={() => onNavigate?.('progress')}
-            className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold mb-1">{Math.round(completionPercentage)}%</p>
-            <p className="text-sm text-muted-foreground">Fortschritt</p>
-          </motion.button>
         </div>
 
         {/* Progress Card */}
-        <motion.div
-          className="bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 mb-8 shadow-lg"
+        <motion.button
+          onClick={() => onNavigate?.('progress')}
+          className="w-full bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 mb-8 shadow-lg hover:shadow-xl transition-all text-left"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -165,7 +132,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               ? 'Themenpfad abgeschlossen!'
               : `Noch ${totalStations - totalCompletedStations} Stationen zu entdecken!`}
           </p>
-        </motion.div>
+        </motion.button>
 
         {/* QR Scanner CTA */}
         {onOpenQRScanner && (

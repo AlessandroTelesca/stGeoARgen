@@ -97,6 +97,8 @@ export function PathView({
               >
                 <StationCard
                   {...station}
+                  latitude={station.latitude}
+                  longitude={station.longitude}
                   onClick={() => onStationClick(station.id)}
                 />
               </motion.div>
