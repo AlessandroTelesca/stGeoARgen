@@ -11,6 +11,7 @@ interface StationCardProps {
   imageUrl: string;
   status: 'locked' | 'available' | 'completed';
   points: number;
+  distance?: number | null;
   onClick: () => void;
   latitude: number;
   longitude: number;

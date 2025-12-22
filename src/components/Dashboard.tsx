@@ -28,6 +28,9 @@ interface DashboardProps {
 export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate }: DashboardProps) {
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
+  
+  // Calculate completed paths
+  const completedPaths = paths.filter(path => path.completedStations === path.totalStations).length;
 
   // Calculate next voucher milestone
   const voucherMilestones = [50, 100, 150, 180, 200, 225];
@@ -91,8 +94,8 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 <Star className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl font-bold mb-1">{totalStations}</p>
-            <p className="text-sm text-muted-foreground">Gesamt Stationen</p>
+            <p className="text-2xl font-bold mb-1">{completedPaths}</p>
+            <p className="text-sm text-muted-foreground">Abgeschl. Pfade</p>
           </motion.button>
         </div>
 
@@ -223,7 +226,20 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
 
         {/* Paths Section */}
         <div className="mb-6">
-          <h3 className="font-semibold mb-4">Themenpfad</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Themenpfade</h3>
+            {paths.length > 0 && (
+              <button
+                onClick={onNavigateToPaths}
+                className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              >
+                Alle ansehen
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paths.map((path, index) => (
               <motion.div
@@ -232,7 +248,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + index * 0.1 }}
               >
-                <PathCard {...path} onClick={() => onPathSelect(path.id)} />
+                <PathCard {...path} onClick={() => onNavigateToPaths?.()} />
               </motion.div>
             ))}
           </div>

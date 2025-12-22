@@ -41,8 +41,7 @@ export function PathCard({
   return (
     <motion.button
       onClick={onClick}
-      className="w-full bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all text-left"
-      whileHover={{ y: -2 }}
+      className="w-full bg-white rounded-2xl overflow-hidden border border-border shadow-sm transition-all text-left"
       whileTap={{ scale: 0.98 }}
     >
       {/* Image */}

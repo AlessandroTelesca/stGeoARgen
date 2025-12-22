@@ -4,6 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
+import { PathSelection } from './components/PathSelection';
 import { PathView } from './components/PathView';
 import { StationDetail } from './components/StationDetail';
 import { Settings } from './components/Settings';
@@ -51,7 +52,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState<'home' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -97,6 +98,8 @@ export default function App() {
       setCurrentView('progress');
     } else if (path === '/rewards') {
       setCurrentView('rewards');
+    } else if (path === '/paths') {
+      setCurrentView('paths');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
     }
@@ -246,6 +249,11 @@ export default function App() {
       navigate('/');
       setSelectedPathId(null);
       setSelectedStationId(null);
+    } else if (view === 'paths') {
+      navigate('/paths');
+      setCurrentView('paths');
+      setSelectedPathId(null);
+      setSelectedStationId(null);
     } else if (view === 'path') {
       // Directly go to the single path
       setSelectedPathId('tourist');
@@ -266,11 +274,20 @@ export default function App() {
     }
   };
 
-  const handleQRScan = (pathId: string, stationId: number) => {
+  const handleQRScan = (arView: string) => {
     setShowQRScanner(false);
-    setSelectedPathId(pathId);
-    setSelectedStationId(stationId);
-    setCurrentView('station');
+    
+    // Direkte Weiterleitung zu AR-Views
+    if (arView === 'glockenspiel') {
+      setCurrentView('ar-glockenspiel');
+      navigate('/glockenspiel');
+    } else if (arView === 'phonomuseum') {
+      setCurrentView('ar-phonomuseum');
+      navigate('/phonomuseum');
+    } else if (arView === 'klosterweiher') {
+      setCurrentView('ar-klosterweiher');
+      navigate('/klosterweiher');
+    }
   };
 
   const handleOpenQRScanner = () => {
@@ -278,9 +295,10 @@ export default function App() {
   };
 
   const handleNavigateToPaths = () => {
-    // Since we only have one path, navigate directly to it
-    setSelectedPathId('tourist');
-    setCurrentView('path');
+    // Navigate to the path selection view
+    setCurrentView('paths');
+    navigate('/paths');
+    setSelectedPathId(null);
     setSelectedStationId(null);
   };
 
@@ -317,6 +335,7 @@ export default function App() {
 
   const getPageTitle = () => {
     if (currentView === 'home') return 'St.GeoARgen';
+    if (currentView === 'paths') return 'Themenpfade';
     if (currentView === 'settings') return 'Einstellungen';
     if (currentView === 'points') return 'Punkte';
     if (currentView === 'stations') return 'Stationen';
@@ -356,6 +375,14 @@ export default function App() {
           onNavigateToPaths={handleNavigateToPaths}
           onOpenQRScanner={handleOpenQRScanner}
           onNavigate={handleNavigate}
+        />
+      )}
+
+      {currentView === 'paths' && (
+        <PathSelection
+          paths={pathsWithProgress}
+          onPathSelect={handlePathSelect}
+          onBack={handleBackToDashboard}
         />
       )}
 
@@ -432,14 +459,6 @@ export default function App() {
           <QRScanner
             onClose={() => setShowQRScanner(false)}
             onScan={handleQRScan}
-            paths={paths.map(path => ({
-              id: path.id,
-              title: path.title,
-              stations: path.stations.map(s => ({
-                id: s.id,
-                title: s.title,
-              })),
-            }))}
           />
         )}
       </AnimatePresence>

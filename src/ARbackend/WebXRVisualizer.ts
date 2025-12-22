@@ -120,6 +120,8 @@ export class WebXRVisualizer implements WebXRSession {
 
       // Initialize Three.js for WebXR
       this.initThree();
+      // Force a compatible reference space; some devices do not support local-floor
+      this.renderer!.xr.setReferenceSpaceType('local');
       this.renderer!.xr.enabled = true;
       this.renderer!.xr.setSession(this.xrSession);
 

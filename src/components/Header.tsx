@@ -14,7 +14,7 @@ export function Header({ title, onNavigate, currentView }: HeaderProps) {
 
   const menuItems = [
     { id: 'home', label: 'Startseite', Icon: Home },
-    { id: 'path', label: 'Themenpfad', Icon: Map },
+    { id: 'paths', label: 'Themenpfade', Icon: Map },
     { id: 'rewards', label: 'Belohnungen', Icon: Gift },
     { id: 'qr-scanner', label: 'QR-Code Scanner', Icon: QrCode },
     { id: 'settings', label: 'Einstellungen', Icon: Settings },

@@ -82,16 +82,20 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Back Button */}
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Zurück</span>
-        </button>
+      {/* Sticky Back Button Header */}
+      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Zurück</span>
+          </button>
+        </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <motion.div
           className="mb-8"

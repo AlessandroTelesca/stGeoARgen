@@ -1,82 +1,77 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QRScanner } from '../../src/components/QRScanner';
 
-const paths = [
-  {
-    id: 'historic',
-    title: 'Historic Walk',
-    stations: [
-      { id: 1, title: 'Start' },
-      { id: 2, title: 'Museum' },
-    ],
+// Mock navigator.mediaDevices
+const mockGetUserMedia = vi.fn();
+Object.defineProperty(global.navigator, 'mediaDevices', {
+  value: {
+    getUserMedia: mockGetUserMedia,
   },
-];
+  writable: true,
+});
 
 describe('QRScanner', () => {
-  test('shows error for invalid manual code format', async () => {
-    const user = userEvent.setup();
-    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} paths={paths} />);
-
-    await user.type(screen.getByPlaceholderText(/z\.b\. historic-1/i), 'invalid');
-    await user.click(screen.getByRole('button', { name: /öffnen/i }));
-
-    expect(screen.getByText(/ungültiges format/i)).toBeInTheDocument();
+  beforeEach(() => {
+    mockGetUserMedia.mockClear();
+    mockGetUserMedia.mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }],
+    });
   });
 
-  test('calls onScan after valid manual entry', async () => {
-    const user = userEvent.setup();
-    const onScan = vi.fn();
-    render(<QRScanner onClose={vi.fn()} onScan={onScan} paths={paths} />);
+  test('renders QR scanner with title', () => {
+    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} />);
+    expect(screen.getByText(/qr-code scanner/i)).toBeInTheDocument();
+  });
 
-    await user.type(screen.getByPlaceholderText(/z\.b\. historic-1/i), 'historic-2');
-    await user.click(screen.getByRole('button', { name: /öffnen/i }));
-
-    expect(await screen.findByText(/station gefunden/i)).toBeInTheDocument();
-
+  test('starts camera on mount', async () => {
+    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} />);
+    
     await vi.waitFor(() => {
-      expect(onScan).toHaveBeenCalledWith('historic', 2);
+      expect(mockGetUserMedia).toHaveBeenCalledWith({
+        video: { facingMode: 'environment' }
+      });
     });
   });
 
   test('closes when X button clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<QRScanner onClose={onClose} onScan={vi.fn()} paths={paths} />);
+    render(<QRScanner onClose={onClose} onScan={vi.fn()} />);
 
-    const closeButtons = screen.getAllByRole('button');
-    await user.click(closeButtons[0]);
+    const closeButton = screen.getByRole('button');
+    await user.click(closeButton);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test('shows error for invalid path', async () => {
-    const user = userEvent.setup();
-    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} paths={paths} />);
-
-    await user.type(screen.getByPlaceholderText(/z\.b\. historic-1/i), 'invalid-1');
-    await user.click(screen.getByRole('button', { name: /öffnen/i }));
-
-    expect(screen.getByText(/pfad "invalid" wurde nicht gefunden/i)).toBeInTheDocument();
+  test('displays scanning instruction', () => {
+    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} />);
+    expect(screen.getByText(/halte den qr-code vor die kamera/i)).toBeInTheDocument();
   });
 
-  test('shows error for invalid station in valid path', async () => {
-    const user = userEvent.setup();
-    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} paths={paths} />);
-
-    await user.type(screen.getByPlaceholderText(/z\.b\. historic-1/i), 'historic-99');
-    await user.click(screen.getByRole('button', { name: /öffnen/i }));
-
-    expect(screen.getByText(/station 99 wurde.*nicht gefunden/i)).toBeInTheDocument();
+  test('displays video element for camera stream', () => {
+    const { container } = render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} />);
+    const video = container.querySelector('video');
+    expect(video).toBeInTheDocument();
+    expect(video).toHaveAttribute('autoPlay');
+    expect(video).toHaveAttribute('playsInline');
   });
 
-  test('shows error for non-numeric station id', async () => {
-    const user = userEvent.setup();
-    render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} paths={paths} />);
+  test('stops camera stream on unmount', async () => {
+    const stopMock = vi.fn();
+    mockGetUserMedia.mockResolvedValue({
+      getTracks: () => [{ stop: stopMock }],
+    });
 
-    await user.type(screen.getByPlaceholderText(/z\.b\. historic-1/i), 'historic-abc');
-    await user.click(screen.getByRole('button', { name: /öffnen/i }));
+    const { unmount } = render(<QRScanner onClose={vi.fn()} onScan={vi.fn()} />);
+    
+    await vi.waitFor(() => {
+      expect(mockGetUserMedia).toHaveBeenCalled();
+    });
 
-    expect(screen.getByText(/stations-id muss eine zahl sein/i)).toBeInTheDocument();
+    unmount();
+    
+    expect(stopMock).toHaveBeenCalled();
   });
 });

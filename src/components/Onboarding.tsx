@@ -11,21 +11,27 @@ interface OnboardingProps {
 const steps = [
   {
     id: 1,
-    title: 'Hallo, ich bin Georgi!',
-    description: 'Ich bin dein Drachen-Guide und begleite dich auf deiner Entdeckungsreise durch St.Georgen. Gemeinsam erkunden wir die Stadt auf einem spannenden touristischen Themenpfad!',
-    georgiMessage: 'Hey! Schön, dass du da bist. Lass mich dir zeigen, wie alles funktioniert!',
+    title: 'Willkommen in St.Georgen!',
+    description: 'Ich bin Georgi, dein Drachen-Guide. Gemeinsam entdecken wir St.Georgen auf spannenden Themenpfaden voller Geschichte, Kultur und Abenteuer!',
+    georgiMessage: 'Hey! Bereit für eine unvergessliche Entdeckungsreise?',
   },
   {
     id: 2,
-    title: 'QR-Codes scannen',
-    description: 'An jeder Station findest du einen QR-Code. Scanne ihn, um AR-Erlebnisse freizuschalten, spannende Infos zu erhalten und Quizfragen zu beantworten.',
-    georgiMessage: 'Mit deiner Kamera kannst du die QR-Codes scannen. Probier es aus!',
+    title: 'Wähle deinen Themenpfad',
+    description: 'Such dir einen Themenpfad aus, der dich interessiert. Jeder Pfad führt dich zu besonderen Orten in St.Georgen - ob historische Sehenswürdigkeiten, Naturerlebnisse oder kulturelle Highlights!',
+    georgiMessage: 'Der touristische Themenpfad ist perfekt für den Start!',
   },
   {
     id: 3,
-    title: 'Punkte sammeln & Belohnung',
-    description: 'Beantworte Quizfragen richtig und sammle Punkte. Wenn du alle Stationen abgeschlossen hast, wartet eine besondere Belohnung auf dich!',
-    georgiMessage: 'Sammle alle Punkte und sichere dir einen tollen Gutschein!',
+    title: 'Erlebe AR an den Stationen',
+    description: 'Besuche die Stationen in beliebiger Reihenfolge. An jeder Station erwartet dich ein spannendes AR-Erlebnis - entdecke interaktive Inhalte, löse Quizfragen und sammle Punkte!',
+    georgiMessage: 'Die nähesten Stationen werden dir immer zuerst angezeigt!',
+  },
+  {
+    id: 4,
+    title: 'Hole deine Belohnungen ab',
+    description: 'Mit gesammelten Punkten schaltest du Gutscheine frei, die du in echten Lokalitäten in St.Georgen einlösen kannst - Cafés, Restaurants, Museen und mehr!',
+    georgiMessage: 'Sammle fleissig Punkte und genieße tolle Belohnungen vor Ort!',
   },
 ];
 
