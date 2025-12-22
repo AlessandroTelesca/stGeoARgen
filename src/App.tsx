@@ -295,6 +295,8 @@ export default function App() {
   const handleQRScan = (arView: string) => {
     setShowQRScanner(false);
     
+    console.log('handleQRScan called with:', arView);
+    
     // Direkte Weiterleitung zu AR-Views
     if (arView === 'glockenspiel') {
       setCurrentView('ar-glockenspiel');
@@ -305,6 +307,16 @@ export default function App() {
     } else if (arView === 'klosterweiher') {
       setCurrentView('ar-klosterweiher');
       navigate('/klosterweiher');
+    } else {
+      // For any other QR code, try to open it as URL or show alert
+      console.log('Generic QR code content:', arView);
+      
+      // Check if it's a URL
+      if (arView.startsWith('http://') || arView.startsWith('https://')) {
+        window.open(arView, '_blank');
+      } else {
+        alert(`QR Code gescannt: ${arView}`);
+      }
     }
   };
 

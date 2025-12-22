@@ -67,16 +67,31 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
         if (code && code.data) {
           console.log('QR Code detected:', code.data);
           
-          // Check if it's a valid AR view
-          const arView = VALID_AR_VIEWS.find(view => 
-            code.data.toLowerCase().includes(view)
-          );
+          // Stop scanning immediately
+          setIsScanning(false);
+          
+          // Stop camera
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+          }
+          
+          // Cancel animation frame
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+          }
+          
+          // Check if it's a valid AR view, otherwise just pass the raw data
+          const lowerData = code.data.toLowerCase();
+          const arView = VALID_AR_VIEWS.find(view => lowerData.includes(view));
           
           if (arView) {
-            setIsScanning(false);
+            console.log('Valid AR view found:', arView);
             onScan(arView);
-            return;
+          } else {
+            console.log('Generic QR code, passing raw data');
+            onScan(code.data);
           }
+          return;
         }
 
         animationFrameRef.current = requestAnimationFrame(scan);
