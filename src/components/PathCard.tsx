@@ -41,7 +41,7 @@ export function PathCard({
   return (
     <motion.button
       onClick={onClick}
-      className="w-full bg-white rounded-2xl overflow-hidden border border-border shadow-sm transition-all text-left"
+      className="w-full bg-white rounded-2xl border border-border shadow-sm transition-all text-left overflow-hidden"
       whileTap={{ scale: 0.98 }}
     >
       {/* Image */}
@@ -112,9 +112,9 @@ export function PathCard({
         {/* CTA */}
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <span className="text-sm font-medium text-primary">
-            {isCompleted ? 'Erneut starten' : isStarted ? 'Fortsetzen' : 'Starten'}
+            Starten
           </span>
-          <ArrowRight className="w-5 h-5 text-primary" />
+          <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
         </div>
       </div>
     </motion.button>

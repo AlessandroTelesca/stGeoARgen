@@ -1,13 +1,6 @@
 import { motion } from 'motion/react';
-import { MapPin, Trophy, Clock, ChevronRight, Star } from 'lucide-react';
+import { MapPin, Trophy, Clock, ChevronRight, Star, ArrowLeft, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from './ui/carousel';
 
 interface PathDetail {
   id: string;
@@ -56,9 +49,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
             onClick={onBack}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Zurück</span>
           </button>
         </div>
@@ -77,34 +68,30 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
           </p>
         </motion.div>
 
-        {/* Paths Carousel */}
+        {/* Paths Grid */}
         <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Carousel
-            opts={{
-              align: 'start',
-              loop: true,
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {paths.map((path) => {
-                const progress = path.totalStations > 0
-                  ? (path.completedStations / path.totalStations) * 100
-                  : 0;
-                const isCompleted = path.completedStations === path.totalStations;
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paths.map((path, index) => {
+              const progress = path.totalStations > 0
+                ? (path.completedStations / path.totalStations) * 100
+                : 0;
+              const isCompleted = path.completedStations === path.totalStations;
 
-                return (
-                  <CarouselItem key={path.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                    <motion.button
-                      onClick={() => onPathSelect(path.id)}
-                      className="w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-border transition-all text-left"
-                      whileTap={{ scale: 0.98 }}
-                    >
+              return (
+                <motion.button
+                  key={path.id}
+                  onClick={() => onPathSelect(path.id)}
+                  className="w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-all text-left"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                       {/* Image */}
                       <div className="relative h-48 overflow-hidden">
                         <ImageWithFallback
@@ -183,25 +170,18 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                         </div>
 
                         {/* Action */}
-                        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                          <span className="text-xs font-medium text-primary">
-                            Jetzt starten →
+                        <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
+                          <span className="text-sm font-medium text-primary">
+                            Jetzt starten
                           </span>
+                          <ArrowRight className="w-5 h-5 text-primary" />
                         </div>
                       </div>
                     </motion.button>
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-            {paths.length > 1 && (
-              <>
-                <CarouselPrevious className="hidden md:flex" />
-                <CarouselNext className="hidden md:flex" />
-              </>
-            )}
-          </Carousel>
-        </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
 
         {/* Info Section */}
         <motion.div

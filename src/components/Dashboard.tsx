@@ -49,16 +49,17 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6 pb-8">
-        {/* Welcome Section */}
+        {/* Header */}
         <motion.div
-          className="mb-8"
+          className="mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <h2 className="text-2xl font-bold mb-2">{getGreeting()}, Gast!</h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             Bereit für ein neues Abenteuer in St.Georgen?
           </p>
+          <h3 className="font-semibold">Dashboard</h3>
         </motion.div>
 
         {/* Stats Overview */}
@@ -138,6 +139,36 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           </p>
         </motion.button>
 
+        {/* Paths Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Themenpfade</h3>
+            {paths.length > 0 && (
+              <button
+                onClick={onNavigateToPaths}
+                className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              >
+                Alle ansehen
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paths.map((path, index) => (
+              <motion.div
+                key={path.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+              >
+                <PathCard {...path} onClick={() => onPathSelect(path.id)} />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
         {/* QR Scanner CTA */}
         {onOpenQRScanner && (
           <motion.button
@@ -181,7 +212,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           {/* Green accent bar */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary-light to-primary" />
           
-          <div className="flex items-start gap-4">
+          <div className="flex items-center gap-4">
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
               hasUnlockedVoucher 
                 ? 'bg-primary/10 group-hover:bg-primary/20' 
@@ -217,43 +248,13 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 </div>
               )}
             </div>
-            <svg className={`w-6 h-6 transition-colors flex-shrink-0 ${
+            <svg className={`w-6 h-6 transition-colors flex-shrink-0 self-center ${
               hasUnlockedVoucher ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
             }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </motion.button>
-
-        {/* Paths Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Themenpfade</h3>
-            {paths.length > 0 && (
-              <button
-                onClick={onNavigateToPaths}
-                className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-              >
-                Alle ansehen
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            )}
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paths.map((path, index) => (
-              <motion.div
-                key={path.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + index * 0.1 }}
-              >
-                <PathCard {...path} onClick={() => onPathSelect(path.id)} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
