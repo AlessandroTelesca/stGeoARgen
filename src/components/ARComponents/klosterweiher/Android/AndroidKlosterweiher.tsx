@@ -26,20 +26,22 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
   private rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
   private fishUrls = [
-    new URL('./../models/Forelle.glb', import.meta.url).href,
-    new URL('./../models/Neunauge.glb', import.meta.url).href,
-    new URL('./../models/Zander.glb', import.meta.url).href,
-    new URL('./../models/Schleie.glb', import.meta.url).href,
-    new URL('./../models/Döbel.glb', import.meta.url).href,
+    // new URL('./../models/Forelle.glb', import.meta.url).href,
+    // new URL('./../models/Neunauge.glb', import.meta.url).href,
+    // new URL('./../models/Zander.glb', import.meta.url).href,
+    // new URL('./../models/Schleie.glb', import.meta.url).href,
+    // new URL('./../models/Döbel.glb', import.meta.url).href,
     new URL('./../models/Rotauge.glb', import.meta.url).href,
-    new URL('./../models/Rotfeder.glb', import.meta.url).href,
-    new URL('./../models/Stichling.glb', import.meta.url).href,
-    new URL('./../models/Karpfen.glb', import.meta.url).href,
+    // new URL('./../models/Rotfeder.glb', import.meta.url).href,
+    // new URL('./../models/Stichling.glb', import.meta.url).href,
+    // new URL('./../models/Karpfen.glb', import.meta.url).href,
   ];
   private waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
 
   public fish: THREE.Object3D | null = null;
   public fishes: THREE.Object3D[] = [];
+  private fishMixers: THREE.AnimationMixer[] = [];
+  private fishAnimations: THREE.AnimationClip[][] = [];
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -71,16 +73,18 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
     // Load all fish models
     this.fishUrls.forEach((fishUrl, index) => {
-      this.loadGLTFModel(fishUrl, {
-        position: new THREE.Vector3(0, -100, -100),
+      this.loadGLTFModelWithAnimations(fishUrl, {
+        position: new THREE.Vector3(0, -100, -1500),
         rotation: new THREE.Euler(0, Math.PI / 2, 0),
         scale: 3,
-      }).then((model) => {
-        const fishModel = model || null;
+      }).then(({ scene, animations }) => {
+        const fishModel = scene || null;
         if (fishModel) {
           fishModel.parent = this.camera;
           fishModel.visible = false;
           this.fishes.push(fishModel);
+          this.fishAnimations.push(animations || []);
+          this.fishMixers.push(new THREE.AnimationMixer(fishModel));
           if (index === 0) {
             this.fish = fishModel; // Set first fish as current
           }
@@ -164,10 +168,11 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     const tl = gsap.timeline()
 
     gsap.to(this.fish.rotation, {
-      y: Math.PI * 8 + Math.PI / 2,
+      y: Math.PI * 8,
       duration: 6,
     });
 
+    this.playCurrentFishAnimation();
     this.fish.visible = true;
 
     tl.to(this.rod.rotation, {
@@ -180,13 +185,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       duration: 1,
     })
     .to(this.fish.position, {
-      y: 5,
-      z: -30,
+      y: 3,
+      z: -500,
       duration: 0.5,
     })
     .to(this.fish.position, {
-      y: 0,
-      z: -30,
+      y: -5,
+      z: -500,
       duration: 0.3,
       onComplete: () => {
         this.hasCaughtFish = true;
@@ -199,13 +204,18 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
   releaseCurrentFish() {
     if (!this.fish) return;
+    const activeMixer = this.fishMixers[this.currentFishIndex];
+    activeMixer?.stopAllAction();
     this.fish.visible = false;
-    this.fish.position.set(0, -100, -100);
+    this.fish.position.set(0, -100, -500);
     this.fish.rotation.set(0, Math.PI / 2, 0);
 
     // Select random fish
     this.currentFishIndex = Math.floor(Math.random() * this.fishes.length);
     this.fish = this.fishes[this.currentFishIndex];
+    this.fish.position.set(0, -100, -1500);
+    this.fish.rotation.set(0, Math.PI / 2, 0);
+    this.fish.visible = false;
 
     this.tapCount = 0;
     this.hasCaughtFish = false;
@@ -216,6 +226,21 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       x: 5.5,
       duration: 1,
     });
+  }
+
+  private playCurrentFishAnimation() {
+    const mixer = this.fishMixers[this.currentFishIndex];
+    const clips = this.fishAnimations[this.currentFishIndex];
+
+    if (!mixer || !clips || clips.length === 0) return;
+
+    mixer.stopAllAction();
+    const action = mixer.clipAction(clips[0]);
+    action.reset().play();
+  }
+
+  protected onXRFrameUpdate(deltaSeconds: number): void {
+    this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
   }
 
 

@@ -17,6 +17,7 @@ export class WebXRVisualizer implements WebXRSession {
   protected scene: THREE.Scene | null = null;
   protected camera: THREE.PerspectiveCamera | null = null;
   private animationId: number | null = null;
+  private lastFrameTime: number | null = null;
   private container: HTMLDivElement;
   private options: ARInitOptions;
   protected isGroundDetected: boolean = false;
@@ -156,6 +157,9 @@ export class WebXRVisualizer implements WebXRSession {
 
     if (!session || !this.xrHitTestSource) return;
 
+    const deltaSeconds = this.lastFrameTime === null ? 0 : (time - this.lastFrameTime) / 1000;
+    this.lastFrameTime = time;
+
     // Get hit test results (detected planes)
     const hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
 
@@ -173,6 +177,10 @@ export class WebXRVisualizer implements WebXRSession {
           this.onGroundDetected();
         }
       }
+    }
+
+    if (deltaSeconds > 0) {
+      this.onXRFrameUpdate(deltaSeconds);
     }
 
     if (this.renderer && this.scene && this.camera) {
@@ -237,9 +245,64 @@ export class WebXRVisualizer implements WebXRSession {
     });
   }
 
+  /**
+   * Load a GLTF/GLB model and return its scene plus animations, applying transforms and adding to the scene.
+   */
+  protected loadGLTFModelWithAnimations(
+    url: string,
+    options: {
+      position?: THREE.Vector3 | [number, number, number];
+      rotation?: THREE.Euler | [number, number, number];
+      scale?: number | [number, number, number];
+    } = {}
+  ): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+    if (!this.scene) return Promise.reject(new Error('Scene not initialized'));
+
+    const toVector3 = (value: THREE.Vector3 | [number, number, number]): THREE.Vector3 =>
+      Array.isArray(value) ? new THREE.Vector3(...value) : value;
+
+    const toEuler = (value: THREE.Euler | [number, number, number]): THREE.Euler =>
+      Array.isArray(value) ? new THREE.Euler(...value) : value;
+
+    const loader = new GLTFLoader();
+
+    return new Promise((resolve, reject) => {
+      loader.load(
+        url,
+        (gltf) => {
+          const model = gltf.scene;
+
+          if (options.position) model.position.copy(toVector3(options.position));
+          if (options.rotation) model.rotation.copy(toEuler(options.rotation));
+
+          if (options.scale) {
+            if (Array.isArray(options.scale)) {
+              model.scale.set(options.scale[0], options.scale[1], options.scale[2]);
+            } else {
+              model.scale.setScalar(options.scale);
+            }
+          }
+
+          this.scene?.add(model);
+          resolve({ scene: model, animations: gltf.animations });
+        },
+        undefined,
+        (err) => reject(err)
+      );
+    });
+  }
+
   protected handlePointer(clientX: number, clientY: number): void {
     // Intentionally left blank: pointer events are kept for future interactions
     // Subclasses can override this method to handle pointer/tap events
+  }
+
+  /**
+   * Subclasses can override to update per-frame state (e.g., AnimationMixers).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onXRFrameUpdate(deltaSeconds: number): void {
+    // Default no-op
   }
 
   private handleResize = (): void => {
@@ -261,6 +324,8 @@ export class WebXRVisualizer implements WebXRSession {
       this.xrSession = null;
       this.xrHitTestSource = null;
     }
+
+    this.lastFrameTime = null;
 
     if (this.renderer) {
       // Remove pointer event listeners
