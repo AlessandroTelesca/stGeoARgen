@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as THREE from 'three';
 import { ARComponentBase } from '../../ARComponentBase';
 import { ARProximityGate } from '../../ARProximityGate';
@@ -32,6 +33,9 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public water: THREE.Object3D | null = null;
 
   public tapCount = 0;
+  public hasCaughtFish = false;
+  public onFishCaught?: () => void;
+  public onFishReleased?: () => void;
 
   protected initThree(): void {
     super.initThree();
@@ -102,10 +106,11 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
   controlrod() {
     if (!this.rod) return;
+    if (this.hasCaughtFish) return; // Wait for release before next catch
     const tl = gsap.timeline()
 
     this.tapCount += 1;
-    if (this.tapCount >= 3) {
+    if (this.tapCount >= 5) {
       this.catchfish();
     }
 
@@ -143,6 +148,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     });
 
     this.fish.visible = true;
+
     tl.to(this.rod.rotation, {
       x: 0,
       duration: 0.5,
@@ -157,6 +163,28 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       y: 0,
       z: -30,
       duration: 0.3,
+      onComplete: () => {
+        this.hasCaughtFish = true;
+        this.onFishCaught?.();
+      }
+    });
+
+  }
+
+  releaseCurrentFish() {
+    if (!this.fish) return;
+    this.fish.visible = false;
+    this.fish.position.set(0, -100, -100);
+    this.fish.rotation.set(0, Math.PI / 2, 0);
+
+    this.tapCount = 0;
+    this.hasCaughtFish = false;
+    this.onFishReleased?.();
+
+    if(this.rod)
+    gsap.to(this.rod.position, {
+      x: 5.5,
+      duration: 1,
     });
   }
 
@@ -171,6 +199,7 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fishCaught, setFishCaught] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -194,6 +223,9 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
           onError: (e) => console.error('AR init failed', e),
         }
       );
+
+      session.onFishCaught = () => setFishCaught(true);
+      session.onFishReleased = () => setFishCaught(false);
 
       await session.init(); // Must be called from user gesture to satisfy WebXR security
       console.log('[KlosterweiherView] AR session initialized');
@@ -264,6 +296,36 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
             </button>
           </div>
         </div>
+      )}
+
+      {fishCaught && overlayRootRef.current && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: '66%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10000,
+            pointerEvents: 'auto',
+          }}
+        >
+          <button
+            onClick={() => sessionRef.current?.releaseCurrentFish()}
+            style={{
+              padding: '12px 18px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#0c690f',
+              color: '#fff',
+              fontWeight: 700,
+              boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+              cursor: 'pointer',
+            }}
+          >
+            Release the fish
+          </button>
+        </div>,
+        overlayRootRef.current
       )}
     </>
   );
