@@ -43,6 +43,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
+  private cameraLight: THREE.PointLight | null = null;
 
   public tapCount = 0;
   public hasCaughtFish = false;
@@ -52,10 +53,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected initThree(): void {
     super.initThree();
 
-    // Add rod model (initially hidden)
+    // Create and attach a light to the camera that follows it
+    this.cameraLight = new THREE.PointLight(0xffffff, 1.5, 100);
+    this.cameraLight.position.set(0, 2, 5);
+    this.cameraLight.parent = this.camera;
     this.loadGLTFModel(this.rodUrl, {
-      position: new THREE.Vector3(5.5, -6, -6),
-      rotation: new THREE.Euler(-1, 0, 0),
+      position: new THREE.Vector3(3, -6, -20),
+      rotation: new THREE.Euler(0, Math.PI, 0),
       scale: 1.2,
     }).then((model) => {
       this.rod = model || null;
@@ -91,6 +95,10 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       this.water = model || null;
             if (this.water) {
         this.water.visible = false;
+        this.water.traverse((child) => {
+          if (child instanceof THREE.Mesh)
+          child.material.opacity = 0.02
+        });
       }
     }).catch((err) => console.error('Water model failed to load', err));
   }
@@ -106,7 +114,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       this.water.position.y = -500;
       this.water.scale.x = 20;
       this.water.scale.z = 20;
-      this.water.visible = true;
+      this.water.visible = false; //Change to true if water should be visible
     }
     
     console.log('Ground plane scanned and detected! Fishing rod and fish placed.');
@@ -133,18 +141,18 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     }
 
     tl.to(this.rod.rotation, {
-      x: -0.8,
+      x: -0.6,
       duration: 0.5,
     });
 
     tl.to(this.rod.rotation, {
-      x: -1.1,
+      x: -1,
       duration: 0.5,
       delay: 0.5,
     });
 
     tl.to(this.rod.rotation, {
-      x: -1,
+      x: -0.8,
       duration: 0.5,
       delay: 0.5,
     });
@@ -157,12 +165,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
     gsap.to(this.fish.rotation, {
       y: Math.PI * 8 + Math.PI / 2,
-      duration: 4,
-    });
-
-    gsap.to(this.rod.position, {
-      x: 8,
-      duration: 1,
+      duration: 6,
     });
 
     this.fish.visible = true;
@@ -171,6 +174,10 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       x: 0,
       duration: 0.5,
       delay: 2,
+    })
+    .to(this.rod.position, {
+      x: 9,
+      duration: 1,
     })
     .to(this.fish.position, {
       y: 5,
@@ -184,6 +191,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       onComplete: () => {
         this.hasCaughtFish = true;
         this.onFishCaught?.();
+        // this.fish?.rotation.set(0, Math.PI / 2, 0);
       }
     });
 
