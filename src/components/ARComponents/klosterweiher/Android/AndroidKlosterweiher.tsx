@@ -25,12 +25,24 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   // }
 
   private rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
-  private fishUrl = new URL('./../models/Fisch.glb', import.meta.url).href;
+  private fishUrls = [
+    new URL('./../models/Forelle.glb', import.meta.url).href,
+    new URL('./../models/Neunauge.glb', import.meta.url).href,
+    new URL('./../models/Zander.glb', import.meta.url).href,
+    new URL('./../models/Schleie.glb', import.meta.url).href,
+    new URL('./../models/Döbel.glb', import.meta.url).href,
+    new URL('./../models/Rotauge.glb', import.meta.url).href,
+    new URL('./../models/Rotfeder.glb', import.meta.url).href,
+    new URL('./../models/Stichling.glb', import.meta.url).href,
+    new URL('./../models/Karpfen.glb', import.meta.url).href,
+  ];
   private waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
 
   public fish: THREE.Object3D | null = null;
+  public fishes: THREE.Object3D[] = [];
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
+  public currentFishIndex = 0;
 
   public tapCount = 0;
   public hasCaughtFish = false;
@@ -53,18 +65,24 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       }
     }).catch((err) => console.error('Rod model failed to load', err));
 
-    // Add fish model
-    this.loadGLTFModel(this.fishUrl, {
-      position: new THREE.Vector3(0, -100, -100),
-      rotation: new THREE.Euler(0, Math.PI / 2, 0),
-      scale: 3,
-    }).then((model) =>{
-      this.fish = model || null;
-      if (this.fish) {
-        this.fish.parent = this.camera;
-        this.fish.visible = false;
-      }
-    }).catch((err) => console.error('Fish model failed to load', err));
+    // Load all fish models
+    this.fishUrls.forEach((fishUrl, index) => {
+      this.loadGLTFModel(fishUrl, {
+        position: new THREE.Vector3(0, -100, -100),
+        rotation: new THREE.Euler(0, Math.PI / 2, 0),
+        scale: 3,
+      }).then((model) => {
+        const fishModel = model || null;
+        if (fishModel) {
+          fishModel.parent = this.camera;
+          fishModel.visible = false;
+          this.fishes.push(fishModel);
+          if (index === 0) {
+            this.fish = fishModel; // Set first fish as current
+          }
+        }
+      }).catch((err) => console.error(`Fish model ${index} failed to load`, err));
+    });
 
     // Add water model
     this.loadGLTFModel(this.waterUrl, {
@@ -176,6 +194,10 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     this.fish.visible = false;
     this.fish.position.set(0, -100, -100);
     this.fish.rotation.set(0, Math.PI / 2, 0);
+
+    // Select random fish
+    this.currentFishIndex = Math.floor(Math.random() * this.fishes.length);
+    this.fish = this.fishes[this.currentFishIndex];
 
     this.tapCount = 0;
     this.hasCaughtFish = false;
