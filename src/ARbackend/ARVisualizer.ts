@@ -13,7 +13,7 @@ export class ARVisualizer implements ARSession {
   protected renderer: THREE.WebGLRenderer | null = null;
   protected scene: THREE.Scene | null = null;
   protected camera: THREE.PerspectiveCamera | null = null;
-  private animationId: number | null = null;
+  protected animationId: number | null = null;
   private stream: MediaStream | null = null;
   private raycaster: THREE.Raycaster;
   private pointer: THREE.Vector2;
@@ -67,6 +67,9 @@ export class ARVisualizer implements ARSession {
       1000
     );
     this.camera.position.z = 5;
+
+    // Ensure camera children are rendered (e.g., UI meshes or objects attached to camera)
+    this.scene.add(this.camera);
 
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -156,12 +159,60 @@ export class ARVisualizer implements ARSession {
     });
   }
 
+  /**
+   * Load a GLTF/GLB model with animations and add it to the scene. 
+   * Returns the loaded root object and animation clips.
+   */
+  protected loadGLTFModelWithAnimations(
+    url: string,
+    options: {
+      position?: THREE.Vector3 | [number, number, number];
+      rotation?: THREE.Euler | [number, number, number];
+      scale?: number | [number, number, number];
+    } = {}
+  ): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+    if (!this.scene) return Promise.reject(new Error('Scene not initialized'));
+
+    const toVector3 = (value: THREE.Vector3 | [number, number, number]): THREE.Vector3 =>
+      Array.isArray(value) ? new THREE.Vector3(...value) : value;
+
+    const toEuler = (value: THREE.Euler | [number, number, number]): THREE.Euler =>
+      Array.isArray(value) ? new THREE.Euler(...value) : value;
+
+    const loader = new GLTFLoader();
+
+    return new Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }>((resolve, reject) => {
+      loader.load(
+        url,
+        (gltf) => {
+          const model = gltf.scene;
+
+          if (options.position) model.position.copy(toVector3(options.position));
+          if (options.rotation) model.rotation.copy(toEuler(options.rotation));
+
+          if (options.scale) {
+            if (Array.isArray(options.scale)) {
+              model.scale.set(options.scale[0], options.scale[1], options.scale[2]);
+            } else {
+              model.scale.setScalar(options.scale);
+            }
+          }
+
+          this.scene?.add(model);
+          resolve({ scene: model, animations: gltf.animations || [] });
+        },
+        undefined,
+        (err) => reject(err)
+      );
+    });
+  }
+
   protected handlePointer(clientX: number, clientY: number): void {
     // Intentionally left blank: pointer events are kept for future interactions
     // Subclasses can override this method to handle pointer/tap events
   }
 
-  private animate = (): void => {
+  protected animate = (): void => {
     this.animationId = requestAnimationFrame(this.animate);
 
     if (this.renderer && this.scene && this.camera) {
