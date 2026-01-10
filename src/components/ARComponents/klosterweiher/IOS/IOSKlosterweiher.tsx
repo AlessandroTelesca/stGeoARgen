@@ -53,9 +53,6 @@ class IOSKlosterweiherARSession extends ARVisualizer {
           this.renderer.domElement.style.zIndex = '1000';
         }
 
-    
-  
-
   // Create and attach a light to the scene (not camera) for proper illumination
     this.cameraLight = new THREE.PointLight(0xffffff, 2.0, 100);
     this.cameraLight.position.set(0, 0, 0);
@@ -64,13 +61,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       
     }
 
-    
-
-  
   // Load rod model - remove from scene and attach to camera after loading
     this.loadGLTFModel(this.rodUrl, {
       // Place rod close to camera frustum
-      position: new THREE.Vector3(0, -0.5, -2),
+      position: new THREE.Vector3(3, -2, -9),
       rotation: new THREE.Euler(0, Math.PI, 0),
       scale: 1.2,
     }).then((model) => {
@@ -96,7 +90,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
         
       this.loadGLTFModelWithAnimations(fishUrl, {
         // Initialize off-screen but not extremely far
-        position: new THREE.Vector3(0, -5, -20),
+        position: new THREE.Vector3(0, -500, -20),
         rotation: new THREE.Euler(0, Math.PI / 2, 0),
         scale: 3,
       }).then(({ scene, animations }) => {
@@ -200,18 +194,18 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     })
     .to(this.rod.position, {
       // Slight move to the right
-      x: 0.6,
+      x: 6,
       duration: 0.6,
     })
     .to(this.fish.position, {
       // Bring fish into view near camera
-      y: -0.2,
-      z: -2.2,
+      y: -1.5,
+      z: -1000,
       duration: 0.5,
     })
     .to(this.fish.position, {
-      y: -0.6,
-      z: -2.2,
+      y: -2,
+      z: -500,
       duration: 0.3,
       onComplete: () => {
         this.hasCaughtFish = true;
@@ -225,13 +219,13 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     const activeMixer = this.fishMixers[this.currentFishIndex];
     activeMixer?.stopAllAction();
     this.fish.visible = false;
-    this.fish.position.set(0, -5, -20);
+    this.fish.position.set(0, -500, -1000);
     this.fish.rotation.set(0, Math.PI / 2, 0);
 
     // Select random fish
     this.currentFishIndex = Math.floor(Math.random() * this.fishes.length);
     this.fish = this.fishes[this.currentFishIndex];
-    this.fish.position.set(0, -5, -20);
+    this.fish.position.set(0, -500, -1000);
     this.fish.rotation.set(0, Math.PI / 2, 0);
     this.fish.visible = false;
 
@@ -241,7 +235,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
     if (this.rod) {
       gsap.to(this.rod.position, {
-        x: 0.2,
+        x: 3,
         duration: 0.6,
       });
     }
