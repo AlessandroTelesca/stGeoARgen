@@ -304,6 +304,13 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
     };
   }, []);
 
+  // Auto-start AR when authorized
+  useEffect(() => {
+    if (isAuthorized && !hasStarted && !isStarting) {
+      startAR();
+    }
+  }, [isAuthorized, hasStarted, isStarting]);
+
   const startAR = async () => {
     if (!containerRef.current || !videoRef.current || !overlayRootRef.current || isStarting || hasStarted) return;
     setIsStarting(true);
@@ -353,50 +360,6 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
       />
-
-      {isAuthorized && !hasStarted && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            background: 'rgba(0,0,0,0.5)',
-            pointerEvents: 'auto',
-          }}
-        >
-          <div
-            style={{
-              padding: '16px',
-              background: '#fff',
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-              minWidth: '240px',
-              textAlign: 'center',
-            }}
-          >
-            <p style={{ margin: '0 0 12px 0', fontWeight: 700 }}>Start AR Experience</p>
-            {error && <p style={{ color: '#b00020', margin: '0 0 8px 0' }}>{error}</p>}
-            <button
-              onClick={startAR}
-              disabled={isStarting}
-              style={{
-                padding: '10px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#0c690f',
-                color: '#fff',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {isStarting ? 'Starting...' : 'Start AR'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {waitingForReady && overlayRootRef.current && createPortal(
         <div
