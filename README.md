@@ -52,7 +52,7 @@ npm install
 npm run dev
 ```
 
-The development server will start at `http://localhost:5173` (Vite default).
+The development server will start at `http://localhost:3000`.
 
 ### Build for Production
 
