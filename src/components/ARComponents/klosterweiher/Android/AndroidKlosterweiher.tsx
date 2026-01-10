@@ -51,6 +51,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public hasCaughtFish = false;
   public onFishCaught?: () => void;
   public onFishReleased?: () => void;
+  public onGroundDetectedCallback?: () => void;
 
   protected initThree(): void {
     super.initThree();
@@ -122,6 +123,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     }
     
     console.log('Ground plane scanned and detected! Fishing rod and fish placed.');
+    this.onGroundDetectedCallback?.();
   }
 
   protected handlePointer(clientX: number, clientY: number): void {
@@ -255,6 +257,8 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
+  const [showFishingInstructions, setShowFishingInstructions] = useState(false);
+  const [waitingForGroundDetection, setWaitingForGroundDetection] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -281,11 +285,16 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
 
       session.onFishCaught = () => setFishCaught(true);
       session.onFishReleased = () => setFishCaught(false);
+      session.onGroundDetectedCallback = () => {
+        setWaitingForGroundDetection(false);
+        setShowFishingInstructions(true);
+      };
 
       await session.init(); // Must be called from user gesture to satisfy WebXR security
       console.log('[KlosterweiherView] AR session initialized');
       sessionRef.current = session;
       setHasStarted(true);
+      setWaitingForGroundDetection(true);
     } catch (e: any) {
       const msg = e?.message || 'Failed to start AR';
       setError(msg);
@@ -353,6 +362,72 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
         </div>
       )}
 
+      {waitingForGroundDetection && overlayRootRef.current && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: '20%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10000,
+            pointerEvents: 'none',
+            padding: '20px 28px',
+            background: 'rgba(12, 105, 15, 0.95)',
+            color: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+            fontWeight: 600,
+            fontSize: '16px',
+            textAlign: 'center',
+          }}
+        >
+          Richten sie ihre kamera auf den See um mit dem Angeln zu beginnen
+        </div>,
+        overlayRootRef.current
+      )}
+
+      {showFishingInstructions && overlayRootRef.current && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: '20%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10000,
+            pointerEvents: 'auto',
+            padding: '20px 28px',
+            background: 'rgba(12, 105, 15, 0.95)',
+            color: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
+            Tippen sie mehrmals auf ihren bildschirm um zu Angeln
+          </p>
+          <button
+            onClick={() => setShowFishingInstructions(false)}
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#fff',
+              color: '#0c690f',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            Mit dem Angeln beginnen
+          </button>
+        </div>,
+        overlayRootRef.current
+      )}
+
       {fishCaught && overlayRootRef.current && createPortal(
         <div
           style={{
@@ -377,7 +452,7 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
               cursor: 'pointer',
             }}
           >
-            Release the fish
+            Fisch wieder freilassen
           </button>
         </div>,
         overlayRootRef.current
