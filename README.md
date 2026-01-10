@@ -110,4 +110,4 @@ Private project. All rights reserved.
 
 ## Contributing
 
-Contributions welcome! Please ensure tests pass and follow the coding guidelines before submitting changes.
+Contributions are not possible at this stage.
