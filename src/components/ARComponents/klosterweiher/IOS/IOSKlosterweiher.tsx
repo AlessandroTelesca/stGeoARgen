@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import * as THREE from 'three';
 import { ARComponentBase } from '../../ARComponentBase';
 import { ARProximityGate } from '../../ARProximityGate';
 import { ARVisualizer } from '../../../../ARbackend/ARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../../data/stationsConfig';
-import gsap from 'gsap';
+import { KlosterweiherARSessionBase } from '../KlosterweiherARSessionBase';
+import { WaitingForReady, FishingInstructions, ReleaseFishButton } from '../KlosterweiherUI';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -16,35 +16,46 @@ interface ARViewProps {
 }
 
 class IOSKlosterweiherARSession extends ARVisualizer {
-  private rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
-  private fishUrls = [
-    // new URL('./../models/Forelle.glb', import.meta.url).href,
-    // new URL('./../models/Neunauge.glb', import.meta.url).href,
-    // new URL('./../models/Zander.glb', import.meta.url).href,
-    // new URL('./../models/Schleie.glb', import.meta.url).href,
-    // new URL('./../models/Döbel.glb', import.meta.url).href,
-    new URL('./../models/Rotauge.glb', import.meta.url).href,
-    // new URL('./../models/Rotfeder.glb', import.meta.url).href,
-    // new URL('./../models/Stichling.glb', import.meta.url).href,
-    // new URL('./../models/Karpfen.glb', import.meta.url).href,
-  ];
-  private waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
+  public onReadyCallback?: () => void;
 
+  // Properties from KlosterweiherARSessionBase
+  protected rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
+  protected fishUrls = [
+    new URL('./../models/Rotauge.glb', import.meta.url).href,
+  ];
+  protected waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
   public fish: THREE.Object3D | null = null;
   public fishes: THREE.Object3D[] = [];
-  private fishMixers: THREE.AnimationMixer[] = [];
-  private fishAnimations: THREE.AnimationClip[][] = [];
+  protected fishMixers: THREE.AnimationMixer[] = [];
+  protected fishAnimations: THREE.AnimationClip[][] = [];
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
-  private cameraLight: THREE.PointLight | null = null;
-  private lastFrameTime: number = 0;
-
+  protected cameraLight: THREE.PointLight | null = null;
   public tapCount = 0;
   public hasCaughtFish = false;
   public onFishCaught?: () => void;
   public onFishReleased?: () => void;
-  public onReadyCallback?: () => void;
+  private lastFrameTime: number = 0;
+
+  // Platform-specific position overrides for iOS
+  protected getRodInitialPositionX(): number { return 3; }
+  protected getRodCaughtPositionX(): number { return 6; }
+  protected getRodCaughtDuration(): number { return 0.6; }
+  protected getRodReleaseDuration(): number { return 0.6; }
+  protected getFishInitialPositionY(): number { return -500; }
+  protected getFishInitialPositionZ(): number { return -1000; }
+  protected getFishCaughtPositionY1(): number { return -1.5; }
+  protected getFishCaughtPositionZ1(): number { return -1000; }
+  protected getFishCaughtPositionY2(): number { return -2; }
+  protected getFishCaughtPositionZ2(): number { return -500; }
+
+  // Import shared methods from base
+  controlrod = KlosterweiherARSessionBase.prototype.controlrod;
+  catchfish = KlosterweiherARSessionBase.prototype.catchfish;
+  releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
+  protected playCurrentFishAnimation = KlosterweiherARSessionBase.prototype['playCurrentFishAnimation'];
+  protected updateFishMixers = KlosterweiherARSessionBase.prototype['updateFishMixers'];
 
   protected initThree(): void {
     super.initThree();
@@ -144,112 +155,6 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected handlePointer(clientX: number, clientY: number): void {
     // Allow rod control immediately (no ground detection on iOS)
     this.controlrod();
-  }
-
-  controlrod() {
-    if (!this.rod) return;
-    if (this.hasCaughtFish) return; // Wait for release before next catch
-    const tl = gsap.timeline();
-
-    this.tapCount += 1;
-    if (this.tapCount >= 5) {
-      this.catchfish();
-    }
-
-    tl.to(this.rod.rotation, {
-      x: -0.6,
-      duration: 0.5,
-    });
-
-    tl.to(this.rod.rotation, {
-      x: -1,
-      duration: 0.5,
-      delay: 0.5,
-    });
-
-    tl.to(this.rod.rotation, {
-      x: -0.8,
-      duration: 0.5,
-      delay: 0.5,
-    });
-  }
-
-  catchfish() {
-    if (!this.fish) return;
-    if (!this.rod) return;
-    const tl = gsap.timeline();
-
-    gsap.to(this.fish.rotation, {
-      y: Math.PI * 8,
-      duration: 6,
-    });
-
-    this.playCurrentFishAnimation();
-    this.fish.visible = true;
-
-    tl.to(this.rod.rotation, {
-      x: 0,
-      duration: 0.5,
-      delay: 2,
-    })
-    .to(this.rod.position, {
-      // Slight move to the right
-      x: 6,
-      duration: 0.6,
-    })
-    .to(this.fish.position, {
-      // Bring fish into view near camera
-      y: -1.5,
-      z: -1000,
-      duration: 0.5,
-    })
-    .to(this.fish.position, {
-      y: -2,
-      z: -500,
-      duration: 0.3,
-      onComplete: () => {
-        this.hasCaughtFish = true;
-        this.onFishCaught?.();
-      }
-    });
-  }
-
-  releaseCurrentFish() {
-    if (!this.fish) return;
-    const activeMixer = this.fishMixers[this.currentFishIndex];
-    activeMixer?.stopAllAction();
-    this.fish.visible = false;
-    this.fish.position.set(0, -500, -1000);
-    this.fish.rotation.set(0, Math.PI / 2, 0);
-
-    // Select random fish
-    this.currentFishIndex = Math.floor(Math.random() * this.fishes.length);
-    this.fish = this.fishes[this.currentFishIndex];
-    this.fish.position.set(0, -500, -1000);
-    this.fish.rotation.set(0, Math.PI / 2, 0);
-    this.fish.visible = false;
-
-    this.tapCount = 0;
-    this.hasCaughtFish = false;
-    this.onFishReleased?.();
-
-    if (this.rod) {
-      gsap.to(this.rod.position, {
-        x: 3,
-        duration: 0.6,
-      });
-    }
-  }
-
-  private playCurrentFishAnimation() {
-    const mixer = this.fishMixers[this.currentFishIndex];
-    const clips = this.fishAnimations[this.currentFishIndex];
-
-    if (!mixer || !clips || clips.length === 0) return;
-
-    mixer.stopAllAction();
-    const action = mixer.clipAction(clips[0]);
-    action.reset().play();
   }
 
   // Override animate to update animation mixers and light position
@@ -361,122 +266,29 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
         onNavigateProfile={onNavigateProfile}
       />
 
-      {waitingForReady && overlayRootRef.current && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: '20%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10000,
-            pointerEvents: 'auto',
-            padding: '20px 28px',
-            background: 'rgba(12, 105, 15, 0.95)',
-            color: '#fff',
-            borderRadius: '12px',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
+      {waitingForReady && overlayRootRef.current && (
+        <WaitingForReady 
+          overlayRoot={overlayRootRef.current}
+          onReady={() => {
+            sessionRef.current?.showRodAndProceed();
+            setWaitingForReady(false);
+            setShowFishingInstructions(true);
           }}
-        >
-          <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-            Richten sie ihre Kamera auf den See, um mit dem Angeln zu beginnen.
-          </p>
-          <button
-            onClick={() => {
-              sessionRef.current?.showRodAndProceed();
-              setWaitingForReady(false);
-              setShowFishingInstructions(true);
-            }}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              background: '#fff',
-              color: '#0c690f',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            }}
-          >
-            Ich sehe den See
-          </button>
-        </div>,
-        overlayRootRef.current
+        />
       )}
 
-      {showFishingInstructions && overlayRootRef.current && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: '20%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10000,
-            pointerEvents: 'auto',
-            padding: '20px 28px',
-            background: 'rgba(12, 105, 15, 0.95)',
-            color: '#fff',
-            borderRadius: '12px',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-          }}
-        >
-          <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-            Tippen sie mehrmals auf ihren bildschirm um zu Angeln
-          </p>
-          <button
-            onClick={() => setShowFishingInstructions(false)}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              background: '#fff',
-              color: '#0c690f',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            }}
-          >
-            Mit dem Angeln beginnen
-          </button>
-        </div>,
-        overlayRootRef.current
+      {showFishingInstructions && overlayRootRef.current && (
+        <FishingInstructions 
+          overlayRoot={overlayRootRef.current}
+          onStart={() => setShowFishingInstructions(false)}
+        />
       )}
 
-      {fishCaught && overlayRootRef.current && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: '66%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10000,
-            pointerEvents: 'auto',
-          }}
-        >
-          <button
-            onClick={() => sessionRef.current?.releaseCurrentFish()}
-            style={{
-              padding: '12px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#0c690f',
-              color: '#fff',
-              fontWeight: 700,
-              boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
-              cursor: 'pointer',
-            }}
-          >
-            Fisch wieder freilassen
-          </button>
-        </div>,
-        overlayRootRef.current
+      {fishCaught && overlayRootRef.current && (
+        <ReleaseFishButton 
+          overlayRoot={overlayRootRef.current}
+          onRelease={() => sessionRef.current?.releaseCurrentFish()}
+        />
       )}
     </>
   );
