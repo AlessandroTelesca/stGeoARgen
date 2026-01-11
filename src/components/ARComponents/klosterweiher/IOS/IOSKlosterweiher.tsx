@@ -5,7 +5,7 @@ import { ARProximityGate } from '../../ARProximityGate';
 import { ARVisualizer } from '../../../../ARbackend/ARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../../data/stationsConfig';
 import { KlosterweiherARSessionBase } from '../KlosterweiherARSessionBase';
-import { WaitingForReady, FishingInstructions, ReleaseFishButton } from '../KlosterweiherUI';
+import { WaitingForReady, FishingInstructions, ReleaseFishButton, FishCaughtDialog } from '../KlosterweiherUI';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -34,7 +34,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected cameraLight: THREE.PointLight | null = null;
   public tapCount = 0;
   public hasCaughtFish = false;
-  public onFishCaught?: () => void;
+  public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
   private lastFrameTime: number = 0;
 
@@ -56,6 +56,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
   protected playCurrentFishAnimation = KlosterweiherARSessionBase.prototype['playCurrentFishAnimation'];
   protected updateFishMixers = KlosterweiherARSessionBase.prototype['updateFishMixers'];
+  protected extractFishName = KlosterweiherARSessionBase.prototype['extractFishName'];
 
   protected initThree(): void {
     super.initThree();
@@ -199,6 +200,7 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
+  const [caughtFishName, setCaughtFishName] = useState<string>('');
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
 
@@ -231,7 +233,10 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
         }
       );
 
-      session.onFishCaught = () => setFishCaught(true);
+      session.onFishCaught = (fishName: string) => {
+        setFishCaught(true);
+        setCaughtFishName(fishName);
+      };
       session.onFishReleased = () => setFishCaught(false);
       session.onReadyCallback = () => {
         setWaitingForReady(false);
@@ -285,10 +290,16 @@ export const IOSKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogo
       )}
 
       {fishCaught && overlayRootRef.current && (
-        <ReleaseFishButton 
-          overlayRoot={overlayRootRef.current}
-          onRelease={() => sessionRef.current?.releaseCurrentFish()}
-        />
+        <>
+          <FishCaughtDialog 
+            overlayRoot={overlayRootRef.current}
+            fishName={caughtFishName}
+          />
+          <ReleaseFishButton 
+            overlayRoot={overlayRootRef.current}
+            onRelease={() => sessionRef.current?.releaseCurrentFish()}
+          />
+        </>
       )}
     </>
   );

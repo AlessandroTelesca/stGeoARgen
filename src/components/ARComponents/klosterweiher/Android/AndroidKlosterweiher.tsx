@@ -5,7 +5,7 @@ import { ARProximityGate } from '../../ARProximityGate';
 import { WebXRVisualizer } from '../../../../ARbackend/WebXRVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../../data/stationsConfig';
 import { KlosterweiherARSessionBase } from '../KlosterweiherARSessionBase';
-import { WaitingForGroundDetection, FishingInstructions, ReleaseFishButton } from '../KlosterweiherUI';
+import { WaitingForGroundDetection, FishingInstructions, ReleaseFishButton, FishCaughtDialog } from '../KlosterweiherUI';
 
 
 interface ARViewProps {
@@ -35,7 +35,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected cameraLight: THREE.PointLight | null = null;
   public tapCount = 0;
   public hasCaughtFish = false;
-  public onFishCaught?: () => void;
+  public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
 
   // Platform-specific position overrides for Android
@@ -56,6 +56,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
   protected playCurrentFishAnimation = KlosterweiherARSessionBase.prototype['playCurrentFishAnimation'];
   protected updateFishMixers = KlosterweiherARSessionBase.prototype['updateFishMixers'];
+  protected extractFishName = KlosterweiherARSessionBase.prototype['extractFishName'];
 
   protected initThree(): void {
     super.initThree();
@@ -154,6 +155,7 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
+  const [caughtFishName, setCaughtFishName] = useState<string>('');
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
   const [waitingForGroundDetection, setWaitingForGroundDetection] = useState(false);
 
@@ -180,7 +182,10 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
         }
       );
 
-      session.onFishCaught = () => setFishCaught(true);
+      session.onFishCaught = (fishName: string) => {
+        setFishCaught(true);
+        setCaughtFishName(fishName);
+      };
       session.onFishReleased = () => setFishCaught(false);
       session.onGroundDetectedCallback = () => {
         setWaitingForGroundDetection(false);
@@ -271,10 +276,16 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
       )}
 
       {fishCaught && overlayRootRef.current && (
-        <ReleaseFishButton 
-          overlayRoot={overlayRootRef.current}
-          onRelease={() => sessionRef.current?.releaseCurrentFish()}
-        />
+        <>
+          <FishCaughtDialog 
+            overlayRoot={overlayRootRef.current}
+            fishName={caughtFishName}
+          />
+          <ReleaseFishButton 
+            overlayRoot={overlayRootRef.current}
+            onRelease={() => sessionRef.current?.releaseCurrentFish()}
+          />
+        </>
       )}
     </>
   );

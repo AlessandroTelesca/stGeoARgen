@@ -9,15 +9,15 @@ export abstract class KlosterweiherARSessionBase {
   // Model URLs
   protected rodUrl = new URL('./models/Angel.glb', import.meta.url).href;
   protected fishUrls = [
-    // new URL('./models/Forelle.glb', import.meta.url).href,
-    // new URL('./models/Neunauge.glb', import.meta.url).href,
-    // new URL('./models/Zander.glb', import.meta.url).href,
-    // new URL('./models/Schleie.glb', import.meta.url).href,
-    // new URL('./models/Döbel.glb', import.meta.url).href,
+    new URL('./models/Forelle.glb', import.meta.url).href,
+    new URL('./models/Neunauge.glb', import.meta.url).href,
+    new URL('./models/Zander.glb', import.meta.url).href,
+    new URL('./models/Schleie.glb', import.meta.url).href,
+    new URL('./models/Döbel.glb', import.meta.url).href,
     new URL('./models/Rotauge.glb', import.meta.url).href,
-    // new URL('./models/Rotfeder.glb', import.meta.url).href,
-    // new URL('./models/Stichling.glb', import.meta.url).href,
-    // new URL('./models/Karpfen.glb', import.meta.url).href,
+    new URL('./models/Rotfeder.glb', import.meta.url).href,
+    new URL('./models/Stichling.glb', import.meta.url).href,
+    new URL('./models/Karpfen.glb', import.meta.url).href,
   ];
   protected waterUrl = new URL('./models/Wasser.glb', import.meta.url).href;
 
@@ -34,7 +34,7 @@ export abstract class KlosterweiherARSessionBase {
   // Fishing state
   public tapCount = 0;
   public hasCaughtFish = false;
-  public onFishCaught?: () => void;
+  public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
 
   /**
@@ -104,7 +104,8 @@ export abstract class KlosterweiherARSessionBase {
       duration: 0.3,
       onComplete: () => {
         this.hasCaughtFish = true;
-        this.onFishCaught?.();
+        const fishName = this.extractFishName(this.fishUrls[this.currentFishIndex]);
+        this.onFishCaught?.(fishName);
       }
     });
   }
@@ -158,6 +159,18 @@ export abstract class KlosterweiherARSessionBase {
    */
   protected updateFishMixers(deltaSeconds: number) {
     this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
+  }
+
+  /**
+   * Extract fish name from model URL
+   */
+  protected extractFishName(url: string): string {
+    // Extract filename from URL (e.g., "Rotauge.glb" from the URL)
+    const match = url.match(/([^/]+)\.glb/);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return 'Fisch';
   }
 
   // Platform-specific overridable methods for position/timing differences

@@ -164,3 +164,41 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
     overlayRoot
   );
 };
+
+interface FishCaughtDialogProps {
+  overlayRoot: HTMLDivElement;
+  fishName: string;
+}
+
+export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: '30%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 9999,
+        pointerEvents: 'none',
+        padding: '24px 32px',
+        background: 'rgba(12, 105, 15, 0.95)',
+        color: '#fff',
+        borderRadius: '16px',
+        boxShadow: '0 12px 28px rgba(0,0,0,0.4)',
+        textAlign: 'center',
+        animation: 'slideInDown 0.4s ease-out',
+      }}
+    >
+      <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
+        Glückwunsch! Sie haben einen
+      </p>
+      <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: '#fff' }}>
+        {fishName}
+      </p>
+      <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
+        gefangen!
+      </p>
+    </div>,
+    overlayRoot
+  );
+};
