@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import gsap from 'gsap';
+import * as THREE from "three";
+import gsap from "gsap";
 
 /**
  * Base class containing shared logic for both Android and iOS Klosterweiher AR sessions.
@@ -7,19 +7,19 @@ import gsap from 'gsap';
  */
 export abstract class KlosterweiherARSessionBase {
   // Model URLs
-  protected rodUrl = new URL('./models/Angel.glb', import.meta.url).href;
+  protected rodUrl = new URL("./models/Angel.glb", import.meta.url).href;
   protected fishUrls = [
-    new URL('./models/Forelle.glb', import.meta.url).href,
-    new URL('./models/Neunauge.glb', import.meta.url).href,
-    new URL('./models/Zander.glb', import.meta.url).href,
-    new URL('./models/Schleie.glb', import.meta.url).href,
-    new URL('./models/Döbel.glb', import.meta.url).href,
-    new URL('./models/Rotauge.glb', import.meta.url).href,
-    new URL('./models/Rotfeder.glb', import.meta.url).href,
-    new URL('./models/Stichling.glb', import.meta.url).href,
-    new URL('./models/Karpfen.glb', import.meta.url).href,
+    new URL("./models/Rotauge.glb", import.meta.url).href,
+    new URL("./models/Forelle.glb", import.meta.url).href,
+    // new URL('./models/Neunauge.glb', import.meta.url).href,
+    // new URL('./models/Zander.glb', import.meta.url).href,
+    // new URL('./models/Schleie.glb', import.meta.url).href,
+    // new URL('./models/Döbel.glb', import.meta.url).href,
+    // new URL('./models/Rotfeder.glb', import.meta.url).href,
+    // new URL('./models/Stichling.glb', import.meta.url).href,
+    // new URL('./models/Karpfen.glb', import.meta.url).href,
   ];
-  protected waterUrl = new URL('./models/Wasser.glb', import.meta.url).href;
+  protected waterUrl = new URL("./models/Wasser.glb", import.meta.url).href;
 
   // 3D Objects
   public fish: THREE.Object3D | null = null;
@@ -89,25 +89,27 @@ export abstract class KlosterweiherARSessionBase {
       duration: 0.5,
       delay: 2,
     })
-    .to(this.rod.position, {
-      x: this.getRodCaughtPositionX(),
-      duration: this.getRodCaughtDuration(),
-    })
-    .to(this.fish.position, {
-      y: this.getFishCaughtPositionY1(),
-      z: this.getFishCaughtPositionZ1(),
-      duration: 0.5,
-    })
-    .to(this.fish.position, {
-      y: this.getFishCaughtPositionY2(),
-      z: this.getFishCaughtPositionZ2(),
-      duration: 0.3,
-      onComplete: () => {
-        this.hasCaughtFish = true;
-        const fishName = this.extractFishName(this.fishUrls[this.currentFishIndex]);
-        this.onFishCaught?.(fishName);
-      }
-    });
+      .to(this.rod.position, {
+        x: this.getRodCaughtPositionX(),
+        duration: this.getRodCaughtDuration(),
+      })
+      .to(this.fish.position, {
+        y: this.getFishCaughtPositionY1(),
+        z: this.getFishCaughtPositionZ1(),
+        duration: 0.5,
+      })
+      .to(this.fish.position, {
+        y: this.getFishCaughtPositionY2(),
+        z: this.getFishCaughtPositionZ2(),
+        duration: 0.3,
+        onComplete: () => {
+          this.hasCaughtFish = true;
+          const fishName = this.extractFishName(
+            this.fishUrls[this.currentFishIndex],
+          );
+          this.onFishCaught?.(fishName);
+        },
+      });
   }
 
   /**
@@ -118,13 +120,35 @@ export abstract class KlosterweiherARSessionBase {
     const activeMixer = this.fishMixers[this.currentFishIndex];
     activeMixer?.stopAllAction();
     this.fish.visible = false;
-    this.fish.position.set(0, this.getFishInitialPositionY(), this.getFishInitialPositionZ());
+    this.fish.position.set(
+      0,
+      this.getFishInitialPositionY(),
+      this.getFishInitialPositionZ(),
+    );
     this.fish.rotation.set(0, Math.PI / 2, 0);
 
-    // Select random fish
-    this.currentFishIndex = Math.floor(Math.random() * this.fishes.length);
+    // Select a random fish that's different from current among loaded models
+    const loadedIndices = this.fishes
+      .map((f, i) => (f ? i : -1))
+      .filter((i) => i >= 0);
+    let newIndex = this.currentFishIndex;
+    if (loadedIndices.length > 1) {
+      do {
+        newIndex = loadedIndices[
+          Math.floor(Math.random() * loadedIndices.length)
+        ];
+      } while (newIndex === this.currentFishIndex);
+    }
+    this.currentFishIndex = newIndex;
     this.fish = this.fishes[this.currentFishIndex];
-    this.fish.position.set(0, this.getFishInitialPositionY(), this.getFishInitialPositionZ());
+    console.log(
+      `[KlosterweiherARSessionBase] Released fish. New fish index: ${this.currentFishIndex}. Total fish available: ${this.fishes.length}`,
+    );
+    this.fish.position.set(
+      0,
+      this.getFishInitialPositionY(),
+      this.getFishInitialPositionZ(),
+    );
     this.fish.rotation.set(0, Math.PI / 2, 0);
     this.fish.visible = false;
 
@@ -165,12 +189,16 @@ export abstract class KlosterweiherARSessionBase {
    * Extract fish name from model URL
    */
   protected extractFishName(url: string): string {
-    // Extract filename from URL (e.g., "Rotauge.glb" from the URL)
-    const match = url.match(/([^/]+)\.glb/);
-    if (match && match[1]) {
-      return match[1];
+    // Extract filename from URL (e.g., "Rotauge.glb" or "Rotauge-DCD9klYJ.glb")
+    const match = url.match(/([^/]+)\.glb(?:\?.*)?$/);
+    let name = match && match[1] ? match[1] : '';
+
+    // Delete everything after the first hyphen (including the hyphen)
+    if (name && name.includes('-')) {
+      name = name.split('-')[0];
     }
-    return 'Fisch';
+
+    return name || 'Fisch';
   }
 
   // Platform-specific overridable methods for position/timing differences

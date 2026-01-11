@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { ARComponentBase } from '../../ARComponentBase';
-import { ARProximityGate } from '../../ARProximityGate';
-import { WebXRVisualizer } from '../../../../ARbackend/WebXRVisualizer';
-import { AR_VIEW_STATION_MAP } from '../../../../data/stationsConfig';
-import { KlosterweiherARSessionBase } from '../KlosterweiherARSessionBase';
-import { WaitingForGroundDetection, FishingInstructions, ReleaseFishButton, FishCaughtDialog } from '../KlosterweiherUI';
-
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { ARComponentBase } from "../../ARComponentBase";
+import { ARProximityGate } from "../../ARProximityGate";
+import { WebXRVisualizer } from "../../../../ARbackend/WebXRVisualizer";
+import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
+import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
+import {
+  WaitingForGroundDetection,
+  FishingInstructions,
+  ReleaseFishButton,
+  FishCaughtDialog,
+} from "../KlosterweiherUI";
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -20,11 +24,19 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public onGroundDetectedCallback?: () => void;
 
   // Properties from KlosterweiherARSessionBase
-  protected rodUrl = new URL('./../models/Angel.glb', import.meta.url).href;
+  protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
   protected fishUrls = [
-    new URL('./../models/Rotauge.glb', import.meta.url).href,
+    new URL("./../models/Rotauge.glb", import.meta.url).href,
+    new URL("./../models/Forelle.glb", import.meta.url).href,
+    // new URL('./../models/Neunauge.glb', import.meta.url).href,
+    // new URL('./../models/Zander.glb', import.meta.url).href,
+    // new URL('./../models/Schleie.glb', import.meta.url).href,
+    // new URL('./../models/Döbel.glb', import.meta.url).href,
+    // new URL('./../models/Rotfeder.glb', import.meta.url).href,
+    // new URL('./../models/Stichling.glb', import.meta.url).href,
+    // new URL('./../models/Karpfen.glb', import.meta.url).href,
   ];
-  protected waterUrl = new URL('./../models/Wasser.glb', import.meta.url).href;
+  protected waterUrl = new URL("./../models/Wasser.glb", import.meta.url).href;
   public fish: THREE.Object3D | null = null;
   public fishes: THREE.Object3D[] = [];
   protected fishMixers: THREE.AnimationMixer[] = [];
@@ -39,24 +51,47 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public onFishReleased?: () => void;
 
   // Platform-specific position overrides for Android
-  protected getRodInitialPositionX(): number { return 5.5; }
-  protected getRodCaughtPositionX(): number { return 9; }
-  protected getRodCaughtDuration(): number { return 1; }
-  protected getRodReleaseDuration(): number { return 1; }
-  protected getFishInitialPositionY(): number { return -100; }
-  protected getFishInitialPositionZ(): number { return -1500; }
-  protected getFishCaughtPositionY1(): number { return 3; }
-  protected getFishCaughtPositionZ1(): number { return -500; }
-  protected getFishCaughtPositionY2(): number { return -5; }
-  protected getFishCaughtPositionZ2(): number { return -500; }
+  protected getRodInitialPositionX(): number {
+    return 5.5;
+  }
+  protected getRodCaughtPositionX(): number {
+    return 9;
+  }
+  protected getRodCaughtDuration(): number {
+    return 1;
+  }
+  protected getRodReleaseDuration(): number {
+    return 1;
+  }
+  protected getFishInitialPositionY(): number {
+    return -100;
+  }
+  protected getFishInitialPositionZ(): number {
+    return -1500;
+  }
+  protected getFishCaughtPositionY1(): number {
+    return 3;
+  }
+  protected getFishCaughtPositionZ1(): number {
+    return -500;
+  }
+  protected getFishCaughtPositionY2(): number {
+    return -5;
+  }
+  protected getFishCaughtPositionZ2(): number {
+    return -500;
+  }
 
   // Import shared methods from base
   controlrod = KlosterweiherARSessionBase.prototype.controlrod;
   catchfish = KlosterweiherARSessionBase.prototype.catchfish;
   releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
-  protected playCurrentFishAnimation = KlosterweiherARSessionBase.prototype['playCurrentFishAnimation'];
-  protected updateFishMixers = KlosterweiherARSessionBase.prototype['updateFishMixers'];
-  protected extractFishName = KlosterweiherARSessionBase.prototype['extractFishName'];
+  protected playCurrentFishAnimation =
+    KlosterweiherARSessionBase.prototype["playCurrentFishAnimation"];
+  protected updateFishMixers =
+    KlosterweiherARSessionBase.prototype["updateFishMixers"];
+  protected extractFishName =
+    KlosterweiherARSessionBase.prototype["extractFishName"];
 
   protected initThree(): void {
     super.initThree();
@@ -69,13 +104,15 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       position: new THREE.Vector3(3, -6, -20),
       rotation: new THREE.Euler(0, Math.PI, 0),
       scale: 1.2,
-    }).then((model) => {
-      this.rod = model || null;
-      if (this.rod) {
-        this.rod.parent = this.camera
-        this.rod.visible = false; // Hide until ground is detected
-      }
-    }).catch((err) => console.error('Rod model failed to load', err));
+    })
+      .then((model) => {
+        this.rod = model || null;
+        if (this.rod) {
+          this.rod.parent = this.camera;
+          this.rod.visible = false; // Hide until ground is detected
+        }
+      })
+      .catch((err) => console.error("Rod model failed to load", err));
 
     // Load all fish models
     this.fishUrls.forEach((fishUrl, index) => {
@@ -83,34 +120,43 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
         position: new THREE.Vector3(0, -100, -1500),
         rotation: new THREE.Euler(0, Math.PI / 2, 0),
         scale: 3,
-      }).then(({ scene, animations }) => {
-        const fishModel = scene || null;
-        if (fishModel) {
-          fishModel.parent = this.camera;
-          fishModel.visible = false;
-          this.fishes.push(fishModel);
-          this.fishAnimations.push(animations || []);
-          this.fishMixers.push(new THREE.AnimationMixer(fishModel));
-          if (index === 0) {
-            this.fish = fishModel; // Set first fish as current
+      })
+        .then(({ scene, animations }) => {
+          const fishModel = scene || null;
+          if (fishModel) {
+            fishModel.parent = this.camera;
+            fishModel.visible = false;
+            this.fishes[index] = fishModel;
+            this.fishAnimations[index] = animations || [];
+            this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
+            console.log(
+              `[AndroidKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
+            );
+            if (index === 0) {
+              this.fish = fishModel; // Set first fish as current
+              this.currentFishIndex = 0;
+            }
           }
-        }
-      }).catch((err) => console.error(`Fish model ${index} failed to load`, err));
+        })
+        .catch((err) =>
+          console.error(`Fish model ${index} failed to load`, err),
+        );
     });
 
     // Add water model
     this.loadGLTFModel(this.waterUrl, {
       scale: 10,
-    }).then((model) =>{
-      this.water = model || null;
-            if (this.water) {
-        this.water.visible = false;
-        this.water.traverse((child) => {
-          if (child instanceof THREE.Mesh)
-          child.material.opacity = 0.02
-        });
-      }
-    }).catch((err) => console.error('Water model failed to load', err));
+    })
+      .then((model) => {
+        this.water = model || null;
+        if (this.water) {
+          this.water.visible = false;
+          this.water.traverse((child) => {
+            if (child instanceof THREE.Mesh) child.material.opacity = 0.02;
+          });
+        }
+      })
+      .catch((err) => console.error("Water model failed to load", err));
   }
 
   // Override to handle WebXR ground detection automatically
@@ -118,7 +164,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     if (this.rod) {
       this.rod.visible = true;
     }
-    
+
     // Place water on the ground
     if (this.water) {
       this.water.position.y = -500;
@@ -126,15 +172,17 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       this.water.scale.z = 20;
       this.water.visible = false; //Change to true if water should be visible
     }
-    
-    console.log('Ground plane scanned and detected! Fishing rod and fish placed.');
+
+    console.log(
+      "Ground plane scanned and detected! Fishing rod and fish placed.",
+    );
     this.onGroundDetectedCallback?.();
   }
 
   protected handlePointer(clientX: number, clientY: number): void {
     // Only allow rod control after ground is detected via WebXR
     if (!this.isGroundDetected) {
-      console.log('Waiting for ground plane detection...');
+      console.log("Waiting for ground plane detection...");
       return;
     }
 
@@ -146,7 +194,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   }
 }
 
-export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: ARViewProps) => {
+export const AndroidKlosterweiherView = ({
+  onNavigateHome,
+  username,
+  onLogin,
+  onLogout,
+  onNavigateProfile,
+}: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<AndroidKlosterweiherARSession | null>(null);
@@ -155,9 +209,10 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
-  const [caughtFishName, setCaughtFishName] = useState<string>('');
+  const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
-  const [waitingForGroundDetection, setWaitingForGroundDetection] = useState(false);
+  const [waitingForGroundDetection, setWaitingForGroundDetection] =
+    useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -167,20 +222,23 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   }, []);
 
   const startAR = async () => {
-    if (!containerRef.current || !overlayRootRef.current || isStarting || hasStarted) return;
+    if (
+      !containerRef.current ||
+      !overlayRootRef.current ||
+      isStarting ||
+      hasStarted
+    )
+      return;
     setIsStarting(true);
     setError(null);
 
     try {
-      console.log('[KlosterweiherView] Initializing AR session...');
-      const session = new AndroidKlosterweiherARSession(
-        containerRef.current,
-        {
-          useWebXR: true,
-          domOverlayRoot: overlayRootRef.current,
-          onError: (e) => console.error('AR init failed', e),
-        }
-      );
+      console.log("[KlosterweiherView] Initializing AR session...");
+      const session = new AndroidKlosterweiherARSession(containerRef.current, {
+        useWebXR: true,
+        domOverlayRoot: overlayRootRef.current,
+        onError: (e) => console.error("AR init failed", e),
+      });
 
       session.onFishCaught = (fishName: string) => {
         setFishCaught(true);
@@ -193,14 +251,14 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
       };
 
       await session.init(); // Must be called from user gesture to satisfy WebXR security
-      console.log('[KlosterweiherView] AR session initialized');
+      console.log("[KlosterweiherView] AR session initialized");
       sessionRef.current = session;
       setHasStarted(true);
       setWaitingForGroundDetection(true);
     } catch (e: any) {
-      const msg = e?.message || 'Failed to start AR';
+      const msg = e?.message || "Failed to start AR";
       setError(msg);
-      console.error('[KlosterweiherView] AR start failed', e);
+      console.error("[KlosterweiherView] AR start failed", e);
     } finally {
       setIsStarting(false);
     }
@@ -223,42 +281,46 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
       {isAuthorized && !hasStarted && (
         <div
           style={{
-            position: 'fixed',
+            position: "fixed",
             inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 9999,
-            background: 'rgba(0,0,0,0.5)',
-            pointerEvents: 'auto',
+            background: "rgba(0,0,0,0.5)",
+            pointerEvents: "auto",
           }}
         >
           <div
             style={{
-              padding: '16px',
-              background: '#fff',
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-              minWidth: '240px',
-              textAlign: 'center',
+              padding: "16px",
+              background: "#fff",
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+              minWidth: "240px",
+              textAlign: "center",
             }}
           >
-            <p style={{ margin: '0 0 12px 0', fontWeight: 700 }}>Start AR to scan the ground</p>
-            {error && <p style={{ color: '#b00020', margin: '0 0 8px 0' }}>{error}</p>}
+            <p style={{ margin: "0 0 12px 0", fontWeight: 700 }}>
+              Start AR to scan the ground
+            </p>
+            {error && (
+              <p style={{ color: "#b00020", margin: "0 0 8px 0" }}>{error}</p>
+            )}
             <button
               onClick={startAR}
               disabled={isStarting}
               style={{
-                padding: '10px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#0c690f',
-                color: '#fff',
+                padding: "10px 16px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#0c690f",
+                color: "#fff",
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
             >
-              {isStarting ? 'Starting...' : 'Start AR'}
+              {isStarting ? "Starting..." : "Start AR"}
             </button>
           </div>
         </div>
@@ -269,7 +331,7 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
       )}
 
       {showFishingInstructions && overlayRootRef.current && (
-        <FishingInstructions 
+        <FishingInstructions
           overlayRoot={overlayRootRef.current}
           onStart={() => setShowFishingInstructions(false)}
         />
@@ -277,11 +339,11 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
 
       {fishCaught && overlayRootRef.current && (
         <>
-          <FishCaughtDialog 
+          <FishCaughtDialog
             overlayRoot={overlayRootRef.current}
             fishName={caughtFishName}
           />
-          <ReleaseFishButton 
+          <ReleaseFishButton
             overlayRoot={overlayRootRef.current}
             onRelease={() => sessionRef.current?.releaseCurrentFish()}
           />
@@ -293,7 +355,7 @@ export const AndroidKlosterweiherView = ({ onNavigateHome, username, onLogin, on
   // Wrap with Proximity Gate - checks if user is within 100m of station
   return (
     <ARProximityGate
-      stationId={AR_VIEW_STATION_MAP['klosterweiher']}
+      stationId={AR_VIEW_STATION_MAP["klosterweiher"]}
       stationName="Klosterweiher"
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
