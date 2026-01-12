@@ -65,10 +65,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     return 0.6;
   }
   protected getFishInitialPositionY(): number {
-    return -500;
+    return -1500;
   }
   protected getFishInitialPositionZ(): number {
-    return -1000;
+    return -1500;
   }
   protected getFishCaughtPositionY1(): number {
     return -1.5;

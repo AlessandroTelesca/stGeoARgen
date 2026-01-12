@@ -64,7 +64,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     return 1;
   }
   protected getFishInitialPositionY(): number {
-    return -100;
+    return -1500;
   }
   protected getFishInitialPositionZ(): number {
     return -1500;
