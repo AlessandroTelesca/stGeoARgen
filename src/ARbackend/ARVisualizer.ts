@@ -13,6 +13,7 @@ export interface ARInitOptions {
   onCubeHit?: (intersection: THREE.Intersection) => void;
 }
 
+<<<<<<< Updated upstream
 export const initAR = async (
   container: HTMLDivElement,
   videoElement: HTMLVideoElement,
@@ -27,11 +28,29 @@ export const initAR = async (
   let stream: MediaStream | null = null;
   let raycaster: THREE.Raycaster;
   let pointer: THREE.Vector2;
+=======
+export class ARVisualizer implements ARSession {
+  protected renderer: THREE.WebGLRenderer | null = null;
+  protected scene: THREE.Scene | null = null;
+  protected camera: THREE.PerspectiveCamera | null = null;
+  protected animationId: number | null = null;
+  private stream: MediaStream | null = null;
+  private raycaster: THREE.Raycaster;
+  private pointer: THREE.Vector2;
+  private container: HTMLDivElement;
+  protected videoElement: HTMLVideoElement;
+  private options: ARInitOptions;
+>>>>>>> Stashed changes
 
   // Initialize Camera
   const initCamera = async () => {
     try {
+<<<<<<< Updated upstream
       stream = await navigator.mediaDevices.getUserMedia({
+=======
+      console.log('[ARVisualizer] Requesting camera access...');
+      this.stream = await navigator.mediaDevices.getUserMedia({
+>>>>>>> Stashed changes
         video: {
           facingMode: 'environment',
           width: { ideal: 1280 },
@@ -185,11 +204,21 @@ export const initAR = async (
         renderer.domElement.parentNode.removeChild(renderer.domElement);
     }
 
+<<<<<<< Updated upstream
     if (cube) {
       cube.geometry.dispose();
       if (Array.isArray(cube.material)) cube.material.forEach((m) => m.dispose());
       else cube.material.dispose();
     }
+=======
+    window.removeEventListener('resize', this.handleResize);
+  }
+
+  public getVideoElement(): HTMLVideoElement {
+    return this.videoElement;
+  }
+}
+>>>>>>> Stashed changes
 
     window.removeEventListener('resize', handleResize);
   };
