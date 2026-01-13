@@ -27,11 +27,11 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
-    new URL("./../models/Forelle.glb", import.meta.url).href,
+    // new URL("./../models/Forelle.glb", import.meta.url).href,
     // new URL('./../models/Neunauge.glb', import.meta.url).href,
-    // new URL('./../models/Zander.glb', import.meta.url).href,
+    new URL('./../models/Zander.glb', import.meta.url).href,
     // new URL('./../models/Schleie.glb', import.meta.url).href,
-    // new URL('./../models/Döbel.glb', import.meta.url).href,
+    new URL('./../models/Doebel.glb', import.meta.url).href,
     // new URL('./../models/Rotfeder.glb', import.meta.url).href,
     // new URL('./../models/Stichling.glb', import.meta.url).href,
     // new URL('./../models/Karpfen.glb', import.meta.url).href,

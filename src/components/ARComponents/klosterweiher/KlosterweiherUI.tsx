@@ -1,5 +1,32 @@
 import { createPortal } from 'react-dom';
 
+// Fish gender mapping for correct German articles
+const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
+  'Rotauge': 'neuter',    // das Rotauge
+  'Zander': 'male',       // der Zander
+  'Doebel': 'male',       // der Döbel
+  'Forelle': 'female',    // die Forelle
+  'Neunauge': 'neuter',   // das Neunauge
+  'Schleie': 'female',    // die Schleie
+  'Rotfeder': 'female',   // die Rotfeder
+  'Stichling': 'male',    // der Stichling
+  'Karpfen': 'male',      // der Karpfen
+};
+
+const getArticle = (fishName: string): string => {
+  const gender = FISH_GENDERS[fishName] || 'male';
+  switch (gender) {
+    case 'male':
+      return 'einen';
+    case 'female':
+      return 'eine';
+    case 'neuter':
+      return 'ein';
+    default:
+      return 'einen';
+  }
+};
+
 interface WaitingForGroundProps {
   overlayRoot: HTMLDivElement;
 }
@@ -171,6 +198,8 @@ interface FishCaughtDialogProps {
 }
 
 export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
+  const article = getArticle(fishName);
+  
   return createPortal(
     <div
       style={{
@@ -190,7 +219,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       }}
     >
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        Glückwunsch! Sie haben einen
+        Glückwunsch! Sie haben {article}
       </p>
       <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: '#fff' }}>
         {fishName}

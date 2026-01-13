@@ -10,11 +10,11 @@ export abstract class KlosterweiherARSessionBase {
   protected rodUrl = new URL("./models/Angel.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./models/Rotauge.glb", import.meta.url).href,
-    new URL("./models/Forelle.glb", import.meta.url).href,
+    // new URL("./models/Forelle.glb", import.meta.url).href,
     // new URL('./models/Neunauge.glb', import.meta.url).href,
-    // new URL('./models/Zander.glb', import.meta.url).href,
+    new URL('./models/Zander.glb', import.meta.url).href,
     // new URL('./models/Schleie.glb', import.meta.url).href,
-    // new URL('./models/Döbel.glb', import.meta.url).href,
+    new URL('./models/Doebel.glb', import.meta.url).href,
     // new URL('./models/Rotfeder.glb', import.meta.url).href,
     // new URL('./models/Stichling.glb', import.meta.url).href,
     // new URL('./models/Karpfen.glb', import.meta.url).href,
@@ -189,7 +189,8 @@ export abstract class KlosterweiherARSessionBase {
    * Extract fish name from model URL
    */
   protected extractFishName(url: string): string {
-    // Extract filename from URL (e.g., "Rotauge.glb" or "Rotauge-DCD9klYJ.glb")
+    // Extract filename from URL (e.g., "Rotauge.glb" or "Rotauge-DCD9klYJ.glb")    
+
     const match = url.match(/([^/]+)\.glb(?:\?.*)?$/);
     let name = match && match[1] ? match[1] : '';
 
@@ -197,7 +198,9 @@ export abstract class KlosterweiherARSessionBase {
     if (name && name.includes('-')) {
       name = name.split('-')[0];
     }
-
+    if (name == "Doebel") {
+      name = "Döbel";
+    }
     return name || 'Fisch';
   }
 
