@@ -50,6 +50,14 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
 
+  // Orbit controls for caught fish
+  protected orbitEnabled = false;
+  protected orbitStartX = 0;
+  protected orbitStartY = 0;
+  protected fishRotationVelocity = { x: 0, y: 0 };
+  protected lastOrbitTime = Date.now();
+  protected fishBeingRotated = false;
+
   // Platform-specific position overrides for Android
   protected getRodInitialPositionX(): number {
     return 5.5;
@@ -92,9 +100,52 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     KlosterweiherARSessionBase.prototype["updateFishMixers"];
   protected extractFishName =
     KlosterweiherARSessionBase.prototype["extractFishName"];
+  protected startOrbitControl =
+    KlosterweiherARSessionBase.prototype["startOrbitControl"];
+  protected updateOrbitControl =
+    KlosterweiherARSessionBase.prototype["updateOrbitControl"];
+  protected endOrbitControl =
+    KlosterweiherARSessionBase.prototype["endOrbitControl"];
+  protected applyOrbitMomentum =
+    KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
+
+  private setupOrbitControlListeners(): void {
+    if (!this.renderer) return;
+
+    const onMouseMove = (event: MouseEvent) => {
+      this.handlePointerMove(event.clientX, event.clientY);
+    };
+    const onMouseUp = () => {
+      this.handlePointerUp();
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length > 0) {
+        this.handlePointerMove(event.touches[0].clientX, event.touches[0].clientY);
+      }
+    };
+    const onTouchEnd = () => {
+      this.handlePointerUp();
+    };
+
+    this.renderer.domElement.addEventListener('mousemove', onMouseMove);
+    this.renderer.domElement.addEventListener('mouseup', onMouseUp);
+    this.renderer.domElement.addEventListener('touchmove', onTouchMove);
+    this.renderer.domElement.addEventListener('touchend', onTouchEnd);
+
+    // Store for cleanup
+    (this.renderer.domElement as any)._orbitControlHandlers = {
+      onMouseMove,
+      onMouseUp,
+      onTouchMove,
+      onTouchEnd,
+    };
+  }
 
   protected initThree(): void {
     super.initThree();
+
+    // Setup additional pointer handlers for orbit controls
+    this.setupOrbitControlListeners();
 
     // Create and attach a light to the camera that follows it
     this.cameraLight = new THREE.PointLight(0xffffff, 1.5, 100);
@@ -186,11 +237,40 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       return;
     }
 
-    this.controlrod();
+    // If fish is caught, start orbit control; otherwise, cast rod
+    if (this.hasCaughtFish) {
+      this.startOrbitControl(clientX, clientY);
+    } else {
+      this.controlrod();
+    }
+  }
+
+  protected handlePointerMove(clientX: number, clientY: number): void {
+    if (!this.isGroundDetected) return;
+    this.updateOrbitControl(clientX, clientY);
+  }
+
+  protected handlePointerUp(): void {
+    this.endOrbitControl();
+  }
+
+  stop(): void {
+    // Cleanup orbit control listeners before calling parent stop
+    if (this.renderer) {
+      const handlers = (this.renderer.domElement as any)._orbitControlHandlers;
+      if (handlers) {
+        this.renderer.domElement.removeEventListener('mousemove', handlers.onMouseMove);
+        this.renderer.domElement.removeEventListener('mouseup', handlers.onMouseUp);
+        this.renderer.domElement.removeEventListener('touchmove', handlers.onTouchMove);
+        this.renderer.domElement.removeEventListener('touchend', handlers.onTouchEnd);
+      }
+    }
+    super.stop();
   }
 
   protected onXRFrameUpdate(deltaSeconds: number): void {
     this.updateFishMixers(deltaSeconds);
+    this.applyOrbitMomentum(deltaSeconds);
   }
 }
 

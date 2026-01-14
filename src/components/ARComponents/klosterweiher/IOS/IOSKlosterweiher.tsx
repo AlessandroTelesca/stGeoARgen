@@ -51,6 +51,14 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   public onFishReleased?: () => void;
   private lastFrameTime: number = 0;
 
+  // Orbit controls for caught fish
+  protected orbitEnabled = false;
+  protected orbitStartX = 0;
+  protected orbitStartY = 0;
+  protected fishRotationVelocity = { x: 0, y: 0 };
+  protected lastOrbitTime = Date.now();
+  protected fishBeingRotated = false;
+
   // Platform-specific position overrides for iOS
   protected getRodInitialPositionX(): number {
     return 3;
@@ -93,9 +101,53 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     KlosterweiherARSessionBase.prototype["updateFishMixers"];
   protected extractFishName =
     KlosterweiherARSessionBase.prototype["extractFishName"];
+  protected startOrbitControl =
+    KlosterweiherARSessionBase.prototype["startOrbitControl"];
+  protected updateOrbitControl =
+    KlosterweiherARSessionBase.prototype["updateOrbitControl"];
+  protected endOrbitControl =
+    KlosterweiherARSessionBase.prototype["endOrbitControl"];
+  protected applyOrbitMomentum =
+    KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
+
+  private setupOrbitControlListeners(): void {
+    if (!this.renderer) return;
+
+    const onMouseMove = (event: MouseEvent) => {
+      this.handlePointerMove(event.clientX, event.clientY);
+    };
+    const onMouseUp = () => {
+      this.handlePointerUp();
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length > 0) {
+        this.handlePointerMove(event.touches[0].clientX, event.touches[0].clientY);
+      }
+    };
+    const onTouchEnd = () => {
+      this.handlePointerUp();
+    };
+
+    this.renderer.domElement.addEventListener('mousemove', onMouseMove);
+    this.renderer.domElement.addEventListener('mouseup', onMouseUp);
+    this.renderer.domElement.addEventListener('touchmove', onTouchMove);
+    this.renderer.domElement.addEventListener('touchend', onTouchEnd);
+
+    // Store for cleanup
+    (this.renderer.domElement as any)._orbitControlHandlers = {
+      onMouseMove,
+      onMouseUp,
+      onTouchMove,
+      onTouchEnd,
+    };
+  }
 
   protected initThree(): void {
     super.initThree();
+
+    // Setup additional pointer handlers for orbit controls
+    this.setupOrbitControlListeners();
+
     // Ensure the 3D canvas renders above the video element
     if (this.renderer) {
       this.renderer.domElement.style.zIndex = "1000";
@@ -194,8 +246,20 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   }
 
   protected handlePointer(clientX: number, clientY: number): void {
-    // Allow rod control immediately (no ground detection on iOS)
-    this.controlrod();
+    // If fish is caught, start orbit control; otherwise, cast rod
+    if (this.hasCaughtFish) {
+      this.startOrbitControl(clientX, clientY);
+    } else {
+      this.controlrod();
+    }
+  }
+
+  protected handlePointerMove(clientX: number, clientY: number): void {
+    this.updateOrbitControl(clientX, clientY);
+  }
+
+  protected handlePointerUp(): void {
+    this.endOrbitControl();
   }
 
   // Override animate to update animation mixers and light position
@@ -212,6 +276,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     if (deltaSeconds > 0 && deltaSeconds < 1) {
       // Cap delta to prevent huge jumps
       this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
+      this.applyOrbitMomentum(deltaSeconds);
     }
 
     // Update light position to follow camera
@@ -225,6 +290,20 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       this.renderer.render(this.scene, this.camera);
     }
   };
+
+  stop(): void {
+    // Cleanup orbit control listeners before calling parent stop
+    if (this.renderer) {
+      const handlers = (this.renderer.domElement as any)._orbitControlHandlers;
+      if (handlers) {
+        this.renderer.domElement.removeEventListener('mousemove', handlers.onMouseMove);
+        this.renderer.domElement.removeEventListener('mouseup', handlers.onMouseUp);
+        this.renderer.domElement.removeEventListener('touchmove', handlers.onTouchMove);
+        this.renderer.domElement.removeEventListener('touchend', handlers.onTouchEnd);
+      }
+    }
+    super.stop();
+  }
 
   async init(): Promise<void> {
     await super.init();

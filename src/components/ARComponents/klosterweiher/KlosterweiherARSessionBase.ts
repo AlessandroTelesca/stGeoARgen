@@ -37,6 +37,14 @@ export abstract class KlosterweiherARSessionBase {
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
 
+  // Orbit controls for caught fish
+  protected orbitEnabled = false;
+  protected orbitStartX = 0;
+  protected orbitStartY = 0;
+  protected fishRotationVelocity = { x: 0, y: 0 };
+  protected lastOrbitTime = Date.now();
+  protected fishBeingRotated = false;
+
   /**
    * Controls the fishing rod animation when user taps
    */
@@ -81,7 +89,10 @@ export abstract class KlosterweiherARSessionBase {
       duration: 6,
     });
 
-    this.playCurrentFishAnimation();
+    // Only play animation if fish hasn't been rotated yet
+    if (!this.fishBeingRotated) {
+      this.playCurrentFishAnimation();
+    }
     this.fish.visible = true;
 
     tl.to(this.rod.rotation, {
@@ -154,6 +165,7 @@ export abstract class KlosterweiherARSessionBase {
 
     this.tapCount = 0;
     this.hasCaughtFish = false;
+    this.fishBeingRotated = false;
     this.onFishReleased?.();
 
     if (this.rod) {
@@ -183,6 +195,79 @@ export abstract class KlosterweiherARSessionBase {
    */
   protected updateFishMixers(deltaSeconds: number) {
     this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
+  }
+
+  /**
+   * Handle orbit control start (touch/mouse down)
+   */
+  protected startOrbitControl(clientX: number, clientY: number): void {
+    if (!this.hasCaughtFish || !this.fish) return;
+    this.orbitEnabled = true;
+    this.orbitStartX = clientX;
+    this.orbitStartY = clientY;
+    this.lastOrbitTime = Date.now();
+
+    // Stop fish animation when user starts rotating
+    if (!this.fishBeingRotated) {
+      this.fishBeingRotated = true;
+      const activeMixer = this.fishMixers[this.currentFishIndex];
+      activeMixer?.stopAllAction();
+    }
+  }
+
+  /**
+   * Handle orbit control movement (touch/mouse move)
+   */
+  protected updateOrbitControl(clientX: number, clientY: number): void {
+    if (!this.orbitEnabled || !this.fish) return;
+
+    const deltaX = clientX - this.orbitStartX;
+    const deltaY = clientY - this.orbitStartY;
+    const sensitivity = 0.005;
+
+    // Calculate velocity for momentum
+    const now = Date.now();
+    const timeDelta = Math.max(1, now - this.lastOrbitTime) / 1000;
+    this.fishRotationVelocity.y = (deltaX * sensitivity) / timeDelta;
+    this.fishRotationVelocity.x = (deltaY * sensitivity) / timeDelta;
+
+    // Apply rotation to fish
+    this.fish.rotation.y += deltaX * sensitivity;
+    this.fish.rotation.x += deltaY * sensitivity;
+
+    // Clamp x rotation to prevent flipping
+    this.fish.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.fish.rotation.x));
+
+    this.orbitStartX = clientX;
+    this.orbitStartY = clientY;
+    this.lastOrbitTime = now;
+  }
+
+  /**
+   * Handle orbit control end (touch/mouse up)
+   */
+  protected endOrbitControl(): void {
+    this.orbitEnabled = false;
+  }
+
+  /**
+   * Apply momentum/inertia to the fish rotation
+   */
+  protected applyOrbitMomentum(deltaSeconds: number): void {
+    if (!this.fish || this.orbitEnabled) return;
+
+    const friction = 0.95; // Friction coefficient
+    if (Math.abs(this.fishRotationVelocity.x) > 0.001 || Math.abs(this.fishRotationVelocity.y) > 0.001) {
+      this.fish.rotation.y += this.fishRotationVelocity.y * deltaSeconds;
+      this.fish.rotation.x += this.fishRotationVelocity.x * deltaSeconds;
+
+      // Apply friction
+      this.fishRotationVelocity.x *= friction;
+      this.fishRotationVelocity.y *= friction;
+
+      // Clamp x rotation
+      this.fish.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.fish.rotation.x));
+    }
   }
 
   /**
