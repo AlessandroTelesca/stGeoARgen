@@ -1,6 +1,7 @@
 import { ArrowRight, MapPin, Trophy, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useTranslation } from 'react-i18next';
 
 interface PathCardProps {
   id: string;
@@ -28,6 +29,7 @@ export function PathCard({
   difficulty,
   onClick,
 }: PathCardProps) {
+  const { t } = useTranslation();
   const progress = (completedStations / totalStations) * 100;
   const isStarted = completedStations > 0;
   const isCompleted = completedStations === totalStations;
@@ -80,12 +82,12 @@ export function PathCard({
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center p-2 bg-muted/50 rounded-lg">
             <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Stationen</p>
+            <p className="text-xs text-muted-foreground">{t('pathCard.stations')}</p>
             <p className="text-sm font-semibold">{completedStations}/{totalStations}</p>
           </div>
           <div className="text-center p-2 bg-muted/50 rounded-lg">
             <Trophy className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Punkte</p>
+            <p className="text-xs text-muted-foreground">{t('pathCard.points')}</p>
             <p className="text-sm font-semibold">{earnedPoints}/{totalPoints}</p>
           </div>
           <div className="text-center p-2 bg-muted/50 rounded-lg">

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { StationCard } from './StationCard';
 import { ProgressBar } from './ProgressBar';
 import { Input } from './ui/input';
+import { useTranslation } from 'react-i18next';
 
 interface Station {
   id: number;
@@ -51,6 +52,7 @@ export function PathView({
   onBack,
   userProgress,
 }: PathViewProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -142,9 +144,9 @@ export function PathView({
         >
           <NavigationIcon className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-sm mb-1">Freie Stationswahl</h4>
+            <h4 className="font-semibold text-sm mb-1">{t('pathView.freeChoice')}</h4>
             <p className="text-sm text-muted-foreground">
-              Du kannst die Stationen in beliebiger Reihenfolge besuchen. Starte wo du möchtest!
+              {t('pathView.freeChoiceDescription')}
             </p>
           </div>
         </motion.div>
@@ -161,7 +163,7 @@ export function PathView({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Station suchen..."
+              placeholder={t('pathView.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12"
@@ -172,11 +174,11 @@ export function PathView({
         {/* Stations Grid */}
         <div>
           <h3 className="font-semibold mb-4">
-            {searchQuery ? `Gefundene Stationen (${processedStations.length})` : `Alle Stationen (${stations.length})`}
+            {searchQuery ? t('pathView.foundStations', { count: processedStations.length }) : t('pathView.allStations', { count: stations.length })}
           </h3>
           {processedStations.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Keine Stationen gefunden.</p>
+              <p className="text-muted-foreground">{t('pathView.noStations')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
