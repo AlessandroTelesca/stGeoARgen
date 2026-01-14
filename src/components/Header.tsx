@@ -1,6 +1,7 @@
 import { Menu, X, Home, Map, QrCode, Settings, Gift, User, ChevronDown, LogIn, UserPlus, LogOut, MapPin, TrendingUp, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   title: string;
@@ -12,6 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, onNavigate, currentView, username, onLogin, onLogout }: HeaderProps) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -26,11 +28,11 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
   };
 
   const menuItems = [
-    { id: 'home', label: 'Startseite', Icon: Home },
-    { id: 'paths', label: 'Themenpfade', Icon: Map },
-    { id: 'rewards', label: 'Belohnungen', Icon: Gift },
-    { id: 'qr-scanner', label: 'QR Scanner', Icon: QrCode },
-    { id: 'settings', label: 'Einstellungen', Icon: Settings },
+    { id: 'home', label: t('header.home'), Icon: Home },
+    { id: 'paths', label: t('header.paths'), Icon: Map },
+    { id: 'rewards', label: t('header.rewards'), Icon: Gift },
+    { id: 'qr-scanner', label: t('header.qrScanner'), Icon: QrCode },
+    { id: 'settings', label: t('header.settings'), Icon: Settings },
   ];
 
   const handleNavigate = (view: string) => {

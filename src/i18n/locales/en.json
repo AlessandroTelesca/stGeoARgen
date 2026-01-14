@@ -1,0 +1,228 @@
+{
+  "app": {
+    "title": "St.GeoARgen"
+  },
+  "header": {
+    "home": "Home",
+    "paths": "Theme Paths",
+    "rewards": "Rewards",
+    "qrScanner": "QR Scanner",
+    "settings": "Settings",
+    "profile": "Profile",
+    "points": "Points",
+    "stations": "Stations",
+    "progress": "Progress"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "startJourney": "Start your discovery journey",
+    "points": "Points",
+    "completedPaths": "Completed Paths",
+    "stationsExplored": "{{completed}} of {{total}} stations explored",
+    "allStationsCompleted": "Congratulations! All stations explored!",
+    "stationsRemaining": "{{remaining}} more stations to discover!",
+    "scanQR": "Scan QR Code",
+    "scanQRDescription": "Scan a QR code at a station to get started",
+    "explorePaths": "Explore Paths",
+    "explorePathsDescription": "Choose a theme path and start your adventure",
+    "nextVoucher": "{{points}} more points until next voucher",
+    "redeemPoints": "Redeem {{points}} points"
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Welcome to St.Georgen!",
+      "description": "I'm Georgi, your dragon guide. Together we'll discover St.Georgen on exciting theme paths full of history, culture, and adventure!",
+      "georgiMessage": "Hey! Ready for an unforgettable journey of discovery?"
+    },
+    "step2": {
+      "title": "Choose Your Theme Path",
+      "description": "Pick a theme path that interests you. Each path leads you to special places in St.Georgen - whether historic sights, nature experiences, or cultural highlights!",
+      "georgiMessage": "The tourist theme path is perfect for starting!"
+    },
+    "step3": {
+      "title": "Experience AR at Stations",
+      "description": "Visit the stations in any order. At each station, an exciting AR experience awaits you - discover interactive content, solve quiz questions, and collect points!",
+      "georgiMessage": "The nearest stations will always be shown first!"
+    },
+    "step4": {
+      "title": "Claim Your Rewards",
+      "description": "With collected points, you unlock vouchers that you can redeem at real locations in St.Georgen - cafés, restaurants, museums, and more!",
+      "georgiMessage": "Collect points diligently and enjoy great rewards on-site!"
+    },
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Let's go!"
+  },
+  "pathView": {
+    "freeChoice": "Free Station Choice",
+    "freeChoiceDescription": "You can visit the stations in any order. Start wherever you like!",
+    "searchPlaceholder": "Search station...",
+    "foundStations": "Stations found ({{count}})",
+    "allStations": "All Stations ({{count}})",
+    "noStations": "No stations found."
+  },
+  "stationsView": {
+    "allStations": "All stations in St.Georgen. Choose one and start your adventure!",
+    "allCompleted": "Wow! You've visited all stations!",
+    "progressMessage": "You've already visited {{completed}} of {{total}} stations. Keep it up!",
+    "searchPlaceholder": "Search station or path...",
+    "noStations": "No stations found",
+    "total": "Total",
+    "completed": "Completed",
+    "available": "Available"
+  },
+  "stationDetail": {
+    "points": "Points",
+    "navigateToStation": "Navigate to station",
+    "distanceToStation": "Distance to station",
+    "startAR": "Start AR Experience",
+    "closeEnough": "You're close enough to the station. Start the AR experience now and discover more about this place.",
+    "navigation": "Navigation to station",
+    "noARExperience": "This station has no AR experience. Visit it on-site for more information.",
+    "completed": "Station Completed",
+    "completedDescription": "You've already visited this station and collected {{points}} points.",
+    "visitForInfo": "Visit this station on-site for more information!"
+  },
+  "pathsOverview": {
+    "allPaths": "All Paths",
+    "pathsAvailable": "Paths available",
+    "pointsCollected": "Points collected",
+    "stationsExplored": "Stations explored",
+    "stations": "Stations",
+    "points": "Points",
+    "progress": "Progress",
+    "allExplored": "All {{total}} stations explored and {{points}} points collected",
+    "remaining": "{{stations}} more stations",
+    "pointsToCollect": "{{points}} points to collect",
+    "waitingForYou": "{{stations}} stations waiting for you",
+    "noPaths": "No paths available",
+    "noPathsDescription": "No paths have been created yet.",
+    "georgiMessage": "Here you can see all available paths with your progress. Choose a path to explore the stations!"
+  },
+  "progressView": {
+    "awesome": "Incredible! You've mastered all paths!",
+    "almostDone": "Almost there! Just {{remaining}} more stations!",
+    "greatProgress": "You're making great progress! Keep it up!",
+    "keepGoing": "Keep going! Each station brings you closer to the goal!",
+    "stationsCompleted": "{{completed}} of {{total}} stations completed",
+    "pathsCompleted": "Paths completed",
+    "pointsProgress": "Points Progress",
+    "pointsAvailable": "{{points}} points still available",
+    "progressByPath": "Progress by Path",
+    "completePath": "Complete a path",
+    "startNewPath": "Start a new path",
+    "oneStationLeft": "Just 1 station left to complete!",
+    "stationsToDiscover": "{{remaining}} more stations to discover"
+  },
+  "pointsView": {
+    "collectPoints": "Collect points by visiting stations and answering quiz questions!",
+    "allPointsCollected": "Fantastic! You've collected all points!",
+    "pointsCollected": "Well done! You've already collected {{points}} points!",
+    "pointsToLevel": "{{points}} points until Level {{level}}",
+    "collectedPoints": "Points Collected",
+    "redeemPoints": "Redeem Points",
+    "viewRewards": "View Rewards",
+    "redeemDescription": "You have {{points}} points - vouchers are waiting for you!",
+    "collectMoreDescription": "Collect {{points}} more points for your first voucher!",
+    "pointsByPath": "Points by Path",
+    "achievements": {
+      "firstSteps": {
+        "title": "First Steps",
+        "description": "First station completed"
+      },
+      "explorer": {
+        "title": "Explorer",
+        "description": "5 stations visited"
+      },
+      "pointCollector": {
+        "title": "Point Collector",
+        "description": "100 points reached"
+      },
+      "pathfinder": {
+        "title": "Pathfinder",
+        "description": "One complete path finished"
+      },
+      "master": {
+        "title": "Master",
+        "description": "200 points reached"
+      },
+      "completionist": {
+        "title": "Completionist",
+        "description": "All paths completed"
+      }
+    }
+  },
+  "rewardsView": {
+    "title": "Rewards",
+    "yourPoints": "Your Points",
+    "collectMore": "Collect more points to unlock additional vouchers!",
+    "pointsMissing": "{{points}} points missing",
+    "progress": "Progress",
+    "pointsNeeded": "{{points}} points needed",
+    "tip": "Tip: Visit more stations and answer quiz questions correctly to collect points!"
+  },
+  "rewardDialog": {
+    "congratulations": "Congratulations!",
+    "pathCompleted": "Path completed!",
+    "allStationsCompleted": "You've successfully completed all stations and reached the full score!",
+    "pointsEarned": "{{points}} points earned",
+    "continue": "Continue exploring",
+    "viewRewards": "View rewards"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language",
+    "german": "Deutsch",
+    "english": "English",
+    "notifications": "Notifications",
+    "pathUpdates": "Path Updates",
+    "pathUpdatesDescription": "Receive updates about new paths",
+    "resetProgress": "Reset Progress",
+    "resetProgressDescription": "Delete all points and completed stations",
+    "confirmReset": "Do you really want to reset all your progress?"
+  },
+  "common": {
+    "back": "Back",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "ar": {
+    "proximityGate": {
+      "outOfRange": "Station out of range",
+      "mustBeWithin": "You must be within <1>100 meters</1> of the station to unlock the AR experience.",
+      "navigateToStation": "Navigate to station"
+    },
+    "navigationButton": {
+      "nextStation": "To next station"
+    },
+    "progressBar": {
+      "station": "Station {{current}}/{{total}}",
+      "points": "{{points}} Points"
+    }
+  },
+  "pathCard": {
+    "stations": "Stations",
+    "points": "Points"
+  },
+  "pathSelection": {
+    "title": "Theme Paths",
+    "description": "Choose a path and explore St.Georgen on various thematic routes",
+    "selectPath": "Select Path",
+    "selectPathDescription": "Choose a theme path that interests you",
+    "discoverStations": "Discover Stations",
+    "discoverStationsDescription": "Visit the stations and experience AR content",
+    "collectPoints": "Collect Points",
+    "collectPointsDescription": "Collect points and unlock vouchers"
+  },
+  "progressBar": {
+    "yourProgress": "Your Progress",
+    "stations": "{{current}}/{{total}} Stations",
+    "points": "{{points}} Points"
+  }
+}
