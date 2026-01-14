@@ -1,0 +1,20 @@
+{
+  "name": "Rotfeder",
+  "scientificName": "Scardinius erythrophthalmus",
+  "description": "Die Rotfeder ist ein lebhafter Schwarmfisch aus der Familie der Karpfenfischen. Sie wird oft mit dem Rotauge verwechselt, hat aber leuchtend rote Flossen und einen oberständigen Mund.",
+  "habitat": "Rotfedern leben in stehenden und langsam fließenden Gewässern mit dichter Vegetation. Sie halten sich gerne in mittleren Wasserschichten und zwischen Wasserpflanzen auf.",
+  "diet": "Allesfresser mit Vorliebe für pflanzliche Nahrung - frisst Algen, Wasserpflanzen, Insektenlarven und Zooplankton",
+  "size": "15-25 cm (bis zu 40 cm möglich)",
+  "weight": "100-300 g (bis zu 1,5 kg möglich)",
+  "lifespan": "10-15 Jahre",
+  "features": [
+    "Seitlich stark abgeflachter, hochrückiger Körper",
+    "Leuchtend rote Flossen",
+    "Goldgelbe Iris",
+    "Oberständiges Maul",
+    "Goldgrün glänzende Flanken",
+    "Rücken dunkler als beim Rotauge"
+  ],
+  "conservation": "Nicht gefährdet - weit verbreitet und häufig",
+  "funFact": "Rotfedern sind wahre Vegetarier unter den Fischen! Während die meisten Karpfenfische Allesfresser sind, bevorzugen Rotfedern pflanzliche Nahrung und können sogar größere Pflanzenteile fressen. Ihr oberständiges Maul ist perfekt angepasst, um an der Wasseroberfläche nach Nahrung zu suchen."
+}

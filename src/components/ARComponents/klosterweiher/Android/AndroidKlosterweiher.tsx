@@ -10,6 +10,8 @@ import {
   FishingInstructions,
   ReleaseFishButton,
   FishCaughtDialog,
+  LearnMoreButton,
+  FishInfoPopup,
 } from "../KlosterweiherUI";
 
 interface ARViewProps {
@@ -303,6 +305,7 @@ export const AndroidKlosterweiherView = ({
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
+  const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForGroundDetection, setWaitingForGroundDetection] =
     useState(false);
 
@@ -439,7 +442,19 @@ export const AndroidKlosterweiherView = ({
             overlayRoot={overlayRootRef.current}
             onRelease={() => sessionRef.current?.releaseCurrentFish()}
           />
+          <LearnMoreButton
+            overlayRoot={overlayRootRef.current}
+            onLearnMore={() => setShowFishInfo(true)}
+          />
         </>
+      )}
+
+      {showFishInfo && overlayRootRef.current && (
+        <FishInfoPopup
+          overlayRoot={overlayRootRef.current}
+          fishName={caughtFishName}
+          onClose={() => setShowFishInfo(false)}
+        />
       )}
     </>
   );

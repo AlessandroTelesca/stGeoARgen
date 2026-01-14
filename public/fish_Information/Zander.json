@@ -1,0 +1,19 @@
+{
+  "name": "Zander",
+  "scientificName": "Sander lucioperca",
+  "description": "Der Zander ist ein beliebter Raubfisch aus der Familie der Barsche. Er ist bekannt für sein schmackhaftes, festes Fleisch und seine hervorragenden Jagdfähigkeiten.",
+  "habitat": "Zander bevorzugen größere, tiefere Seen und langsam fließende Flüsse mit sandigem oder kiesigem Grund. Sie halten sich oft in Grundnähe auf.",
+  "diet": "Raubfisch - ernährt sich hauptsächlich von kleineren Fischen wie Rotaugen, Barschen und Ukeleis",
+  "size": "40-70 cm (bis zu 120 cm möglich)",
+  "weight": "1-4 kg (bis zu 20 kg möglich)",
+  "lifespan": "12-20 Jahre",
+  "features": [
+    "Länglicher, spindelförmiger Körper",
+    "Große, glasige Augen",
+    "Zwei getrennte Rückenflossen",
+    "Scharfe Fangzähne im Maul",
+    "Grünlich-graue Färbung mit dunklen Querbändern"
+  ],
+  "conservation": "Nicht gefährdet - wichtiger Wirtschaftsfisch in europäischen Gewässern",
+  "funFact": "Zander können auch in trübem Wasser sehr gut sehen. Ihre großen Augen haben eine spezielle Schicht, die das vorhandene Licht verstärkt - ähnlich wie bei Katzen!"
+}

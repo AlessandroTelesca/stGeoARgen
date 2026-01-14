@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
 
 // Fish gender mapping for correct German articles
 const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
@@ -26,6 +27,21 @@ const getArticle = (fishName: string): string => {
       return 'einen';
   }
 };
+
+// Type definition for fish information
+interface FishInfo {
+  name: string;
+  scientificName: string;
+  description: string;
+  habitat: string;
+  diet: string;
+  size: string;
+  weight: string;
+  lifespan: string;
+  features: string[];
+  conservation: string;
+  funFact: string;
+}
 
 interface WaitingForGroundProps {
   overlayRoot: HTMLDivElement;
@@ -234,6 +250,254 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
         gefangen!
       </p>
+    </div>,
+    overlayRoot
+  );
+};
+
+interface LearnMoreButtonProps {
+  overlayRoot: HTMLDivElement;
+  onLearnMore: () => void;
+}
+
+export const LearnMoreButton = ({ overlayRoot, onLearnMore }: LearnMoreButtonProps) => {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: '73%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10000,
+        pointerEvents: 'auto',
+      }}
+    >
+      <button
+        onClick={onLearnMore}
+        style={{
+          padding: '12px 18px',
+          borderRadius: '10px',
+          border: 'none',
+          background: '#0c690f',
+          color: '#fff',
+          fontWeight: 700,
+          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+          cursor: 'pointer',
+        }}
+      >
+        Ich will mehr über diesen Fisch erfahren!
+      </button>
+    </div>,
+    overlayRoot
+  );
+};
+
+interface FishInfoPopupProps {
+  overlayRoot: HTMLDivElement;
+  fishName: string;
+  onClose: () => void;
+}
+
+export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
+  const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const loadFishInfo = async () => {
+      try {
+        setLoading(true);
+        setError(false);
+        const response = await fetch(`/fish_Information/${fishName}.json`);
+        if (!response.ok) {
+          throw new Error('Fish info not found');
+        }
+        const data = await response.json();
+        setFishInfo(data);
+      } catch (err) {
+        console.error(`Failed to load fish info for ${fishName}:`, err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFishInfo();
+  }, [fishName]);
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 10001,
+        pointerEvents: 'auto',
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          maxWidth: '500px',
+          width: '100%',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+          position: 'relative',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+            <p>Lade Informationen...</p>
+          </div>
+        ) : error || !fishInfo ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+            <p>Informationen für diesen Fisch sind leider nicht verfügbar.</p>
+            <button
+              onClick={onClose}
+              style={{
+                marginTop: '20px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: '#0c690f',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Schließen
+            </button>
+          </div>
+        ) : (
+          <>
+            <div
+              style={{
+                background: '#0c690f',
+                color: '#fff',
+                padding: '20px 24px',
+                borderTopLeftRadius: '16px',
+                borderTopRightRadius: '16px',
+              }}
+            >
+              <h2 style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 700 }}>
+                {fishInfo.name}
+              </h2>
+              <p style={{ margin: 0, fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
+                {fishInfo.scientificName}
+              </p>
+            </div>
+
+            <div style={{ padding: '24px' }}>
+              <p style={{ margin: '0 0 20px 0', fontSize: '15px', lineHeight: '1.6', color: '#333' }}>
+                {fishInfo.description}
+              </p>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  Lebensraum
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
+                  {fishInfo.habitat}
+                </p>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  Ernährung
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
+                  {fishInfo.diet}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#0c690f' }}>
+                    Größe
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.size}</p>
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#0c690f' }}>
+                    Gewicht
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.weight}</p>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  Merkmale
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#555' }}>
+                  {fishInfo.features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  Lebenserwartung
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.lifespan}</p>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  Naturschutz
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.conservation}</p>
+              </div>
+
+              <div
+                style={{
+                  background: '#f0f8f0',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                }}
+              >
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                  💡 Wussten Sie schon?
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
+                  {fishInfo.funFact}
+                </p>
+              </div>
+
+              <button
+                onClick={onClose}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#0c690f',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(12, 105, 15, 0.2)',
+                }}
+              >
+                Schließen
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>,
     overlayRoot
   );

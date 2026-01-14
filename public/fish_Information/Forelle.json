@@ -1,0 +1,19 @@
+{
+  "name": "Forelle",
+  "scientificName": "Salmo trutta",
+  "description": "Die Forelle ist ein begehrter Speise- und Angelfisch aus der Familie der Lachse. Sie ist bekannt für ihr zartes, rosa Fleisch und ihre Vorliebe für saubere, sauerstoffreiche Gewässer.",
+  "habitat": "Forellen bevorzugen klare, kühle und sauerstoffreiche Gewässer. Sie leben in Bächen, Flüssen und kühlen Seen, oft in strömungsreichen Bereichen.",
+  "diet": "Raubfisch - ernährt sich von Insektenlarven, fliegenden Insekten, Krebstieren und kleineren Fischen",
+  "size": "25-40 cm (bis zu 80 cm möglich)",
+  "weight": "300-1000 g (bis zu 15 kg möglich)",
+  "lifespan": "5-10 Jahre (Seeforellen bis 20 Jahre)",
+  "features": [
+    "Stromlinienförmiger Körper",
+    "Charakteristische schwarze und rote Punkte",
+    "Fettflosse zwischen Rücken- und Schwanzflosse",
+    "Variable Färbung je nach Lebensraum",
+    "Kräftiger Schwanzstiel"
+  ],
+  "conservation": "Je nach Unterart unterschiedlich - Bachforellen teilweise gefährdet durch Gewässerverschmutzung und Verbauung",
+  "funFact": "Forellen haben ein erstaunliches Gedächtnis! Sie können sich monatelang an Futterstellen erinnern und lernen, künstliche Köder zu meiden, nachdem sie einmal damit gefangen wurden."
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Stichling",
+  "scientificName": "Gasterosteus aculeatus",
+  "description": "Der Stichling ist ein kleiner, aber wehrhafter Fisch mit charakteristischen Stacheln auf dem Rücken. Trotz seiner geringen Größe ist er bekannt für sein komplexes Brutverhalten und seine Aggressivität.",
+  "habitat": "Stichlinge sind sehr anpassungsfähig und leben in Seen, Teichen, Bächen, Flüssen und sogar im Brackwasser. Sie bevorzugen pflanzenreiche Uferzonen.",
+  "diet": "Kleiner Raubfisch - ernährt sich von Zooplankton, Insektenlarven, kleinen Krebstieren und Fischlaich",
+  "size": "4-8 cm (bis zu 11 cm möglich)",
+  "weight": "2-5 g",
+  "lifespan": "2-3 Jahre",
+  "features": [
+    "Drei freistehende Stacheln auf dem Rücken",
+    "Zwei Stacheln am Bauch",
+    "Knochenplatten statt Schuppen an den Seiten",
+    "Männchen zur Laichzeit mit roter Kehle und blauem Rücken",
+    "Grünliche Färbung außerhalb der Laichzeit",
+    "Sehr große Augen im Verhältnis zum Körper"
+  ],
+  "conservation": "Nicht gefährdet - sehr häufige und anpassungsfähige Art",
+  "funFact": "Stichlingsmännchen sind erstaunliche Väter! Sie bauen kunstvolle Nester aus Pflanzenmaterial, locken mehrere Weibchen zum Laichen an und bewachen dann alleine die Eier. Sie fächeln ihnen mit den Flossen frisches Wasser zu und verteidigen das Nest aggressiv gegen jeden Eindringling - selbst gegen viel größere Fische!"
+}

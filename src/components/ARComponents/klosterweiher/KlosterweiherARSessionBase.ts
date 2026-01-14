@@ -348,9 +348,6 @@ export abstract class KlosterweiherARSessionBase {
     if (name && name.includes('-')) {
       name = name.split('-')[0];
     }
-    if (name == "Doebel") {
-      name = "Döbel";
-    }
     return name || 'Fisch';
   }
 

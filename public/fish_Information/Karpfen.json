@@ -1,0 +1,20 @@
+{
+  "name": "Karpfen",
+  "scientificName": "Cyprinus carpio",
+  "description": "Der Karpfen ist einer der bekanntesten Süßwasserfische und wird seit Jahrhunderten als Speisefisch gezüchtet. Er ist robust, langlebig und kann beeindruckende Größen erreichen.",
+  "habitat": "Karpfen bevorzugen warme, stehende oder langsam fließende Gewässer mit schlammigem Grund und reichem Pflanzenwuchs. Sie sind in Teichen, Seen und Flussaltarmen zu finden.",
+  "diet": "Bodenfresser - ernährt sich von Würmern, Insektenlarven, Schnecken, Muscheln und pflanzlichem Material am Gewässergrund",
+  "size": "30-60 cm (bis zu 120 cm möglich)",
+  "weight": "2-10 kg (bis zu 40 kg möglich)",
+  "lifespan": "20-30 Jahre (einzelne Exemplare über 100 Jahre)",
+  "features": [
+    "Langgestreckter, seitlich leicht abgeflachter Körper",
+    "Vier Bartfäden am Obermaul",
+    "Große, kräftige Schuppen",
+    "Lange Rückenflosse mit gezähntem Hartstahl",
+    "Goldgelbe bis bronzefarbene Färbung",
+    "Rüsselartiges, vorstülpbares Maul"
+  ],
+  "conservation": "Nicht gefährdet - weit verbreitet durch Besatz, Wildformen teilweise gefährdet",
+  "funFact": "Karpfen sind unglaublich intelligent und lernfähig! Sie können trainiert werden, auf Glocken zu reagieren, um gefüttert zu werden. Einige Karpfen erkennen sogar einzelne Menschen und können Gesichter unterscheiden. In Japan gibt es Koi-Karpfen, die über 200 Jahre alt wurden!"
+}

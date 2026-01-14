@@ -10,6 +10,8 @@ import {
   FishingInstructions,
   ReleaseFishButton,
   FishCaughtDialog,
+  LearnMoreButton,
+  FishInfoPopup,
 } from "../KlosterweiherUI";
 
 interface ARViewProps {
@@ -370,6 +372,7 @@ export const IOSKlosterweiherView = ({
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
+  const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
@@ -479,7 +482,19 @@ export const IOSKlosterweiherView = ({
             overlayRoot={overlayRootRef.current}
             onRelease={() => sessionRef.current?.releaseCurrentFish()}
           />
+          <LearnMoreButton
+            overlayRoot={overlayRootRef.current}
+            onLearnMore={() => setShowFishInfo(true)}
+          />
         </>
+      )}
+
+      {showFishInfo && overlayRootRef.current && (
+        <FishInfoPopup
+          overlayRoot={overlayRootRef.current}
+          fishName={caughtFishName}
+          onClose={() => setShowFishInfo(false)}
+        />
       )}
     </>
   );
