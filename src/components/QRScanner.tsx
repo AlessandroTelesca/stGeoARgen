@@ -160,70 +160,58 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
         
         {/* Scanning Overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-64 h-64 border-4 border-white/80 rounded-2xl relative">
+          <div className="relative w-64 h-64">
             {/* Corner Decorations - Animated - z-10 damit sie über dem Rahmen liegen */}
             <motion.div 
-              className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-xl z-10"
+              className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-primary rounded-tl-xl z-10"
               animate={{ 
-                scale: [1, 1.15, 1],
-                opacity: [1, 0.7, 1]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div 
-              className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-xl z-10"
-              animate={{ 
-                scale: [1, 1.15, 1],
-                opacity: [1, 0.7, 1]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-            />
-            <motion.div 
-              className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-xl z-10"
-              animate={{ 
-                scale: [1, 1.15, 1],
-                opacity: [1, 0.7, 1]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-            />
-            <motion.div 
-              className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-xl z-10"
-              animate={{ 
-                scale: [1, 1.15, 1],
-                opacity: [1, 0.7, 1]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-            />
-            
-            {/* Scanning Line with Glow Effect */}
-            <motion.div
-              className="absolute left-0 right-0 h-0.5 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.8)]"
-              style={{
-                boxShadow: '0 0 20px rgba(124, 58, 237, 0.8), 0 0 40px rgba(124, 58, 237, 0.4)'
-              }}
-              animate={{ 
-                top: ['0%', '100%', '100%', '0%'],
-                opacity: [0, 1, 1, 0]
+                scale: [1, 1.2, 1],
+                opacity: [0.8, 1, 0.8]
               }}
               transition={{ 
-                duration: 3, 
+                duration: 2, 
                 repeat: Infinity, 
                 ease: 'easeInOut',
-                times: [0, 0.1, 0.9, 1]
+                repeatType: 'loop'
               }}
             />
-            
-            {/* Scanning Gradient Overlay */}
-            <motion.div
-              className="absolute left-0 right-0 h-24 bg-gradient-to-b from-primary/30 to-transparent blur-sm"
+            <motion.div 
+              className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-primary rounded-tr-xl z-10"
               animate={{ 
-                top: ['0%', '100%', '100%', '0%']
+                scale: [1, 1.2, 1],
+                opacity: [0.8, 1, 0.8]
               }}
               transition={{ 
-                duration: 3, 
+                duration: 2, 
                 repeat: Infinity, 
                 ease: 'easeInOut',
-                times: [0, 0.1, 0.9, 1]
+                repeatType: 'loop'
+              }}
+            />
+            <motion.div 
+              className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-primary rounded-bl-xl z-10"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.8, 1, 0.8]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                ease: 'easeInOut',
+                repeatType: 'loop'
+              }}
+            />
+            <motion.div 
+              className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-primary rounded-br-xl z-10"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.8, 1, 0.8]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                ease: 'easeInOut',
+                repeatType: 'loop'
               }}
             />
           </div>
