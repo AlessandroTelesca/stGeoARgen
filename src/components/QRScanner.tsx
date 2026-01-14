@@ -22,8 +22,12 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
   useEffect(() => {
     const startCamera = async () => {
       try {
+        // Nutze die Standard-Kamera ohne spezifische Auflösung für 1x Kamera
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment', width: 1280, height: 720 } 
+          video: { 
+            facingMode: 'environment',
+            // Keine width/height Constraints, damit die Standard-1x-Kamera verwendet wird
+          } 
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -159,11 +163,12 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
         />
         
         {/* Scanning Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="relative w-64 h-64">
             {/* Corner Decorations - Animated - z-10 damit sie über dem Rahmen liegen */}
             <motion.div 
               className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-primary rounded-tl-xl z-10"
+              initial={{ scale: 1, opacity: 0.8 }}
               animate={{ 
                 scale: [1, 1.2, 1],
                 opacity: [0.8, 1, 0.8]
@@ -177,6 +182,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
             />
             <motion.div 
               className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-primary rounded-tr-xl z-10"
+              initial={{ scale: 1, opacity: 0.8 }}
               animate={{ 
                 scale: [1, 1.2, 1],
                 opacity: [0.8, 1, 0.8]
@@ -190,6 +196,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
             />
             <motion.div 
               className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-primary rounded-bl-xl z-10"
+              initial={{ scale: 1, opacity: 0.8 }}
               animate={{ 
                 scale: [1, 1.2, 1],
                 opacity: [0.8, 1, 0.8]
@@ -203,6 +210,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
             />
             <motion.div 
               className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-primary rounded-br-xl z-10"
+              initial={{ scale: 1, opacity: 0.8 }}
               animate={{ 
                 scale: [1, 1.2, 1],
                 opacity: [0.8, 1, 0.8]
