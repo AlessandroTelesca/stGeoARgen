@@ -26,6 +26,7 @@ export abstract class KlosterweiherARSessionBase {
   public fishes: THREE.Object3D[] = [];
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
+  protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -94,6 +95,10 @@ export abstract class KlosterweiherARSessionBase {
       this.playCurrentFishAnimation();
     }
     this.fish.visible = true;
+    
+    // Show backdrop for visibility
+    const backdrop = this.fishBackdrops[this.currentFishIndex];
+    if (backdrop) backdrop.visible = true;
 
     tl.to(this.rod.rotation, {
       x: 0,
@@ -131,6 +136,10 @@ export abstract class KlosterweiherARSessionBase {
     const activeMixer = this.fishMixers[this.currentFishIndex];
     activeMixer?.stopAllAction();
     this.fish.visible = false;
+    
+    // Hide current fish backdrop
+    const oldBackdrop = this.fishBackdrops[this.currentFishIndex];
+    if (oldBackdrop) oldBackdrop.visible = false;
     this.fish.position.set(
       0,
       this.getFishInitialPositionY(),
@@ -177,6 +186,47 @@ export abstract class KlosterweiherARSessionBase {
   }
 
   /**
+   * Create a semi-transparent white backdrop mesh for a fish model
+   */
+  protected createFishBackdrop(fishModel: THREE.Object3D, camera: THREE.Camera): THREE.Mesh {
+    const shape = new THREE.Shape();
+    const radiusX = 700;
+    const radiusY = 300;
+    const segments = 128;
+    
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x = Math.cos(angle) * radiusX;
+      const y = Math.sin(angle) * radiusY;
+      
+      if (i === 0) {
+        shape.moveTo(x, y);
+      } else {
+        shape.lineTo(x, y);
+      }
+    }
+    
+    const geometry = new THREE.ShapeGeometry(shape);
+    
+    // Create semi-transparent white material
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+      depthWrite: false, // Ensure proper transparency rendering
+    });
+    
+    const backdrop = new THREE.Mesh(geometry, material);
+    backdrop.visible = false;
+    
+    // Add backdrop to camera (not as child of fish) so it doesn't rotate with fish
+    camera.add(backdrop);
+    
+    return backdrop;
+  }
+
+  /**
    * Play animation for the currently selected fish
    */
   protected playCurrentFishAnimation() {
@@ -195,6 +245,21 @@ export abstract class KlosterweiherARSessionBase {
    */
   protected updateFishMixers(deltaSeconds: number) {
     this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
+  }
+
+  /**
+   * Update backdrop position to follow fish without rotating
+   */
+  protected updateFishBackdrop() {
+    if (!this.fish || !this.hasCaughtFish) return;
+    const backdrop = this.fishBackdrops[this.currentFishIndex];
+    if (!backdrop || !backdrop.visible) return;
+    
+    // Copy fish position but keep backdrop facing camera (no rotation)
+    backdrop.position.copy(this.fish.position);
+    // Offset slightly behind the fish (towards camera)
+    backdrop.position.z -= 400;
+    backdrop.position.y += 50;
   }
 
   /**

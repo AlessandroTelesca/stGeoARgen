@@ -41,6 +41,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public fishes: THREE.Object3D[] = [];
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
+  protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -94,10 +95,14 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   controlrod = KlosterweiherARSessionBase.prototype.controlrod;
   catchfish = KlosterweiherARSessionBase.prototype.catchfish;
   releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
+  protected createFishBackdrop =
+    KlosterweiherARSessionBase.prototype["createFishBackdrop"];
   protected playCurrentFishAnimation =
     KlosterweiherARSessionBase.prototype["playCurrentFishAnimation"];
   protected updateFishMixers =
     KlosterweiherARSessionBase.prototype["updateFishMixers"];
+  protected updateFishBackdrop =
+    KlosterweiherARSessionBase.prototype["updateFishBackdrop"];
   protected extractFishName =
     KlosterweiherARSessionBase.prototype["extractFishName"];
   protected startOrbitControl =
@@ -180,6 +185,12 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
+            
+            // Create and store backdrop for this fish
+            if (this.camera) {
+              this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
+            }
+            
             console.log(
               `[AndroidKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
@@ -271,6 +282,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected onXRFrameUpdate(deltaSeconds: number): void {
     this.updateFishMixers(deltaSeconds);
     this.applyOrbitMomentum(deltaSeconds);
+    this.updateFishBackdrop();
   }
 }
 

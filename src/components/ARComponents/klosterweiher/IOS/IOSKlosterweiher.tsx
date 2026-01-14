@@ -41,6 +41,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   public fishes: THREE.Object3D[] = [];
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
+  protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -95,10 +96,14 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   controlrod = KlosterweiherARSessionBase.prototype.controlrod;
   catchfish = KlosterweiherARSessionBase.prototype.catchfish;
   releaseCurrentFish = KlosterweiherARSessionBase.prototype.releaseCurrentFish;
+  protected createFishBackdrop =
+    KlosterweiherARSessionBase.prototype["createFishBackdrop"];
   protected playCurrentFishAnimation =
     KlosterweiherARSessionBase.prototype["playCurrentFishAnimation"];
   protected updateFishMixers =
     KlosterweiherARSessionBase.prototype["updateFishMixers"];
+  protected updateFishBackdrop =
+    KlosterweiherARSessionBase.prototype["updateFishBackdrop"];
   protected extractFishName =
     KlosterweiherARSessionBase.prototype["extractFishName"];
   protected startOrbitControl =
@@ -200,6 +205,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
+            
+            // Create and store backdrop for this fish
+            this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
+            
             console.log(
               `[IOSKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
@@ -277,6 +286,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       // Cap delta to prevent huge jumps
       this.fishMixers.forEach((mixer) => mixer.update(deltaSeconds));
       this.applyOrbitMomentum(deltaSeconds);
+      this.updateFishBackdrop();
     }
 
     // Update light position to follow camera
