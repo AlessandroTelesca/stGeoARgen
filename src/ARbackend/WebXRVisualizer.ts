@@ -58,6 +58,9 @@ export class WebXRVisualizer implements WebXRSession {
     );
     this.camera.position.z = 5;
 
+    // Ensure camera children (e.g., overlays/backdrops attached to the camera) render
+    this.scene.add(this.camera);
+
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
