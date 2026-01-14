@@ -26,7 +26,12 @@
     "explorePaths": "Explore Paths",
     "explorePathsDescription": "Choose a theme path and start your adventure",
     "nextVoucher": "{{points}} more points until next voucher",
-    "redeemPoints": "Redeem {{points}} points"
+    "redeemPoints": "Redeem {{points}} points",
+    "voucherAvailable": "Voucher available!",
+    "nextVoucherTitle": "Next Voucher",
+    "allVouchersUnlocked": "All vouchers unlocked! Redeem now.",
+    "newVoucherAvailable": "Congratulations! New voucher available!",
+    "viewAll": "View all"
   },
   "onboarding": {
     "step1": {
@@ -180,7 +185,8 @@
     "pathUpdatesDescription": "Receive updates about new paths",
     "resetProgress": "Reset Progress",
     "resetProgressDescription": "Delete all points and completed stations",
-    "confirmReset": "Do you really want to reset all your progress?"
+    "confirmReset": "Do you really want to reset all your progress?",
+    "accountInfo": "Account information & security"
   },
   "common": {
     "back": "Back",

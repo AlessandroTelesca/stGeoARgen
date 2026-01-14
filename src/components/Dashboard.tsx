@@ -150,7 +150,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 onClick={onNavigateToPaths}
                 className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
               >
-                Alle ansehen
+                {t('dashboard.viewAll')}
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -224,13 +224,13 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             </div>
             <div className="flex-1 text-left">
               <h4 className="font-semibold mb-1">
-                {hasUnlockedVoucher ? 'Gutschein verfügbar!' : 'Nächster Gutschein'}
+                {hasUnlockedVoucher ? t('dashboard.voucherAvailable') : t('dashboard.nextVoucherTitle')}
               </h4>
               <p className="text-sm text-muted-foreground mb-3">
                 {totalPoints >= 225 
-                  ? 'Alle Gutscheine freigeschaltet! Jetzt einlösen.'
+                  ? t('dashboard.allVouchersUnlocked')
                   : pointsToNextVoucher === 0
-                    ? 'Glückwunsch! Neuer Gutschein verfügbar!'
+                    ? t('dashboard.newVoucherAvailable')
                     : t('dashboard.nextVoucher', { points: pointsToNextVoucher })
                 }
               </p>
