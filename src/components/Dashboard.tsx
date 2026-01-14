@@ -1,6 +1,7 @@
 import { Trophy, MapPin, Star, TrendingUp, Gift } from 'lucide-react';
 import { motion } from 'motion/react';
 import { PathCard } from './PathCard';
+import { useTranslation } from 'react-i18next';
 
 interface Path {
   id: string;
@@ -27,6 +28,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate, username }: DashboardProps) {
+  const { t } = useTranslation();
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
   
@@ -79,7 +81,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{totalPoints}</p>
-            <p className="text-sm text-muted-foreground">Punkte</p>
+            <p className="text-sm text-muted-foreground">{t('dashboard.points')}</p>
           </motion.button>
 
           <motion.button
@@ -97,7 +99,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{completedPaths}</p>
-            <p className="text-sm text-muted-foreground">Abgeschl. Pfade</p>
+            <p className="text-sm text-muted-foreground">{t('dashboard.completedPaths')}</p>
           </motion.button>
         </div>
 
@@ -113,9 +115,9 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
         >
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="font-semibold mb-1">Deine Reise</h3>
+              <h3 className="font-semibold mb-1">{username ? t('dashboard.welcome') : t('dashboard.startJourney')}</h3>
               <p className="text-sm opacity-90">
-                {totalCompletedStations} von {totalStations} Stationen erkundet
+                {t('dashboard.stationsExplored', { completed: totalCompletedStations, total: totalStations })}
               </p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -134,15 +136,15 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
 
           <p className="text-sm opacity-90">
             {completionPercentage === 100
-              ? 'Themenpfad abgeschlossen!'
-              : `Noch ${totalStations - totalCompletedStations} Stationen zu entdecken!`}
+              ? t('dashboard.allStationsCompleted')
+              : t('dashboard.stationsRemaining', { remaining: totalStations - totalCompletedStations })}
           </p>
         </motion.button>
 
         {/* Paths Section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Themenpfade</h3>
+            <h3 className="font-semibold">{t('header.paths')}</h3>
             {paths.length > 0 && (
               <button
                 onClick={onNavigateToPaths}
@@ -187,9 +189,9 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 </svg>
               </div>
               <div className="flex-1 text-left">
-                <h4 className="font-semibold mb-1">QR-Code scannen</h4>
+                <h4 className="font-semibold mb-1">{t('dashboard.scanQR')}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Scanne einen QR-Code an einer Station, um direkt zu starten
+                  {t('dashboard.scanQRDescription')}
                 </p>
               </div>
               <svg className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,7 +231,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                   ? 'Alle Gutscheine freigeschaltet! Jetzt einlösen.'
                   : pointsToNextVoucher === 0
                     ? 'Glückwunsch! Neuer Gutschein verfügbar!'
-                    : `Noch ${pointsToNextVoucher} Punkte bis zum nächsten Gutschein`
+                    : t('dashboard.nextVoucher', { points: pointsToNextVoucher })
                 }
               </p>
               {/* Progress bar */}
@@ -242,8 +244,8 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-primary font-semibold">{totalPoints} Punkte</span>
-                    <span className="text-muted-foreground">{nextMilestone} Punkte</span>
+                    <span className="text-primary font-semibold">{t('dashboard.redeemPoints', { points: totalPoints })}</span>
+                    <span className="text-muted-foreground">{nextMilestone} {t('dashboard.points')}</span>
                   </div>
                 </div>
               )}

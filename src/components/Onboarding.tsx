@@ -2,42 +2,44 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
 import { GeorgiAvatar } from './Georgi';
+import { useTranslation } from 'react-i18next';
 
 interface OnboardingProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-const steps = [
-  {
-    id: 1,
-    title: 'Willkommen in St.Georgen!',
-    description: 'Ich bin Georgi, dein Drachen-Guide. Gemeinsam entdecken wir St.Georgen auf spannenden Themenpfaden voller Geschichte, Kultur und Abenteuer!',
-    georgiMessage: 'Hey! Bereit für eine unvergessliche Entdeckungsreise?',
-  },
-  {
-    id: 2,
-    title: 'Wähle deinen Themenpfad',
-    description: 'Such dir einen Themenpfad aus, der dich interessiert. Jeder Pfad führt dich zu besonderen Orten in St.Georgen - ob historische Sehenswürdigkeiten, Naturerlebnisse oder kulturelle Highlights!',
-    georgiMessage: 'Der touristische Themenpfad ist perfekt für den Start!',
-  },
-  {
-    id: 3,
-    title: 'Erlebe AR an den Stationen',
-    description: 'Besuche die Stationen in beliebiger Reihenfolge. An jeder Station erwartet dich ein spannendes AR-Erlebnis - entdecke interaktive Inhalte, löse Quizfragen und sammle Punkte!',
-    georgiMessage: 'Die nähesten Stationen werden dir immer zuerst angezeigt!',
-  },
-  {
-    id: 4,
-    title: 'Hole deine Belohnungen ab',
-    description: 'Mit gesammelten Punkten schaltest du Gutscheine frei, die du in echten Lokalitäten in St.Georgen einlösen kannst - Cafés, Restaurants, Museen und mehr!',
-    georgiMessage: 'Sammle fleissig Punkte und genieße tolle Belohnungen vor Ort!',
-  },
-];
-
 export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
+
+  const steps = [
+    {
+      id: 1,
+      title: t('onboarding.step1.title'),
+      description: t('onboarding.step1.description'),
+      georgiMessage: t('onboarding.step1.georgiMessage'),
+    },
+    {
+      id: 2,
+      title: t('onboarding.step2.title'),
+      description: t('onboarding.step2.description'),
+      georgiMessage: t('onboarding.step2.georgiMessage'),
+    },
+    {
+      id: 3,
+      title: t('onboarding.step3.title'),
+      description: t('onboarding.step3.description'),
+      georgiMessage: t('onboarding.step3.georgiMessage'),
+    },
+    {
+      id: 4,
+      title: t('onboarding.step4.title'),
+      description: t('onboarding.step4.description'),
+      georgiMessage: t('onboarding.step4.georgiMessage'),
+    },
+  ];
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -92,7 +94,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
             onClick={onSkip}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-muted"
           >
-            Überspringen
+            {t('onboarding.skip')}
           </button>
         </div>
 
@@ -182,7 +184,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <ChevronLeft className="w-5 h-5" />
-                    <span>Zurück</span>
+                    <span>{t('common.back')}</span>
                   </div>
                 </button>
               )}
@@ -193,12 +195,12 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               >
                 {isLastStep ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span>Los geht's!</span>
+                    <span>{t('onboarding.start')}</span>
                     <Trophy className="w-5 h-5" />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
-                    <span>Weiter</span>
+                    <span>{t('onboarding.next')}</span>
                     <ChevronRight className="w-5 h-5" />
                   </div>
                 )}
