@@ -37,6 +37,7 @@ export abstract class KlosterweiherARSessionBase {
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
+  protected rodAnimationInProgress = false;
 
   // Orbit controls for caught fish
   protected orbitEnabled = false;
@@ -52,6 +53,9 @@ export abstract class KlosterweiherARSessionBase {
   controlrod() {
     if (!this.rod) return;
     if (this.hasCaughtFish) return; // Wait for release before next catch
+    if (this.rodAnimationInProgress) return; // Prevent animation while one is running
+    
+    this.rodAnimationInProgress = true;
     const tl = gsap.timeline();
 
     this.tapCount += 1;
@@ -74,6 +78,9 @@ export abstract class KlosterweiherARSessionBase {
       x: -0.8,
       duration: 0.5,
       delay: 0.5,
+      onComplete: () => {
+        this.rodAnimationInProgress = false;
+      },
     });
   }
 
