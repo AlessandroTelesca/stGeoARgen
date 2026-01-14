@@ -60,9 +60,10 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
 interface WaitingForReadyProps {
   overlayRoot: HTMLDivElement;
   onReady: () => void;
+  modelsLoaded?: boolean;
 }
 
-export const WaitingForReady = ({ overlayRoot, onReady }: WaitingForReadyProps) => {
+export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: WaitingForReadyProps) => {
   return createPortal(
     <div
       style={{
@@ -86,21 +87,27 @@ export const WaitingForReady = ({ overlayRoot, onReady }: WaitingForReadyProps) 
       <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
         Richten sie ihre Kamera auf den See, um mit dem Angeln zu beginnen.
       </p>
-      <button
-        onClick={onReady}
-        style={{
-          padding: '10px 16px',
-          borderRadius: '8px',
-          border: 'none',
-          background: '#fff',
-          color: '#0c690f',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-        }}
-      >
-        Ich sehe den See
-      </button>
+      {modelsLoaded ? (
+        <button
+          onClick={onReady}
+          style={{
+            padding: '10px 16px',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#fff',
+            color: '#0c690f',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
+          Ich sehe den See
+        </button>
+      ) : (
+        <p style={{ margin: 0, fontWeight: 400, fontSize: '14px', opacity: 0.8 }}>
+          Laden...
+        </p>
+      )}
     </div>,
     overlayRoot
   );

@@ -22,6 +22,7 @@ interface ARViewProps {
 
 class IOSKlosterweiherARSession extends ARVisualizer {
   public onReadyCallback?: () => void;
+  public onModelsLoadedCallback?: () => void;
 
   // Properties from KlosterweiherARSessionBase
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
@@ -48,6 +49,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected cameraLight: THREE.PointLight | null = null;
   public tapCount = 0;
   public hasCaughtFish = false;
+  private modelsLoaded = false;
+  private rodLoaded = false;
+  private fishesLoaded = false;
+  private waterLoaded = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
   private lastFrameTime: number = 0;
@@ -147,6 +152,13 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     };
   }
 
+  private checkAllModelsLoaded(): void {
+    if (this.rodLoaded && this.fishesLoaded && this.waterLoaded && !this.modelsLoaded) {
+      this.modelsLoaded = true;
+      this.onModelsLoadedCallback?.();
+    }
+  }
+
   protected initThree(): void {
     super.initThree();
 
@@ -180,11 +192,14 @@ class IOSKlosterweiherARSession extends ARVisualizer {
           this.camera.add(this.rod);
           this.rod.visible = false; // Hide initially
           // Visibility will be enabled via user confirmation button
-        } else {
         }
+        this.rodLoaded = true;
+        this.checkAllModelsLoaded();
       })
       .catch((err) => {
         console.error("[IOSKlosterweiher] Rod model failed to load:", err);
+        this.rodLoaded = true;
+        this.checkAllModelsLoaded();
       });
 
     // Load all fish models
@@ -215,8 +230,12 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             if (index === 0) {
               this.fish = fishModel; // Set first fish as current
               this.currentFishIndex = 0;
-            } else {
             }
+          }
+          // Check if all fishes are loaded
+          if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.fishesLoaded = true;
+            this.checkAllModelsLoaded();
           }
         })
         .catch((err) => {
@@ -224,6 +243,11 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             `[IOSKlosterweiher] Fish model ${index} failed to load:`,
             err,
           );
+          // Still mark as loaded to avoid infinite waiting
+          if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.fishesLoaded = true;
+            this.checkAllModelsLoaded();
+          }
         });
     });
 
@@ -242,8 +266,14 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             }
           });
         }
+        this.waterLoaded = true;
+        this.checkAllModelsLoaded();
       })
-      .catch((err) => console.error("Water model failed to load", err));
+      .catch((err) => {
+        console.error("Water model failed to load", err);
+        this.waterLoaded = true;
+        this.checkAllModelsLoaded();
+      });
   }
 
   // Explicitly show rod when user confirms they see the lake
@@ -341,6 +371,7 @@ export const IOSKlosterweiherView = ({
   const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -387,6 +418,9 @@ export const IOSKlosterweiherView = ({
         setWaitingForReady(false);
         setShowFishingInstructions(true);
       };
+      session.onModelsLoadedCallback = () => {
+        setModelsLoaded(true);
+      };
 
       await session.init();
       console.log("[IOSKlosterweiherView] AR session initialized");
@@ -424,6 +458,7 @@ export const IOSKlosterweiherView = ({
             setWaitingForReady(false);
             setShowFishingInstructions(true);
           }}
+          modelsLoaded={modelsLoaded}
         />
       )}
 
