@@ -188,13 +188,30 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
     <div
       style={{
         position: 'fixed',
-        top: '66%',
+        top: '64%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 10000,
         pointerEvents: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px',
       }}
     >
+      <p
+        style={{
+          margin: 0,
+          fontSize: '14px',
+          fontWeight: 500,
+          color: 'var(--color-white)',
+          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          opacity: 0.9,
+          pointerEvents: 'none',
+        }}
+      >
+        Bewege den fisch mit deinen Fingern!
+      </p>
       <button
         onClick={onRelease}
         style={{
