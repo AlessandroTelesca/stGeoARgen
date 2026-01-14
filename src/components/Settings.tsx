@@ -60,7 +60,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-medium">{t('header.profile')}</p>
-                  <p className="text-sm text-muted-foreground">Account-Informationen & Sicherheit</p>
+                  <p className="text-sm text-muted-foreground">{t('settings.accountInfo')}</p>
                 </div>
               </button>
             </div>

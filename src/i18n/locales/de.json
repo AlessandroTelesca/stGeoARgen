@@ -26,7 +26,12 @@
     "explorePaths": "Pfade entdecken",
     "explorePathsDescription": "Wähle einen Themenpfad und beginne dein Abenteuer",
     "nextVoucher": "Noch {{points}} Punkte bis zum nächsten Gutschein",
-    "redeemPoints": "{{points}} Punkte einlösen"
+    "redeemPoints": "{{points}} Punkte einlösen",
+    "voucherAvailable": "Gutschein verfügbar!",
+    "nextVoucherTitle": "Nächster Gutschein",
+    "allVouchersUnlocked": "Alle Gutscheine freigeschaltet! Jetzt einlösen.",
+    "newVoucherAvailable": "Glückwunsch! Neuer Gutschein verfügbar!",
+    "viewAll": "Alle ansehen"
   },
   "onboarding": {
     "step1": {
@@ -180,7 +185,8 @@
     "pathUpdatesDescription": "Erhalte Updates zu neuen Pfaden",
     "resetProgress": "Fortschritt zurücksetzen",
     "resetProgressDescription": "Alle Punkte und abgeschlossenen Stationen löschen",
-    "confirmReset": "Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?"
+    "confirmReset": "Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?",
+    "accountInfo": "Account-Informationen & Sicherheit"
   },
   "common": {
     "back": "Zurück",
