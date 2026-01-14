@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -53,6 +54,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
@@ -364,17 +366,17 @@ export default function App() {
   });
 
   const getPageTitle = () => {
-    if (currentView === 'home') return 'St.GeoARgen';
-    if (currentView === 'paths') return 'Themenpfade';
-    if (currentView === 'settings') return 'Einstellungen';
-    if (currentView === 'profile') return 'Profil';
-    if (currentView === 'points') return 'Punkte';
-    if (currentView === 'stations') return 'Stationen';
-    if (currentView === 'progress') return 'Fortschritt';
-    if (currentView === 'rewards') return 'Belohnungen';
+    if (currentView === 'home') return t('app.title');
+    if (currentView === 'paths') return t('header.paths');
+    if (currentView === 'settings') return t('header.settings');
+    if (currentView === 'profile') return t('header.profile');
+    if (currentView === 'points') return t('header.points');
+    if (currentView === 'stations') return t('header.stations');
+    if (currentView === 'progress') return t('header.progress');
+    if (currentView === 'rewards') return t('header.rewards');
     if (currentView === 'path' && selectedPath) return selectedPath.title;
     if (currentView === 'station' && selectedStation) return selectedStation.title;
-    return 'St.GeoARgen';
+    return t('app.title');
   };
 
   const handleRewardSelect = (localityId: string) => {

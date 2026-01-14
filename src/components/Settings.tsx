@@ -1,6 +1,7 @@
 import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsProps {
   onResetProgress: () => void;
@@ -9,8 +10,15 @@ interface SettingsProps {
 }
 
 export function Settings({ onResetProgress, onBack, onNavigateToProfile }: SettingsProps) {
+  const { t, i18n } = useTranslation();
   const [notifications, setNotifications] = useState(true);
-  const [language, setLanguage] = useState('de');
+  const [language, setLanguage] = useState(i18n.language);
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    i18n.changeLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -23,7 +31,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Zurück</span>
+              <span className="font-medium">{t('common.back')}</span>
             </button>
           </div>
         </div>
@@ -34,7 +42,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-6">Einstellungen</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('settings.title')}</h2>
 
           {/* Account Settings */}
           <div className="mb-6">
@@ -51,7 +59,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Profil verwalten</p>
+                  <p className="font-medium">{t('header.profile')}</p>
                   <p className="text-sm text-muted-foreground">Account-Informationen & Sicherheit</p>
                 </div>
               </button>
@@ -71,8 +79,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                     <Bell className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Benachrichtigungen</p>
-                    <p className="text-sm text-muted-foreground">Erhalte Updates zu neuen Pfaden</p>
+                    <p className="font-medium">{t('settings.notifications')}</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.pathUpdatesDescription')}</p>
                   </div>
                 </div>
                 <button
@@ -95,18 +103,17 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                     <Globe className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Sprache</p>
-                    <p className="text-sm text-muted-foreground">Deutsch</p>
+                    <p className="font-medium">{t('settings.language')}</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.languageDescription')}</p>
                   </div>
                 </div>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
                   className="px-4 py-2 bg-muted rounded-lg border border-border"
                 >
-                  <option value="de">Deutsch</option>
-                  <option value="en">English</option>
-                  <option value="fr">Français</option>
+                  <option value="de">{t('settings.german')}</option>
+                  <option value="en">{t('settings.english')}</option>
                 </select>
               </div>
             </div>
@@ -160,7 +167,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
                 onClick={() => {
-                  if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
+                  if (window.confirm(t('settings.confirmReset'))) {
                     onResetProgress();
                   }
                 }}
@@ -172,9 +179,9 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>Fortschritt zurücksetzen</p>
+                  <p className="font-medium" style={{ color: '#dc2626' }}>{t('settings.resetProgress')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Alle Punkte und abgeschlossenen Stationen löschen
+                    {t('settings.resetProgressDescription')}
                   </p>
                 </div>
               </button>
