@@ -58,9 +58,9 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
         zIndex: 10000,
         pointerEvents: 'none',
         padding: '20px 28px',
-        background: 'rgba(12, 105, 15, 0.95)',
-        color: '#fff',
-        borderRadius: '12px',
+        background: 'var(--color-white)',
+        color: 'var(--color-gray-800)',
+        borderRadius: '16px',
         boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
         fontWeight: 600,
         fontSize: '16px',
@@ -84,15 +84,15 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
     <div
       style={{
         position: 'fixed',
-        top: '20%',
+        top: '30%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 10000,
         pointerEvents: 'auto',
         padding: '20px 28px',
-        background: 'rgba(12, 105, 15, 0.95)',
-        color: '#fff',
-        borderRadius: '12px',
+        background: 'var(--color-white)',
+        color: 'var(--color-gray-800)',
+        borderRadius: '16px',
         boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
         textAlign: 'center',
         display: 'flex',
@@ -108,10 +108,10 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
           onClick={onReady}
           style={{
             padding: '10px 16px',
-            borderRadius: '8px',
+            borderRadius: '12px',
             border: 'none',
-            background: '#fff',
-            color: '#0c690f',
+            background: 'var(--color-primary)',
+            color: 'var(--color-white)',
             fontWeight: 700,
             cursor: 'pointer',
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
@@ -139,15 +139,15 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
     <div
       style={{
         position: 'fixed',
-        top: '20%',
+        top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 10000,
         pointerEvents: 'auto',
         padding: '20px 28px',
-        background: 'rgba(12, 105, 15, 0.95)',
-        color: '#fff',
-        borderRadius: '12px',
+        background: 'var(--color-white)',
+        color: 'var(--color-gray-800)',
+        borderRadius: '16px',
         boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
         textAlign: 'center',
         display: 'flex',
@@ -162,10 +162,10 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
         onClick={onStart}
         style={{
           padding: '10px 16px',
-          borderRadius: '8px',
+          borderRadius: '12px',
           border: 'none',
-          background: '#fff',
-          color: '#0c690f',
+          background: 'var(--color-primary)',
+          color: 'var(--color-white)',
           fontWeight: 700,
           cursor: 'pointer',
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
@@ -199,13 +199,14 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
         onClick={onRelease}
         style={{
           padding: '12px 18px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: 'none',
-          background: '#0c690f',
-          color: '#fff',
+          background: 'var(--color-white)',
+          color: 'var(--color-primary)',
           fontWeight: 700,
           boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
           cursor: 'pointer',
+          width: '280px',
         }}
       >
         Fisch wieder freilassen
@@ -233,8 +234,8 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
         zIndex: 9999,
         pointerEvents: 'none',
         padding: '24px 32px',
-        background: 'rgba(12, 105, 15, 0.95)',
-        color: '#fff',
+        background: 'var(--color-white)',
+        color: 'var(--color-gray-800)',
         borderRadius: '16px',
         boxShadow: '0 12px 28px rgba(0,0,0,0.4)',
         textAlign: 'center',
@@ -244,7 +245,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
         Glückwunsch! Sie haben {article}
       </p>
-      <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: '#fff' }}>
+      <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
         {fishName}
       </p>
       <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
@@ -276,13 +277,14 @@ export const LearnMoreButton = ({ overlayRoot, onLearnMore }: LearnMoreButtonPro
         onClick={onLearnMore}
         style={{
           padding: '12px 18px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: 'none',
-          background: '#0c690f',
-          color: '#fff',
+          background: 'var(--color-white)',
+          color: 'var(--color-primary)',
           fontWeight: 700,
           boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
           cursor: 'pointer',
+          width: '280px',
         }}
       >
         Ich will mehr über diesen Fisch erfahren!
@@ -368,10 +370,10 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
               style={{
                 marginTop: '20px',
                 padding: '10px 20px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 border: 'none',
-                background: '#0c690f',
-                color: '#fff',
+                background: 'var(--color-primary)',
+                color: 'var(--color-white)',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
@@ -383,8 +385,8 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
           <>
             <div
               style={{
-                background: '#0c690f',
-                color: '#fff',
+                background: 'var(--color-primary)',
+                color: 'var(--color-white)',
                 padding: '20px 24px',
                 borderTopLeftRadius: '16px',
                 borderTopRightRadius: '16px',
@@ -404,7 +406,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
               </p>
 
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Lebensraum
                 </h3>
                 <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
@@ -413,7 +415,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Ernährung
                 </h3>
                 <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
@@ -423,13 +425,13 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#0c690f' }}>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' }}>
                     Größe
                   </h4>
                   <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.size}</p>
                 </div>
                 <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#0c690f' }}>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' }}>
                     Gewicht
                   </h4>
                   <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.weight}</p>
@@ -437,7 +439,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Merkmale
                 </h3>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#555' }}>
@@ -448,14 +450,14 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Lebenserwartung
                 </h3>
                 <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.lifespan}</p>
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Naturschutz
                 </h3>
                 <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.conservation}</p>
@@ -463,13 +465,13 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
 
               <div
                 style={{
-                  background: '#f0f8f0',
+                  background: 'var(--color-green-50)',
                   padding: '16px',
                   borderRadius: '8px',
                   marginBottom: '20px',
                 }}
               >
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0c690f' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                   💡 Wussten Sie schon?
                 </h3>
                 <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
@@ -482,14 +484,14 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 style={{
                   width: '100%',
                   padding: '12px',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   border: 'none',
-                  background: '#0c690f',
-                  color: '#fff',
+                  background: 'var(--color-primary)',
+                  color: 'var(--color-white)',
                   fontWeight: 700,
                   fontSize: '16px',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(12, 105, 15, 0.2)',
+                  boxShadow: 'var(--shadow-primary-light)',
                 }}
               >
                 Schließen
