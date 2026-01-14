@@ -1,5 +1,9 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Accordion, AccordionItem, AccordionContent } from '@/components/ui/accordion';
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { Plus, X, Info } from 'lucide-react';
 
 // Fish gender mapping for correct German articles
 const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
@@ -236,29 +240,97 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
 interface FishCaughtDialogProps {
   overlayRoot: HTMLDivElement;
   fishName: string;
+  onLearnMore: () => void;
 }
 
-export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
+export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCaughtDialogProps) => {
   const article = getArticle(fishName);
+  const [showTooltip, setShowTooltip] = useState(false);
   
   return createPortal(
     <div
       style={{
         position: 'fixed',
         top: '18%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
+        left: '20px',
+        right: '20px',
+        transform: 'translateY(-50%)',
         zIndex: 9999,
-        pointerEvents: 'none',
-        padding: '24px 32px',
+        pointerEvents: 'auto',
+        padding: '24px 20px',
         background: 'var(--color-white)',
         color: 'var(--color-gray-800)',
         borderRadius: '16px',
         boxShadow: '0 12px 28px rgba(0,0,0,0.4)',
         textAlign: 'center',
         animation: 'slideInDown 0.4s ease-out',
+        boxSizing: 'border-box',
       }}
     >
+      {/* Info Icon in der oberen rechten Ecke */}
+      <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+        <button
+          onClick={onLearnMore}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          style={{
+            background: 'var(--color-primary)',
+            border: 'none',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <Info style={{ width: '18px', height: '18px', color: 'white' }} />
+        </button>
+        
+        {/* Tooltip */}
+        {showTooltip && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '40px',
+              right: '0',
+              background: 'rgba(0,0,0,0.85)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              zIndex: 10001,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            }}
+          >
+            Mehr über diesen Fisch
+            {/* Tooltip Arrow */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '12px',
+                width: '8px',
+                height: '8px',
+                background: 'rgba(0,0,0,0.85)',
+                transform: 'rotate(45deg)',
+              }}
+            />
+          </div>
+        )}
+      </div>
+
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
         Glückwunsch! Sie haben {article}
       </p>
@@ -268,44 +340,6 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
         gefangen!
       </p>
-    </div>,
-    overlayRoot
-  );
-};
-
-interface LearnMoreButtonProps {
-  overlayRoot: HTMLDivElement;
-  onLearnMore: () => void;
-}
-
-export const LearnMoreButton = ({ overlayRoot, onLearnMore }: LearnMoreButtonProps) => {
-  return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: '73%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 10000,
-        pointerEvents: 'auto',
-      }}
-    >
-      <button
-        onClick={onLearnMore}
-        style={{
-          padding: '12px 18px',
-          borderRadius: '12px',
-          border: 'none',
-          background: 'var(--color-white)',
-          color: 'var(--color-primary)',
-          fontWeight: 700,
-          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
-          cursor: 'pointer',
-          width: '280px',
-        }}
-      >
-        Ich will mehr über diesen Fisch erfahren!
-      </button>
     </div>,
     overlayRoot
   );
@@ -321,6 +355,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
     const loadFishInfo = async () => {
@@ -344,180 +379,201 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     loadFishInfo();
   }, [fishName]);
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      onClose();
+    }
+  };
+
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 10001,
-        pointerEvents: 'auto',
-        background: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
-      onClick={onClose}
-    >
-      <div
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <SheetContent 
+        side="bottom" 
+        className="h-[95vh] p-0 overflow-hidden border-t-0"
         style={{
-          background: '#fff',
-          borderRadius: '16px',
-          maxWidth: '500px',
-          width: '100%',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
-          position: 'relative',
+          pointerEvents: 'auto',
+          zIndex: 10001,
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
+        {/* Bottom Sheet Indicator */}
+        <div className="w-full flex justify-center pt-4 pb-3">
+          <div className="w-16 h-1.5 bg-gray-400 rounded-full" />
+        </div>
+
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-            <p>Lade Informationen...</p>
+            <p className="text-lg">Lade Informationen...</p>
           </div>
         ) : error || !fishInfo ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-            <p>Informationen für diesen Fisch sind leider nicht verfügbar.</p>
-            <button
-              onClick={onClose}
-              style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'var(--color-primary)',
-                color: 'var(--color-white)',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Schließen
-            </button>
+            <p className="text-lg">Informationen für diesen Fisch sind leider nicht verfügbar.</p>
           </div>
         ) : (
-          <>
-            <div
-              style={{
-                background: 'var(--color-primary)',
-                color: 'var(--color-white)',
-                padding: '20px 24px',
-                borderTopLeftRadius: '16px',
-                borderTopRightRadius: '16px',
-              }}
-            >
-              <h2 style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 700 }}>
+          <div className="h-full flex flex-col overflow-hidden pb-6">
+            {/* Header */}
+            <SheetHeader className="px-8 pb-6 pt-2">
+              <SheetTitle className="text-3xl font-bold text-primary">
                 {fishInfo.name}
-              </h2>
-              <p style={{ margin: 0, fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
+              </SheetTitle>
+              <SheetDescription className="text-base italic opacity-80 mt-1">
                 {fishInfo.scientificName}
-              </p>
-            </div>
+              </SheetDescription>
+            </SheetHeader>
 
-            <div style={{ padding: '24px' }}>
-              <p style={{ margin: '0 0 20px 0', fontSize: '15px', lineHeight: '1.6', color: '#333' }}>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-8 py-2">
+              {/* Einleitungstext */}
+              <p className="mb-8 text-lg leading-relaxed text-gray-700">
                 {fishInfo.description}
               </p>
 
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Lebensraum
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
-                  {fishInfo.habitat}
-                </p>
-              </div>
+              {/* Accordion für weitere Informationen */}
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                {/* Lebensraum */}
+                <AccordionItem value="habitat" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Lebensraum</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <p className="text-base leading-relaxed text-gray-600 pl-8 pb-2">
+                      {fishInfo.habitat}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Ernährung
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
-                  {fishInfo.diet}
-                </p>
-              </div>
+                {/* Ernährung */}
+                <AccordionItem value="diet" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Ernährung</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <p className="text-base leading-relaxed text-gray-600 pl-8 pb-2">
+                      {fishInfo.diet}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                    Größe
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.size}</p>
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                    Gewicht
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.weight}</p>
-                </div>
-              </div>
+                {/* Größe & Gewicht */}
+                <AccordionItem value="dimensions" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Größe & Gewicht</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 gap-4 pl-8 pb-2">
+                      <div>
+                        <h4 className="text-base font-semibold text-primary mb-2">Größe</h4>
+                        <p className="text-base text-gray-600">{fishInfo.size}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-semibold text-primary mb-2">Gewicht</h4>
+                        <p className="text-base text-gray-600">{fishInfo.weight}</p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Merkmale
-                </h3>
-                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#555' }}>
-                  {fishInfo.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
+                {/* Merkmale */}
+                <AccordionItem value="features" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Merkmale</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <ul className="list-disc pl-12 space-y-2 pb-2">
+                      {fishInfo.features.map((feature, index) => (
+                        <li key={index} className="text-base text-gray-600">{feature}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Lebenserwartung
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.lifespan}</p>
-              </div>
+                {/* Lebenserwartung */}
+                <AccordionItem value="lifespan" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Lebenserwartung</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <p className="text-base leading-relaxed text-gray-600 pl-8 pb-2">
+                      {fishInfo.lifespan}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Naturschutz
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>{fishInfo.conservation}</p>
-              </div>
+                {/* Naturschutz */}
+                <AccordionItem value="conservation" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>Naturschutz</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <p className="text-base leading-relaxed text-gray-600 pl-8 pb-2">
+                      {fishInfo.conservation}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div
-                style={{
-                  background: 'var(--color-green-50)',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  marginBottom: '20px',
-                }}
-              >
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  💡 Wussten Sie schon?
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#555' }}>
-                  {fishInfo.funFact}
-                </p>
-              </div>
-
-              <button
-                onClick={onClose}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-white)',
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-primary-light)',
-                }}
-              >
-                Schließen
-              </button>
+                {/* Wussten Sie schon? */}
+                <AccordionItem value="funfact" className="border-b-0">
+                  <AccordionPrimitive.Header className="flex">
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
+                      <span>💡 Wussten Sie schon?</span>
+                      <div className="relative w-5 h-5">
+                        <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
+                        <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent>
+                    <div className="bg-green-50 p-5 rounded-lg ml-8 mb-2">
+                      <p className="text-base leading-relaxed text-gray-600">
+                        {fishInfo.funFact}
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
-          </>
+          </div>
         )}
-      </div>
-    </div>,
+      </SheetContent>
+    </Sheet>,
     overlayRoot
   );
 };

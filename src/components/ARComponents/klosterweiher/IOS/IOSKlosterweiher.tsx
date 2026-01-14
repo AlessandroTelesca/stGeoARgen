@@ -10,7 +10,6 @@ import {
   FishingInstructions,
   ReleaseFishButton,
   FishCaughtDialog,
-  LearnMoreButton,
   FishInfoPopup,
 } from "../KlosterweiherUI";
 
@@ -477,14 +476,11 @@ export const IOSKlosterweiherView = ({
           <FishCaughtDialog
             overlayRoot={overlayRootRef.current}
             fishName={caughtFishName}
+            onLearnMore={() => setShowFishInfo(true)}
           />
           <ReleaseFishButton
             overlayRoot={overlayRootRef.current}
             onRelease={() => sessionRef.current?.releaseCurrentFish()}
-          />
-          <LearnMoreButton
-            overlayRoot={overlayRootRef.current}
-            onLearnMore={() => setShowFishInfo(true)}
           />
         </>
       )}
