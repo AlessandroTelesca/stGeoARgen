@@ -56,6 +56,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   private rodLoaded = false;
   private fishesLoaded = false;
   private waterLoaded = false;
+  private threeInitialized = false; // Guard to prevent double initialization
 
   // Orbit controls for caught fish
   protected orbitEnabled = false;
@@ -160,6 +161,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   }
 
   protected initThree(): void {
+    // Guard against double initialization
+    if (this.threeInitialized) {
+      console.log("[AndroidKlosterweiher] initThree already called, skipping...");
+      return;
+    }
+    this.threeInitialized = true;
+
     super.initThree();
 
     // Setup additional pointer handlers for orbit controls
@@ -350,24 +358,18 @@ export const AndroidKlosterweiherView = ({
     };
   }, []);
 
-  const startAR = async () => {
-    if (
-      !containerRef.current ||
-      !overlayRootRef.current ||
-      isStarting ||
-      hasStarted
-    )
-      return;
-    setIsStarting(true);
-    setError(null);
-
-    try {
-      console.log("[KlosterweiherView] Initializing AR session...");
-      const session = new AndroidKlosterweiherARSession(containerRef.current, {
-        useWebXR: true,
-        domOverlayRoot: overlayRootRef.current,
-        onError: (e) => console.error("AR init failed", e),
-      });
+  // Pre-create session and start loading models when authorized
+  useEffect(() => {
+    if (isAuthorized && !sessionRef.current && !hasStarted && containerRef.current && overlayRootRef.current) {
+      console.log("[KlosterweiherView] Pre-creating AR session to load models...");
+      const session = new AndroidKlosterweiherARSession(
+        containerRef.current,
+        {
+          useWebXR: true,
+          domOverlayRoot: overlayRootRef.current,
+          onError: (e) => console.error("AR init failed", e),
+        }
+      );
 
       session.onFishCaught = (fishName: string) => {
         setFishCaught(true);
@@ -380,11 +382,32 @@ export const AndroidKlosterweiherView = ({
       };
       session.onModelsLoadedCallback = () => {
         setModelsLoaded(true);
+        console.log("[KlosterweiherView] All models loaded and ready!");
       };
 
-      await session.init(); // Must be called from user gesture to satisfy WebXR security
-      console.log("[KlosterweiherView] AR session initialized");
       sessionRef.current = session;
+      
+      // Manually trigger initThree to start loading models without starting WebXR
+      session['initThree']();
+    }
+  }, [isAuthorized, hasStarted]);
+
+  const startAR = async () => {
+    if (
+      !containerRef.current ||
+      !overlayRootRef.current ||
+      isStarting ||
+      hasStarted ||
+      !sessionRef.current
+    )
+      return;
+    setIsStarting(true);
+    setError(null);
+
+    try {
+      console.log("[KlosterweiherView] Starting WebXR AR session...");
+      await sessionRef.current.init(); // Must be called from user gesture to satisfy WebXR security
+      console.log("[KlosterweiherView] AR session initialized");
       setHasStarted(true);
       setWaitingForGroundDetection(true);
     } catch (e: any) {
@@ -410,7 +433,7 @@ export const AndroidKlosterweiherView = ({
         onNavigateProfile={onNavigateProfile}
       />
 
-      {isAuthorized && !hasStarted && modelsLoaded && (
+      {isAuthorized && !hasStarted && (
         <div
           style={{
             position: "fixed",
@@ -434,25 +457,31 @@ export const AndroidKlosterweiherView = ({
             }}
           >
             <p style={{ margin: "0 0 12px 0", fontWeight: 700 }}>
-              Start AR to scan the ground
+              {modelsLoaded ? "Start AR to scan the ground" : "Loading models..."}
             </p>
+            {!modelsLoaded && (
+              <p style={{ color: "#666", margin: "0 0 12px 0", fontSize: "14px" }}>
+                Please wait while AR models are loading
+              </p>
+            )}
             {error && (
               <p style={{ color: "#b00020", margin: "0 0 8px 0" }}>{error}</p>
             )}
             <button
               onClick={startAR}
-              disabled={isStarting}
+              disabled={isStarting || !modelsLoaded}
               style={{
                 padding: "10px 16px",
                 borderRadius: "8px",
                 border: "none",
-                background: "#0c690f",
+                background: modelsLoaded ? "#0c690f" : "#ccc",
                 color: "#fff",
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: modelsLoaded && !isStarting ? "pointer" : "not-allowed",
+                opacity: modelsLoaded && !isStarting ? 1 : 0.6,
               }}
             >
-              {isStarting ? "Starting..." : "Start AR"}
+              {isStarting ? "Starting..." : modelsLoaded ? "Start AR" : "Loading..."}
             </button>
           </div>
         </div>
