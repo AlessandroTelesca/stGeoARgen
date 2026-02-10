@@ -23,6 +23,7 @@ interface ARViewProps {
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public onGroundDetectedCallback?: () => void;
+  public onModelsLoadedCallback?: () => void;
 
   // Properties from KlosterweiherARSessionBase
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
@@ -51,6 +52,10 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
+  private modelsLoaded = false;
+  private rodLoaded = false;
+  private fishesLoaded = false;
+  private waterLoaded = false;
 
   // Orbit controls for caught fish
   protected orbitEnabled = false;
@@ -147,6 +152,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     };
   }
 
+  private checkAllModelsLoaded(): void {
+    if (this.rodLoaded && this.fishesLoaded && this.waterLoaded && !this.modelsLoaded) {
+      this.modelsLoaded = true;
+      this.onModelsLoadedCallback?.();
+    }
+  }
+
   protected initThree(): void {
     super.initThree();
 
@@ -168,8 +180,14 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
           this.rod.parent = this.camera;
           this.rod.visible = false; // Hide until ground is detected
         }
+        this.rodLoaded = true;
+        this.checkAllModelsLoaded();
       })
-      .catch((err) => console.error("Rod model failed to load", err));
+      .catch((err) => {
+        console.error("Rod model failed to load", err);
+        this.rodLoaded = true;
+        this.checkAllModelsLoaded();
+      });
 
     // Load all fish models
     this.fishUrls.forEach((fishUrl, index) => {
@@ -200,10 +218,20 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
               this.currentFishIndex = 0;
             }
           }
+          // Check if all fishes are loaded
+          if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.fishesLoaded = true;
+            this.checkAllModelsLoaded();
+          }
         })
-        .catch((err) =>
-          console.error(`Fish model ${index} failed to load`, err),
-        );
+        .catch((err) => {
+          console.error(`Fish model ${index} failed to load`, err);
+          // Still mark as loaded to avoid infinite waiting
+          if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.fishesLoaded = true;
+            this.checkAllModelsLoaded();
+          }
+        });
     });
 
     // Add water model
@@ -218,8 +246,14 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
             if (child instanceof THREE.Mesh) child.material.opacity = 0.02;
           });
         }
+        this.waterLoaded = true;
+        this.checkAllModelsLoaded();
       })
-      .catch((err) => console.error("Water model failed to load", err));
+      .catch((err) => {
+        console.error("Water model failed to load", err);
+        this.waterLoaded = true;
+        this.checkAllModelsLoaded();
+      });
   }
 
   // Override to handle WebXR ground detection automatically
@@ -307,6 +341,7 @@ export const AndroidKlosterweiherView = ({
   const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForGroundDetection, setWaitingForGroundDetection] =
     useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -343,6 +378,9 @@ export const AndroidKlosterweiherView = ({
         setWaitingForGroundDetection(false);
         setShowFishingInstructions(true);
       };
+      session.onModelsLoadedCallback = () => {
+        setModelsLoaded(true);
+      };
 
       await session.init(); // Must be called from user gesture to satisfy WebXR security
       console.log("[KlosterweiherView] AR session initialized");
@@ -372,7 +410,7 @@ export const AndroidKlosterweiherView = ({
         onNavigateProfile={onNavigateProfile}
       />
 
-      {isAuthorized && !hasStarted && (
+      {isAuthorized && !hasStarted && modelsLoaded && (
         <div
           style={{
             position: "fixed",
