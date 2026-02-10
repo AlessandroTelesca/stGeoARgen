@@ -1,6 +1,7 @@
 /// <reference path="../types/webxr.d.ts" />
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 export interface WebXRSession {
   stop: () => void;
@@ -221,6 +222,9 @@ export class WebXRVisualizer implements WebXRSession {
       Array.isArray(value) ? new THREE.Euler(...value) : value;
 
     const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
+    loader.setDRACOLoader(dracoLoader);
 
     return new Promise<THREE.Object3D>((resolve, reject) => {
       loader.load(
@@ -268,6 +272,9 @@ export class WebXRVisualizer implements WebXRSession {
       Array.isArray(value) ? new THREE.Euler(...value) : value;
 
     const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
+    loader.setDRACOLoader(dracoLoader);
 
     return new Promise((resolve, reject) => {
       loader.load(
