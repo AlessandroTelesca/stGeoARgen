@@ -8,9 +8,10 @@ import { GeorgiAvatar } from './Georgi';
 interface ForgotPasswordProps {
   onNavigateBack?: () => void;
   onNavigateToLogin?: () => void;
+  onNavigateToRegister?: () => void;
 }
 
-export function ForgotPassword({ onNavigateBack, onNavigateToLogin }: ForgotPasswordProps) {
+export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateToRegister }: ForgotPasswordProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -341,7 +342,14 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin }: ForgotPass
           transition={{ delay: 1.0 }}
         >
           Du erhältst nur eine E-Mail, wenn ein Konto mit dieser Adresse existiert. Falls nicht, kannst du dich{' '}
-          <button className="text-primary hover:underline">hier registrieren</button>
+          <button
+            type="button"
+            onClick={onNavigateToRegister}
+            className="text-primary hover:underline"
+            disabled={isLoading}
+          >
+            hier registrieren
+          </button>
         </motion.p>
       </motion.div>
     </div>
