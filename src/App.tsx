@@ -16,6 +16,7 @@ import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
+import { Login } from './components/Login';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
@@ -53,7 +54,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -61,15 +62,36 @@ export default function App() {
   const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Handle login
-  const handleLogin = () => {
-    setUsername('Jonas');
+  const handleLogin = (username: string, email: string) => {
+    setUsername(username);
+    setUserEmail(email);
+    setCurrentView('home');
+    navigate('/');
+    toast.success('Erfolgreich angemeldet!', {
+      description: `Willkommen zurück, ${username}!`,
+      duration: 3000,
+    });
   };
 
   // Handle logout
   const handleLogout = () => {
     setUsername(null);
+    setUserEmail(null);
+    setCurrentView('home');
+    navigate('/');
+    toast.success('Erfolgreich abgemeldet!', {
+      description: 'Bis bald!',
+      duration: 3000,
+    });
+  };
+
+  // Navigate to login
+  const handleNavigateToLogin = () => {
+    setCurrentView('login');
+    navigate('/login');
   };
 
   // Check if user has seen onboarding
@@ -372,6 +394,7 @@ export default function App() {
     if (currentView === 'stations') return 'Stationen';
     if (currentView === 'progress') return 'Fortschritt';
     if (currentView === 'rewards') return 'Belohnungen';
+    if (currentView === 'login') return 'Anmeldung';
     if (currentView === 'path' && selectedPath) return selectedPath.title;
     if (currentView === 'station' && selectedStation) return selectedStation.title;
     return 'St.GeoARgen';
@@ -389,13 +412,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      {currentView !== 'station' && (
+      {currentView !== 'station' && currentView !== 'login' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}
           currentView={currentView}
           username={username}
-          onLogin={handleLogin}
+          onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
         />
       )}
@@ -410,6 +433,13 @@ export default function App() {
           onOpenQRScanner={handleOpenQRScanner}
           onNavigate={handleNavigate}
           username={username}
+        />
+      )}
+
+      {currentView === 'login' && (
+        <Login 
+          onLogin={handleLogin}
+          onNavigateBack={handleBackToDashboard}
         />
       )}
 
@@ -542,7 +572,7 @@ export default function App() {
         <KlosterweiherView
           onNavigateHome={() => navigate('/')}
           username={username}
-          onLogin={handleLogin}
+          onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
         />
@@ -552,7 +582,7 @@ export default function App() {
         <PhonomuseumView
           onNavigateHome={() => navigate('/')}
           username={username}
-          onLogin={handleLogin}
+          onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
         />
@@ -562,7 +592,7 @@ export default function App() {
         <GlockenspielView
           onNavigateHome={() => navigate('/')}
           username={username}
-          onLogin={handleLogin}
+          onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
         />

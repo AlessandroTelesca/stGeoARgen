@@ -179,19 +179,38 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                                 <LogIn className="w-4 h-4" />
                                 Anmelden
                               </button>
-                              <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium">
+                              <button 
+                                onClick={() => {
+                                  setUserDropdownOpen(false);
+                                  setMenuOpen(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                              >
                                 <UserPlus className="w-4 h-4" />
                                 Registrieren
                               </button>
                             </>
                           ) : (
-                            <button
-                              onClick={handleLogout}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-red-600"
-                            >
-                              <LogOut className="w-4 h-4" />
-                              Abmelden
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  onNavigate('profile');
+                                  setUserDropdownOpen(false);
+                                  setMenuOpen(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                              >
+                                <User className="w-4 h-4" />
+                                Profil
+                              </button>
+                              <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-red-600"
+                              >
+                                <LogOut className="w-4 h-4" />
+                                Abmelden
+                              </button>
+                            </>
                           )}
                         </div>
                       </motion.div>
