@@ -3,7 +3,7 @@ import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void }) => {
 
     // Detect device and open appropriate maps app
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -17,7 +17,7 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 		);
     } else if (isAndroid) {
 		console.log("Device is Android, rendering AndroidKlosterweiher");
-		return <AndroidKlosterweiherView onNavigateHome={onNavigateHome} username={username} onLogin={onLogin} onLogout={onLogout} onNavigateProfile={onNavigateProfile} />;
+		return <AndroidKlosterweiherView onNavigateHome={onNavigateHome} username={username} onLogin={onLogin} onLogout={onLogout} onNavigateProfile={onNavigateProfile} onRegister={onRegister} />;
     } else if (isNotMobile) {
 		return (
 			<div className="flex items-center justify-center h-screen p-4">

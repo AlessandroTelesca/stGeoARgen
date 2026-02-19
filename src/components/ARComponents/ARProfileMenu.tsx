@@ -9,6 +9,7 @@ interface ARProfileMenuProps {
   onLogin: () => void;
   onLogout: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
 }
 
 export const ARProfileMenu = ({
@@ -18,6 +19,7 @@ export const ARProfileMenu = ({
   onLogin,
   onLogout,
   onNavigateProfile,
+  onRegister,
 }: ARProfileMenuProps) => {
   const handleLogin = () => {
     onLogin();
@@ -26,6 +28,11 @@ export const ARProfileMenu = ({
 
   const handleLogout = () => {
     onLogout();
+    onClose();
+  };
+
+  const handleRegister = () => {
+    onRegister?.();
     onClose();
   };
 
@@ -86,6 +93,7 @@ export const ARProfileMenu = ({
                     Anmelden
                   </button>
                   <button
+                    onClick={handleRegister}
                     style={{
                       width: '100%',
                       display: 'flex',

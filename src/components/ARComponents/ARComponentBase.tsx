@@ -17,6 +17,7 @@ interface ARComponentBaseProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
 }
 
 // Export Stations aus zentraler Config
@@ -92,7 +93,7 @@ export const useStationProximity = (stationLat: number, stationLng: number, radi
   return { userLocation, distance, locationError, isWithinRadius };
 };
 
-export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef, username, onLogin, onLogout, onNavigateProfile }: ARComponentBaseProps) => {
+export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -239,6 +240,10 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
             setProfileMenuOpen(false);
           }}
           onNavigateProfile={onNavigateProfile}
+          onRegister={() => {
+            onRegister?.();
+            setProfileMenuOpen(false);
+          }}
         />
       </div>
     </div>

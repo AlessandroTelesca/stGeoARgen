@@ -10,6 +10,7 @@ interface ARViewProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
 }
 
 class PhonomuseumARSession extends ARVisualizer {
@@ -21,7 +22,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -70,6 +71,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
+        onRegister={onRegister}
       />
     </ARProximityGate>
   );

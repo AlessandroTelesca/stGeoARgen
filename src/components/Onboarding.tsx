@@ -120,7 +120,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               >
-                <GeorgiAvatar size="xl" animated />
+                <GeorgiAvatar size="lg" animated />
               </motion.div>
 
               {/* Georgi Speech Bubble */}

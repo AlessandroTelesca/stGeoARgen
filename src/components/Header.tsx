@@ -9,9 +9,10 @@ interface HeaderProps {
   username: string | null;
   onLogin: () => void;
   onLogout: () => void;
+  onRegister?: () => void;
 }
 
-export function Header({ title, onNavigate, currentView, username, onLogin, onLogout }: HeaderProps) {
+export function Header({ title, onNavigate, currentView, username, onLogin, onLogout, onRegister }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -23,6 +24,12 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
   const handleLogout = () => {
     onLogout();
     setUserDropdownOpen(false);
+  };
+
+  const handleRegister = () => {
+    onRegister?.();
+    setUserDropdownOpen(false);
+    setMenuOpen(false);
   };
 
   const menuItems = [
@@ -180,10 +187,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                                 Anmelden
                               </button>
                               <button 
-                                onClick={() => {
-                                  setUserDropdownOpen(false);
-                                  setMenuOpen(false);
-                                }}
+                                onClick={handleRegister}
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                               >
                                 <UserPlus className="w-4 h-4" />

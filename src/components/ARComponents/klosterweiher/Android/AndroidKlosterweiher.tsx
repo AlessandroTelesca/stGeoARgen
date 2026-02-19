@@ -19,6 +19,7 @@ interface ARViewProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
 }
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
@@ -335,6 +336,7 @@ export const AndroidKlosterweiherView = ({
   onLogin,
   onLogout,
   onNavigateProfile,
+  onRegister,
 }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -431,6 +433,7 @@ export const AndroidKlosterweiherView = ({
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
+        onRegister={onRegister}
       />
 
       {isAuthorized && !hasStarted && (

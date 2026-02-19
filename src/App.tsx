@@ -17,6 +17,8 @@ import { ProgressView } from './components/ProgressView';
 import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
 import { Login } from './components/Login';
+import { Register } from './components/Register';
+import { ForgotPassword } from './components/ForgotPassword';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
@@ -54,7 +56,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -92,6 +94,18 @@ export default function App() {
   const handleNavigateToLogin = () => {
     setCurrentView('login');
     navigate('/login');
+  };
+
+  // Navigate to register
+  const handleNavigateToRegister = () => {
+    setCurrentView('register');
+    navigate('/register');
+  };
+
+  // Navigate to forgot password
+  const handleNavigateToForgotPassword = () => {
+    setCurrentView('forgot-password');
+    navigate('/forgot-password');
   };
 
   // Check if user has seen onboarding
@@ -136,6 +150,12 @@ export default function App() {
       setCurrentView('rewards');
     } else if (path === '/paths') {
       setCurrentView('paths');
+    } else if (path === '/login') {
+      setCurrentView('login');
+    } else if (path === '/register') {
+      setCurrentView('register');
+    } else if (path === '/forgot-password') {
+      setCurrentView('forgot-password');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
     }
@@ -395,6 +415,8 @@ export default function App() {
     if (currentView === 'progress') return 'Fortschritt';
     if (currentView === 'rewards') return 'Belohnungen';
     if (currentView === 'login') return 'Anmeldung';
+    if (currentView === 'register') return 'Registrierung';
+    if (currentView === 'forgot-password') return 'Passwort vergessen';
     if (currentView === 'path' && selectedPath) return selectedPath.title;
     if (currentView === 'station' && selectedStation) return selectedStation.title;
     return 'St.GeoARgen';
@@ -412,7 +434,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      {currentView !== 'station' && currentView !== 'login' && (
+      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}
@@ -420,6 +442,7 @@ export default function App() {
           username={username}
           onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
+          onRegister={handleNavigateToRegister}
         />
       )}
 
@@ -440,6 +463,23 @@ export default function App() {
         <Login 
           onLogin={handleLogin}
           onNavigateBack={handleBackToDashboard}
+          onNavigateToRegister={handleNavigateToRegister}
+          onNavigateToForgotPassword={handleNavigateToForgotPassword}
+        />
+      )}
+
+      {currentView === 'register' && (
+        <Register 
+          onRegister={handleLogin}
+          onNavigateBack={handleBackToDashboard}
+          onNavigateToLogin={handleNavigateToLogin}
+        />
+      )}
+
+      {currentView === 'forgot-password' && (
+        <ForgotPassword 
+          onNavigateBack={handleBackToDashboard}
+          onNavigateToLogin={handleNavigateToLogin}
         />
       )}
 
@@ -575,6 +615,7 @@ export default function App() {
           onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
+          onRegister={handleNavigateToRegister}
         />
       )}
       
@@ -585,6 +626,7 @@ export default function App() {
           onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
+          onRegister={handleNavigateToRegister}
         />
       )}
       
@@ -595,6 +637,7 @@ export default function App() {
           onLogin={handleNavigateToLogin}
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
+          onRegister={handleNavigateToRegister}
         />
       )}
     </div>

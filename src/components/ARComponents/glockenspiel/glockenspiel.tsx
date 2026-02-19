@@ -10,6 +10,7 @@ interface ARViewProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
 }
 
 class GlockenspielARSession extends ARVisualizer {
@@ -21,7 +22,7 @@ class GlockenspielARSession extends ARVisualizer {
   // }
 }
 
-export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: ARViewProps) => {
+export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<GlockenspielARSession | null>(null);
@@ -70,6 +71,7 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
+        onRegister={onRegister}
       />
     </ARProximityGate>
   );
