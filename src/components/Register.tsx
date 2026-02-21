@@ -4,6 +4,7 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-re
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
+import { ApiError, registerWithEmail } from '../utils/authApi';
 
 interface RegisterProps {
   onRegister: (username: string, email: string) => void;
@@ -142,11 +143,19 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      onRegister(username, email);
+    try {
+      const user = await registerWithEmail(username, email, password);
+      onRegister(user.username, user.email);
+    } catch (error) {
+      console.error('Registration failed in UI:', error);
+      const message = error instanceof ApiError
+        ? error.message
+        : 'Registrierung fehlgeschlagen. Bitte versuche es erneut.';
+
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const isFormValid = username && email && password && confirmPassword && 

@@ -4,6 +4,7 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
+import { ApiError, loginWithEmail } from '../utils/authApi';
 
 interface LoginProps {
   onLogin: (username: string, email: string) => void;
@@ -81,14 +82,19 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any valid credentials
-      // In production, this would be a real API call
-      const username = email.split('@')[0];
-      onLogin(username.charAt(0).toUpperCase() + username.slice(1), email);
+    try {
+      const user = await loginWithEmail(email, password);
+      onLogin(user.username, user.email);
+    } catch (error) {
+      console.error('Login failed in UI:', error);
+      const message = error instanceof ApiError
+        ? error.message
+        : 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.';
+
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const isFormValid = email && password && !errors.email && !errors.password;

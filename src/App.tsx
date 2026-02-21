@@ -480,6 +480,7 @@ export default function App() {
         <ForgotPassword 
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
+          onNavigateToRegister={handleNavigateToRegister}
         />
       )}
 
