@@ -3,12 +3,14 @@ import { motion } from 'motion/react';
 
 interface ProfileProps {
   username: string | null;
+  email?: string | null;
+  createdAt?: string | null;
   onBack: () => void;
   onBackToSettings?: () => void;
   onLogout: () => void;
 }
 
-export function Profile({ username, onBack, onBackToSettings, onLogout }: ProfileProps) {
+export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout }: ProfileProps) {
   const handleDeleteAccount = () => {
     if (confirm('Möchtest du dein Konto wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
       // TODO: Implement account deletion
@@ -30,7 +32,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
           </button>
         </div>
       </div>
-      
+
       <div className="max-w-3xl mx-auto px-4 py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -54,7 +56,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
               Account-Informationen
             </h3>
-            
+
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
               <div className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -72,7 +74,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">E-Mail</p>
-                  <p className="text-sm text-muted-foreground">{username ? `${username.toLowerCase()}@example.com` : 'Nicht verfügbar'}</p>
+                  <p className="text-sm text-muted-foreground">{email || 'Nicht verfügbar'}</p>
                 </div>
               </div>
 
@@ -82,7 +84,13 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">Registriert seit</p>
-                  <p className="text-sm text-muted-foreground">22. Dezember 2025</p>
+                  <p className="text-sm text-muted-foreground">
+                    {createdAt
+                      ? new Date(createdAt).toLocaleDateString('de-DE', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                      })
+                      : 'Unbekannt'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -93,7 +101,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
               Datenschutz & Sicherheit
             </h3>
-            
+
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
               <button className="w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors">
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -122,7 +130,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
               Account
             </h3>
-            
+
             <div className="bg-white rounded-xl border border-border">
               <button
                 onClick={onLogout}
@@ -144,7 +152,7 @@ export function Profile({ username, onBack, onBackToSettings, onLogout }: Profil
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
               Gefahrenzone
             </h3>
-            
+
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
                 onClick={handleDeleteAccount}

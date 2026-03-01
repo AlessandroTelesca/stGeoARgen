@@ -4,9 +4,10 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
+import { loginUser } from '../services/auth';
 
 interface LoginProps {
-  onLogin: (username: string, email: string) => void;
+  onLogin: (username: string, email: string, userId: number) => void;
   onNavigateBack?: () => void;
   onNavigateToRegister?: () => void;
   onNavigateToForgotPassword?: () => void;
@@ -64,14 +65,14 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     setTouched({ email: true, password: true });
-    
+
     // Validate all fields
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
-    
+
     if (emailError || passwordError) {
       setErrors({ email: emailError, password: passwordError });
       return;
@@ -81,14 +82,15 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any valid credentials
-      // In production, this would be a real API call
-      const username = email.split('@')[0];
-      onLogin(username.charAt(0).toUpperCase() + username.slice(1), email);
+    try {
+      const user = await loginUser(email, password);
+      onLogin(user.username, user.email, user.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const isFormValid = email && password && !errors.email && !errors.password;

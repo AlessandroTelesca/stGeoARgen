@@ -4,9 +4,10 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-re
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
+import { registerUser } from '../services/auth';
 
 interface RegisterProps {
-  onRegister: (username: string, email: string) => void;
+  onRegister: (username: string, email: string, userId: number) => void;
   onNavigateBack?: () => void;
   onNavigateToLogin?: () => void;
 }
@@ -19,17 +20,17 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ 
-    username?: string; 
-    email?: string; 
-    password?: string; 
+  const [errors, setErrors] = useState<{
+    username?: string;
+    email?: string;
+    password?: string;
     confirmPassword?: string;
-    general?: string 
+    general?: string
   }>({});
-  const [touched, setTouched] = useState<{ 
-    username?: boolean; 
-    email?: boolean; 
-    password?: boolean; 
+  const [touched, setTouched] = useState<{
+    username?: boolean;
+    email?: boolean;
+    password?: boolean;
     confirmPassword?: boolean;
   }>({});
 
@@ -118,20 +119,20 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     setTouched({ username: true, email: true, password: true, confirmPassword: true });
-    
+
     // Validate all fields
     const usernameError = validateUsername(username);
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
     const confirmPasswordError = validateConfirmPassword(confirmPassword);
-    
+
     if (usernameError || emailError || passwordError || confirmPasswordError) {
-      setErrors({ 
-        username: usernameError, 
-        email: emailError, 
+      setErrors({
+        username: usernameError,
+        email: emailError,
         password: passwordError,
         confirmPassword: confirmPasswordError
       });
@@ -142,14 +143,18 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      onRegister(username, email);
+    try {
+      const user = await registerUser(username, email, password);
+      onRegister(user.username, user.email, user.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registrierung fehlgeschlagen.';
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
-  const isFormValid = username && email && password && confirmPassword && 
+  const isFormValid = username && email && password && confirmPassword &&
     !errors.username && !errors.email && !errors.password && !errors.confirmPassword;
 
   return (

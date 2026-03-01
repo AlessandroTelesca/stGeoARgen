@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { useAuth } from './hooks/useAuth';
+import { getUserProgress, saveStationProgress } from './services/auth';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -56,6 +58,7 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isInitializing, login, register, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
@@ -63,27 +66,58 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Handle login
-  const handleLogin = (username: string, email: string) => {
-    setUsername(username);
-    setUserEmail(email);
+  // Bequeme Aliases aus dem User-Objekt
+  const username = user?.username ?? null;
+  const userEmail = user?.email ?? null;
+
+  // Handle login (wird von Login.tsx und Register.tsx aufgerufen)
+  const handleLogin = async (uname: string, email: string, userId: number) => {
     setCurrentView('home');
     navigate('/');
     toast.success('Erfolgreich angemeldet!', {
-      description: `Willkommen zurück, ${username}!`,
+      description: `Willkommen zurück, ${uname}!`,
       duration: 3000,
     });
+    // Fortschritt aus DB laden
+    try {
+      const progressEntries = await getUserProgress(userId);
+      if (progressEntries.length > 0) {
+        const completedIds = new Set(
+          progressEntries.map((p) => p.station_id)
+        );
+        setPaths((prev) =>
+          prev.map((path) => ({
+            ...path,
+            stations: path.stations.map((station) =>
+              completedIds.has(station.id)
+                ? { ...station, status: 'completed' as const }
+                : station
+            ),
+          }))
+        );
+      }
+    } catch {
+      // Progress konnte nicht geladen werden – kein Fehler für den User
+    }
   };
 
   // Handle logout
   const handleLogout = () => {
-    setUsername(null);
-    setUserEmail(null);
+    logout();
     setCurrentView('home');
     navigate('/');
+    // Stationen zurücksetzen damit kein fremder Fortschritt angezeigt wird
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) => ({
+          ...station,
+          status: 'available' as const,
+        })),
+      }))
+    );
+    setRewardClaimed(false);
     toast.success('Erfolgreich abgemeldet!', {
       description: 'Bis bald!',
       duration: 3000,
@@ -129,7 +163,7 @@ export default function App() {
   // Sync state with URL
   useEffect(() => {
     const path = location.pathname;
-    
+
     if (path === '/klosterweiher') {
       setCurrentView('ar-klosterweiher');
     } else if (path === '/phonomuseum') {
@@ -228,7 +262,7 @@ export default function App() {
   useEffect(() => {
     const currentPath = paths[0];
     const progress = getPathProgress(currentPath);
-    
+
     // Check if all stations are completed and reward hasn't been claimed yet
     if (
       progress.completedStations === progress.totalStations &&
@@ -246,7 +280,7 @@ export default function App() {
     const earnedPoints = path.stations
       .filter(s => s.status === 'completed')
       .reduce((sum, s) => sum + s.points, 0);
-    
+
     return {
       completedStations,
       totalStations: path.stations.length,
@@ -275,15 +309,31 @@ export default function App() {
     setCurrentView('station');
   };
 
-  const handleStationComplete = (stationId: number) => {
-    setPaths(paths.map(path => ({
-      ...path,
-      stations: path.stations.map(station =>
-        station.id === stationId
-          ? { ...station, status: 'completed' as const }
-          : station
-      ),
-    })));
+  const handleStationComplete = async (stationId: number) => {
+    // Lokal aktualisieren
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) =>
+          station.id === stationId
+            ? { ...station, status: 'completed' as const }
+            : station
+        ),
+      }))
+    );
+    // In DB speichern (nur wenn User eingeloggt)
+    if (user) {
+      const currentPath = paths.find((p) =>
+        p.stations.some((s) => s.id === stationId)
+      );
+      if (currentPath) {
+        try {
+          await saveStationProgress(user.id, currentPath.id, stationId);
+        } catch {
+          // Speichern fehlgeschlagen – Fortschritt ist lokal trotzdem sichtbar
+        }
+      }
+    }
   };
 
   const handleResetProgress = () => {
@@ -336,9 +386,9 @@ export default function App() {
 
   const handleQRScan = (arView: string) => {
     setShowQRScanner(false);
-    
+
     console.log('handleQRScan called with:', arView);
-    
+
     // Direkte Weiterleitung zu AR-Views
     if (arView === 'glockenspiel') {
       setCurrentView('ar-glockenspiel');
@@ -352,7 +402,7 @@ export default function App() {
     } else {
       // For any other QR code, try to open it as URL or show alert
       console.log('Generic QR code content:', arView);
-      
+
       // Check if it's a URL
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
         window.open(arView, '_blank');
@@ -425,7 +475,7 @@ export default function App() {
   const handleRewardSelect = (localityId: string) => {
     setRewardClaimed(true);
     setShowRewardDialog(false);
-    
+
     toast.success('Gutschein erfolgreich eingelöst!', {
       description: 'Du erhältst deinen Gutschein per E-Mail.',
       duration: 5000,
@@ -460,7 +510,7 @@ export default function App() {
       )}
 
       {currentView === 'login' && (
-        <Login 
+        <Login
           onLogin={handleLogin}
           onNavigateBack={handleBackToDashboard}
           onNavigateToRegister={handleNavigateToRegister}
@@ -469,7 +519,7 @@ export default function App() {
       )}
 
       {currentView === 'register' && (
-        <Register 
+        <Register
           onRegister={handleLogin}
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
@@ -477,7 +527,7 @@ export default function App() {
       )}
 
       {currentView === 'forgot-password' && (
-        <ForgotPassword 
+        <ForgotPassword
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
         />
@@ -508,8 +558,8 @@ export default function App() {
       )}
 
       {currentView === 'settings' && (
-        <Settings 
-          onResetProgress={handleResetProgress} 
+        <Settings
+          onResetProgress={handleResetProgress}
           onBack={handleBackToDashboard}
           onNavigateToProfile={() => {
             setCurrentView('profile');
@@ -519,14 +569,16 @@ export default function App() {
       )}
 
       {currentView === 'profile' && (
-        <Profile 
-          username={username} 
-          onBack={handleBackToDashboard} 
+        <Profile
+          username={username}
+          email={user?.email}
+          createdAt={user?.created_at}
+          onBack={handleBackToDashboard}
           onBackToSettings={() => {
             setCurrentView('settings');
             navigate('/settings');
           }}
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
         />
       )}
 
@@ -618,7 +670,7 @@ export default function App() {
           onRegister={handleNavigateToRegister}
         />
       )}
-      
+
       {currentView === 'ar-phonomuseum' && (
         <PhonomuseumView
           onNavigateHome={() => navigate('/')}
@@ -629,7 +681,7 @@ export default function App() {
           onRegister={handleNavigateToRegister}
         />
       )}
-      
+
       {currentView === 'ar-glockenspiel' && (
         <GlockenspielView
           onNavigateHome={() => navigate('/')}
