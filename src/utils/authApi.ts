@@ -19,13 +19,6 @@ function resolveApiBaseUrl(): string {
     return configuredBaseUrl.replace(/\/$/, '');
   }
 
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:4000';
-    }
-  }
-
   return '';
 }
 
@@ -78,7 +71,7 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
     if (!isLikelyJson) {
       const preview = rawText.slice(0, 120);
       const apiError = new ApiError(
-        'Auth-Endpoint hat keine JSON-Antwort geliefert. Prüfe, ob das Backend unter /api erreichbar ist.',
+        'Auth-Endpoint hat keine JSON-Antwort geliefert. Prüfe, ob das Backend unter /api/auth/*.php erreichbar ist.',
         response.status,
         { url, contentType, preview },
       );
@@ -93,12 +86,12 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
     }
 
     console.error(`[authApi] Network error during ${options.method || 'GET'} ${url}`, error);
-    throw new ApiError('Keine Verbindung zum Auth-Server. Bitte prüfe, ob das Backend läuft.', 0, error);
+    throw new ApiError('Keine Verbindung zur API. Prüfe, ob /api/auth/*.php auf demselben Host erreichbar ist.', 0, error);
   }
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<AuthUser> {
-  const data = await request<AuthResponse>('/api/auth/login', {
+  const data = await request<AuthResponse>('/api/auth/login.php', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
@@ -113,7 +106,7 @@ export async function loginWithEmail(email: string, password: string): Promise<A
 }
 
 export async function registerWithEmail(username: string, email: string, password: string): Promise<AuthUser> {
-  const data = await request<AuthResponse>('/api/auth/register', {
+  const data = await request<AuthResponse>('/api/auth/register.php', {
     method: 'POST',
     body: JSON.stringify({ username, email, password }),
   });

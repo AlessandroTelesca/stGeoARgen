@@ -56,26 +56,16 @@ The development server will start at `http://localhost:3000`.
 
 ### Authentication API + MySQL setup
 
-1. Copy `.env.example` to `.env` and set your MySQL credentials.
-2. Create schema and user table:
+Authentication runs via PHP endpoints inside the deployed app (no separate Node backend process).
 
-```bash
-mysql -h 127.0.0.1 -P 3306 -u root -p < server/schema.sql
-```
-
-3. Start the auth API (in one terminal):
-
-```bash
-npm run auth:dev
-```
-
-4. Start the frontend (in another terminal):
+1. Configure DB credentials in `public/api/auth/config.php`.
+2. Start frontend development:
 
 ```bash
 npm run dev
 ```
 
-`Login` and `Register` now call `/api/auth/login` and `/api/auth/register`, backed by MySQL.
+`Login` and `Register` call `/api/auth/login.php` and `/api/auth/register.php`, backed by MySQL.
 
 ### Build for Production
 

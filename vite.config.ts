@@ -4,6 +4,8 @@
   import path from 'path';
   import { copyFileSync } from 'fs';
 
+  const devApiProxyTarget = process.env.VITE_DEV_API_PROXY?.trim();
+
   export default defineConfig({
     plugins: [
       react(),
@@ -70,11 +72,15 @@
     server: {
       port: 3000,
       open: true,
-      proxy: {
-        '/api': {
-          target: 'http://localhost:4000',
-          changeOrigin: true,
-        },
-      },
+      ...(devApiProxyTarget
+        ? {
+            proxy: {
+              '/api': {
+                target: devApiProxyTarget,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
   });
