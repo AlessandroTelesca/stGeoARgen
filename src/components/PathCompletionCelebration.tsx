@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Star, MapPin, Clock, Zap, Home, ChevronRight } from 'lucide-react';
 
@@ -29,7 +29,7 @@ interface Particle {
     rotation: number;
 }
 
-const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+const COLORS = ['#0C690F', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
 function generateParticles(count: number): Particle[] {
     return Array.from({ length: count }, (_, i) => ({
@@ -84,7 +84,7 @@ export function PathCompletionCelebration({
                     <div
                         style={{
                             minHeight: '100%',
-                            background: 'linear-gradient(160deg, #064e3b 0%, #065f46 30%, #047857 60%, #059669 100%)',
+                            background: 'linear-gradient(160deg, #053705 0%, #064e3b 30%, #0C690F 60%, #094d0b 100%)',
                             position: 'relative',
                             overflow: 'hidden',
                             paddingBottom: '40px',
@@ -280,7 +280,7 @@ export function PathCompletionCelebration({
                                                             style={{
                                                                 width: '24px',
                                                                 height: '24px',
-                                                                backgroundColor: '#22c55e',
+                                                                backgroundColor: '#0C690F',
                                                                 borderRadius: '50%',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -314,7 +314,7 @@ export function PathCompletionCelebration({
                                             style={{
                                                 width: '100%',
                                                 backgroundColor: 'white',
-                                                color: '#065f46',
+                                                color: '#0C690F',
                                                 border: 'none',
                                                 borderRadius: '16px',
                                                 padding: '16px 20px',

@@ -135,6 +135,8 @@ export const ARComponentBase = ({
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [stationStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // Snapshot: gespeicherter Wert beim Klick auf "Station abschließen" (VOR props-Update)
+  const [remainingAtCompletion, setRemainingAtCompletion] = useState(0);
 
   // Echter Progress aus Props
   const progress = {
@@ -232,6 +234,9 @@ export const ARComponentBase = ({
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
+    // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
+    const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
+    setRemainingAtCompletion(remaining);
     if (currentStationId && onCompleteStation) {
       onCompleteStation(currentStationId);
     }
@@ -337,7 +342,7 @@ export const ARComponentBase = ({
         stationTitle={currentStationTitle}
         stationPoints={currentStationPoints}
         durationSeconds={elapsedSeconds}
-        remainingStations={remainingStations}
+        remainingStations={remainingAtCompletion}
         totalStations={totalStations || 1}
         distanceToNextStation={distanceToNext}
         onNavigateHome={() => {

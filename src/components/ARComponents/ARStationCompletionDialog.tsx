@@ -91,7 +91,7 @@ export const ARStationCompletionDialog = ({
                             {/* Green success header */}
                             <div
                                 style={{
-                                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                    background: 'linear-gradient(135deg, #0C690F, #094d0b)',
                                     padding: '24px 24px 20px',
                                     textAlign: 'center',
                                     color: 'white',
@@ -202,7 +202,7 @@ export const ARStationCompletionDialog = ({
                                             textAlign: 'center',
                                         }}
                                     >
-                                        <MapPin style={{ width: '20px', height: '20px', color: remainingStations > 0 ? '#64748b' : '#16a34a', margin: '0 auto 4px' }} />
+                                        <MapPin style={{ width: '20px', height: '20px', color: remainingStations > 0 ? '#6b7280' : '#0C690F', margin: '0 auto 4px' }} />
                                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
                                             {remainingStations > 0 ? formatDistance(distanceToNextStation) : '🎉'}
                                         </div>
@@ -220,7 +220,7 @@ export const ARStationCompletionDialog = ({
                                             onClick={onNavigateToNextStation}
                                             style={{
                                                 width: '100%',
-                                                backgroundColor: '#22c55e',
+                                                backgroundColor: '#0C690F',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '14px',
@@ -234,8 +234,8 @@ export const ARStationCompletionDialog = ({
                                                 gap: '8px',
                                                 transition: 'background-color 0.2s',
                                             }}
-                                            onTouchStart={(e) => (e.currentTarget.style.backgroundColor = '#16a34a')}
-                                            onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '#22c55e')}
+                                            onTouchStart={(e) => (e.currentTarget.style.backgroundColor = '#094d0b')}
+                                            onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '#0C690F')}
                                         >
                                             <Navigation style={{ width: '18px', height: '18px' }} />
                                             Zur nächsten Station navigieren

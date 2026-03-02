@@ -43,7 +43,7 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
                 <X className="w-4 h-4" />
               </button>
             )}
-            
+
             <div className="flex items-start gap-3">
               <motion.div
                 className="flex-shrink-0"
@@ -57,10 +57,10 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
                 }}
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-2xl">🐉</span>
+                  <img src="/georgi-logo.png" alt="Georgi" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
                 </div>
               </motion.div>
-              
+
               <div className="flex-1 pt-1">
                 <p className="font-semibold text-sm mb-1">Georgi sagt:</p>
                 <p className="text-sm text-muted-foreground">{message}</p>
@@ -97,7 +97,7 @@ export function GeorgiAvatar({ size = 'md', animated = true }: GeorgiAvatarProps
         ease: 'easeInOut',
       }}
     >
-      <span>{size === 'sm' ? '🐉' : size === 'md' ? '🐉' : '🐉'}</span>
+      <img src="/georgi-logo.png" alt="Georgi" style={{ width: size === 'sm' ? '20px' : size === 'md' ? '30px' : '40px', height: size === 'sm' ? '20px' : size === 'md' ? '30px' : '40px', objectFit: 'contain' }} />
     </motion.div>
   );
 }
