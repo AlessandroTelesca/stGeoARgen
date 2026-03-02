@@ -17,7 +17,6 @@ import { Onboarding } from './components/Onboarding';
 import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
-import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -66,7 +65,6 @@ export default function App() {
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
@@ -275,7 +273,7 @@ export default function App() {
           longDescription: 'Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.',
           imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
-          points: 60,
+          points: 50,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
           longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
@@ -291,7 +289,7 @@ export default function App() {
           longDescription: 'Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.',
           imageUrl: 'https://images.unsplash.com/photo-1587991993507-ff688501c2b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBwYXJrJTIwcGF0aHxlbnwxfHx8fDE3NjIyNzYzODd8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
-          points: 45,
+          points: 50,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
           longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
@@ -303,22 +301,6 @@ export default function App() {
       ],
     },
   ]);
-
-  // Check for reward eligibility whenever stations are completed
-  useEffect(() => {
-    const currentPath = paths[0];
-    const progress = getPathProgress(currentPath);
-
-    // Check if all stations are completed and reward hasn't been claimed yet
-    if (
-      progress.completedStations === progress.totalStations &&
-      progress.earnedPoints === progress.totalPoints &&
-      !rewardClaimed &&
-      progress.completedStations > 0
-    ) {
-      setShowRewardDialog(true);
-    }
-  }, [paths, rewardClaimed]);
 
   // Calculate progress
   const getPathProgress = (path: Path) => {
@@ -598,16 +580,6 @@ export default function App() {
     return 'St.GeoARgen';
   };
 
-  const handleRewardSelect = (localityId: string) => {
-    setRewardClaimed(true);
-    setShowRewardDialog(false);
-
-    toast.success('Gutschein erfolgreich eingelöst!', {
-      description: 'Du erhältst deinen Gutschein per E-Mail.',
-      duration: 5000,
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
@@ -765,16 +737,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Reward Dialog */}
-      <AnimatePresence>
-        {showRewardDialog && (
-          <RewardDialog
-            onClose={() => setShowRewardDialog(false)}
-            onSelectReward={handleRewardSelect}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Onboarding */}
       <AnimatePresence>
         {showOnboarding && (
@@ -843,6 +805,11 @@ export default function App() {
         onNavigateHome={() => {
           setCelebrationData((d) => ({ ...d, isOpen: false }));
           navigate('/');
+        }}
+        onNavigateToRewards={() => {
+          setCelebrationData((d) => ({ ...d, isOpen: false }));
+          navigate('/rewards');
+          setCurrentView('rewards');
         }}
       />
     </div>

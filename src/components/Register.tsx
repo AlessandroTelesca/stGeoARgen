@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { GeorgiAvatar } from './Georgi';
 
 interface RegisterProps {
   /** Wird nach erfolgreicher Registrierung aufgerufen. Wirft einen Error bei Fehlschlag. */
@@ -185,14 +184,24 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Header with Georgi */}
+          {/* Header with Logo */}
           <div className="flex flex-col items-center mb-16" style={{ marginBottom: '5rem' }}>
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+              style={{
+                width: '88px',
+                height: '88px',
+                backgroundColor: '#0C690F',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(12,105,15,0.25)',
+              }}
             >
-              <GeorgiAvatar size="lg" animated={true} />
+              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '52px', height: '52px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
             </motion.div>
             <motion.h1
               className="text-3xl sm:text-4xl font-bold mt-6 mb-3 text-center text-foreground"
