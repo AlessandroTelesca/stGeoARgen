@@ -33,11 +33,11 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
   // Allow access once user is within radius
   useEffect(() => {
     if (isWithinRadius) {
-      console.log('[ARProximityGate] ✅ Access granted - user within radius');
+      console.log('[ARProximityGate] Access granted - user within radius');
       setAllowAccess(true);
       onAccessGranted?.();
     } else if (distance !== null && !isWithinRadius) {
-      console.log(`[ARProximityGate] ❌ Access denied - user ${Math.round(distance)}m away (requires ≤100m)`);
+      console.log(`[ARProximityGate] Access denied - user ${Math.round(distance)}m away (requires ≤100m)`);
     }
   }, [isWithinRadius, distance, onAccessGranted]);
 

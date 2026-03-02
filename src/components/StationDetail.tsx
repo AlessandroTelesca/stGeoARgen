@@ -57,9 +57,9 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
   React.useEffect(() => {
     if (hasARRoute && distance !== null) {
       if (isWithinRadius) {
-        console.log(`[StationDetail] ✅ Access granted - Station ${station.id} (${station.title}) within radius`);
+        console.log(`[StationDetail] Access granted - Station ${station.id} (${station.title}) within radius`);
       } else {
-        console.log(`[StationDetail] ❌ Access denied - Station ${station.id} (${station.title}) ${Math.round(distance)}m away (requires ≤100m)`);
+        console.log(`[StationDetail] Access denied - Station ${station.id} (${station.title}) ${Math.round(distance)}m away (requires ≤100m)`);
       }
     }
   }, [hasARRoute, distance, isWithinRadius, station.id, station.title]);

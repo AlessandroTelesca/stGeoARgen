@@ -56,8 +56,8 @@ console.log(typeof closeARView); // sollte "function" sein
 
 // Kamera-Support testen
 navigator.mediaDevices.getUserMedia({ video: true })
-  .then(() => console.log('✅ Kamera verfügbar'))
-  .catch(err => console.error('❌ Kamera-Fehler:', err));
+  .then(() => console.log('Kamera verfügbar'))
+  .catch(err => console.error('Kamera-Fehler:', err));
 ```
 
 ## 🎯 Alternative: Direkte Demo-Seite

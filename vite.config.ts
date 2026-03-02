@@ -12,7 +12,7 @@
         closeBundle() {
           try {
             copyFileSync('public/.htaccess', 'build/.htaccess');
-            console.log('✓ .htaccess copied to build directory');
+            console.log('.htaccess copied to build directory');
           } catch (err) {
             console.warn('Could not copy .htaccess:', err);
           }
