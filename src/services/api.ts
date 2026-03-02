@@ -4,7 +4,7 @@
  * WICHTIG: Trage hier die URL deines Servers ein!
  * Beispiel: 'https://mein-server.de/stgeoargen/api'
  */
-export const API_BASE_URL = 'https://stgeorgen.iiius.de/api';
+export const API_BASE_URL = 'https://stgeoargen.iiius.de/api';
 
 export interface ApiResponse<T = unknown> {
     success: boolean;
