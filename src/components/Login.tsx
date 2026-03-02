@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { GeorgiAvatar } from './Georgi';
 
 interface LoginProps {
-  onLogin: (username: string, email: string) => void;
+  /** Wird nach erfolgreichem Login aufgerufen. Wirft einen Error bei Fehlschlag. */
+  onLogin: (email: string, password: string) => Promise<void>;
   onNavigateBack?: () => void;
   onNavigateToRegister?: () => void;
   onNavigateToForgotPassword?: () => void;
@@ -64,14 +64,14 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     setTouched({ email: true, password: true });
-    
+
     // Validate all fields
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
-    
+
     if (emailError || passwordError) {
       setErrors({ email: emailError, password: passwordError });
       return;
@@ -81,14 +81,14 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any valid credentials
-      // In production, this would be a real API call
-      const username = email.split('@')[0];
-      onLogin(username.charAt(0).toUpperCase() + username.slice(1), email);
+    try {
+      await onLogin(email, password);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const isFormValid = email && password && !errors.email && !errors.password;
@@ -122,14 +122,24 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Header with Georgi */}
+          {/* Header with Logo */}
           <div className="flex flex-col items-center mb-16" style={{ marginBottom: '5rem' }}>
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+              style={{
+                width: '88px',
+                height: '88px',
+                backgroundColor: '#0C690F',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(12,105,15,0.25)',
+              }}
             >
-              <GeorgiAvatar size="lg" animated={true} />
+              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '52px', height: '52px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
             </motion.div>
             <motion.h1
               className="text-3xl sm:text-4xl font-bold mt-6 mb-3 text-center text-foreground"

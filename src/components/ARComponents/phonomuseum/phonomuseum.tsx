@@ -11,6 +11,10 @@ interface ARViewProps {
   onLogout?: () => void;
   onNavigateProfile?: () => void;
   onRegister?: () => void;
+  completedStations?: number;
+  totalStations?: number;
+  totalPoints?: number;
+  onCompleteStation?: (stationId: number) => void;
 }
 
 class PhonomuseumARSession extends ARVisualizer {
@@ -22,7 +26,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -40,7 +44,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         onError: (e) => console.error("AR init failed", e)
       }
     );
-    
+
     session.init().then(() => {
       console.log('[PhonomuseumView] AR session initialized');
       sessionRef.current = session;
@@ -62,16 +66,23 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >
-      <ARComponentBase 
-        onNavigateHome={onNavigateHome} 
-        closeARViewKey="closePhonomuseumView" 
-        containerRef={containerRef as React.RefObject<HTMLDivElement>} 
+      <ARComponentBase
+        onNavigateHome={onNavigateHome}
+        closeARViewKey="closePhonomuseumView"
+        containerRef={containerRef as React.RefObject<HTMLDivElement>}
         videoRef={videoRef as React.RefObject<HTMLVideoElement>}
         username={username}
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
         onRegister={onRegister}
+        completedStations={completedStations}
+        totalStations={totalStations}
+        totalPoints={totalPoints}
+        currentStationId={3}
+        currentStationTitle="Phonomuseum"
+        currentStationPoints={50}
+        onCompleteStation={onCompleteStation}
       />
     </ARProximityGate>
   );

@@ -3,22 +3,23 @@ import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void }) => {
 
-    // Detect device and open appropriate maps app
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    const isNotMobile = !isIOS && !isAndroid;
-    
-    if (isIOS) {
+	// Detect device and open appropriate maps app
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	const isAndroid = /Android/.test(navigator.userAgent);
+	const isNotMobile = !isIOS && !isAndroid;
+
+	if (isIOS) {
 		console.log("Device is iOS, rendering IOSKlosterweiher");
 		return (
 			<IOSKlosterweiherView />
 		);
-    } else if (isAndroid) {
-		console.log("Device is Android, rendering AndroidKlosterweiher");
-		return <AndroidKlosterweiherView onNavigateHome={onNavigateHome} username={username} onLogin={onLogin} onLogout={onLogout} onNavigateProfile={onNavigateProfile} onRegister={onRegister} />;
-    } else if (isNotMobile) {
+	} else if (isAndroid) {
+		return (
+			<AndroidKlosterweiherView onNavigateHome={onNavigateHome} username={username} onLogin={onLogin} onLogout={onLogout} onNavigateProfile={onNavigateProfile} onRegister={onRegister} completedStations={completedStations} totalStations={totalStations} totalPoints={totalPoints} onCompleteStation={onCompleteStation} />
+		);
+	} else if (isNotMobile) {
 		return (
 			<div className="flex items-center justify-center h-screen p-4">
 				<div className="text-center">
@@ -27,9 +28,9 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				</div>
 			</div>
 		);
-    }
-    
-    return null;
+	}
+
+	return null;
 };
 
 export default KlosterweiherView;

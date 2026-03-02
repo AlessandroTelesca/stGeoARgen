@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { GeorgiAvatar } from './Georgi';
 
 interface RegisterProps {
-  onRegister: (username: string, email: string) => void;
+  /** Wird nach erfolgreicher Registrierung aufgerufen. Wirft einen Error bei Fehlschlag. */
+  onRegister: (username: string, email: string, password: string) => Promise<void>;
   onNavigateBack?: () => void;
   onNavigateToLogin?: () => void;
 }
@@ -19,17 +19,17 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ 
-    username?: string; 
-    email?: string; 
-    password?: string; 
+  const [errors, setErrors] = useState<{
+    username?: string;
+    email?: string;
+    password?: string;
     confirmPassword?: string;
-    general?: string 
+    general?: string
   }>({});
-  const [touched, setTouched] = useState<{ 
-    username?: boolean; 
-    email?: boolean; 
-    password?: boolean; 
+  const [touched, setTouched] = useState<{
+    username?: boolean;
+    email?: boolean;
+    password?: boolean;
     confirmPassword?: boolean;
   }>({});
 
@@ -118,20 +118,20 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     setTouched({ username: true, email: true, password: true, confirmPassword: true });
-    
+
     // Validate all fields
     const usernameError = validateUsername(username);
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
     const confirmPasswordError = validateConfirmPassword(confirmPassword);
-    
+
     if (usernameError || emailError || passwordError || confirmPasswordError) {
-      setErrors({ 
-        username: usernameError, 
-        email: emailError, 
+      setErrors({
+        username: usernameError,
+        email: emailError,
         password: passwordError,
         confirmPassword: confirmPasswordError
       });
@@ -142,14 +142,17 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      onRegister(username, email);
+    try {
+      await onRegister(username, email, password);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registrierung fehlgeschlagen.';
+      setErrors({ general: message });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
-  const isFormValid = username && email && password && confirmPassword && 
+  const isFormValid = username && email && password && confirmPassword &&
     !errors.username && !errors.email && !errors.password && !errors.confirmPassword;
 
   return (
@@ -181,14 +184,24 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Header with Georgi */}
+          {/* Header with Logo */}
           <div className="flex flex-col items-center mb-16" style={{ marginBottom: '5rem' }}>
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+              style={{
+                width: '88px',
+                height: '88px',
+                backgroundColor: '#0C690F',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(12,105,15,0.25)',
+              }}
             >
-              <GeorgiAvatar size="lg" animated={true} />
+              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '52px', height: '52px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
             </motion.div>
             <motion.h1
               className="text-3xl sm:text-4xl font-bold mt-6 mb-3 text-center text-foreground"

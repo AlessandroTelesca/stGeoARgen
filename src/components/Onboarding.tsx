@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
-import { GeorgiAvatar } from './Georgi';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -81,7 +80,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
+        className="bg-white rounded-3xl max-w-md w-full flex flex-col overflow-hidden shadow-2xl max-h-[90vh]"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -97,7 +96,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
         </div>
 
         {/* Content */}
-        <div className="relative h-[500px] flex flex-col">
+        <div className="relative flex-1 flex flex-col overflow-y-auto min-h-0">
           {/* Animated Step Content */}
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
@@ -111,16 +110,18 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 x: { type: 'spring', stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 },
               }}
-              className="flex-1 flex flex-col items-center justify-center p-8 text-center"
+              className="flex-1 flex flex-col items-center justify-start pt-8 px-8 pb-4 text-center"
             >
-              {/* Georgi Avatar */}
+              {/* Logo */}
               <motion.div
                 className="mb-6"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               >
-                <GeorgiAvatar size="lg" animated />
+                <div style={{ width: '80px', height: '80px', backgroundColor: '#0C690F', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(12,105,15,0.25)', margin: '0 auto' }}>
+                  <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '48px', height: '48px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                </div>
               </motion.div>
 
               {/* Georgi Speech Bubble */}

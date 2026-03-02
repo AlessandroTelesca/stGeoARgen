@@ -47,7 +47,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
 
   const getViewIcon = () => {
     const iconMap: Record<string, JSX.Element> = {
-      'home': <span className="text-xl">🐉</span>,
+      'home': <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />,
       'paths': <Map className="w-5 h-5 text-white" />,
       'path': <Map className="w-5 h-5 text-white" />,
       'settings': <Settings className="w-5 h-5 text-white" />,
@@ -57,7 +57,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
       'progress': <TrendingUp className="w-5 h-5 text-white" />,
       'rewards': <Gift className="w-5 h-5 text-white" />,
     };
-    return iconMap[currentView] || <span className="text-xl">🐉</span>;
+    return iconMap[currentView] || <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />;
   };
 
   return (
@@ -166,7 +166,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                       <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
                   </button>
-                  
+
                   <AnimatePresence>
                     {userDropdownOpen && (
                       <motion.div
@@ -186,7 +186,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                                 <LogIn className="w-4 h-4" />
                                 Anmelden
                               </button>
-                              <button 
+                              <button
                                 onClick={handleRegister}
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                               >
@@ -230,18 +230,15 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                       <button
                         key={item.id}
                         onClick={() => handleNavigate(item.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-primary text-white'
-                            : 'hover:bg-muted'
-                        }`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                          ? 'bg-primary text-white'
+                          : 'hover:bg-muted'
+                          }`}
                       >
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isActive ? 'bg-white/20' : 'bg-primary/10'
-                        }`}>
-                          <IconComponent className={`w-5 h-5 ${
-                            isActive ? 'text-white' : 'text-primary'
-                          }`} />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-primary/10'
+                          }`}>
+                          <IconComponent className={`w-5 h-5 ${isActive ? 'text-white' : 'text-primary'
+                            }`} />
                         </div>
                         <span className="font-medium">{item.label}</span>
                       </button>

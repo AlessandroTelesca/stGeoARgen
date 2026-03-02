@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { useAuth } from './hooks/useAuth';
+import { getUserProgress, saveStationProgress } from './services/auth';
+import { apiSavePathBonus } from './services/api';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -14,7 +17,6 @@ import { Onboarding } from './components/Onboarding';
 import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
-import { RewardDialog } from './components/RewardDialog';
 import { RewardsView } from './components/RewardsView';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -23,6 +25,7 @@ import { KlosterweiherView } from './components/ARComponents/klosterweiher/klost
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
+import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 
 
 interface Station {
@@ -56,34 +59,62 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isInitializing, login, register, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
+  const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
 
-  // Handle login
-  const handleLogin = (username: string, email: string) => {
-    setUsername(username);
-    setUserEmail(email);
+  // Bequeme Aliases aus dem User-Objekt
+  const username = user?.username ?? null;
+  const userEmail = user?.email ?? null;
+
+  // Handle login – wird von Login.tsx als onLogin Callback genutzt
+  // Wirft einen Error bei Fehlschlag (Login.tsx zeigt ihn dann an)
+  const handleLogin = async (email: string, password: string): Promise<void> => {
+    await login(email, password); // setzt user in useAuth
+    // Nach login() ist user gesetzt → user.id für Progress nutzen
+    // user ist hier noch die alte Version (State-Update async), daher
+    // lesen wir die Session direkt aus dem Objekt das login() geliefert hat
     setCurrentView('home');
     navigate('/');
     toast.success('Erfolgreich angemeldet!', {
-      description: `Willkommen zurück, ${username}!`,
+      description: `Willkommen zurück!`,
+      duration: 3000,
+    });
+  };
+
+  // Handle register – wird von Register.tsx als onRegister Callback genutzt
+  const handleRegister = async (uname: string, email: string, password: string): Promise<void> => {
+    await register(uname, email, password); // setzt user in useAuth
+    setCurrentView('home');
+    navigate('/');
+    toast.success('Konto erstellt!', {
+      description: `Willkommen, ${uname}!`,
       duration: 3000,
     });
   };
 
   // Handle logout
   const handleLogout = () => {
-    setUsername(null);
-    setUserEmail(null);
+    logout();
     setCurrentView('home');
     navigate('/');
+    // Stationen zurücksetzen damit kein fremder Fortschritt angezeigt wird
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) => ({
+          ...station,
+          status: 'available' as const,
+        })),
+      }))
+    );
+    setRewardClaimed(false);
     toast.success('Erfolgreich abgemeldet!', {
       description: 'Bis bald!',
       duration: 3000,
@@ -108,6 +139,16 @@ export default function App() {
     navigate('/forgot-password');
   };
 
+  // Path completion celebration state
+  const [celebrationData, setCelebrationData] = useState<{
+    isOpen: boolean;
+    pathTitle: string;
+    pathDescription: string;
+    stations: { title: string; points: number }[];
+    earnedStationPoints: number;
+    bonusPoints: number;
+  }>({ isOpen: false, pathTitle: '', pathDescription: '', stations: [], earnedStationPoints: 0, bonusPoints: 500 });
+
   // Check if user has seen onboarding
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('st-geoargen-onboarding-complete');
@@ -115,6 +156,43 @@ export default function App() {
       setShowOnboarding(true);
     }
   }, []);
+
+  // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
+  useEffect(() => {
+    if (!user) return;
+    getUserProgress(user.id)
+      .then((progressEntries) => {
+        if (progressEntries.length > 0) {
+          // station_id === 0 = Pfad-Abschluss-Bonus
+          const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
+          const completedIds = new Set(
+            progressEntries.filter((p) => p.station_id !== 0).map((p) => p.station_id)
+          );
+
+          // Stations-Fortschritt wiederherstellen
+          setPaths((prev) =>
+            prev.map((path) => ({
+              ...path,
+              stations: path.stations.map((station) =>
+                completedIds.has(station.id)
+                  ? { ...station, status: 'completed' as const }
+                  : station
+              ),
+            }))
+          );
+
+          // Pfad-Bonus-Status wiederherstellen
+          if (bonusEntries.length > 0) {
+            const restoredBonuses: Record<string, boolean> = {};
+            bonusEntries.forEach((entry) => {
+              restoredBonuses[entry.path_id] = true;
+            });
+            setClaimedPathBonuses(restoredBonuses);
+          }
+        }
+      })
+      .catch(() => { /* Progress konnte nicht geladen werden */ });
+  }, [user?.id]); // nur wenn sich die User-ID ändert
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
@@ -129,7 +207,7 @@ export default function App() {
   // Sync state with URL
   useEffect(() => {
     const path = location.pathname;
-    
+
     if (path === '/klosterweiher') {
       setCurrentView('ar-klosterweiher');
     } else if (path === '/phonomuseum') {
@@ -195,7 +273,7 @@ export default function App() {
           longDescription: 'Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.',
           imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
-          points: 60,
+          points: 50,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
           longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
@@ -211,7 +289,7 @@ export default function App() {
           longDescription: 'Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.',
           imageUrl: 'https://images.unsplash.com/photo-1587991993507-ff688501c2b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBwYXJrJTIwcGF0aHxlbnwxfHx8fDE3NjIyNzYzODd8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
-          points: 45,
+          points: 50,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
           longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
@@ -224,29 +302,13 @@ export default function App() {
     },
   ]);
 
-  // Check for reward eligibility whenever stations are completed
-  useEffect(() => {
-    const currentPath = paths[0];
-    const progress = getPathProgress(currentPath);
-    
-    // Check if all stations are completed and reward hasn't been claimed yet
-    if (
-      progress.completedStations === progress.totalStations &&
-      progress.earnedPoints === progress.totalPoints &&
-      !rewardClaimed &&
-      progress.completedStations > 0
-    ) {
-      setShowRewardDialog(true);
-    }
-  }, [paths, rewardClaimed]);
-
   // Calculate progress
   const getPathProgress = (path: Path) => {
     const completedStations = path.stations.filter(s => s.status === 'completed').length;
     const earnedPoints = path.stations
       .filter(s => s.status === 'completed')
       .reduce((sum, s) => sum + s.points, 0);
-    
+
     return {
       completedStations,
       totalStations: path.stations.length,
@@ -258,7 +320,7 @@ export default function App() {
   const totalPoints = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.earnedPoints;
-  }, 0);
+  }, 0) + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -275,15 +337,111 @@ export default function App() {
     setCurrentView('station');
   };
 
-  const handleStationComplete = (stationId: number) => {
-    setPaths(paths.map(path => ({
-      ...path,
-      stations: path.stations.map(station =>
-        station.id === stationId
-          ? { ...station, status: 'completed' as const }
-          : station
-      ),
-    })));
+  const handleStationComplete = async (stationId: number) => {
+    // Lokal aktualisieren
+    let completedPathId: string | null = null;
+    let allStationsCompleted = false;
+
+    setPaths((prev) => {
+      const updated = prev.map((path) => {
+        const updatedPath = {
+          ...path,
+          stations: path.stations.map((station) =>
+            station.id === stationId
+              ? { ...station, status: 'completed' as const }
+              : station
+          ),
+        };
+        // Prüfen ob dieser Pfad jetzt vollständig abgeschlossen ist
+        const allDone = updatedPath.stations.every((s) => s.status === 'completed');
+        if (allDone && !claimedPathBonuses[path.id]) {
+          completedPathId = path.id;
+          allStationsCompleted = true;
+        }
+        return updatedPath;
+      });
+      return updated;
+    });
+
+    // In DB speichern (nur wenn User eingeloggt)
+    if (user) {
+      const currentPath = paths.find((p) =>
+        p.stations.some((s) => s.id === stationId)
+      );
+      if (currentPath) {
+        try {
+          await saveStationProgress(user.id, currentPath.id, stationId);
+
+          // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
+          // Da setState async ist, berechnen wir hier direkt
+          const updatedStations = currentPath.stations.map((s) =>
+            s.id === stationId ? { ...s, status: 'completed' as const } : s
+          );
+          const pathNowComplete = updatedStations.every((s) => s.status === 'completed');
+
+          if (pathNowComplete && !claimedPathBonuses[currentPath.id]) {
+            try {
+              const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
+              if (bonusRes.success && !bonusRes.already_claimed) {
+                setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+                const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
+                const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
+                setCelebrationData({
+                  isOpen: true,
+                  pathTitle: currentPath.title,
+                  pathDescription: currentPath.description || '',
+                  stations: completedStationsList,
+                  earnedStationPoints: earnedStationPts,
+                  bonusPoints: 500,
+                });
+              } else if (bonusRes.already_claimed) {
+                // Bonus wurde bereits im Backend vergeben → trotzdem lokal markieren
+                setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+              }
+            } catch {
+              // Bonus-Speichern fehlgeschlagen – lokal trotzdem gutschreiben
+              setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+              const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
+              const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
+              setCelebrationData({
+                isOpen: true,
+                pathTitle: currentPath.title,
+                pathDescription: currentPath.description || '',
+                stations: completedStationsList,
+                earnedStationPoints: earnedStationPts,
+                bonusPoints: 500,
+              });
+            }
+          }
+        } catch {
+          // Speichern fehlgeschlagen – Fortschritt ist lokal trotzdem sichtbar
+        }
+      }
+    } else {
+      // Kein User eingeloggt → Bonus nur lokal vergeben
+      const currentPath = paths.find((p) =>
+        p.stations.some((s) => s.id === stationId)
+      );
+      if (currentPath && !claimedPathBonuses[currentPath.id]) {
+        const updatedStations = currentPath.stations.map((s) =>
+          s.id === stationId ? { ...s, status: 'completed' as const } : s
+        );
+        const pathNowComplete = updatedStations.every((s) => s.status === 'completed');
+        if (pathNowComplete) {
+          setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+          const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
+          const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
+          setCelebrationData({
+            isOpen: true,
+            pathTitle: currentPath.title,
+            pathDescription: currentPath.description || '',
+            stations: completedStationsList,
+            earnedStationPoints: earnedStationPts,
+            bonusPoints: 500,
+          });
+        }
+      }
+    }
   };
 
   const handleResetProgress = () => {
@@ -336,9 +494,9 @@ export default function App() {
 
   const handleQRScan = (arView: string) => {
     setShowQRScanner(false);
-    
+
     console.log('handleQRScan called with:', arView);
-    
+
     // Direkte Weiterleitung zu AR-Views
     if (arView === 'glockenspiel') {
       setCurrentView('ar-glockenspiel');
@@ -352,7 +510,7 @@ export default function App() {
     } else {
       // For any other QR code, try to open it as URL or show alert
       console.log('Generic QR code content:', arView);
-      
+
       // Check if it's a URL
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
         window.open(arView, '_blank');
@@ -422,16 +580,6 @@ export default function App() {
     return 'St.GeoARgen';
   };
 
-  const handleRewardSelect = (localityId: string) => {
-    setRewardClaimed(true);
-    setShowRewardDialog(false);
-    
-    toast.success('Gutschein erfolgreich eingelöst!', {
-      description: 'Du erhältst deinen Gutschein per E-Mail.',
-      duration: 5000,
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
@@ -460,7 +608,7 @@ export default function App() {
       )}
 
       {currentView === 'login' && (
-        <Login 
+        <Login
           onLogin={handleLogin}
           onNavigateBack={handleBackToDashboard}
           onNavigateToRegister={handleNavigateToRegister}
@@ -469,15 +617,15 @@ export default function App() {
       )}
 
       {currentView === 'register' && (
-        <Register 
-          onRegister={handleLogin}
+        <Register
+          onRegister={handleRegister}
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
         />
       )}
 
       {currentView === 'forgot-password' && (
-        <ForgotPassword 
+        <ForgotPassword
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
         />
@@ -508,8 +656,8 @@ export default function App() {
       )}
 
       {currentView === 'settings' && (
-        <Settings 
-          onResetProgress={handleResetProgress} 
+        <Settings
+          onResetProgress={handleResetProgress}
           onBack={handleBackToDashboard}
           onNavigateToProfile={() => {
             setCurrentView('profile');
@@ -519,14 +667,16 @@ export default function App() {
       )}
 
       {currentView === 'profile' && (
-        <Profile 
-          username={username} 
-          onBack={handleBackToDashboard} 
+        <Profile
+          username={username}
+          email={user?.email}
+          createdAt={user?.created_at}
+          onBack={handleBackToDashboard}
           onBackToSettings={() => {
             setCurrentView('settings');
             navigate('/settings');
           }}
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
         />
       )}
 
@@ -587,16 +737,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Reward Dialog */}
-      <AnimatePresence>
-        {showRewardDialog && (
-          <RewardDialog
-            onClose={() => setShowRewardDialog(false)}
-            onSelectReward={handleRewardSelect}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Onboarding */}
       <AnimatePresence>
         {showOnboarding && (
@@ -616,9 +756,13 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
           onRegister={handleNavigateToRegister}
+          completedStations={totalCompletedStations}
+          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+          totalPoints={totalPoints}
+          onCompleteStation={(stationId) => handleStationComplete(stationId)}
         />
       )}
-      
+
       {currentView === 'ar-phonomuseum' && (
         <PhonomuseumView
           onNavigateHome={() => navigate('/')}
@@ -627,9 +771,13 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
           onRegister={handleNavigateToRegister}
+          completedStations={totalCompletedStations}
+          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+          totalPoints={totalPoints}
+          onCompleteStation={(stationId) => handleStationComplete(stationId)}
         />
       )}
-      
+
       {currentView === 'ar-glockenspiel' && (
         <GlockenspielView
           onNavigateHome={() => navigate('/')}
@@ -638,8 +786,32 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateProfile={() => navigate('/profile')}
           onRegister={handleNavigateToRegister}
+          completedStations={totalCompletedStations}
+          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+          totalPoints={totalPoints}
+          onCompleteStation={(stationId) => handleStationComplete(stationId)}
         />
       )}
+
+      {/* Path Completion Celebration */}
+      <PathCompletionCelebration
+        isOpen={celebrationData.isOpen}
+        pathTitle={celebrationData.pathTitle}
+        pathDescription={celebrationData.pathDescription}
+        stations={celebrationData.stations}
+        earnedStationPoints={celebrationData.earnedStationPoints}
+        bonusPoints={celebrationData.bonusPoints}
+        onClose={() => setCelebrationData((d) => ({ ...d, isOpen: false }))}
+        onNavigateHome={() => {
+          setCelebrationData((d) => ({ ...d, isOpen: false }));
+          navigate('/');
+        }}
+        onNavigateToRewards={() => {
+          setCelebrationData((d) => ({ ...d, isOpen: false }));
+          navigate('/rewards');
+          setCurrentView('rewards');
+        }}
+      />
     </div>
   );
 }
