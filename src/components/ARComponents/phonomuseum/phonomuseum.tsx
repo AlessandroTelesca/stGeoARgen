@@ -81,7 +81,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         totalPoints={totalPoints}
         currentStationId={3}
         currentStationTitle="Phonomuseum"
-        currentStationPoints={60}
+        currentStationPoints={50}
         onCompleteStation={onCompleteStation}
       />
     </ARProximityGate>
