@@ -13,11 +13,27 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 	if (isIOS) {
 		console.log("Device is iOS, rendering IOSKlosterweiher");
 		return (
-			<IOSKlosterweiherView />
+			<IOSKlosterweiherView
+				onNavigateHome={onNavigateHome}
+				username={username}
+				onLogin={onLogin}
+				onLogout={onLogout}
+				onNavigateProfile={onNavigateProfile}
+			/>
 		);
 	} else if (isAndroid) {
 		return (
-			<AndroidKlosterweiherView onNavigateHome={onNavigateHome} username={username} onLogin={onLogin} onLogout={onLogout} onNavigateProfile={onNavigateProfile} onRegister={onRegister} completedStations={completedStations} totalStations={totalStations} totalPoints={totalPoints} onCompleteStation={onCompleteStation} />
+			<AndroidKlosterweiherView 
+				onNavigateHome={onNavigateHome} 
+				username={username} 
+				onLogin={onLogin} 
+				onLogout={onLogout} 
+				onNavigateProfile={onNavigateProfile} 
+				onRegister={onRegister} 
+				completedStations={completedStations} 
+				totalStations={totalStations} 
+				totalPoints={totalPoints} 
+				onCompleteStation={onCompleteStation} />
 		);
 	} else if (isNotMobile) {
 		return (
