@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect, RefObject } from 'react';
-import { GeorgiAvatar } from '../Georgi';
 import { ARTopBar } from './ARTopBar';
 import { ARProgressBar } from './ARProgressBar';
 import { ARProfileMenu } from './ARProfileMenu';

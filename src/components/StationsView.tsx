@@ -1,7 +1,6 @@
 import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { GeorgiAvatar } from './Georgi';
 import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 
@@ -171,7 +170,9 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <GeorgiAvatar size="lg" />
+            <div style={{ width: '48px', height: '48px', backgroundColor: '#0C690F', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 10px rgba(12,105,15,0.2)' }}>
+              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            </div>
             <div className="flex-1">
               <p className="text-sm">
                 {completedStations === totalStations
