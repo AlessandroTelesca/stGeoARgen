@@ -19,6 +19,11 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				onLogin={onLogin}
 				onLogout={onLogout}
 				onNavigateProfile={onNavigateProfile}
+				onRegister={onRegister}
+				completedStations={completedStations}
+				totalStations={totalStations}
+				totalPoints={totalPoints}
+				onCompleteStation={onCompleteStation}
 			/>
 		);
 	} else if (isAndroid) {
@@ -39,7 +44,7 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 		return (
 			<div className="flex items-center justify-center h-screen p-4">
 				<div className="text-center">
-					<h2 className="text-xl font-bold mb-4">Not mobile devices are Not Supported</h2>
+					<h2 className="text-xl font-bold mb-4">We only support mobile devices.</h2>
 					<p>Please access this AR experience on a mobile device (Android or iOS).</p>
 				</div>
 			</div>

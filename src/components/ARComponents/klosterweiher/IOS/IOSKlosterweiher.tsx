@@ -19,6 +19,11 @@ interface ARViewProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onNavigateProfile?: () => void;
+  onRegister?: () => void;
+  completedStations?: number;
+  totalStations?: number;
+  totalPoints?: number;
+  onCompleteStation?: (stationId: number) => void;
 }
 
 class IOSKlosterweiherARSession extends ARVisualizer {
@@ -359,6 +364,11 @@ export const IOSKlosterweiherView = ({
   onLogin,
   onLogout,
   onNavigateProfile,
+  onRegister,
+  completedStations,
+  totalStations,
+  totalPoints,
+  onCompleteStation,
 }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -450,6 +460,14 @@ export const IOSKlosterweiherView = ({
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
+        onRegister={onRegister}
+        completedStations={completedStations}
+        totalStations={totalStations}
+        totalPoints={totalPoints}
+        currentStationId={5}
+        currentStationTitle="Klosterweiher"
+        currentStationPoints={45}
+        onCompleteStation={onCompleteStation}
       />
 
       {waitingForReady && overlayRootRef.current && (
