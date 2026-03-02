@@ -20,6 +20,10 @@ interface ARViewProps {
   onLogout?: () => void;
   onNavigateProfile?: () => void;
   onRegister?: () => void;
+  completedStations?: number;
+  totalStations?: number;
+  totalPoints?: number;
+  onCompleteStation?: (stationId: number) => void;
 }
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
@@ -213,12 +217,12 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
-            
+
             // Create and store backdrop for this fish
             if (this.camera) {
               this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
             }
-            
+
             console.log(
               `[AndroidKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
@@ -337,6 +341,10 @@ export const AndroidKlosterweiherView = ({
   onLogout,
   onNavigateProfile,
   onRegister,
+  completedStations,
+  totalStations,
+  totalPoints,
+  onCompleteStation,
 }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -388,7 +396,7 @@ export const AndroidKlosterweiherView = ({
       };
 
       sessionRef.current = session;
-      
+
       // Manually trigger initThree to start loading models without starting WebXR
       session['initThree']();
     }
@@ -434,6 +442,13 @@ export const AndroidKlosterweiherView = ({
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
         onRegister={onRegister}
+        completedStations={completedStations}
+        totalStations={totalStations}
+        totalPoints={totalPoints}
+        currentStationId={5}
+        currentStationTitle="Klosterweiher"
+        currentStationPoints={45}
+        onCompleteStation={onCompleteStation}
       />
 
       {isAuthorized && !hasStarted && (

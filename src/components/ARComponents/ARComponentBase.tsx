@@ -2,14 +2,16 @@ import { useRef, useState, useEffect, RefObject } from 'react';
 import { GeorgiAvatar } from '../Georgi';
 import { ARTopBar } from './ARTopBar';
 import { ARProgressBar } from './ARProgressBar';
-import { ARNavigationButton } from './ARNavigationButton';
 import { ARProfileMenu } from './ARProfileMenu';
+import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
+import { motion } from 'motion/react';
+import { CheckCircle2 } from 'lucide-react';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
   onNavigateHome?: () => void;
-  closeARViewKey?: string; // Key for window.closeXXXView function
+  closeARViewKey?: string;
   containerRef: RefObject<HTMLDivElement>;
   videoRef: RefObject<HTMLVideoElement>;
   overlayRootRef?: RefObject<HTMLDivElement | null>;
@@ -18,6 +20,20 @@ interface ARComponentBaseProps {
   onLogout?: () => void;
   onNavigateProfile?: () => void;
   onRegister?: () => void;
+  /** Abgeschlossene Stationen (aus App.tsx paths) */
+  completedStations?: number;
+  /** Gesamtanzahl der Stationen (aus App.tsx paths) */
+  totalStations?: number;
+  /** Gesammelte Punkte */
+  totalPoints?: number;
+  /** Aktuelle Station ID (für Abschluss-Callback) */
+  currentStationId?: number;
+  /** Titel der aktuellen Station */
+  currentStationTitle?: string;
+  /** Punkte der aktuellen Station */
+  currentStationPoints?: number;
+  /** Callback wenn User Station abschließt */
+  onCompleteStation?: (stationId: number) => void;
 }
 
 // Export Stations aus zentraler Config
@@ -93,16 +109,44 @@ export const useStationProximity = (stationLat: number, stationLng: number, radi
   return { userLocation, distance, locationError, isWithinRadius };
 };
 
-export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView', containerRef, videoRef, overlayRootRef, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARComponentBaseProps) => {
+export const ARComponentBase = ({
+  onNavigateHome,
+  closeARViewKey = 'closeARView',
+  containerRef,
+  videoRef,
+  overlayRootRef,
+  username,
+  onLogin,
+  onLogout,
+  onNavigateProfile,
+  onRegister,
+  completedStations = 0,
+  totalStations = 0,
+  totalPoints = 0,
+  currentStationId,
+  currentStationTitle = 'Station',
+  currentStationPoints = 0,
+  onCompleteStation,
+}: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [progress, setProgress] = useState({ current: 2, total: 5, points: 150 }); // Mock data - 5 Stationen
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearestStation, setNearestStation] = useState<typeof STATIONS[0] | null>(null);
-  
+  const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [stationStartTime] = useState<number>(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Echter Progress aus Props
+  const progress = {
+    current: completedStations + 1 > totalStations ? totalStations : completedStations + 1,
+    total: totalStations || 1,
+    points: totalPoints,
+  };
+
   // Station status: completed, current, locked
-  const stations = Array.from({ length: progress.total }, (_, i) => {
-    if (i < progress.current - 1) return 'completed';
-    if (i === progress.current - 1) return 'current';
+  const stations = Array.from({ length: Math.max(progress.total, 1) }, (_, i) => {
+    if (i < completedStations) return 'completed';
+    if (i === completedStations && completedStations < progress.total) return 'current';
     return 'locked';
   });
 
@@ -118,16 +162,20 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
   useEffect(() => {
     // Filter out completed stations (all stations before current)
     const incompleteStations = STATIONS.filter((station, index) => index >= progress.current - 1);
-    
+
     if (incompleteStations.length === 0) {
       console.log('Alle Stationen abgeschlossen!');
       setNearestStation(STATIONS[STATIONS.length - 1]); // Fallback zur letzten Station
+      setDistanceToNext(null);
       return;
     }
 
     if (DISABLE_GEO) {
       setUserLocation(MOCK_LOCATION);
-      setNearestStation(incompleteStations[0]);
+      // In Mock-Mode nächste Station wählen (nicht die aktuelle)
+      const nextStation = incompleteStations.length > 1 ? incompleteStations[1] : incompleteStations[0];
+      setNearestStation(nextStation);
+      setDistanceToNext(350); // Mock-Distanz für Demo
       return;
     }
 
@@ -138,11 +186,17 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           const userLng = position.coords.longitude;
           setUserLocation({ lat: userLat, lng: userLng });
 
-          // Finde nächste NICHT-ABGESCHLOSSENE Station
-          let minDistance = Infinity;
-          let nearest = incompleteStations[0];
+          // Finde nächste NICHT-ABGESCHLOSSENE Station (die auf die aktuelle folgt)
+          const nextStations = incompleteStations.slice(1); // Überspringe aktuelle
+          if (nextStations.length === 0) {
+            setDistanceToNext(null);
+            setNearestStation(null);
+            return;
+          }
 
-          incompleteStations.forEach((station) => {
+          let minDistance = Infinity;
+          let nearest = nextStations[0];
+          nextStations.forEach((station) => {
             const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
             if (distance < minDistance) {
               minDistance = distance;
@@ -151,45 +205,62 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           });
 
           setNearestStation(nearest);
+          setDistanceToNext(minDistance);
           console.log(`Nächste Station: ${nearest.name} (${Math.round(minDistance)}m entfernt)`);
         },
         (error) => {
           console.error('Geolocation error:', error);
-          // Fallback: erste nicht-abgeschlossene Station
-          setNearestStation(incompleteStations[0]);
+          const nextStation = incompleteStations.length > 1 ? incompleteStations[1] : null;
+          setNearestStation(nextStation);
+          setDistanceToNext(null);
         }
       );
     } else {
       console.error('Geolocation wird nicht unterstützt');
-      // Fallback: erste nicht-abgeschlossene Station
-      setNearestStation(incompleteStations[0]);
+      const nextStation = incompleteStations.length > 1 ? incompleteStations[1] : null;
+      setNearestStation(nextStation);
+      setDistanceToNext(null);
     }
   }, [progress.current]);
 
+  // Timer läuft wenn Dialog offen ist (zeigt Aufenthaltsdauer)
+  useEffect(() => {
+    if (!showCompletionDialog) return;
+    const elapsed = Math.floor((Date.now() - stationStartTime) / 1000);
+    setElapsedSeconds(elapsed);
+  }, [showCompletionDialog, stationStartTime]);
+
+  // "Station abschließen" clicked → Progress speichern + Dialog zeigen
+  const handleCompleteStation = () => {
+    if (currentStationId && onCompleteStation) {
+      onCompleteStation(currentStationId);
+    }
+    setShowCompletionDialog(true);
+  };
+
   const handleNavigateToNextStation = () => {
+    setShowCompletionDialog(false);
     if (!nearestStation) {
-      console.error('Keine Station gefunden');
+      console.error('Keine nächste Station gefunden');
       return;
     }
 
     const nextStationLat = nearestStation.lat;
     const nextStationLng = nearestStation.lng;
-    
-    // Detect device and open appropriate maps app
+
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    
+
     if (isIOS) {
-      // Open Apple Maps
       window.location.href = `maps://maps.apple.com/?daddr=${nextStationLat},${nextStationLng}&dirflg=w`;
     } else if (isAndroid) {
-      // Open Google Maps
       window.location.href = `google.navigation:q=${nextStationLat},${nextStationLng}&mode=w`;
     } else {
-      // Fallback to Google Maps in browser
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${nextStationLat},${nextStationLng}&travelmode=walking`, '_blank');
     }
   };
+
+  const remainingStations = Math.max(0, (totalStations || 1) - (completedStations + 1));
 
   return (
     <div className="ar-container" ref={overlayRootRef}>
@@ -200,7 +271,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
         playsInline
         muted
       />
-      
+
       {/* AR Container für Three.js */}
       <div
         ref={containerRef}
@@ -213,7 +284,7 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           pointerEvents: 'none'
         }}
       />
-      
+
       {/* UI Overlay */}
       <div className="ar-ui-overlay">
         <ARTopBar
@@ -225,7 +296,20 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
 
         <ARProgressBar progress={progress} stations={stations} />
 
-        <ARNavigationButton onNavigateToNextStation={handleNavigateToNextStation} />
+        {/* "Station abschließen"-Button */}
+        <motion.button
+          onClick={handleCompleteStation}
+          className="ar-navigate-button"
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="ar-navigate-button-content">
+            <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
+            <span className="ar-navigate-button-text">Station abschließen</span>
+          </div>
+        </motion.button>
 
         <ARProfileMenu
           isOpen={profileMenuOpen}
@@ -246,6 +330,22 @@ export const ARComponentBase = ({ onNavigateHome, closeARViewKey = 'closeARView'
           }}
         />
       </div>
+
+      {/* Completion Dialog */}
+      <ARStationCompletionDialog
+        isOpen={showCompletionDialog}
+        stationTitle={currentStationTitle}
+        stationPoints={currentStationPoints}
+        durationSeconds={elapsedSeconds}
+        remainingStations={remainingStations}
+        totalStations={totalStations || 1}
+        distanceToNextStation={distanceToNext}
+        onNavigateHome={() => {
+          setShowCompletionDialog(false);
+          handleNavigateHome();
+        }}
+        onNavigateToNextStation={handleNavigateToNextStation}
+      />
     </div>
   );
 };

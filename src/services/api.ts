@@ -105,3 +105,25 @@ export async function apiSaveProgress(
         body: JSON.stringify({ user_id: userId, path_id: pathId, station_id: stationId }),
     });
 }
+
+export interface PathBonusResponse {
+    success: boolean;
+    message: string;
+    already_claimed: boolean;
+    bonus?: number;
+}
+
+/**
+ * Speichert den Pfad-Abschluss-Bonus (500 Punkte) in der Datenbank.
+ * Idempotent: Ein zweiter Aufruf liefert already_claimed: true.
+ */
+export async function apiSavePathBonus(
+    userId: number,
+    pathId: string,
+    bonus: number = 500
+): Promise<PathBonusResponse> {
+    return apiFetch<PathBonusResponse>('save_path_bonus.php', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, path_id: pathId, bonus }),
+    });
+}

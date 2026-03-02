@@ -4,10 +4,10 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
-import { loginUser } from '../services/auth';
 
 interface LoginProps {
-  onLogin: (username: string, email: string, userId: number) => void;
+  /** Wird nach erfolgreichem Login aufgerufen. Wirft einen Error bei Fehlschlag. */
+  onLogin: (email: string, password: string) => Promise<void>;
   onNavigateBack?: () => void;
   onNavigateToRegister?: () => void;
   onNavigateToForgotPassword?: () => void;
@@ -83,8 +83,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
     setIsLoading(true);
 
     try {
-      const user = await loginUser(email, password);
-      onLogin(user.username, user.email, user.id);
+      await onLogin(email, password);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
       setErrors({ general: message });

@@ -11,6 +11,10 @@ interface ARViewProps {
   onLogout?: () => void;
   onNavigateProfile?: () => void;
   onRegister?: () => void;
+  completedStations?: number;
+  totalStations?: number;
+  totalPoints?: number;
+  onCompleteStation?: (stationId: number) => void;
 }
 
 class GlockenspielARSession extends ARVisualizer {
@@ -22,7 +26,7 @@ class GlockenspielARSession extends ARVisualizer {
   // }
 }
 
-export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister }: ARViewProps) => {
+export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<GlockenspielARSession | null>(null);
@@ -40,7 +44,7 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
         onError: (e) => console.error("AR init failed", e)
       }
     );
-    
+
     session.init().then(() => {
       console.log('[GlockenspielView] AR session initialized');
       sessionRef.current = session;
@@ -62,16 +66,23 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >
-      <ARComponentBase 
-        onNavigateHome={onNavigateHome} 
-        closeARViewKey="closeGlockenspielView" 
-        containerRef={containerRef as React.RefObject<HTMLDivElement>} 
+      <ARComponentBase
+        onNavigateHome={onNavigateHome}
+        closeARViewKey="closeGlockenspielView"
+        containerRef={containerRef as React.RefObject<HTMLDivElement>}
         videoRef={videoRef as React.RefObject<HTMLVideoElement>}
         username={username}
         onLogin={onLogin}
         onLogout={onLogout}
         onNavigateProfile={onNavigateProfile}
         onRegister={onRegister}
+        completedStations={completedStations}
+        totalStations={totalStations}
+        totalPoints={totalPoints}
+        currentStationId={1}
+        currentStationTitle="Glockenspiel"
+        currentStationPoints={50}
+        onCompleteStation={onCompleteStation}
       />
     </ARProximityGate>
   );

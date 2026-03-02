@@ -29,7 +29,7 @@ interface DashboardProps {
 export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate, username }: DashboardProps) {
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
-  
+
   // Calculate completed paths
   const completedPaths = paths.filter(path => path.completedStations === path.totalStations).length;
 
@@ -55,7 +55,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-2">{getGreeting()}, Gast!</h2>
+          <h2 className="text-2xl font-bold mb-2">{getGreeting()}{username ? `, ${username}` : ''}!</h2>
           <p className="text-muted-foreground mb-6">
             Bereit für ein neues Abenteuer in St.Georgen?
           </p>
@@ -211,13 +211,12 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
         >
           {/* Green accent bar */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary-light to-primary" />
-          
+
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
-              hasUnlockedVoucher 
-                ? 'bg-primary/10 group-hover:bg-primary/20' 
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${hasUnlockedVoucher
+                ? 'bg-primary/10 group-hover:bg-primary/20'
                 : 'bg-gray-100 group-hover:bg-gray-200'
-            }`}>
+              }`}>
               <Gift className={`w-8 h-8 ${hasUnlockedVoucher ? 'text-primary' : 'text-gray-400'}`} />
             </div>
             <div className="flex-1 text-left">
@@ -225,7 +224,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 {hasUnlockedVoucher ? 'Gutschein verfügbar!' : 'Nächster Gutschein'}
               </h4>
               <p className="text-sm text-muted-foreground mb-3">
-                {totalPoints >= 225 
+                {totalPoints >= 225
                   ? 'Alle Gutscheine freigeschaltet! Jetzt einlösen.'
                   : pointsToNextVoucher === 0
                     ? 'Glückwunsch! Neuer Gutschein verfügbar!'
@@ -236,7 +235,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               {totalPoints < 225 && (
                 <div className="space-y-1.5">
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full transition-all duration-500"
                       style={{ width: `${(totalPoints / nextMilestone) * 100}%` }}
                     />
@@ -248,9 +247,8 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 </div>
               )}
             </div>
-            <svg className={`w-6 h-6 transition-colors flex-shrink-0 self-center ${
-              hasUnlockedVoucher ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-            }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-6 h-6 transition-colors flex-shrink-0 self-center ${hasUnlockedVoucher ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+              }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>

@@ -4,10 +4,10 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-re
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { GeorgiAvatar } from './Georgi';
-import { registerUser } from '../services/auth';
 
 interface RegisterProps {
-  onRegister: (username: string, email: string, userId: number) => void;
+  /** Wird nach erfolgreicher Registrierung aufgerufen. Wirft einen Error bei Fehlschlag. */
+  onRegister: (username: string, email: string, password: string) => Promise<void>;
   onNavigateBack?: () => void;
   onNavigateToLogin?: () => void;
 }
@@ -144,8 +144,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     setIsLoading(true);
 
     try {
-      const user = await registerUser(username, email, password);
-      onRegister(user.username, user.email, user.id);
+      await onRegister(username, email, password);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registrierung fehlgeschlagen.';
       setErrors({ general: message });

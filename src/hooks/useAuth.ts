@@ -17,6 +17,8 @@ import {
 interface UseAuthReturn {
     /** Eingeloggter User oder null wenn nicht eingeloggt */
     user: UserData | null;
+    /** Setzt den User-State direkt (nach externem Login-Callback) */
+    setUser: (user: UserData | null) => void;
     /** True während einer async Auth-Operation */
     isLoading: boolean;
     /** True solange die initiale Session-Wiederherstellung läuft */
@@ -45,7 +47,6 @@ export function useAuth(): UseAuthReturn {
                 }
             })
             .catch(() => {
-                // Fehler beim Wiederherstellen → kein User
                 if (!cancelled) setUser(null);
             })
             .finally(() => {
@@ -83,5 +84,5 @@ export function useAuth(): UseAuthReturn {
         setUser(null);
     }, []);
 
-    return { user, isLoading, isInitializing, login, register, logout };
+    return { user, setUser, isLoading, isInitializing, login, register, logout };
 }
