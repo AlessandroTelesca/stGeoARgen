@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Navigation, Play, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -31,6 +31,9 @@ interface StationDetailProps {
   };
   onClose: () => void;
   onComplete: (stationId: number, earnedPoints: number) => void;
+  isLoggedIn?: boolean;
+  onNavigateToLogin?: () => void;
+  onNavigateToRegister?: () => void;
 }
 
 // Station ID to AR Route mapping
@@ -40,13 +43,14 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const navigate = useNavigate();
 
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const hasARRoute = !!STATION_AR_ROUTES[station.id];
+  const needsLogin = isLoggedIn === false && hasARRoute && station.status !== 'completed';
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,
@@ -129,8 +133,42 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
             </p>
           </div>
 
+          {/* LOGIN GATE – shown when not logged in and AR is available */}
+          {needsLogin && (
+            <motion.div
+              className="bg-white text-gray-900 rounded-2xl p-6 text-center shadow-xl border border-gray-100"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="w-20 h-20 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2 text-lg text-gray-900">Anmeldung erforderlich</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Melde dich an, um das AR-Erlebnis zu starten und deinen Fortschritt zu speichern.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={onNavigateToLogin}
+                  className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>Jetzt anmelden</span>
+                </button>
+                {onNavigateToRegister && (
+                  <button
+                    onClick={onNavigateToRegister}
+                    className="w-full bg-white text-primary border-2 border-primary py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
+                  >
+                    Konto erstellen
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Location Error */}
-          {hasARRoute && locationError && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && locationError && station.status !== 'completed' && (
             <motion.div
               className="bg-warning/10 border border-warning/30 rounded-2xl p-6"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -156,7 +194,7 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
           )}
 
           {/* Distance Check - Too Far (Echtzeit-Anzeige) */}
-          {hasARRoute && !locationError && distance !== null && !isWithinRadius && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && !locationError && distance !== null && !isWithinRadius && station.status !== 'completed' && (
             <motion.div
               className="bg-black text-white rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -187,7 +225,7 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
           )}
 
           {/* AR Experience Button - Within Radius */}
-          {hasARRoute && !locationError && isWithinRadius && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && !locationError && isWithinRadius && station.status !== 'completed' && (
             <motion.div
               className="bg-primary text-white rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -279,7 +317,9 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
       {/* Georgi Helper */}
       <Georgi
         message={
-          hasARRoute && isWithinRadius && !locationError
+          needsLogin
+            ? "Melde dich an, um das AR-Erlebnis freizuschalten!"
+            : hasARRoute && isWithinRadius && !locationError
             ? "Super! Du bist nah genug. Starte das AR-Erlebnis!"
             : hasARRoute && distance !== null
             ? `Du bist noch ${Math.round(distance)}m entfernt. Nutze die Navigation!`

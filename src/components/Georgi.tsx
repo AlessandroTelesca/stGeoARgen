@@ -57,7 +57,7 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
                 }}
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md">
-                  <img src="/georgi-logo.png" alt="Georgi" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
+                  <img src="/Logo.svg" alt="Georgi" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
                 </div>
               </motion.div>
 
@@ -97,7 +97,7 @@ export function GeorgiAvatar({ size = 'md', animated = true }: GeorgiAvatarProps
         ease: 'easeInOut',
       }}
     >
-      <img src="/georgi-logo.png" alt="Georgi" style={{ width: size === 'sm' ? '20px' : size === 'md' ? '30px' : '40px', height: size === 'sm' ? '20px' : size === 'md' ? '30px' : '40px', objectFit: 'contain' }} />
+      <img src="/Logo.svg" alt="Georgi" style={{ width: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', height: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
     </motion.div>
   );
 }

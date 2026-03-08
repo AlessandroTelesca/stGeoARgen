@@ -26,6 +26,8 @@ import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuse
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
+import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
+import { ARLoginGuard } from './components/ARLoginGuard';
 
 
 interface Station {
@@ -65,6 +67,7 @@ export default function App() {
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPostOnboardingLoginPrompt, setShowPostOnboardingLoginPrompt] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
@@ -197,11 +200,13 @@ export default function App() {
   const handleOnboardingComplete = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
     setShowOnboarding(false);
+    if (!user) setShowPostOnboardingLoginPrompt(true);
   };
 
   const handleOnboardingSkip = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
     setShowOnboarding(false);
+    if (!user) setShowPostOnboardingLoginPrompt(true);
   };
 
   // Sync state with URL
@@ -723,6 +728,9 @@ export default function App() {
             station={selectedStation}
             onClose={handleBackToPath}
             onComplete={handleStationComplete}
+            isLoggedIn={!!username}
+            onNavigateToLogin={handleNavigateToLogin}
+            onNavigateToRegister={handleNavigateToRegister}
           />
         )}
       </AnimatePresence>
@@ -747,50 +755,88 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Post-Onboarding Login Prompt */}
+      <PostOnboardingLoginPrompt
+        isOpen={showPostOnboardingLoginPrompt}
+        onLogin={() => {
+          setShowPostOnboardingLoginPrompt(false);
+          handleNavigateToLogin();
+        }}
+        onRegister={() => {
+          setShowPostOnboardingLoginPrompt(false);
+          handleNavigateToRegister();
+        }}
+        onSkip={() => setShowPostOnboardingLoginPrompt(false)}
+      />
+
       {/* AR Views */}
       {currentView === 'ar-klosterweiher' && (
-        <KlosterweiherView
-          onNavigateHome={() => navigate('/')}
-          username={username}
-          onLogin={handleNavigateToLogin}
-          onLogout={handleLogout}
-          onNavigateProfile={() => navigate('/profile')}
-          onRegister={handleNavigateToRegister}
-          completedStations={totalCompletedStations}
-          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
-          totalPoints={totalPoints}
-          onCompleteStation={(stationId) => handleStationComplete(stationId)}
-        />
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
+          <KlosterweiherView
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+          />
+        )
       )}
 
       {currentView === 'ar-phonomuseum' && (
-        <PhonomuseumView
-          onNavigateHome={() => navigate('/')}
-          username={username}
-          onLogin={handleNavigateToLogin}
-          onLogout={handleLogout}
-          onNavigateProfile={() => navigate('/profile')}
-          onRegister={handleNavigateToRegister}
-          completedStations={totalCompletedStations}
-          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
-          totalPoints={totalPoints}
-          onCompleteStation={(stationId) => handleStationComplete(stationId)}
-        />
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
+          <PhonomuseumView
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+          />
+        )
       )}
 
       {currentView === 'ar-glockenspiel' && (
-        <GlockenspielView
-          onNavigateHome={() => navigate('/')}
-          username={username}
-          onLogin={handleNavigateToLogin}
-          onLogout={handleLogout}
-          onNavigateProfile={() => navigate('/profile')}
-          onRegister={handleNavigateToRegister}
-          completedStations={totalCompletedStations}
-          totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
-          totalPoints={totalPoints}
-          onCompleteStation={(stationId) => handleStationComplete(stationId)}
-        />
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
+          <GlockenspielView
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+          />
+        )
       )}
 
       {/* Path Completion Celebration */}

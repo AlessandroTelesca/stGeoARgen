@@ -13,12 +13,17 @@ interface LoginProps {
 }
 
 export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigateToForgotPassword }: LoginProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() =>
+    localStorage.getItem('remember-me') === 'true' ? (localStorage.getItem('remember-email') || '') : ''
+  );
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('remember-me') === 'true');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
-  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>(
+    () => localStorage.getItem('remember-me') === 'true' ? { email: false, password: false } : {}
+  );
 
   // Real-time validation
   const validateEmail = (value: string) => {
@@ -83,6 +88,13 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
 
     try {
       await onLogin(email, password);
+      if (rememberMe) {
+        localStorage.setItem('remember-me', 'true');
+        localStorage.setItem('remember-email', email);
+      } else {
+        localStorage.removeItem('remember-me');
+        localStorage.removeItem('remember-email');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
       setErrors({ general: message });
@@ -254,17 +266,42 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               </AnimatePresence>
             </motion.div>
 
-            {/* Forgot Password Link */}
+            {/* Forgot Password + Remember Me Row */}
             <motion.div
-              className="text-right pt-3"
+              className="flex items-center justify-between pt-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
             >
+              {/* Remember Me Checkbox */}
+              <button
+                type="button"
+                onClick={() => !isLoading && setRememberMe(v => !v)}
+                className="flex items-center gap-2.5 group"
+                disabled={isLoading}
+                aria-label="Angemeldet bleiben"
+              >
+                <span
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                    rememberMe ? 'bg-primary border-primary' : 'border-border bg-white group-hover:border-primary/50'
+                  }`}
+                >
+                  {rememberMe && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+                <span className="text-sm sm:text-base text-muted-foreground select-none">
+                  Angemeldet bleiben
+                </span>
+              </button>
+
+              {/* Forgot Password */}
               <button
                 type="button"
                 onClick={onNavigateToForgotPassword}
-                className="text-base sm:text-lg text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
+                className="text-sm sm:text-base text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
                 disabled={isLoading}
               >
                 Passwort vergessen?
