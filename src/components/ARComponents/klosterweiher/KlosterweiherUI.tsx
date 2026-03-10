@@ -59,7 +59,7 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
         top: '20%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 10000,
+        zIndex: 10003,
         pointerEvents: 'none',
         padding: '20px 28px',
         background: 'var(--color-white)',
@@ -91,7 +91,7 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
         top: '30%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 10000,
+        zIndex: 10003,
         pointerEvents: 'auto',
         padding: '20px 28px',
         background: 'var(--color-white)',
@@ -146,7 +146,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 10000,
+        zIndex: 10003,
         pointerEvents: 'auto',
         padding: '20px 28px',
         background: 'var(--color-white)',
@@ -182,55 +182,21 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
   );
 };
 
-interface ReleaseFishButtonProps {
+interface FishActionButtonsProps {
   overlayRoot: HTMLDivElement;
   onRelease: () => void;
+  onLearnMore: () => void;
 }
 
-export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonProps) => {
+export const FishActionButtons = ({ overlayRoot, onRelease, onLearnMore }: FishActionButtonsProps) => {
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: '64%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 10000,
-        pointerEvents: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '12px',
-      }}
-    >
-      <p
-        style={{
-          margin: 0,
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'var(--color-white)',
-          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          opacity: 0.9,
-          pointerEvents: 'none',
-        }}
-      >
-        Bewege den fisch mit deinen Fingern!
-      </p>
-      <button
-        onClick={onRelease}
-        style={{
-          padding: '12px 18px',
-          borderRadius: '12px',
-          border: 'none',
-          background: 'var(--color-white)',
-          color: 'var(--color-primary)',
-          fontWeight: 700,
-          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
-          cursor: 'pointer',
-          width: '280px',
-        }}
-      >
-        Fisch wieder freilassen
+    <div className="ar-fish-action-row" style={{ zIndex: 10003 }}>
+      <button className="ar-fish-btn-tertiary" onClick={onRelease}>
+        Freilassen
+      </button>
+      <button className="ar-fish-btn-secondary" onClick={onLearnMore}>
+        <Info style={{ width: '16px', height: '16px' }} />
+        Mehr Infos
       </button>
     </div>,
     overlayRoot
@@ -240,13 +206,11 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
 interface FishCaughtDialogProps {
   overlayRoot: HTMLDivElement;
   fishName: string;
-  onLearnMore: () => void;
 }
 
-export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCaughtDialogProps) => {
+export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
   const article = getArticle(fishName);
-  const [showTooltip, setShowTooltip] = useState(false);
-  
+
   return createPortal(
     <div
       style={{
@@ -255,7 +219,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCau
         left: '20px',
         right: '20px',
         transform: 'translateY(-50%)',
-        zIndex: 9999,
+        zIndex: 10003,
         pointerEvents: 'auto',
         padding: '24px 20px',
         background: 'var(--color-white)',
@@ -267,70 +231,6 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCau
         boxSizing: 'border-box',
       }}
     >
-      {/* Info Icon in der oberen rechten Ecke */}
-      <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
-        <button
-          onClick={onLearnMore}
-          onMouseEnter={() => setShowTooltip(true)}
-          onMouseLeave={() => setShowTooltip(false)}
-          style={{
-            background: 'var(--color-primary)',
-            border: 'none',
-            borderRadius: '50%',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          <Info style={{ width: '18px', height: '18px', color: 'white' }} />
-        </button>
-        
-        {/* Tooltip */}
-        {showTooltip && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '40px',
-              right: '0',
-              background: 'rgba(0,0,0,0.85)',
-              color: 'white',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              zIndex: 10001,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            }}
-          >
-            Mehr über diesen Fisch
-            {/* Tooltip Arrow */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '12px',
-                width: '8px',
-                height: '8px',
-                background: 'rgba(0,0,0,0.85)',
-                transform: 'rotate(45deg)',
-              }}
-            />
-          </div>
-        )}
-      </div>
-
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
         Glückwunsch! Sie haben {article}
       </p>
@@ -393,7 +293,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
         className="h-[95vh] p-0 overflow-hidden border-t-0"
         style={{
           pointerEvents: 'auto',
-          zIndex: 10001,
+          zIndex: 10004,
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',
         }}
@@ -553,7 +453,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="funfact" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>💡 Wussten Sie schon?</span>
+                      <span>Wussten Sie schon?</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />

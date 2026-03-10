@@ -37,7 +37,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  z-index: 10002;
   pointer-events: none;
 }
 
@@ -331,5 +331,65 @@
   
   .ar-navigate-button-text {
     font-size: 14px;
+  }
+}
+
+/* Fish Action Buttons - Above Progress Bar */
+.ar-fish-action-row {
+  position: fixed;
+  bottom: calc(300px + max(24px, env(safe-area-inset-bottom)));
+  left: 16px;
+  right: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.ar-fish-btn-tertiary {
+  flex: 1;
+  padding: 13px 8px;
+  border-radius: 32px;
+  border: none;
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.15s ease;
+}
+
+.ar-fish-btn-tertiary:active {
+  transform: scale(0.96);
+  background: var(--color-gray-100);
+}
+
+.ar-fish-btn-secondary {
+  flex: 2;
+  padding: 13px 16px;
+  border-radius: 32px;
+  border: 2px solid var(--color-primary);
+  background: var(--color-white);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.15s ease;
+}
+
+.ar-fish-btn-secondary:active {
+  transform: scale(0.96);
+  background: var(--color-gray-50);
+}
+
+@media (max-width: 480px) {
+  .ar-fish-action-row {
+    bottom: calc(290px + max(24px, env(safe-area-inset-bottom)));
   }
 }

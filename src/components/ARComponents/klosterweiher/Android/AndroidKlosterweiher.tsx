@@ -8,8 +8,8 @@ import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
 import {
   WaitingForGroundDetection,
   FishingInstructions,
-  ReleaseFishButton,
   FishCaughtDialog,
+  FishActionButtons,
   FishInfoPopup,
 } from "../KlosterweiherUI";
 
@@ -521,11 +521,11 @@ export const AndroidKlosterweiherView = ({
           <FishCaughtDialog
             overlayRoot={overlayRootRef.current}
             fishName={caughtFishName}
-            onLearnMore={() => setShowFishInfo(true)}
           />
-          <ReleaseFishButton
+          <FishActionButtons
             overlayRoot={overlayRootRef.current}
             onRelease={() => sessionRef.current?.releaseCurrentFish()}
+            onLearnMore={() => setShowFishInfo(true)}
           />
         </>
       )}
