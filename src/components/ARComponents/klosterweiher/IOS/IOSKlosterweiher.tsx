@@ -53,6 +53,9 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
   protected cameraLight: THREE.PointLight | null = null;
+  protected ambientLight: THREE.AmbientLight | null = null;
+  protected hemisphereLight: THREE.HemisphereLight | null = null;
+  protected fishLights: THREE.PointLight[] = [];
   public tapCount = 0;
   public hasCaughtFish = false;
   private modelsLoaded = false;
@@ -176,12 +179,44 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       this.renderer.domElement.style.zIndex = "1000";
     }
 
-    // Create and attach a light to the scene (not camera) for proper illumination
-    this.cameraLight = new THREE.PointLight(0xffffff, 2.0, 100);
+    // Create multiple lights for even illumination from all sides
+    // Main camera light
+    this.cameraLight = new THREE.PointLight(0xffffff, 3.0, 1000);
     this.cameraLight.position.set(0, 0, 0);
     if (this.scene && this.camera) {
       this.scene.add(this.cameraLight);
     }
+
+    // Ambient light for overall illumination (no shadows)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    if (this.scene) {
+      this.scene.add(this.ambientLight);
+    }
+
+    // Hemisphere light for even top/bottom lighting
+    this.hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0);
+    if (this.scene) {
+      this.scene.add(this.hemisphereLight);
+    }
+
+    // Additional point lights around fish position for all-around lighting
+    const fishLightPositions = [
+      { x: 0, y: 0, z: -200 },   // Front
+      { x: -200, y: 0, z: -400 }, // Left
+      { x: 200, y: 0, z: -400 },  // Right
+      { x: 0, y: 200, z: -400 },  // Top
+      { x: 0, y: -200, z: -400 }, // Bottom
+      { x: 0, y: 0, z: -600 },    // Behind fish
+    ];
+
+    fishLightPositions.forEach((pos) => {
+      const light = new THREE.PointLight(0xffffff, 2.0, 800);
+      light.position.set(pos.x, pos.y, pos.z);
+      if (this.camera) {
+        this.camera.add(light);
+      }
+      this.fishLights.push(light);
+    });
 
     // Load rod model - remove from scene and attach to camera after loading
     this.loadGLTFModel(this.rodUrl, {
@@ -226,6 +261,23 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
+            
+            // Disable shadows on fish for even lighting
+            fishModel.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.castShadow = false;
+                child.receiveShadow = false;
+                // Flatten shading slightly for more even appearance
+                if (child.material) {
+                  const materials = Array.isArray(child.material) ? child.material : [child.material];
+                  materials.forEach((mat) => {
+                    if ('flatShading' in mat) {
+                      mat.flatShading = false;
+                    }
+                  });
+                }
+              }
+            });
             
             // Create and store backdrop for this fish
             this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
@@ -325,11 +377,14 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       this.updateFishBackdrop();
     }
 
-    // Update light position to follow camera
+    // Update light position to be between camera and fish
     if (this.cameraLight && this.camera) {
       this.cameraLight.position.copy(this.camera.position);
-      this.cameraLight.position.y += 2;
-      this.cameraLight.position.z += 5;
+      // Position light in front of camera (negative Z) to illuminate fish at z=-500
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyQuaternion(this.camera.quaternion);
+      this.cameraLight.position.add(forward.multiplyScalar(200));
+      this.cameraLight.position.y += 1;
     }
 
     if (this.renderer && this.scene && this.camera) {

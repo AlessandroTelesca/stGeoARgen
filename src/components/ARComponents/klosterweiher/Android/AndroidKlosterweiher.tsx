@@ -53,6 +53,9 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
   protected cameraLight: THREE.PointLight | null = null;
+  protected ambientLight: THREE.AmbientLight | null = null;
+  protected hemisphereLight: THREE.HemisphereLight | null = null;
+  protected fishLights: THREE.PointLight[] = [];
   public tapCount = 0;
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
@@ -178,10 +181,44 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     // Setup additional pointer handlers for orbit controls
     this.setupOrbitControlListeners();
 
-    // Create and attach a light to the camera that follows it
-    this.cameraLight = new THREE.PointLight(0xffffff, 1.5, 100);
-    this.cameraLight.position.set(0, 2, 5);
-    this.cameraLight.parent = this.camera;
+    // Create multiple lights for even illumination from all sides
+    // Main camera light
+    this.cameraLight = new THREE.PointLight(0xffffff, 3.0, 1000);
+    this.cameraLight.position.set(0, 1, -200);
+    if (this.camera) {
+      this.camera.add(this.cameraLight);
+    }
+
+    // Ambient light for overall illumination (no shadows)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    if (this.scene) {
+      this.scene.add(this.ambientLight);
+    }
+
+    // Hemisphere light for even top/bottom lighting
+    this.hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0);
+    if (this.scene) {
+      this.scene.add(this.hemisphereLight);
+    }
+
+    // Additional point lights around fish position for all-around lighting
+    const fishLightPositions = [
+      { x: 0, y: 0, z: -200 },   // Front
+      { x: -200, y: 0, z: -400 }, // Left
+      { x: 200, y: 0, z: -400 },  // Right
+      { x: 0, y: 200, z: -400 },  // Top
+      { x: 0, y: -200, z: -400 }, // Bottom
+      { x: 0, y: 0, z: -600 },    // Behind fish
+    ];
+
+    fishLightPositions.forEach((pos) => {
+      const light = new THREE.PointLight(0xffffff, 2.0, 800);
+      light.position.set(pos.x, pos.y, pos.z);
+      if (this.camera) {
+        this.camera.add(light);
+      }
+      this.fishLights.push(light);
+    });
     this.loadGLTFModel(this.rodUrl, {
       position: new THREE.Vector3(3, -6, -20),
       rotation: new THREE.Euler(0, Math.PI, 0),
@@ -217,6 +254,23 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
+
+            // Disable shadows on fish for even lighting
+            fishModel.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.castShadow = false;
+                child.receiveShadow = false;
+                // Flatten shading slightly for more even appearance
+                if (child.material) {
+                  const materials = Array.isArray(child.material) ? child.material : [child.material];
+                  materials.forEach((mat) => {
+                    if ('flatShading' in mat) {
+                      mat.flatShading = false;
+                    }
+                  });
+                }
+              }
+            });
 
             // Create and store backdrop for this fish
             if (this.camera) {
