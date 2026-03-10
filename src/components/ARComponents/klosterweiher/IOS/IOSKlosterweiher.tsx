@@ -11,6 +11,8 @@ import {
   FishCaughtDialog,
   FishActionButtons,
   FishInfoPopup,
+  TapInstructionGIF,
+  DragInstructionGIF,
 } from "../KlosterweiherUI";
 
 interface ARViewProps {
@@ -64,6 +66,8 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   private waterLoaded = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
+  public onTap?: () => void; // Callback for tap tracking
+  public onDrag?: () => void; // Callback for drag tracking
   private lastFrameTime: number = 0;
 
   // Orbit controls for caught fish
@@ -343,6 +347,9 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   }
 
   protected handlePointer(clientX: number, clientY: number): void {
+    // Notify about tap
+    this.onTap?.();
+    
     // If fish is caught, start orbit control; otherwise, cast rod
     if (this.hasCaughtFish) {
       this.startOrbitControl(clientX, clientY);
@@ -439,6 +446,11 @@ export const IOSKlosterweiherView = ({
   const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [showTapInstruction, setShowTapInstruction] = useState(false);
+  const [tapsSinceStart, setTapsSinceStart] = useState(0);
+  const [lastTapTime, setLastTapTime] = useState<number>(Date.now());
+  const [showDragInstruction, setShowDragInstruction] = useState(false);
+  const [dragsSinceStart, setDragsSinceStart] = useState(0);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -453,6 +465,20 @@ export const IOSKlosterweiherView = ({
       startAR();
     }
   }, [isAuthorized, hasStarted, isStarting]);
+
+  // Timer to show tap instruction after 5 seconds of inactivity
+  useEffect(() => {
+    if (!hasStarted || fishCaught || tapsSinceStart >= 3) return;
+
+    const timer = setInterval(() => {
+      const timeSinceLastTap = Date.now() - lastTapTime;
+      if (timeSinceLastTap >= 5000) {
+        setShowTapInstruction(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [hasStarted, fishCaught, lastTapTime, tapsSinceStart]);
 
   const startAR = async () => {
     if (
@@ -479,8 +505,37 @@ export const IOSKlosterweiherView = ({
       session.onFishCaught = (fishName: string) => {
         setFishCaught(true);
         setCaughtFishName(fishName);
+        setShowTapInstruction(false); // Hide tap instruction when fish is caught
+        setShowDragInstruction(true); // Show drag instruction when fish is caught
+        setDragsSinceStart(0);
       };
-      session.onFishReleased = () => setFishCaught(false);
+      session.onFishReleased = () => {
+        setFishCaught(false);
+        setTapsSinceStart(0); // Reset tap count for new fishing session
+        setLastTapTime(Date.now());
+        setShowDragInstruction(false);
+        setDragsSinceStart(0);
+      };
+      session.onDrag = () => {
+        setDragsSinceStart(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 3) {
+            setShowDragInstruction(false);
+          }
+          return newCount;
+        });
+      };
+      session.onTap = () => {
+        setLastTapTime(Date.now());
+        setTapsSinceStart(prev => {
+          const newCount = prev + 1;
+          // Only hide GIF after reaching 3 taps
+          if (newCount >= 3) {
+            setShowTapInstruction(false);
+          }
+          return newCount;
+        });
+      };
       session.onReadyCallback = () => {
         setWaitingForReady(false);
         setShowFishingInstructions(true);
@@ -532,6 +587,8 @@ export const IOSKlosterweiherView = ({
             sessionRef.current?.showRodAndProceed();
             setWaitingForReady(false);
             setShowFishingInstructions(true);
+            setShowTapInstruction(true); // Show tap instruction when ready
+            setLastTapTime(Date.now());
           }}
           modelsLoaded={modelsLoaded}
         />
@@ -540,8 +597,16 @@ export const IOSKlosterweiherView = ({
       {showFishingInstructions && overlayRootRef.current && (
         <FishingInstructions
           overlayRoot={overlayRootRef.current}
-          onStart={() => setShowFishingInstructions(false)}
+          onStart={() => {
+            setShowFishingInstructions(false);
+            setShowTapInstruction(true); // Show tap instruction after dismissing fishing instructions
+            setLastTapTime(Date.now());
+          }}
         />
+      )}
+
+      {showTapInstruction && !fishCaught && tapsSinceStart < 3 && overlayRootRef.current && (
+        <TapInstructionGIF overlayRoot={overlayRootRef.current} />
       )}
 
       {fishCaught && overlayRootRef.current && (
@@ -556,6 +621,10 @@ export const IOSKlosterweiherView = ({
             onLearnMore={() => setShowFishInfo(true)}
           />
         </>
+      )}
+
+      {fishCaught && showDragInstruction && dragsSinceStart < 3 && overlayRootRef.current && (
+        <DragInstructionGIF overlayRoot={overlayRootRef.current} />
       )}
 
       {showFishInfo && overlayRootRef.current && (

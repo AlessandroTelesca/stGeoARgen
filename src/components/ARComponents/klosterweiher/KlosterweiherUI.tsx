@@ -18,6 +18,98 @@ const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
   'Karpfen': 'male',      // der Karpfen
 };
 
+interface TapInstructionGIFProps {
+  overlayRoot: HTMLDivElement;
+}
+
+export const TapInstructionGIF = ({ overlayRoot }: TapInstructionGIFProps) => {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10002,
+        pointerEvents: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '8px',
+      }}
+    >
+      <img
+        src="/TapOnScreen.gif"
+        alt="Tap on screen"
+        style={{
+          width: '80px',
+          height: '80px',
+          filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))',
+        }}
+      />
+      <p
+        style={{
+          margin: 0,
+          color: 'var(--color-white)',
+          fontSize: '14px',
+          fontWeight: 600,
+          textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+        }}
+      >
+        Tippen Sie auf den Bildschirm
+      </p>
+    </div>,
+    overlayRoot
+  );
+};
+
+interface DragInstructionGIFProps {
+  overlayRoot: HTMLDivElement;
+}
+
+export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: '38%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10002,
+        pointerEvents: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '8px',
+      }}
+    >
+      <img
+        src="/dragAnimation.gif"
+        alt="Drag to rotate fish"
+        style={{
+          width: '160px',
+          height: '160px',
+          filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))',
+        }}
+      />
+      <p
+        style={{
+          margin: 0,
+          color: 'var(--color-white)',
+          fontSize: '14px',
+          fontWeight: 600,
+          textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Ziehen Sie, um den Fisch zu drehen
+      </p>
+    </div>,
+    overlayRoot
+  );
+};
+
 const getArticle = (fishName: string): string => {
   const gender = FISH_GENDERS[fishName] || 'male';
   switch (gender) {

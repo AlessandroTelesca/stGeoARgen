@@ -37,6 +37,7 @@ export abstract class KlosterweiherARSessionBase {
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
+  public onDrag?: () => void;
   protected rodAnimationInProgress = false;
 
   // Orbit controls for caught fish
@@ -105,7 +106,7 @@ export abstract class KlosterweiherARSessionBase {
     
     // Show backdrop for visibility
     const backdrop = this.fishBackdrops[this.currentFishIndex];
-    if (backdrop) backdrop.visible = true;
+    // if (backdrop) backdrop.visible = true; // Backdrop deactivated
 
     tl.to(this.rod.rotation, {
       x: 0,
@@ -285,6 +286,9 @@ export abstract class KlosterweiherARSessionBase {
       const activeMixer = this.fishMixers[this.currentFishIndex];
       activeMixer?.stopAllAction();
     }
+
+    // Notify about drag
+    this.onDrag?.();
   }
 
   /**

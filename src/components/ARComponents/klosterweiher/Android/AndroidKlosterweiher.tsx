@@ -11,6 +11,8 @@ import {
   FishCaughtDialog,
   FishActionButtons,
   FishInfoPopup,
+  TapInstructionGIF,
+  DragInstructionGIF,
 } from "../KlosterweiherUI";
 
 interface ARViewProps {
@@ -60,6 +62,8 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
   public onFishReleased?: () => void;
+  public onTap?: () => void; // Callback for tap tracking
+  public onDrag?: () => void; // Callback for drag tracking
   private modelsLoaded = false;
   private rodLoaded = false;
   private fishesLoaded = false;
@@ -414,6 +418,11 @@ export const AndroidKlosterweiherView = ({
   const [waitingForGroundDetection, setWaitingForGroundDetection] =
     useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [showTapInstruction, setShowTapInstruction] = useState(false);
+  const [tapsSinceStart, setTapsSinceStart] = useState(0);
+  const [lastTapTime, setLastTapTime] = useState<number>(Date.now());
+  const [showDragInstruction, setShowDragInstruction] = useState(false);
+  const [dragsSinceStart, setDragsSinceStart] = useState(0);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -421,6 +430,20 @@ export const AndroidKlosterweiherView = ({
       sessionRef.current?.stop();
     };
   }, []);
+
+  // Timer to show tap instruction after 5 seconds of inactivity
+  useEffect(() => {
+    if (!hasStarted || fishCaught || tapsSinceStart >= 3 || waitingForGroundDetection) return;
+
+    const timer = setInterval(() => {
+      const timeSinceLastTap = Date.now() - lastTapTime;
+      if (timeSinceLastTap >= 5000) {
+        setShowTapInstruction(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [hasStarted, fishCaught, lastTapTime, tapsSinceStart, waitingForGroundDetection]);
 
   // Pre-create session and start loading models when authorized
   useEffect(() => {
@@ -438,11 +461,42 @@ export const AndroidKlosterweiherView = ({
       session.onFishCaught = (fishName: string) => {
         setFishCaught(true);
         setCaughtFishName(fishName);
+        setShowTapInstruction(false); // Hide tap instruction when fish is caught
+        setShowDragInstruction(true); // Show drag instruction when fish is caught
+        setDragsSinceStart(0);
       };
-      session.onFishReleased = () => setFishCaught(false);
+      session.onFishReleased = () => {
+        setFishCaught(false);
+        setTapsSinceStart(0); // Reset tap count for new fishing session
+        setLastTapTime(Date.now());
+        setShowDragInstruction(false);
+        setDragsSinceStart(0);
+      };
+      session.onDrag = () => {
+        setDragsSinceStart(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 3) {
+            setShowDragInstruction(false);
+          }
+          return newCount;
+        });
+      };
+      session.onTap = () => {
+        setLastTapTime(Date.now());
+        setTapsSinceStart(prev => {
+          const newCount = prev + 1;
+          // Only hide GIF after reaching 3 taps
+          if (newCount >= 3) {
+            setShowTapInstruction(false);
+          }
+          return newCount;
+        });
+      };
       session.onGroundDetectedCallback = () => {
         setWaitingForGroundDetection(false);
         setShowFishingInstructions(true);
+        setShowTapInstruction(true); // Show tap instruction when ground is detected
+        setLastTapTime(Date.now());
       };
       session.onModelsLoadedCallback = () => {
         setModelsLoaded(true);
@@ -566,8 +620,16 @@ export const AndroidKlosterweiherView = ({
       {showFishingInstructions && overlayRootRef.current && (
         <FishingInstructions
           overlayRoot={overlayRootRef.current}
-          onStart={() => setShowFishingInstructions(false)}
+          onStart={() => {
+            setShowFishingInstructions(false);
+            setShowTapInstruction(true); // Show tap instruction after dismissing fishing instructions
+            setLastTapTime(Date.now());
+          }}
         />
+      )}
+
+      {showTapInstruction && !fishCaught && tapsSinceStart < 3 && overlayRootRef.current && (
+        <TapInstructionGIF overlayRoot={overlayRootRef.current} />
       )}
 
       {fishCaught && overlayRootRef.current && (
@@ -582,6 +644,10 @@ export const AndroidKlosterweiherView = ({
             onLearnMore={() => setShowFishInfo(true)}
           />
         </>
+      )}
+
+      {fishCaught && showDragInstruction && dragsSinceStart < 3 && overlayRootRef.current && (
+        <DragInstructionGIF overlayRoot={overlayRootRef.current} />
       )}
 
       {showFishInfo && overlayRootRef.current && (
