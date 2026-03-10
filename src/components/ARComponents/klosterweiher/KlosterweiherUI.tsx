@@ -72,28 +72,29 @@ export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => 
     <div
       style={{
         position: 'fixed',
-        top: '38%',
+        top: '45%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 10002,
         pointerEvents: 'none',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        gap: '8px',
+        justifyContent: 'center',
       }}
     >
       <img
         src="/dragAnimation.gif"
         alt="Drag to rotate fish"
         style={{
-          width: '160px',
-          height: '160px',
+          width: '240px',
+          height: '240px',
           filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))',
         }}
       />
       <p
         style={{
+          position: 'absolute',
+          top: '75%',
           margin: 0,
           color: 'var(--color-white)',
           fontSize: '14px',
@@ -101,9 +102,10 @@ export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => 
           textShadow: '0 2px 8px rgba(0,0,0,0.8)',
           textAlign: 'center',
           whiteSpace: 'nowrap',
+          zIndex: 10003,
         }}
       >
-        Ziehen Sie, um den Fisch zu drehen
+        Wische um den Fisch zu drehen
       </p>
     </div>,
     overlayRoot
@@ -324,7 +326,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       }}
     >
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        Glückwunsch! Sie haben {article}
+        Glückwunsch! Du hast {article}
       </p>
       <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
         {fishName}
