@@ -111,26 +111,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   onChange={(e) => handleLanguageChange(e.target.value)}
                   className="px-4 py-2 bg-muted rounded-lg border border-border"
                 >
-                  <optgroup label="Europa">
-                    <option value="de">{t('settings.german')}</option>
-                    <option value="en">{t('settings.english')}</option>
-                    <option value="fr">{t('settings.french')}</option>
-                    <option value="es">{t('settings.spanish')}</option>
-                    <option value="ru">{t('settings.russian')}</option>
-                    <option value="nl">{t('settings.dutch')}</option>
-                    <option value="da">{t('settings.danish')}</option>
-                    <option value="pl">{t('settings.polish')}</option>
-                    <option value="uk">{t('settings.ukrainian')}</option>
-                    <option value="fi">{t('settings.finnish')}</option>
-                    <option value="no">{t('settings.norwegian')}</option>
-                    <option value="sv">{t('settings.swedish')}</option>
-                    <option value="be">{t('settings.belgian')}</option>
-                  </optgroup>
-                  <optgroup label="Asien">
-                    <option value="zh">{t('settings.chinese')}</option>
-                    <option value="ja">{t('settings.japanese')}</option>
-                    <option value="ko">{t('settings.korean')}</option>
-                  </optgroup>
+                  <option value="de">{t('settings.german')}</option>
+                  <option value="en">{t('settings.english')}</option>
                 </select>
               </div>
             </div>
