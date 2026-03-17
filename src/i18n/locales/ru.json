@@ -1,0 +1,65 @@
+{
+  "app": {
+    "title": "St.GeoARgen"
+  },
+  "header": {
+    "home": "Главная",
+    "paths": "Тематические маршруты",
+    "rewards": "Награды",
+    "qrScanner": "QR-сканер",
+    "settings": "Настройки",
+    "profile": "Профиль",
+    "points": "Очки",
+    "stations": "Станции",
+    "progress": "Прогресс"
+  },
+  "dashboard": {
+    "welcome": "Добро пожаловать обратно",
+    "startJourney": "Начните свое путешествие открытий",
+    "points": "Очки",
+    "completedPaths": "Завершенные маршруты",
+    "stationsExplored": "{{completed}} из {{total}} станций исследовано",
+    "allStationsCompleted": "Поздравляем! Все станции исследованы!",
+    "stationsRemaining": "Еще {{remaining}} станций для открытия!",
+    "scanQR": "Сканировать QR-код",
+    "scanQRDescription": "Сканируйте QR-код на станции, чтобы начать",
+    "explorePaths": "Исследовать маршруты",
+    "explorePathsDescription": "Выберите тематический маршрут и начните приключение",
+    "nextVoucher": "Еще {{points}} очков до следующего ваучера",
+    "redeemPoints": "Обменять {{points}} очков",
+    "voucherAvailable": "Ваучер доступен!",
+    "nextVoucherTitle": "Следующий ваучер",
+    "allVouchersUnlocked": "Все ваучеры разблокированы! Обменяйте сейчас.",
+    "newVoucherAvailable": "Поздравляем! Новый ваучер доступен!",
+    "viewAll": "Посмотреть все"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "languageDescription": "Выберите предпочитаемый язык",
+    "german": "Немецкий",
+    "english": "Английский",
+    "french": "Французский",
+    "spanish": "Испанский",
+    "russian": "Русский",
+    "chinese": "Китайский",
+    "dutch": "Нидерландский",
+    "notifications": "Уведомления",
+    "pathUpdates": "Обновления маршрутов",
+    "pathUpdatesDescription": "Получайте обновления о новых маршрутах",
+    "resetProgress": "Сбросить прогресс",
+    "resetProgressDescription": "Удалить все очки и завершенные станции",
+    "confirmReset": "Вы действительно хотите сбросить весь прогресс?",
+    "accountInfo": "Информация об аккаунте и безопасность"
+  },
+  "common": {
+    "back": "Назад",
+    "close": "Закрыть",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "save": "Сохранить",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успех"
+  }
+}

@@ -115,6 +115,9 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <option value="en">{t('settings.english')}</option>
                   <option value="fr">{t('settings.french')}</option>
                   <option value="es">{t('settings.spanish')}</option>
+                  <option value="ru">{t('settings.russian')}</option>
+                  <option value="zh">{t('settings.chinese')}</option>
+                  <option value="nl">{t('settings.dutch')}</option>
                 </select>
               </div>
             </div>
