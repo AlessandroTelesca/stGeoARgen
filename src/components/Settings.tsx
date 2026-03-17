@@ -17,7 +17,6 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
   const handleLanguageChange = (newLanguage: string) => {
     setLanguage(newLanguage);
     i18n.changeLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
   };
 
   return (
@@ -114,6 +113,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                 >
                   <option value="de">{t('settings.german')}</option>
                   <option value="en">{t('settings.english')}</option>
+                  <option value="fr">{t('settings.french')}</option>
+                  <option value="es">{t('settings.spanish')}</option>
                 </select>
               </div>
             </div>

@@ -2,15 +2,31 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import de from './locales/de.json';
 import en from './locales/en.json';
+import fr from './locales/fr.json';
+import es from './locales/es.json';
 
 // Detect browser language
 const getBrowserLanguage = (): string => {
   const browserLang = navigator.language.toLowerCase();
-  // Check if browser language starts with 'de' for German, otherwise default to English
+  // Check if browser language starts with 'de' for German, 'fr' for French, 'es' for Spanish, otherwise default to English
   if (browserLang.startsWith('de')) {
     return 'de';
+  } else if (browserLang.startsWith('fr')) {
+    return 'fr';
+  } else if (browserLang.startsWith('es')) {
+    return 'es';
   }
   return 'en';
+};
+
+export const changeLanguageToBrowserDefault = () => {
+  const targetLang = getBrowserLanguage();
+  i18n.changeLanguage(targetLang);
+  localStorage.setItem('language', targetLang);
+};
+
+export const getCurrentLanguage = () => {
+  return i18n.language;
 };
 
 i18n
@@ -19,8 +35,10 @@ i18n
     resources: {
       de: { translation: de },
       en: { translation: en },
+      fr: { translation: fr },
+      es: { translation: es },
     },
-    lng: localStorage.getItem('language') || getBrowserLanguage(),
+    lng: getBrowserLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,

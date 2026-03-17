@@ -180,6 +180,8 @@
     "languageDescription": "Choose your preferred language",
     "german": "Deutsch",
     "english": "English",
+    "french": "French",
+    "spanish": "Spanish",
     "notifications": "Notifications",
     "pathUpdates": "Path Updates",
     "pathUpdatesDescription": "Receive updates about new paths",
