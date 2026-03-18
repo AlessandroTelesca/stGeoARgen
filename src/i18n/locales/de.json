@@ -69,7 +69,8 @@
     "searchPlaceholder": "Station suchen...",
     "foundStations": "Gefundene Stationen ({{count}})",
     "allStations": "Alle Stationen ({{count}})",
-    "noStations": "Keine Stationen gefunden."
+    "noStations": "Keine Stationen gefunden.",
+    "back": "Zurück"
   },
   "stationsView": {
     "allStations": "Alle Stationen in St.Georgen. Wähle eine aus und starte dein Abenteuer!",
@@ -91,7 +92,11 @@
     "noARExperience": "Diese Station hat kein AR-Erlebnis. Besuche sie vor Ort für mehr Informationen.",
     "completed": "Station abgeschlossen",
     "completedDescription": "Du hast diese Station bereits besucht und {{points}} Punkte gesammelt.",
-    "visitForInfo": "Besuche diese Station vor Ort für mehr Informationen!"
+    "visitForInfo": "Besuche diese Station vor Ort für mehr Informationen!",
+    "inRange": "In Reichweite",
+    "completedStatus": "Abgeschlossen",
+    "metersAway": "{{distance}}m entfernt",
+    "locating": "Standort wird ermittelt..."
   },
   "pathsOverview": {
     "allPaths": "Alle Pfade",

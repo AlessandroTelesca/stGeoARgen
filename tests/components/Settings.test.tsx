@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Settings } from '../../src/components/Settings';
+import i18n from '../../src/i18n/languageChanger';
 
 describe('Settings', () => {
   afterEach(() => {
@@ -10,8 +11,8 @@ describe('Settings', () => {
 
   it('renders settings content', () => {
     render(<Settings onResetProgress={vi.fn()} />);
-    expect(screen.getByText('Einstellungen')).toBeInTheDocument();
-    expect(screen.getByText('Allgemein')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('settings.title'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('settings.general'))).toBeInTheDocument();
   });
 
   it('toggles notifications and changes language', async () => {
@@ -26,9 +27,9 @@ describe('Settings', () => {
     await userEvent.click(toggle);
     expect(toggle.className).not.toBe(beforeClass);
 
-    const select = screen.getByDisplayValue('Deutsch');
+    const select = screen.getByDisplayValue(i18n.t('settings.german'));
     await userEvent.selectOptions(select, 'en');
-    expect(screen.getByDisplayValue('English')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(i18n.t('settings.english'))).toBeInTheDocument();
   });
 
   it('confirms and calls reset handler', async () => {
@@ -36,7 +37,7 @@ describe('Settings', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<Settings onResetProgress={onResetProgress} />);
-    await userEvent.click(screen.getByText('Fortschritt zurücksetzen'));
+    await userEvent.click(screen.getByText(i18n.t('settings.resetProgress')));
 
     expect(window.confirm).toHaveBeenCalled();
     expect(onResetProgress).toHaveBeenCalled();

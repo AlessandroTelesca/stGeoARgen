@@ -113,7 +113,7 @@ export function PathView({
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('pathView.back')}</span>
           </button>
         </div>
       </div>

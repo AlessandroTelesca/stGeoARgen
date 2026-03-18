@@ -6,17 +6,21 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus, X, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-// Fish gender mapping for correct articles
-const FISH_ARTICLES: Record<string, Record<string, string>> = {
-  'Rotauge': { 'de': 'ein', 'en': 'a' },
-  'Zander': { 'de': 'einen', 'en': 'a' },
-  'Doebel': { 'de': 'einen', 'en': 'a' },
-  'Forelle': { 'de': 'eine', 'en': 'a' },
-  'Neunauge': { 'de': 'ein', 'en': 'a' },
-  'Schleie': { 'de': 'eine', 'en': 'a' },
-  'Rotfeder': { 'de': 'eine', 'en': 'a' },
-  'Stichling': { 'de': 'einen', 'en': 'a' },
-  'Karpfen': { 'de': 'einen', 'en': 'a' },
+// Fish name mapping for file loading
+const FISH_NAME_MAPPING: Record<string, string> = {
+  'Rotauge': 'Roach',
+  'Zander': 'Zander',
+  'Doebel': 'Chub',
+  'Forelle': 'Trout',
+  'Neunauge': 'Lamprey',
+  'Schleie': 'Tench',
+  'Rotfeder': 'Rudd',
+  'Stichling': 'Stickleback',
+  'Karpfen': 'Carp',
+};
+
+const getEnglishFishName = (germanName: string): string => {
+  return FISH_NAME_MAPPING[germanName] || germanName;
 };
 
 const getArticle = (fishName: string, language: string): string => {
@@ -346,6 +350,7 @@ interface FishInfoPopupProps {
 }
 
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
+  const { i18n } = useTranslation();
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -356,7 +361,10 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`/fish_Information/${fishName}.json`);
+        const language = i18n.language === 'de' ? 'de' : 'en';
+        const englishName = getEnglishFishName(fishName);
+        const url = language === 'de' ? `/fish_Information/${fishName}_de.json` : `/fish_Information/${englishName}_en.json`;
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
@@ -371,7 +379,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishName]);
+  }, [fishName, i18n.language]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);

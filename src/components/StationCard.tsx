@@ -52,7 +52,7 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
         {!isCompleted && isInRange && (
           <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 font-semibold text-xs">
             <MapPin className="w-3.5 h-3.5" />
-            In Reichweite
+            {t('stationDetail.inRange')}
           </div>
         )}
         
@@ -80,7 +80,7 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-4 h-4" />
             <span>
-              {isCompleted ? 'Abgeschlossen' : distance !== null ? `${Math.round(distance)}m entfernt` : 'Standort wird ermittelt...'}
+              {isCompleted ? t('stationDetail.completedStatus') : distance !== null ? t('stationDetail.metersAway', { distance: Math.round(distance) }) : t('stationDetail.locating')}
             </span>
           </div>
           {!isCompleted && (

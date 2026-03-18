@@ -4,7 +4,7 @@
   },
   "header": {
     "home": "Home",
-    "paths": "Theme Paths",
+    "paths": "Tourist Themed Trails",
     "rewards": "Rewards",
     "qrScanner": "QR Scanner",
     "settings": "Settings",
@@ -17,14 +17,14 @@
     "welcome": "Welcome back",
     "startJourney": "Start your discovery journey",
     "points": "Points",
-    "completedPaths": "Completed Paths",
+    "completedPaths": "Completed Tourist Themed Trails",
     "stationsExplored": "{{completed}} of {{total}} stations explored",
     "allStationsCompleted": "Congratulations! All stations explored!",
     "stationsRemaining": "{{remaining}} more stations to discover!",
     "scanQR": "Scan QR Code",
     "scanQRDescription": "Scan a QR code at a station to get started",
-    "explorePaths": "Explore Paths",
-    "explorePathsDescription": "Choose a theme path and start your adventure",
+    "explorePaths": "Explore Tourist Themed Trails",
+    "explorePathsDescription": "Choose a tourist themed trail and start your adventure",
     "nextVoucher": "{{points}} more points until next voucher",
     "redeemPoints": "Redeem {{points}} points",
     "voucherAvailable": "Voucher available!",
@@ -41,13 +41,13 @@
   "onboarding": {
     "step1": {
       "title": "Welcome to St.Georgen!",
-      "description": "I'm Georgi, your dragon guide. Together we'll discover St.Georgen on exciting theme paths full of history, culture, and adventure!",
+      "description": "I'm Georgi, your dragon guide. Together we'll discover St.Georgen on exciting tourist themed trails full of history, culture, and adventure!",
       "georgiMessage": "Hey! Ready for an unforgettable journey of discovery?"
     },
     "step2": {
-      "title": "Choose Your Theme Path",
-      "description": "Pick a theme path that interests you. Each path leads you to special places in St.Georgen - whether historic sights, nature experiences, or cultural highlights!",
-      "georgiMessage": "The tourist theme path is perfect for starting!"
+      "title": "Choose Your Tourist Themed Trail",
+      "description": "Pick a tourist themed trail that interests you. Each trail leads you to special places in St.Georgen - whether historic sights, nature experiences, or cultural highlights!",
+      "georgiMessage": "Tourist themed trails are perfect for starting!"
     },
     "step3": {
       "title": "Experience AR at Stations",
@@ -69,13 +69,14 @@
     "searchPlaceholder": "Search station...",
     "foundStations": "Stations found ({{count}})",
     "allStations": "All Stations ({{count}})",
-    "noStations": "No stations found."
+    "noStations": "No stations found.",
+    "back": "Back"
   },
   "stationsView": {
     "allStations": "All stations in St.Georgen. Choose one and start your adventure!",
     "allCompleted": "Wow! You've visited all stations!",
     "progressMessage": "You've already visited {{completed}} of {{total}} stations. Keep it up!",
-    "searchPlaceholder": "Search station or path...",
+    "searchPlaceholder": "Search station or tourist themed trail...",
     "noStations": "No stations found",
     "total": "Total",
     "completed": "Completed",
@@ -91,11 +92,15 @@
     "noARExperience": "This station has no AR experience. Visit it on-site for more information.",
     "completed": "Station Completed",
     "completedDescription": "You've already visited this station and collected {{points}} points.",
-    "visitForInfo": "Visit this station on-site for more information!"
+    "visitForInfo": "Visit this station on-site for more information!",
+    "inRange": "In Range",
+    "completedStatus": "Completed",
+    "metersAway": "{{distance}}m away",
+    "locating": "Locating..."
   },
   "pathsOverview": {
-    "allPaths": "All Paths",
-    "pathsAvailable": "Paths available",
+    "allPaths": "All Tourist Themed Trails",
+    "pathsAvailable": "Tourist Themed Trails available",
     "pointsCollected": "Points collected",
     "stationsExplored": "Stations explored",
     "stations": "Stations",
@@ -105,9 +110,9 @@
     "remaining": "{{stations}} more stations",
     "pointsToCollect": "{{points}} points to collect",
     "waitingForYou": "{{stations}} stations waiting for you",
-    "noPaths": "No paths available",
-    "noPathsDescription": "No paths have been created yet.",
-    "georgiMessage": "Here you can see all available paths with your progress. Choose a path to explore the stations!",
+    "noPaths": "No tourist themed trails available",
+    "noPathsDescription": "No tourist themed trails have been created yet.",
+    "georgiMessage": "Here you can see all available tourist themed trails with your progress. Choose a trail to explore the stations!",
     "readyToStart": "Ready to Start",
     "exploreAgain": "Explore Again",
     "continue": "Continue",
@@ -119,12 +124,12 @@
     "greatProgress": "You're making great progress! Keep it up!",
     "keepGoing": "Keep going! Each station brings you closer to the goal!",
     "stationsCompleted": "{{completed}} of {{total}} stations completed",
-    "pathsCompleted": "Paths completed",
+    "pathsCompleted": "Tourist Themed Trails completed",
     "pointsProgress": "Points Progress",
     "pointsAvailable": "{{points}} points still available",
-    "progressByPath": "Progress by Path",
-    "completePath": "Complete a path",
-    "startNewPath": "Start a new path",
+    "progressByPath": "Progress by Tourist Themed Trail",
+    "completePath": "Complete a tourist themed trail",
+    "startNewPath": "Start a new tourist themed trail",
     "oneStationLeft": "Just 1 station left to complete!",
     "stationsToDiscover": "{{remaining}} more stations to discover"
   },
@@ -138,7 +143,7 @@
     "viewRewards": "View Rewards",
     "redeemDescription": "You have {{points}} points - vouchers are waiting for you!",
     "collectMoreDescription": "Collect {{points}} more points for your first voucher!",
-    "pointsByPath": "Points by Path",
+    "pointsByPath": "Points by Tourist Themed Trail",
     "achievements": {
       "firstSteps": {
         "title": "First Steps",
@@ -249,8 +254,8 @@
   },
   "pathDetails": {
     "tourist": {
-      "title": "Tourist Theme Path",
-      "description": "Discover the highlights of St.Georgen on this exciting tourist tour through history, culture and nature.",
+      "title": "Tourist Themed Trails",
+      "description": "Discover the highlights of St.Georgen on this exciting tour through history, culture and nature.",
       "difficulty": "Easy",
       "estimatedTime": "2-3 hours"
     }
@@ -324,10 +329,10 @@
     "points": "Points"
   },
   "pathSelection": {
-    "title": "Theme Paths",
+    "title": "Tourist Themed Trails",
     "description": "Choose a path and explore St.Georgen on various thematic routes",
     "selectPath": "Select Path",
-    "selectPathDescription": "Choose a theme path that interests you",
+    "selectPathDescription": "Choose a tourist themed trail that interests you",
     "discoverStations": "Discover Stations",
     "discoverStationsDescription": "Visit the stations and experience AR content",
     "collectPoints": "Collect Points",
