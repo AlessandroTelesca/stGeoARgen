@@ -1,0 +1,20 @@
+{
+  "name": "Neunauge",
+  "scientificName": "Petromyzontidae",
+  "description": "Das Neunauge ist ein primitives, aalartiger Fisch ohne Kiefer. Es gehört zu den ältesten noch lebenden Wirbeltieren und hat sich seit 360 Millionen Jahren kaum verändert.",
+  "habitat": "Neunaugen leben in Flüssen und Bächen mit sandigen oder schlammigen Böden. Einige Arten wandern ins Meer und kehren ins Süßwasser zurück, um zu laichen.",
+  "diet": "Je nach Art: Larven filtern kleine Organismen aus dem Sediment, adulte parasitische Arten heften sich an Fische",
+  "size": "15-30 cm (Bachneunauge), bis zu 120 cm (Meerneunauge)",
+  "weight": "50-150 g (kleine Arten), bis zu 2,5 kg (Meerneunauge)",
+  "lifespan": "5-7 Jahre (einschließlich Larvenzeit)",
+  "features": [
+    "Aalartiger, schlangenförmiger Körper",
+    "Sieben Kiemenöffnungen auf jeder Seite",
+    "Runde Saugmund ohne Kiefer",
+    "Keine paarigen Flossen",
+    "Knöchernes Skelett statt Knochen",
+    "Augen erscheinen wie neun (daher der Name)"
+  ],
+  "conservation": "In Deutschland vom Aussterben bedroht bis stark gefährdet - streng geschützt durch EU-Richtlinien",
+  "funFact": "Neunaugen sind lebende Fossilien! Sie existierten vor Dinosauriern und haben die letzten fünf Massenaussterben überlebt. Ihre Körperstruktur ist so erfolgreich, dass sie sich kaum verändert hat."
+}

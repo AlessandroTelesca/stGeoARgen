@@ -1,0 +1,18 @@
+{
+  "name": "Rotauge",
+  "scientificName": "Rutilus rutilus",
+  "description": "Das Rotauge ist ein weit verbreiteter Süßwasserfisch aus der Karpfenfamilie. Es ist leicht an seiner charakteristischen roten Iris zu erkennen.",
+  "habitat": "Rotaugen leben in stehenden und langsam fließenden Gewässern. Sie bevorzugen Seen, Teiche und Flüsse mit reichem Pflanzenbewuchs.",
+  "diet": "Allesfresser - ernährt sich von Insektenlarven, Zooplankton, Algen und Wasserpflanzen",
+  "size": "15-25 cm (bis zu 35 cm möglich)",
+  "weight": "100-300 g (bis zu 1 kg möglich)",
+  "lifespan": "8-12 Jahre",
+  "features": [
+    "Rötliche Iris",
+    "Silbrig-graue Flanken",
+    "Rötliche Brust- und Bauchflossen",
+    "Hochrückige Körperform"
+  ],
+  "conservation": "Nicht gefährdet - häufige Art in europäischen Gewässern",
+  "funFact": "Rotaugen sind sehr gesellige Fische und leben in großen Schwärmen, die mehrere tausend Individuen umfassen können."
+}

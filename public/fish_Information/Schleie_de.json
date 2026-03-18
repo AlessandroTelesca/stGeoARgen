@@ -1,0 +1,20 @@
+{
+  "name": "Schleie",
+  "scientificName": "Tinca tinca",
+  "description": "Die Schleie ist ein friedlicher Bodenfisch aus der Karpfenfamilie. Sie ist bekannt für ihre oliv-grüne Färbung und ihre Vorliebe für bewachsene Gewässer.",
+  "habitat": "Schleien bevorzugen stehende oder langsam fließende Gewässer mit schlammigen Böden und dichter Vegetation. Sie sind oft in Teichen, Tümpeln und bewachsenen Uferzonen zu finden.",
+  "diet": "Bodenfresser - ernährt sich von Insektenlarven, Schnecken, Würmern und Pflanzenmaterial am Gewässergrund",
+  "size": "20-35 cm (bis zu 70 cm möglich)",
+  "weight": "300-1000 g (bis zu 7 kg möglich)",
+  "lifespan": "15-20 Jahre",
+  "features": [
+    "Hochrückiger, gedrungener Körper",
+    "Oliv-grüne bis bronzefarbene Färbung",
+    "Sehr kleine Schuppen mit dicker Schleimschicht",
+    "Zwei kurze Barteln am Maul",
+    "Rötliche Augen",
+    "Abgerundete Flossen"
+  ],
+  "conservation": "Nicht gefährdet - stabile Populationen in geeigneten Gewässern",
+  "funFact": "Die Schleie wird auch 'Doktorfisch' genannt! Früher glaubte man, dass ihr Schleim Heilkräfte hätte. Tatsächlich enthält die Schleimschicht antibakterielle Substanzen, die sie vor Infektionen schützen."
+}

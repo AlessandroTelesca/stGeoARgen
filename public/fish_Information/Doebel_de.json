@@ -1,0 +1,19 @@
+{
+  "name": "Döbel",
+  "scientificName": "Squalius cephalus",
+  "description": "Der Döbel, auch Europäischer Döbel genannt, ist ein anpassungsfähiger Fisch aus der Karpfenfamilie. Er ist robust und kommt in verschiedenen Gewässertypen vor.",
+  "habitat": "Döbel sind äußerst anpassungsfähig und leben in Flüssen, Bächen, Seen und Teichen. Sie bevorzugen Bereiche mit Strömung und Verstecken wie Wurzeln oder überhängenden Ästen.",
+  "diet": "Allesfresser - ernährt sich von Insekten, kleineren Fischen, Krebstieren, Würmern und Pflanzenmaterial",
+  "size": "30-40 cm (bis zu 60 cm möglich)",
+  "weight": "500-1500 g (bis zu 4 kg möglich)",
+  "lifespan": "10-15 Jahre",
+  "features": [
+    "Großer, breiter Kopf",
+    "Starker, zylindrischer Körper",
+    "Große Schuppen mit dunklen Rändern",
+    "Silbrig-graue Färbung",
+    "Orange-roter Bauch und Afterflossen bei älteren Exemplaren"
+  ],
+  "conservation": "Nicht gefährdet - weit verbreitet und häufige Art",
+  "funFact": "Döbel sind wahre Opportunisten! Sie fressen fast alles - von Insekten über Früchte bis hin zu kleinen Mäusen, die ins Wasser fallen. Deshalb werden sie auch 'Wasser-Schweine' genannt."
+}
