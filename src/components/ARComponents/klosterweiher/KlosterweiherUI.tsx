@@ -4,32 +4,23 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Accordion, AccordionItem, AccordionContent } from '@/components/ui/accordion';
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus, X, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-// Fish gender mapping for correct German articles
-const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
-  'Rotauge': 'neuter',    // das Rotauge
-  'Zander': 'male',       // der Zander
-  'Doebel': 'male',       // der Döbel
-  'Forelle': 'female',    // die Forelle
-  'Neunauge': 'neuter',   // das Neunauge
-  'Schleie': 'female',    // die Schleie
-  'Rotfeder': 'female',   // die Rotfeder
-  'Stichling': 'male',    // der Stichling
-  'Karpfen': 'male',      // der Karpfen
+// Fish gender mapping for correct articles
+const FISH_ARTICLES: Record<string, Record<string, string>> = {
+  'Rotauge': { 'de': 'ein', 'en': 'a' },
+  'Zander': { 'de': 'einen', 'en': 'a' },
+  'Doebel': { 'de': 'einen', 'en': 'a' },
+  'Forelle': { 'de': 'eine', 'en': 'a' },
+  'Neunauge': { 'de': 'ein', 'en': 'a' },
+  'Schleie': { 'de': 'eine', 'en': 'a' },
+  'Rotfeder': { 'de': 'eine', 'en': 'a' },
+  'Stichling': { 'de': 'einen', 'en': 'a' },
+  'Karpfen': { 'de': 'einen', 'en': 'a' },
 };
 
-const getArticle = (fishName: string): string => {
-  const gender = FISH_GENDERS[fishName] || 'male';
-  switch (gender) {
-    case 'male':
-      return 'einen';
-    case 'female':
-      return 'eine';
-    case 'neuter':
-      return 'ein';
-    default:
-      return 'einen';
-  }
+const getArticle = (fishName: string, language: string): string => {
+  return FISH_ARTICLES[fishName]?.[language] || (language === 'de' ? 'einen' : 'a');
 };
 
 // Type definition for fish information
@@ -52,6 +43,8 @@ interface WaitingForGroundProps {
 }
 
 export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps) => {
+  const { t } = useTranslation();
+
   return createPortal(
     <div
       style={{
@@ -71,7 +64,7 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
         textAlign: 'center',
       }}
     >
-      Richten sie ihre kamera auf den See um mit dem Angeln zu beginnen
+      {t('ar.klosterweiher.pointCameraAtLake')}
     </div>,
     overlayRoot
   );
@@ -84,6 +77,8 @@ interface WaitingForReadyProps {
 }
 
 export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: WaitingForReadyProps) => {
+  const { t } = useTranslation();
+
   return createPortal(
     <div
       style={{
@@ -105,7 +100,7 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
       }}
     >
       <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        Richten sie ihre Kamera auf den See, um mit dem Angeln zu beginnen.
+        {t('ar.klosterweiher.pointCameraAtLake')}
       </p>
       {modelsLoaded ? (
         <button
@@ -121,11 +116,11 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           }}
         >
-          Ich sehe den See
+          {t('ar.klosterweiher.iSeeTheLake')}
         </button>
       ) : (
         <p style={{ margin: 0, fontWeight: 400, fontSize: '14px', opacity: 0.8 }}>
-          Laden...
+          {t('ar.klosterweiher.loading')}
         </p>
       )}
     </div>,
@@ -139,6 +134,8 @@ interface FishingInstructionsProps {
 }
 
 export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstructionsProps) => {
+  const { t } = useTranslation();
+
   return createPortal(
     <div
       style={{
@@ -160,7 +157,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
       }}
     >
       <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        Tippen sie mehrmals auf ihren bildschirm um zu Angeln
+        {t('ar.klosterweiher.tapToFish')}
       </p>
       <button
         onClick={onStart}
@@ -175,7 +172,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         }}
       >
-        Mit dem Angeln beginnen
+        {t('ar.klosterweiher.startFishing')}
       </button>
     </div>,
     overlayRoot
@@ -188,6 +185,8 @@ interface ReleaseFishButtonProps {
 }
 
 export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonProps) => {
+  const { t } = useTranslation();
+
   return createPortal(
     <div
       style={{
@@ -214,7 +213,7 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
           pointerEvents: 'none',
         }}
       >
-        Bewege den fisch mit deinen Fingern!
+        {t('ar.klosterweiher.moveFishWithFingers')}
       </p>
       <button
         onClick={onRelease}
@@ -230,7 +229,7 @@ export const ReleaseFishButton = ({ overlayRoot, onRelease }: ReleaseFishButtonP
           width: '280px',
         }}
       >
-        Fisch wieder freilassen
+        {t('ar.klosterweiher.releaseFish')}
       </button>
     </div>,
     overlayRoot
@@ -244,7 +243,8 @@ interface FishCaughtDialogProps {
 }
 
 export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCaughtDialogProps) => {
-  const article = getArticle(fishName);
+  const { t, i18n } = useTranslation();
+  const article = getArticle(fishName, i18n.language);
   const [showTooltip, setShowTooltip] = useState(false);
   
   return createPortal(
@@ -314,7 +314,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCau
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             }}
           >
-            Mehr über diesen Fisch
+            {t('ar.klosterweiher.learnMoreAboutFish')}
             {/* Tooltip Arrow */}
             <div
               style={{
@@ -332,13 +332,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, onLearnMore }: FishCau
       </div>
 
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        Glückwunsch! Sie haben {article}
-      </p>
-      <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
-        {fishName}
-      </p>
-      <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        gefangen!
+        {t('ar.klosterweiher.congratulationsCaught', { article, fishName: fishName.split(' ')[0] })}
       </p>
     </div>,
     overlayRoot

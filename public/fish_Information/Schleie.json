@@ -1,20 +1,20 @@
 {
-  "name": "Schleie",
+  "name": "Tench",
   "scientificName": "Tinca tinca",
-  "description": "Die Schleie ist ein friedlicher Bodenfisch aus der Familie der Karpfenfische. Sie ist bekannt für ihre olivgrüne Färbung und ihre Vorliebe für verkrautete Gewässer.",
-  "habitat": "Schleien bevorzugen stehende oder langsam fließende Gewässer mit schlammigem Grund und dichter Vegetation. Sie sind oft in Teichen, Weihern und verkrauteten Uferzonen zu finden.",
-  "diet": "Bodenfresser - ernährt sich von Insektenlarven, Schnecken, Würmern und pflanzlichem Material am Gewässergrund",
-  "size": "20-35 cm (bis zu 70 cm möglich)",
-  "weight": "300-1000 g (bis zu 7 kg möglich)",
-  "lifespan": "15-20 Jahre",
+  "description": "The tench is a peaceful bottom fish from the carp family. It is known for its olive-green coloration and its preference for weedy waters.",
+  "habitat": "Tench prefer standing or slowly flowing waters with muddy bottoms and dense vegetation. They are often found in ponds, pools and weedy shore zones.",
+  "diet": "Bottom feeder - feeds on insect larvae, snails, worms and plant material at the bottom of the water",
+  "size": "20-35 cm (up to 70 cm possible)",
+  "weight": "300-1000 g (up to 7 kg possible)",
+  "lifespan": "15-20 years",
   "features": [
-    "Hochrückiger, gedrungener Körper",
-    "Olivgrüne bis bronzefarbene Färbung",
-    "Sehr kleine Schuppen mit dicker Schleimschicht",
-    "Zwei kurze Bartfäden am Maul",
-    "Rötliche Augen",
-    "Abgerundete Flossen"
+    "High-backed, stocky body",
+    "Olive-green to bronze coloration",
+    "Very small scales with thick mucus layer",
+    "Two short barbels on the mouth",
+    "Reddish eyes",
+    "Rounded fins"
   ],
-  "conservation": "Nicht gefährdet - stabile Bestände in geeigneten Gewässern",
-  "funFact": "Die Schleie wird auch 'Doktorfisch' genannt! Früher glaubte man, dass ihr Schleim heilende Kräfte hat. Tatsächlich enthält die Schleimschicht antibakterielle Substanzen, die sie vor Infektionen schützen."
+  "conservation": "Not endangered - stable populations in suitable waters",
+  "funFact": "The tench is also called 'doctor fish'! In the past, people believed that its mucus had healing powers. In fact, the mucus layer contains antibacterial substances that protect it from infections."
 }

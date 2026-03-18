@@ -1,9 +1,11 @@
 import React from 'react';
 import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
+import { useTranslation } from 'react-i18next';
 
 
 export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void }) => {
+  const { t } = useTranslation();
 
     // Detect device and open appropriate maps app
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -22,8 +24,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 		return (
 			<div className="flex items-center justify-center h-screen p-4">
 				<div className="text-center">
-					<h2 className="text-xl font-bold mb-4">Not mobile devices are Not Supported</h2>
-					<p>Please access this AR experience on a mobile device (Android or iOS).</p>
+					<h2 className="text-xl font-bold mb-4">{t('ar.klosterweiher.notMobileSupported')}</h2>
+					<p>{t('ar.klosterweiher.notMobileSupportedDescription')}</p>
 				</div>
 			</div>
 		);

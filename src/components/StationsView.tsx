@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GeorgiAvatar } from './Georgi';
 import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
+import { useTranslation } from 'react-i18next';
 
 interface Station {
   id: number;
@@ -38,6 +39,7 @@ interface StationsViewProps {
 }
 
 export function StationsView({ paths, onStationClick, onBack }: StationsViewProps) {
+  const { t } = useTranslation();
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -243,7 +245,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Station oder Pfad suchen..."
+              placeholder={t('stationsView.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"

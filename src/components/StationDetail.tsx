@@ -8,6 +8,7 @@ import { Trophy } from 'lucide-react';
 import { MapPin, Clock, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
+import { useTranslation } from 'react-i18next';
 
 interface QuizQuestion {
   question: string;
@@ -41,6 +42,7 @@ const STATION_AR_ROUTES: Record<number, string> = {
 };
 
 export function StationDetail({ station, onClose, onComplete }: StationDetailProps) {
+  const { t } = useTranslation();
   const [showGeorgi, setShowGeorgi] = useState(true);
   const navigate = useNavigate();
 
@@ -148,7 +150,7 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
                     className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                   >
                     <Navigation className="w-5 h-5" />
-                    <span>Zur Station navigieren</span>
+                    <span>{t('stationDetail.navigateToStation')}</span>
                   </button>
                 </div>
               </div>
@@ -180,7 +182,7 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
                   className="w-full bg-white text-black py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>Zur Station navigieren</span>
+                  <span>{t('stationDetail.navigateToStation')}</span>
                 </button>
               </div>
             </motion.div>
@@ -210,14 +212,14 @@ export function StationDetail({ station, onClose, onComplete }: StationDetailPro
                   className="w-full bg-white text-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
                 >
                   <Play className="w-5 h-5" />
-                  <span>AR-Erlebnis starten</span>
+                  <span>{t('stationDetail.startAR')}</span>
                 </button>
                 <button
                   onClick={handleNavigateToStation}
                   className="w-full bg-white/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>Navigation zur Station</span>
+                  <span>{t('stationDetail.navigation')}</span>
                 </button>
               </div>
             </motion.div>

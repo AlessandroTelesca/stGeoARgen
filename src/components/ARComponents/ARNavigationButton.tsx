@@ -1,10 +1,13 @@
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 
 interface ARNavigationButtonProps {
   onNavigateToNextStation: () => void;
 }
 
 export const ARNavigationButton = ({ onNavigateToNextStation }: ARNavigationButtonProps) => {
+  const { t } = useTranslation();
+
   return (
     <motion.button
       onClick={onNavigateToNextStation}
@@ -15,7 +18,7 @@ export const ARNavigationButton = ({ onNavigateToNextStation }: ARNavigationButt
       transition={{ delay: 0.4 }}
     >
       <div className="ar-navigate-button-content">
-        <span className="ar-navigate-button-text">Zur nächsten Station</span>
+        <span className="ar-navigate-button-text">{t('ar.navigationButton.nextStation')}</span>
 
         <span className="material-icons" style={{ fontSize: '28px', color: 'white' }}>
           arrow_forward

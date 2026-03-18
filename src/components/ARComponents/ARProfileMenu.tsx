@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ARProfileMenuProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export const ARProfileMenu = ({
   onLogout,
   onNavigateProfile,
 }: ARProfileMenuProps) => {
+  const { t } = useTranslation();
+
   const handleLogin = () => {
     onLogin();
     onClose();
@@ -83,7 +86,7 @@ export const ARProfileMenu = ({
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <LogIn style={{ width: '16px', height: '16px' }} />
-                    Anmelden
+                    {t('ar.profileMenu.login')}
                   </button>
                   <button
                     style={{
@@ -104,7 +107,7 @@ export const ARProfileMenu = ({
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <UserPlus style={{ width: '16px', height: '16px' }} />
-                    Registrieren
+                    {t('ar.profileMenu.register')}
                   </button>
                 </>
               ) : (
@@ -129,7 +132,7 @@ export const ARProfileMenu = ({
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <LogOut style={{ width: '16px', height: '16px' }} />
-                  Abmelden
+                  {t('ar.profileMenu.logout')}
                 </button>
               )}
             </div>

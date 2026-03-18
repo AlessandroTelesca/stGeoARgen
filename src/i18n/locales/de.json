@@ -31,7 +31,12 @@
     "nextVoucherTitle": "Nächster Gutschein",
     "allVouchersUnlocked": "Alle Gutscheine freigeschaltet! Jetzt einlösen.",
     "newVoucherAvailable": "Glückwunsch! Neuer Gutschein verfügbar!",
-    "viewAll": "Alle ansehen"
+    "viewAll": "Alle ansehen",
+    "guest": "Gast",
+    "goodMorning": "Guten Morgen",
+    "goodDay": "Guten Tag",
+    "goodEvening": "Guten Abend",
+    "readyForAdventure": "Bereit für ein neues Abenteuer in St.Georgen?"
   },
   "onboarding": {
     "step1": {
@@ -102,7 +107,11 @@
     "waitingForYou": "{{stations}} Stationen warten auf dich",
     "noPaths": "Keine Pfade verfügbar",
     "noPathsDescription": "Es wurden noch keine Pfade erstellt.",
-    "georgiMessage": "Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!"
+    "georgiMessage": "Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!",
+    "readyToStart": "Bereit zum Starten",
+    "exploreAgain": "Erneut erkunden",
+    "continue": "Weiter machen",
+    "startNow": "Jetzt starten"
   },
   "progressView": {
     "awesome": "Unglaublich! Du hast alle Pfade gemeistert!",
@@ -164,7 +173,8 @@
     "pointsMissing": "{{points}} Punkte fehlen",
     "progress": "Fortschritt",
     "pointsNeeded": "{{points}} Punkte nötig",
-    "tip": "Tipp: Besuche mehr Stationen und beantworte Quiz-Fragen richtig, um Punkte zu sammeln!"
+    "tip": "Tipp: Besuche mehr Stationen und beantworte Quiz-Fragen richtig, um Punkte zu sammeln!",
+    "ofVouchersUnlocked": "von {{total}} Gutscheinen freigeschaltet"
   },
   "rewardDialog": {
     "congratulations": "Herzlichen Glückwunsch!",
@@ -172,7 +182,31 @@
     "allStationsCompleted": "Du hast alle Stationen erfolgreich abgeschlossen und die volle Punktzahl erreicht!",
     "pointsEarned": "{{points}} Punkte verdient",
     "continue": "Weiter erkunden",
-    "viewRewards": "Belohnungen ansehen"
+    "viewRewards": "Belohnungen ansehen",
+    "chooseVoucher": "Wähle deinen Gutschein:",
+    "later": "Später",
+    "redeemVoucher": "Gutschein einlösen",
+    "voucherEmailNote": "Der Gutschein wird nach der Auswahl an deine E-Mail gesendet"
+  },
+  "localities": {
+    "locality1": {
+      "name": "Café Schwarzwald",
+      "type": "Café & Restaurant",
+      "description": "10% Rabatt auf Speisen und Getränke",
+      "address": "Hauptstraße 12, St.Georgen"
+    },
+    "locality2": {
+      "name": "Stadtmuseum St.Georgen",
+      "type": "Museum & Kultur",
+      "description": "Freier Eintritt für eine Person",
+      "address": "Kulturplatz 5, St.Georgen"
+    },
+    "locality3": {
+      "name": "Schwarzwald Souvenirs",
+      "type": "Souvenirshop",
+      "description": "15% Rabatt auf alle Artikel",
+      "address": "Marktstraße 23, St.Georgen"
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -186,7 +220,17 @@
     "resetProgress": "Fortschritt zurücksetzen",
     "resetProgressDescription": "Alle Punkte und abgeschlossenen Stationen löschen",
     "confirmReset": "Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?",
-    "accountInfo": "Account-Informationen & Sicherheit"
+    "accountInfo": "Account-Informationen & Sicherheit",
+    "general": "Allgemein",
+    "appInfo": "App Informationen",
+    "helpSupport": "Hilfe & Support",
+    "faqsContact": "FAQs und Kontakt",
+    "about": "Über St.GeoARgen",
+    "version": "Version 1.0.0",
+    "privacy": "Datenschutz",
+    "privacyPolicy": "Datenschutzerklärung",
+    "dangerZone": "Gefahrenzone",
+    "madeWithLove": "Made with 💚 in St.Georgen"
   },
   "common": {
     "back": "Zurück",
@@ -198,14 +242,77 @@
     "error": "Fehler",
     "success": "Erfolg"
   },
+  "stations": {
+    "glockenspiel": "Glockenspiel",
+    "phonomuseum": "Phonomuseum",
+    "klosterweiher": "Klosterweiher"
+  },
+  "pathDetails": {
+    "tourist": {
+      "title": "Touristischer Themenpfad",
+      "description": "Entdecke die Highlights von St.Georgen auf diesem spannenden touristischen Rundgang durch Geschichte, Kultur und Natur.",
+      "difficulty": "Einfach",
+      "estimatedTime": "2-3 Std"
+    }
+  },
+  "stationDetails": {
+    "glockenspiel": {
+      "description": "Erlebe das historische Glockenspiel in AR",
+      "longDescription": "Das Glockenspiel ist ein faszinierendes historisches Instrument. Entdecke in der AR-Experience, wie die Mechanik funktioniert und höre die traditionellen Melodien.",
+      "quiz": {
+        "question": "Wie viele Glocken hat das Glockenspiel?",
+        "options": ["12 Glocken", "18 Glocken", "24 Glocken", "30 Glocken"],
+        "correctAnswer": 1
+      }
+    },
+    "phonomuseum": {
+      "description": "Entdecke historische Musikinstrumente in AR",
+      "longDescription": "Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.",
+      "quiz": {
+        "question": "Wann wurde der Phonograph erfunden?",
+        "options": ["1857", "1877", "1897", "1917"],
+        "correctAnswer": 1
+      }
+    },
+    "klosterweiher": {
+      "description": "Erkunde die Natur am historischen Klosterweiher",
+      "longDescription": "Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.",
+      "quiz": {
+        "question": "Welche Tierart ist am Klosterweiher besonders häufig zu sehen?",
+        "options": ["Frösche", "Enten", "Reiher", "Biber"],
+        "correctAnswer": 1
+      }
+    }
+  },
   "ar": {
     "proximityGate": {
       "outOfRange": "Station außerhalb der Reichweite",
-      "mustBeWithin": "Du musst dich innerhalb von <1>100 Metern</1> der Station befinden, um das AR-Erlebnis freizuschalten.",
+      "mustBeWithin": "Du musst dich innerhalb von 100 Metern der Station befinden, um das AR-Erlebnis freizuschalten.",
       "navigateToStation": "Zur Station navigieren"
     },
     "navigationButton": {
       "nextStation": "Zur nächsten Station"
+    },
+    "profileMenu": {
+      "guest": "Gast",
+      "loggedIn": "Angemeldet",
+      "notLoggedIn": "Nicht angemeldet",
+      "login": "Anmelden",
+      "register": "Registrieren",
+      "logout": "Abmelden"
+    },
+    "klosterweiher": {
+      "notMobileSupported": "Nicht mobile Geräte werden nicht unterstützt",
+      "notMobileSupportedDescription": "Bitte greifen Sie auf diese AR-Erfahrung auf einem mobilen Gerät zu (Android oder iOS).",
+      "pointCameraAtLake": "Richten Sie Ihre Kamera auf den See, um mit dem Angeln zu beginnen.",
+      "iSeeTheLake": "Ich sehe den See",
+      "loading": "Laden...",
+      "tapToFish": "Tippen Sie mehrmals auf Ihren Bildschirm, um zu angeln",
+      "startFishing": "Mit dem Angeln beginnen",
+      "moveFishWithFingers": "Bewegen Sie den Fisch mit Ihren Fingern!",
+      "releaseFish": "Fisch wieder freilassen",
+      "learnMoreAboutFish": "Mehr über diesen Fisch",
+      "congratulationsCaught": "Glückwunsch! Sie haben {{article}} {{fishName}} gefangen!"
     },
     "progressBar": {
       "station": "Station {{current}}/{{total}}",
@@ -225,6 +332,44 @@
     "discoverStationsDescription": "Besuche die Stationen und erlebe AR-Inhalte",
     "collectPoints": "Punkte sammeln",
     "collectPointsDescription": "Sammle Punkte und schalte Gutscheine frei"
+  },
+  "rewards": {
+    "voucher1": {
+      "title": "Café Schwarzwald",
+      "description": "10% Rabatt auf alle Speisen und Getränke",
+      "type": "Café & Restaurant",
+      "address": "Hauptstraße 12, St.Georgen"
+    },
+    "voucher2": {
+      "title": "Stadtmuseum St.Georgen",
+      "description": "Freier Eintritt für eine Person",
+      "type": "Museum & Kultur",
+      "address": "Kulturplatz 5, St.Georgen"
+    },
+    "voucher3": {
+      "title": "Schwarzwald Souvenirs",
+      "description": "15% Rabatt auf alle Artikel",
+      "type": "Souvenirshop",
+      "address": "Marktstraße 23, St.Georgen"
+    },
+    "voucher4": {
+      "title": "Restaurant Zum Drachen",
+      "description": "Gratis Dessert bei Hauptgericht",
+      "type": "Restaurant",
+      "address": "Drachengasse 8, St.Georgen"
+    },
+    "voucher5": {
+      "title": "Schwarzwald-Bäckerei",
+      "description": "2 Kaffee zum Preis von 1",
+      "type": "Bäckerei & Café",
+      "address": "Bäckerstraße 15, St.Georgen"
+    },
+    "voucher6": {
+      "title": "Wellness Schwarzwald",
+      "description": "20% auf alle Wellness-Angebote",
+      "type": "Wellness & Spa",
+      "address": "Kurstraße 42, St.Georgen"
+    }
   },
   "progressBar": {
     "yourProgress": "Dein Fortschritt",

@@ -2,6 +2,7 @@ import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Calenda
 import { motion } from 'motion/react';
 import { Georgi } from './Georgi';
 import { Progress } from './ui/progress';
+import { useTranslation } from 'react-i18next';
 
 interface ProgressViewProps {
   paths: Array<{
@@ -20,6 +21,7 @@ interface ProgressViewProps {
 }
 
 export function ProgressView({ paths, totalPoints, totalCompletedStations, onBack }: ProgressViewProps) {
+  const { t } = useTranslation();
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const maxPossiblePoints = paths.reduce((sum, path) => sum + path.totalPoints, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
@@ -293,8 +295,8 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           {completionPercentage < 100 && (
             <p className="text-sm text-muted-foreground">
               {totalStations - totalCompletedStations === 1
-                ? "Noch 1 Station bis zum Abschluss!"
-                : `Noch ${totalStations - totalCompletedStations} Stationen zu entdecken`}
+                ? t('progressView.oneStationLeft')
+                : t('progressView.stationsToDiscover', { remaining: totalStations - totalCompletedStations })}
             </p>
           )}
         </motion.div>

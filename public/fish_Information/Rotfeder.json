@@ -1,20 +1,20 @@
 {
-  "name": "Rotfeder",
+  "name": "Rudd",
   "scientificName": "Scardinius erythrophthalmus",
-  "description": "Die Rotfeder ist ein lebhafter Schwarmfisch aus der Familie der Karpfenfischen. Sie wird oft mit dem Rotauge verwechselt, hat aber leuchtend rote Flossen und einen oberständigen Mund.",
-  "habitat": "Rotfedern leben in stehenden und langsam fließenden Gewässern mit dichter Vegetation. Sie halten sich gerne in mittleren Wasserschichten und zwischen Wasserpflanzen auf.",
-  "diet": "Allesfresser mit Vorliebe für pflanzliche Nahrung - frisst Algen, Wasserpflanzen, Insektenlarven und Zooplankton",
-  "size": "15-25 cm (bis zu 40 cm möglich)",
-  "weight": "100-300 g (bis zu 1,5 kg möglich)",
-  "lifespan": "10-15 Jahre",
+  "description": "The rudd is a lively schooling fish from the carp family. It is often confused with the roach, but has bright red fins and a superior mouth.",
+  "habitat": "Rudd live in standing and slowly flowing waters with dense vegetation. They like to stay in middle water layers and between aquatic plants.",
+  "diet": "Omnivore with preference for plant food - eats algae, aquatic plants, insect larvae and zooplankton",
+  "size": "15-25 cm (up to 40 cm possible)",
+  "weight": "100-300 g (up to 1.5 kg possible)",
+  "lifespan": "10-15 years",
   "features": [
-    "Seitlich stark abgeflachter, hochrückiger Körper",
-    "Leuchtend rote Flossen",
-    "Goldgelbe Iris",
-    "Oberständiges Maul",
-    "Goldgrün glänzende Flanken",
-    "Rücken dunkler als beim Rotauge"
+    "Laterally strongly flattened, high-backed body",
+    "Bright red fins",
+    "Golden yellow iris",
+    "Superior mouth",
+    "Gold-green shining flanks",
+    "Back darker than roach"
   ],
-  "conservation": "Nicht gefährdet - weit verbreitet und häufig",
-  "funFact": "Rotfedern sind wahre Vegetarier unter den Fischen! Während die meisten Karpfenfische Allesfresser sind, bevorzugen Rotfedern pflanzliche Nahrung und können sogar größere Pflanzenteile fressen. Ihr oberständiges Maul ist perfekt angepasst, um an der Wasseroberfläche nach Nahrung zu suchen."
+  "conservation": "Not endangered - widespread and common",
+  "funFact": "Rudd are true vegetarians among fish! While most carp fish are omnivores, rudd prefer plant food and can even eat larger plant parts. Their superior mouth is perfectly adapted to search for food at the water surface."
 }

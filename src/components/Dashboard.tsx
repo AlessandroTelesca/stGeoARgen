@@ -43,9 +43,9 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Guten Morgen';
-    if (hour < 18) return 'Guten Tag';
-    return 'Guten Abend';
+    if (hour < 12) return t('dashboard.goodMorning');
+    if (hour < 18) return t('dashboard.goodDay');
+    return t('dashboard.goodEvening');
   };
 
   return (
@@ -57,9 +57,9 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-2">{getGreeting()}, Gast!</h2>
+          <h2 className="text-2xl font-bold mb-2">{getGreeting()}, {t('dashboard.guest')}!</h2>
           <p className="text-muted-foreground mb-6">
-            Bereit für ein neues Abenteuer in St.Georgen?
+            {t('dashboard.readyForAdventure')}
           </p>
           <h3 className="font-semibold">Dashboard</h3>
         </motion.div>

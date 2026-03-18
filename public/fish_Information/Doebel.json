@@ -1,19 +1,19 @@
 {
-  "name": "Döbel",
+  "name": "Chub",
   "scientificName": "Squalius cephalus",
-  "description": "Der Döbel, auch Aitel genannt, ist ein anpassungsfähiger Fisch aus der Familie der Karpfenfische. Er ist robust und kommt in verschiedensten Gewässertypen vor.",
-  "habitat": "Döbel sind äußerst anpassungsfähig und leben in Flüssen, Bächen, Seen und Teichen. Sie bevorzugen Bereiche mit Strömung und Unterständen wie Wurzeln oder überhängenden Ästen.",
-  "diet": "Allesfresser - ernährt sich von Insekten, kleineren Fischen, Krebstieren, Würmern und pflanzlicher Nahrung",
-  "size": "30-40 cm (bis zu 60 cm möglich)",
-  "weight": "500-1500 g (bis zu 4 kg möglich)",
-  "lifespan": "10-15 Jahre",
+  "description": "The chub, also known as the European chub, is an adaptable fish from the carp family. It is robust and occurs in various types of water bodies.",
+  "habitat": "Chub are extremely adaptable and live in rivers, streams, lakes and ponds. They prefer areas with current and shelters like roots or overhanging branches.",
+  "diet": "Omnivore - feeds on insects, smaller fish, crustaceans, worms and plant matter",
+  "size": "30-40 cm (up to 60 cm possible)",
+  "weight": "500-1500 g (up to 4 kg possible)",
+  "lifespan": "10-15 years",
   "features": [
-    "Großer, breiter Kopf",
-    "Kräftiger, walzenförmiger Körper",
-    "Große Schuppen mit dunklem Rand",
-    "Silbrig-graue Färbung",
-    "Orangerote Bauch- und Afterflossen bei älteren Exemplaren"
+    "Large, broad head",
+    "Strong, cylindrical body",
+    "Large scales with dark edges",
+    "Silvery-gray coloration",
+    "Orange-red belly and anal fins in older specimens"
   ],
-  "conservation": "Nicht gefährdet - weit verbreitete und häufige Art",
-  "funFact": "Döbel sind wahre Opportunisten! Sie fressen fast alles - von Insekten über Früchte bis hin zu kleinen Mäusen, die ins Wasser fallen. Man nennt sie deshalb auch 'Wasserschweine'."
+  "conservation": "Not endangered - widespread and common species",
+  "funFact": "Chub are true opportunists! They eat almost anything - from insects to fruits to small mice that fall into the water. That's why they're also called 'water pigs'."
 }

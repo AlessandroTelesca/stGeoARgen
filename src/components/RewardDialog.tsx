@@ -3,6 +3,7 @@ import { Trophy, X, MapPin, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Locality {
   id: string;
@@ -17,31 +18,34 @@ interface RewardDialogProps {
   onSelectReward: (localityId: string) => void;
 }
 
-const localities: Locality[] = [
-  {
-    id: 'locality1',
-    name: 'Lokalität 1',
-    type: 'Café & Restaurant',
-    description: '10% Rabatt auf Speisen und Getränke',
-    address: 'Hauptstraße 12, St.Georgen',
-  },
-  {
-    id: 'locality2',
-    name: 'Lokalität 2',
-    type: 'Museum & Kultur',
-    description: 'Freier Eintritt für eine Person',
-    address: 'Kulturplatz 5, St.Georgen',
-  },
-  {
-    id: 'locality3',
-    name: 'Lokalität 3',
-    type: 'Souvenirshop',
-    description: '15% Rabatt auf alle Artikel',
-    address: 'Marktstraße 23, St.Georgen',
-  },
-];
-
 export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
+  const { t } = useTranslation();
+
+  const getLocalities = () => [
+    {
+      id: 'locality1',
+      name: t('localities.locality1.name'),
+      type: t('localities.locality1.type'),
+      description: t('localities.locality1.description'),
+      address: t('localities.locality1.address'),
+    },
+    {
+      id: 'locality2',
+      name: t('localities.locality2.name'),
+      type: t('localities.locality2.type'),
+      description: t('localities.locality2.description'),
+      address: t('localities.locality2.address'),
+    },
+    {
+      id: 'locality3',
+      name: t('localities.locality3.name'),
+      type: t('localities.locality3.type'),
+      description: t('localities.locality3.description'),
+      address: t('localities.locality3.address'),
+    },
+  ];
+
+  const localities = getLocalities();
   const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
 
   const handleConfirm = () => {
@@ -83,9 +87,9 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
             >
               <Trophy className="w-12 h-12 text-yellow-300" />
             </motion.div>
-            <h2 className="text-2xl mb-2">Herzlichen Glückwunsch!</h2>
+            <h2 className="text-2xl mb-2">{t('rewardDialog.congratulations')}</h2>
             <p className="text-white/90">
-              Du hast alle Stationen erfolgreich abgeschlossen und die volle Punktzahl erreicht!
+              {t('rewardDialog.allStationsCompleted')}
             </p>
           </div>
         </div>
@@ -93,7 +97,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
         {/* Content */}
         <div className="p-6">
           <h3 className="text-lg mb-4 text-gray-900">
-            Wähle deinen Gutschein:
+            {t('rewardDialog.chooseVoucher')}
           </h3>
 
           <div className="space-y-3">
@@ -148,19 +152,19 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
               onClick={onClose}
               className="flex-1"
             >
-              Später
+              {t('rewardDialog.later')}
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={!selectedLocality}
               className="flex-1 bg-[#0C690F] hover:bg-[#0a5a0d] text-white"
             >
-              Gutschein einlösen
+              {t('rewardDialog.redeemVoucher')}
             </Button>
           </div>
 
           <p className="text-xs text-center text-gray-500 mt-4">
-            Der Gutschein wird nach der Auswahl an deine E-Mail gesendet
+            {t('rewardDialog.voucherEmailNote')}
           </p>
         </div>
       </motion.div>

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
+import { useTranslation } from 'react-i18next';
 
 interface Voucher {
   id: string;
@@ -19,64 +20,67 @@ interface RewardsViewProps {
   onBack: () => void;
 }
 
-const vouchers: Voucher[] = [
-  {
-    id: 'voucher1',
-    title: 'Café Schwarzwald',
-    description: '10% Rabatt auf alle Speisen und Getränke',
-    type: 'Café & Restaurant',
-    address: 'Hauptstraße 12, St.Georgen',
-    requiredPoints: 50,
-    imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWZlJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher2',
-    title: 'Stadtmuseum St.Georgen',
-    description: 'Freier Eintritt für eine Person',
-    type: 'Museum & Kultur',
-    address: 'Kulturplatz 5, St.Georgen',
-    requiredPoints: 100,
-    imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher3',
-    title: 'Schwarzwald Souvenirs',
-    description: '15% Rabatt auf alle Artikel',
-    type: 'Souvenirshop',
-    address: 'Marktstraße 23, St.Georgen',
-    requiredPoints: 150,
-    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaG9wJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher4',
-    title: 'Restaurant Zum Drachen',
-    description: 'Gratis Dessert bei Hauptgericht',
-    type: 'Restaurant',
-    address: 'Drachengasse 8, St.Georgen',
-    requiredPoints: 180,
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher5',
-    title: 'Schwarzwald-Bäckerei',
-    description: '2 Kaffee zum Preis von 1',
-    type: 'Bäckerei & Café',
-    address: 'Bäckerstraße 15, St.Georgen',
-    requiredPoints: 200,
-    imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBzaG9wfGVufDF8fHx8MTczMjMyNjQwMHww&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher6',
-    title: 'Wellness Schwarzwald',
-    description: '20% auf alle Wellness-Angebote',
-    type: 'Wellness & Spa',
-    address: 'Kurstraße 42, St.Georgen',
-    requiredPoints: 225,
-    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzc3xlbnwxfHx8fDE3MzIzMjY0MDB8MA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-];
-
 export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
+  const { t } = useTranslation();
+
+  const getVouchers = () => [
+    {
+      id: 'voucher1',
+      title: t('rewards.voucher1.title'),
+      description: t('rewards.voucher1.description'),
+      type: t('rewards.voucher1.type'),
+      address: t('rewards.voucher1.address'),
+      requiredPoints: 50,
+      imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWZlJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
+    },
+    {
+      id: 'voucher2',
+      title: t('rewards.voucher2.title'),
+      description: t('rewards.voucher2.description'),
+      type: t('rewards.voucher2.type'),
+      address: t('rewards.voucher2.address'),
+      requiredPoints: 100,
+      imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=400',
+    },
+    {
+      id: 'voucher3',
+      title: t('rewards.voucher3.title'),
+      description: t('rewards.voucher3.description'),
+      type: t('rewards.voucher3.type'),
+      address: t('rewards.voucher3.address'),
+      requiredPoints: 150,
+      imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaG9wJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
+    },
+    {
+      id: 'voucher4',
+      title: t('rewards.voucher4.title'),
+      description: t('rewards.voucher4.description'),
+      type: t('rewards.voucher4.type'),
+      address: t('rewards.voucher4.address'),
+      requiredPoints: 180,
+      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
+    },
+    {
+      id: 'voucher5',
+      title: t('rewards.voucher5.title'),
+      description: t('rewards.voucher5.description'),
+      type: t('rewards.voucher5.type'),
+      address: t('rewards.voucher5.address'),
+      requiredPoints: 200,
+      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBzaG9wfGVufDF8fHx8MTczMjMyNjQwMHww&ixlib=rb-4.1.0&q=80&w=400',
+    },
+    {
+      id: 'voucher6',
+      title: t('rewards.voucher6.title'),
+      description: t('rewards.voucher6.description'),
+      type: t('rewards.voucher6.type'),
+      address: t('rewards.voucher6.address'),
+      requiredPoints: 225,
+      imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzc3xlbnwxfHx8fDE3MzIzMjY0MDB8MA&ixlib=rb-4.1.0&q=80&w=400',
+    },
+  ];
+
+  const vouchers = getVouchers();
   const isVoucherUnlocked = (requiredPoints: number) => totalPoints >= requiredPoints;
   const unlockedCount = vouchers.filter(v => isVoucherUnlocked(v.requiredPoints)).length;
 
@@ -90,7 +94,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('common.back')}</span>
           </button>
         </div>
       </div>
@@ -107,9 +111,9 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
               <Gift className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Belohnungen</h1>
+              <h1 className="text-2xl font-bold">{t('rewardsView.title')}</h1>
               <p className="text-muted-foreground">
-                {unlockedCount} von {vouchers.length} Gutscheinen freigeschaltet
+                {unlockedCount} {t('rewardsView.ofVouchersUnlocked', { total: vouchers.length })}
               </p>
             </div>
           </div>

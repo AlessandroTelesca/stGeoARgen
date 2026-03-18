@@ -3,6 +3,7 @@ import { MapPin, Trophy, Clock, TrendingUp, ChevronRight, Star, Award } from 'lu
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Georgi } from './Georgi';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PathDetail {
   id: string;
@@ -23,6 +24,7 @@ interface PathsOverviewProps {
 }
 
 export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
+  const { t } = useTranslation();
   const [showGeorgi, setShowGeorgi] = useState(false);
 
   useEffect(() => {
@@ -261,9 +263,9 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                         <div className="flex items-center gap-2">
                           <MapPin className="w-5 h-5 text-primary" />
                           <div>
-                            <p className="text-sm font-semibold">Bereit zum Starten</p>
+                            <p className="text-sm font-semibold">{t('pathsOverview.readyToStart')}</p>
                             <p className="text-xs text-muted-foreground">
-                              {path.totalStations} Stationen warten auf dich
+                              {t('pathsOverview.waitingForYou', { stations: path.totalStations })}
                             </p>
                           </div>
                         </div>
@@ -276,7 +278,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                       className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl px-6 py-3 flex items-center justify-center gap-2 transition-colors"
                     >
                       <span className="font-semibold">
-                        {isCompleted ? 'Erneut erkunden' : isStarted ? 'Weiter machen' : 'Jetzt starten'}
+                        {isCompleted ? t('pathsOverview.exploreAgain') : isStarted ? t('pathsOverview.continue') : t('pathsOverview.startNow')}
                       </span>
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -298,7 +300,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
             <div className="text-6xl mb-4">🗺️</div>
             <h3 className="font-semibold mb-2">Keine Pfade verfügbar</h3>
             <p className="text-muted-foreground">
-              Es wurden noch keine Pfade erstellt.
+              {t('pathsOverview.noPathsDescription')}
             </p>
           </motion.div>
         )}
@@ -306,7 +308,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
 
       {/* Georgi Helper */}
       <Georgi
-        message="Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!"
+        message={t('pathsOverview.georgiMessage')}
         show={showGeorgi}
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"

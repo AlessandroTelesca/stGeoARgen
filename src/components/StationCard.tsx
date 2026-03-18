@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Trophy } from 'lucide-react';
 import { useStationProximity } from './ARComponents/ARComponentBase';
+import { useTranslation } from 'react-i18next';
 
 interface StationCardProps {
   id: number;
@@ -18,6 +19,7 @@ interface StationCardProps {
 }
 
 export function StationCard({ title, description, imageUrl, status, points, onClick, latitude, longitude }: StationCardProps) {
+  const { t } = useTranslation();
   const isLocked = false; // Stations are never locked - user can start anywhere
   const isCompleted = status === 'completed';
   
@@ -82,7 +84,7 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
             </span>
           </div>
           {!isCompleted && (
-            <span className="text-xs font-medium text-primary">Jetzt starten →</span>
+            <span className="text-xs font-medium text-primary">{t('pathsOverview.startNow')} →</span>
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { MapPin, Trophy, Clock, ChevronRight, Star, ArrowLeft, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useTranslation } from 'react-i18next';
 
 interface PathDetail {
   id: string;
@@ -22,6 +23,7 @@ interface PathSelectionProps {
 }
 
 export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProps) {
+  const { t } = useTranslation();
   const difficultyColors = {
     'Einfach': {
       bg: 'bg-success/10',
@@ -50,7 +52,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('common.back')}</span>
           </button>
         </div>
       </div>
@@ -172,7 +174,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                         {/* Action */}
                         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
                           <span className="text-sm font-medium text-primary">
-                            Jetzt starten
+                            {t('pathsOverview.startNow')}
                           </span>
                           <ArrowRight className="w-5 h-5 text-primary" />
                         </div>
@@ -208,9 +210,9 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                 <span className="text-primary font-bold">2</span>
               </div>
               <div>
-                <p className="font-medium text-sm">Stationen entdecken</p>
+                <p className="font-medium text-sm">{t('pathSelection.discoverStations')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Besuche die Stationen und erlebe AR-Inhalte
+                  {t('pathSelection.discoverStationsDescription')}
                 </p>
               </div>
             </div>

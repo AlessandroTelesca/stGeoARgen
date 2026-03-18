@@ -1,19 +1,19 @@
 {
-  "name": "Forelle",
+  "name": "Trout",
   "scientificName": "Salmo trutta",
-  "description": "Die Forelle ist ein begehrter Speise- und Angelfisch aus der Familie der Lachse. Sie ist bekannt für ihr zartes, rosa Fleisch und ihre Vorliebe für saubere, sauerstoffreiche Gewässer.",
-  "habitat": "Forellen bevorzugen klare, kühle und sauerstoffreiche Gewässer. Sie leben in Bächen, Flüssen und kühlen Seen, oft in strömungsreichen Bereichen.",
-  "diet": "Raubfisch - ernährt sich von Insektenlarven, fliegenden Insekten, Krebstieren und kleineren Fischen",
-  "size": "25-40 cm (bis zu 80 cm möglich)",
-  "weight": "300-1000 g (bis zu 15 kg möglich)",
-  "lifespan": "5-10 Jahre (Seeforellen bis 20 Jahre)",
+  "description": "The trout is a prized food and game fish from the salmon family. It is known for its tender, pink flesh and its preference for clean, oxygen-rich waters.",
+  "habitat": "Trout prefer clear, cool and oxygen-rich waters. They live in streams, rivers and cool lakes, often in areas with strong currents.",
+  "diet": "Predator - feeds on insect larvae, flying insects, crustaceans and smaller fish",
+  "size": "25-40 cm (up to 80 cm possible)",
+  "weight": "300-1000 g (up to 15 kg possible)",
+  "lifespan": "5-10 years (lake trout up to 20 years)",
   "features": [
-    "Stromlinienförmiger Körper",
-    "Charakteristische schwarze und rote Punkte",
-    "Fettflosse zwischen Rücken- und Schwanzflosse",
-    "Variable Färbung je nach Lebensraum",
-    "Kräftiger Schwanzstiel"
+    "Streamlined body",
+    "Characteristic black and red spots",
+    "Adipose fin between dorsal and tail fin",
+    "Variable coloration depending on habitat",
+    "Strong caudal peduncle"
   ],
-  "conservation": "Je nach Unterart unterschiedlich - Bachforellen teilweise gefährdet durch Gewässerverschmutzung und Verbauung",
-  "funFact": "Forellen haben ein erstaunliches Gedächtnis! Sie können sich monatelang an Futterstellen erinnern und lernen, künstliche Köder zu meiden, nachdem sie einmal damit gefangen wurden."
+  "conservation": "Varies by subspecies - brook trout partly endangered due to water pollution and river engineering",
+  "funFact": "Trout have an amazing memory! They can remember feeding spots for months and learn to avoid artificial lures after being caught once."
 }

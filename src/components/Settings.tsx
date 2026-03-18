@@ -68,7 +68,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
           {/* General Settings */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Allgemein
+              {t('settings.general')}
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -121,7 +121,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
           {/* App Info */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              App Informationen
+              {t('settings.appInfo')}
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -130,8 +130,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <HelpCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Hilfe & Support</p>
-                  <p className="text-sm text-muted-foreground">FAQs und Kontakt</p>
+                  <p className="font-medium">{t('settings.helpSupport')}</p>
+                  <p className="text-sm text-muted-foreground">{t('settings.faqsContact')}</p>
                 </div>
               </button>
 
@@ -140,8 +140,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <Info className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Über St.GeoARgen</p>
-                  <p className="text-sm text-muted-foreground">Version 1.0.0</p>
+                  <p className="font-medium">{t('settings.about')}</p>
+                  <p className="text-sm text-muted-foreground">{t('settings.version')}</p>
                 </div>
               </button>
 
@@ -150,8 +150,8 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <Shield className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Datenschutz</p>
-                  <p className="text-sm text-muted-foreground">Datenschutzerklärung</p>
+                  <p className="font-medium">{t('settings.privacy')}</p>
+                  <p className="text-sm text-muted-foreground">{t('settings.privacyPolicy')}</p>
                 </div>
               </button>
             </div>
@@ -160,7 +160,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
           {/* Danger Zone */}
           <div>
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              Gefahrenzone
+              {t('settings.dangerZone')}
             </h3>
             
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
@@ -190,7 +190,7 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
-              Made with 💚 in St.Georgen
+              {t('settings.madeWithLove')}
             </p>
           </div>
         </motion.div>

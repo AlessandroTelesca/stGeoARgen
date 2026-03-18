@@ -31,7 +31,12 @@
     "nextVoucherTitle": "Next Voucher",
     "allVouchersUnlocked": "All vouchers unlocked! Redeem now.",
     "newVoucherAvailable": "Congratulations! New voucher available!",
-    "viewAll": "View all"
+    "viewAll": "View All",
+    "guest": "Guest",
+    "goodMorning": "Good Morning",
+    "goodDay": "Good Day",
+    "goodEvening": "Good Evening",
+    "readyForAdventure": "Ready for a new adventure in St.Georgen?"
   },
   "onboarding": {
     "step1": {
@@ -102,7 +107,11 @@
     "waitingForYou": "{{stations}} stations waiting for you",
     "noPaths": "No paths available",
     "noPathsDescription": "No paths have been created yet.",
-    "georgiMessage": "Here you can see all available paths with your progress. Choose a path to explore the stations!"
+    "georgiMessage": "Here you can see all available paths with your progress. Choose a path to explore the stations!",
+    "readyToStart": "Ready to Start",
+    "exploreAgain": "Explore Again",
+    "continue": "Continue",
+    "startNow": "Start Now"
   },
   "progressView": {
     "awesome": "Incredible! You've mastered all paths!",
@@ -164,7 +173,8 @@
     "pointsMissing": "{{points}} points missing",
     "progress": "Progress",
     "pointsNeeded": "{{points}} points needed",
-    "tip": "Tip: Visit more stations and answer quiz questions correctly to collect points!"
+    "tip": "Tip: Visit more stations and answer quiz questions correctly to collect points!",
+    "ofVouchersUnlocked": "of {{total}} vouchers unlocked"
   },
   "rewardDialog": {
     "congratulations": "Congratulations!",
@@ -172,7 +182,31 @@
     "allStationsCompleted": "You've successfully completed all stations and reached the full score!",
     "pointsEarned": "{{points}} points earned",
     "continue": "Continue exploring",
-    "viewRewards": "View rewards"
+    "viewRewards": "View rewards",
+    "chooseVoucher": "Choose your voucher:",
+    "later": "Later",
+    "redeemVoucher": "Redeem voucher",
+    "voucherEmailNote": "The voucher will be sent to your email after selection"
+  },
+  "localities": {
+    "locality1": {
+      "name": "Café Schwarzwald",
+      "type": "Café & Restaurant",
+      "description": "10% discount on food and drinks",
+      "address": "Hauptstraße 12, St.Georgen"
+    },
+    "locality2": {
+      "name": "St.Georgen City Museum",
+      "type": "Museum & Culture",
+      "description": "Free entry for one person",
+      "address": "Kulturplatz 5, St.Georgen"
+    },
+    "locality3": {
+      "name": "Black Forest Souvenirs",
+      "type": "Souvenir Shop",
+      "description": "15% discount on all items",
+      "address": "Marktstraße 23, St.Georgen"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -186,7 +220,17 @@
     "resetProgress": "Reset Progress",
     "resetProgressDescription": "Delete all points and completed stations",
     "confirmReset": "Do you really want to reset all your progress?",
-    "accountInfo": "Account information & security"
+    "accountInfo": "Account information & security",
+    "general": "General",
+    "appInfo": "App Information",
+    "helpSupport": "Help & Support",
+    "faqsContact": "FAQs and Contact",
+    "about": "About St.GeoARgen",
+    "version": "Version 1.0.0",
+    "privacy": "Privacy",
+    "privacyPolicy": "Privacy Policy",
+    "dangerZone": "Danger Zone",
+    "madeWithLove": "Made with 💚 in St.Georgen"
   },
   "common": {
     "back": "Back",
@@ -198,14 +242,77 @@
     "error": "Error",
     "success": "Success"
   },
+  "stations": {
+    "glockenspiel": "Carillon",
+    "phonomuseum": "Phonographic Museum",
+    "klosterweiher": "Monastery Pond"
+  },
+  "pathDetails": {
+    "tourist": {
+      "title": "Tourist Theme Path",
+      "description": "Discover the highlights of St.Georgen on this exciting tourist tour through history, culture and nature.",
+      "difficulty": "Easy",
+      "estimatedTime": "2-3 hours"
+    }
+  },
+  "stationDetails": {
+    "glockenspiel": {
+      "description": "Experience the historic carillon in AR",
+      "longDescription": "The carillon is a fascinating historic instrument. Discover in the AR experience how the mechanics work and hear the traditional melodies.",
+      "quiz": {
+        "question": "How many bells does the carillon have?",
+        "options": ["12 bells", "18 bells", "24 bells", "30 bells"],
+        "correctAnswer": 1
+      }
+    },
+    "phonomuseum": {
+      "description": "Discover historic musical instruments in AR",
+      "longDescription": "The Phonographic Museum shows the fascinating history of sound recording and playback. Experience in AR how historic phonographs and gramophones work.",
+      "quiz": {
+        "question": "When was the phonograph invented?",
+        "options": ["1857", "1877", "1897", "1917"],
+        "correctAnswer": 1
+      }
+    },
+    "klosterweiher": {
+      "description": "Explore nature at the historic monastery pond",
+      "longDescription": "The Monastery Pond is an idyllic natural place with rich history. Discover in the AR experience the animal and plant world and learn more about the historical significance of the pond.",
+      "quiz": {
+        "question": "Which animal species is particularly common to see at the Monastery Pond?",
+        "options": ["Frogs", "Ducks", "Herons", "Beavers"],
+        "correctAnswer": 1
+      }
+    }
+  },
   "ar": {
     "proximityGate": {
       "outOfRange": "Station out of range",
-      "mustBeWithin": "You must be within <1>100 meters</1> of the station to unlock the AR experience.",
+      "mustBeWithin": "You must be within 100 meters of the station to unlock the AR experience.",
       "navigateToStation": "Navigate to station"
     },
     "navigationButton": {
       "nextStation": "To next station"
+    },
+    "profileMenu": {
+      "guest": "Guest",
+      "loggedIn": "Logged in",
+      "notLoggedIn": "Not logged in",
+      "login": "Login",
+      "register": "Register",
+      "logout": "Logout"
+    },
+    "klosterweiher": {
+      "notMobileSupported": "Not mobile devices are not supported",
+      "notMobileSupportedDescription": "Please access this AR experience on a mobile device (Android or iOS).",
+      "pointCameraAtLake": "Point your camera at the lake to start fishing.",
+      "iSeeTheLake": "I see the lake",
+      "loading": "Loading...",
+      "tapToFish": "Tap multiple times on your screen to fish",
+      "startFishing": "Start fishing",
+      "moveFishWithFingers": "Move the fish with your fingers!",
+      "releaseFish": "Release fish again",
+      "learnMoreAboutFish": "Learn more about this fish",
+      "congratulationsCaught": "Congratulations! You caught {{article}} {{fishName}}!"
     },
     "progressBar": {
       "station": "Station {{current}}/{{total}}",
@@ -225,6 +332,44 @@
     "discoverStationsDescription": "Visit the stations and experience AR content",
     "collectPoints": "Collect Points",
     "collectPointsDescription": "Collect points and unlock vouchers"
+  },
+  "rewards": {
+    "voucher1": {
+      "title": "Café Schwarzwald",
+      "description": "10% discount on all food and drinks",
+      "type": "Café & Restaurant",
+      "address": "Hauptstraße 12, St.Georgen"
+    },
+    "voucher2": {
+      "title": "St.Georgen City Museum",
+      "description": "Free entry for one person",
+      "type": "Museum & Culture",
+      "address": "Kulturplatz 5, St.Georgen"
+    },
+    "voucher3": {
+      "title": "Black Forest Souvenirs",
+      "description": "15% discount on all items",
+      "type": "Souvenir Shop",
+      "address": "Marktstraße 23, St.Georgen"
+    },
+    "voucher4": {
+      "title": "Restaurant Zum Drachen",
+      "description": "Free dessert with main course",
+      "type": "Restaurant",
+      "address": "Drachengasse 8, St.Georgen"
+    },
+    "voucher5": {
+      "title": "Black Forest Bakery",
+      "description": "2 coffees for the price of 1",
+      "type": "Bakery & Café",
+      "address": "Bäckerstraße 15, St.Georgen"
+    },
+    "voucher6": {
+      "title": "Black Forest Wellness",
+      "description": "20% off all wellness offers",
+      "type": "Wellness & Spa",
+      "address": "Kurstraße 42, St.Georgen"
+    }
   },
   "progressBar": {
     "yourProgress": "Your Progress",
