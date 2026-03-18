@@ -2,6 +2,7 @@ import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User } from '
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { changeLanguage } from '../i18n/languageChanger';
 
 interface SettingsProps {
   onResetProgress: () => void;
@@ -14,9 +15,9 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState(i18n.language);
 
-  const handleLanguageChange = (newLanguage: string) => {
+  const handleLanguageChange = async (newLanguage: string) => {
     setLanguage(newLanguage);
-    i18n.changeLanguage(newLanguage);
+    await changeLanguage(newLanguage);
   };
 
   return (
