@@ -350,25 +350,26 @@ interface FishInfoPopupProps {
 }
 
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
-    const loadFishInfo = () => {
+    const loadFishInfo = async () => {
       try {
         setLoading(true);
         setError(false);
+        const language = i18n.language === 'de' ? 'de' : 'en';
         const englishName = getEnglishFishName(fishName);
-        const key = i18n.language === 'de' ? fishName : englishName;
-        const data = t(`fish.${key}`, { returnObjects: true });
-        if (data && typeof data === 'object' && 'name' in data) {
-          setFishInfo(data as FishInfo);
-        } else {
+        const url = language === 'de' ? `/fish_Information/${fishName}_de.json` : `/fish_Information/${englishName}_en.json`;
+        const response = await fetch(url);
+        if (!response.ok) {
           throw new Error('Fish info not found');
         }
+        const data = await response.json();
+        setFishInfo(data);
       } catch (err) {
         console.error(`Failed to load fish info for ${fishName}:`, err);
         setError(true);
@@ -378,7 +379,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishName, i18n.language, t]);
+  }, [fishName, i18n.language]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);

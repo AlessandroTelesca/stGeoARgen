@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { getIsReady } from './i18n/languageChanger';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -56,7 +55,6 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const [isReady, setIsReady] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
@@ -77,17 +75,6 @@ export default function App() {
   };
 
   // Check if user has seen onboarding
-  useEffect(() => {
-    const checkReady = () => {
-      if (getIsReady()) {
-        setIsReady(true);
-      } else {
-        setTimeout(checkReady, 100);
-      }
-    };
-    checkReady();
-  }, []);
-
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('st-geoargen-onboarding-complete');
     if (!hasSeenOnboarding) {
@@ -401,10 +388,6 @@ export default function App() {
       duration: 5000,
     });
   };
-
-  if (!isReady) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-background">
