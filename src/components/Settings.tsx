@@ -1,14 +1,26 @@
-import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User } from 'lucide-react';
+import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User, Maximize2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
 interface SettingsProps {
   onResetProgress: () => Promise<void> | void;
+  fullscreenActive: boolean;
+  fullscreenAvailable: boolean;
+  isIOS: boolean;
+  onToggleFullscreen: (enabled: boolean) => void;
   onBack?: () => void;
   onNavigateToProfile?: () => void;
 }
 
-export function Settings({ onResetProgress, onBack, onNavigateToProfile }: SettingsProps) {
+export function Settings({
+  onResetProgress,
+  fullscreenActive,
+  fullscreenAvailable,
+  isIOS,
+  onToggleFullscreen,
+  onBack,
+  onNavigateToProfile,
+}: SettingsProps) {
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('de');
 
@@ -108,6 +120,37 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
                   <option value="en">English</option>
                   <option value="fr">Français</option>
                 </select>
+              </div>
+
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Maximize2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Vollbildmodus{isIOS ? ' (BETA)' : ''}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {fullscreenAvailable
+                        ? 'Vollbildmodus an/aus'
+                        : 'Nur auf Mobilgeraeten verfuegbar'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => void onToggleFullscreen(!fullscreenActive)}
+                  disabled={!fullscreenAvailable}
+                  className={`w-12 h-6 rounded-full transition-colors ${
+                    fullscreenActive ? 'bg-primary' : 'bg-muted'
+                  } ${
+                    fullscreenAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+                      fullscreenActive ? 'translate-x-6' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           </div>

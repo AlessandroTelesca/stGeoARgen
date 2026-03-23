@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -28,6 +28,8 @@ import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
 import { ARLoginGuard } from './components/ARLoginGuard';
+import { useIsMobile } from './components/ui/use-mobile';
+import { useSiteFullscreen } from './hooks/useSiteFullscreen';
 
 
 interface Station {
@@ -61,6 +63,10 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const appRootRef = useRef<HTMLDivElement>(null);
+  const fullscreenAttemptRef = useRef(0);
+  const isMobile = useIsMobile();
+  const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
@@ -68,6 +74,9 @@ export default function App() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostOnboardingLoginPrompt, setShowPostOnboardingLoginPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
@@ -160,6 +169,15 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const detectedIOS = /iPad|iPhone|iPod/.test(userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const detectedAndroid = /Android/i.test(userAgent);
+    setIsIOS(detectedIOS);
+    setIsAndroid(detectedAndroid);
+  }, []);
+
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
   useEffect(() => {
     if (!user) return;
@@ -244,6 +262,83 @@ export default function App() {
     }
   }, [location.pathname]);
 
+  const requestSiteFullscreen = useCallback(async () => {
+    if (!isMobile || isFullscreen || fallbackAppModeActive) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - fullscreenAttemptRef.current < 1200) {
+      return;
+    }
+
+    fullscreenAttemptRef.current = now;
+    if (!isSupported) {
+      // Safari on iOS may not expose Fullscreen API for arbitrary elements.
+      setFallbackAppModeActive(true);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      return;
+    }
+
+    const entered = await enterFullscreen();
+    if (!entered && !isIOS) {
+      // Fullscreen may require an explicit user activation on some Android browsers.
+      setFallbackAppModeActive(false);
+    }
+  }, [enterFullscreen, fallbackAppModeActive, isFullscreen, isIOS, isMobile, isSupported]);
+
+  const handleFullscreenToggle = useCallback(async (enabled: boolean) => {
+    if (!enabled) {
+      setFallbackAppModeActive(false);
+      if (isFullscreen) {
+        await exitFullscreen();
+      }
+      return;
+    }
+
+    await requestSiteFullscreen();
+  }, [exitFullscreen, isFullscreen, requestSiteFullscreen]);
+
+  useEffect(() => {
+    if (!isMobile || !isAndroid || isIOS || isFullscreen || fallbackAppModeActive) {
+      return;
+    }
+
+    void requestSiteFullscreen();
+
+    const triggerRetry = () => {
+      void requestSiteFullscreen();
+    };
+
+    document.addEventListener('pointerdown', triggerRetry, { passive: true });
+    document.addEventListener('touchstart', triggerRetry, { passive: true });
+    document.addEventListener('keydown', triggerRetry);
+
+    return () => {
+      document.removeEventListener('pointerdown', triggerRetry);
+      document.removeEventListener('touchstart', triggerRetry);
+      document.removeEventListener('keydown', triggerRetry);
+    };
+  }, [fallbackAppModeActive, isAndroid, isFullscreen, isIOS, isMobile, requestSiteFullscreen]);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    if (isMobile && (isFullscreen || fallbackAppModeActive)) {
+      html.classList.add('site-fullscreen-active');
+      body.classList.add('site-fullscreen-active');
+      return;
+    }
+
+    html.classList.remove('site-fullscreen-active');
+    body.classList.remove('site-fullscreen-active');
+
+    return () => {
+      html.classList.remove('site-fullscreen-active');
+      body.classList.remove('site-fullscreen-active');
+    };
+  }, [fallbackAppModeActive, isFullscreen, isMobile]);
 
   // Mock paths data - now only ONE path
   const [paths, setPaths] = useState<Path[]>([
@@ -629,7 +724,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
         <Header
           title={getPageTitle()}
@@ -706,6 +801,10 @@ export default function App() {
       {currentView === 'settings' && (
         <Settings
           onResetProgress={handleResetProgress}
+          fullscreenActive={isFullscreen || fallbackAppModeActive}
+          fullscreenAvailable={isMobile}
+          isIOS={isIOS}
+          onToggleFullscreen={handleFullscreenToggle}
           onBack={handleBackToDashboard}
           onNavigateToProfile={() => {
             setCurrentView('profile');
@@ -904,6 +1003,7 @@ export default function App() {
           setCurrentView('rewards');
         }}
       />
+
     </div>
   );
 }
