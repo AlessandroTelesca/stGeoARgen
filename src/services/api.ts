@@ -53,6 +53,17 @@ export interface AuthResponse {
     user: UserData;
 }
 
+export interface PasswordResetRequestResponse {
+    success: boolean;
+    message: string;
+    reset_token?: string;
+}
+
+export interface PasswordResetResponse {
+    success: boolean;
+    message: string;
+}
+
 export async function apiRegister(
     username: string,
     email: string,
@@ -76,6 +87,25 @@ export async function apiLogin(
 
 export async function apiGetUser(userId: number): Promise<AuthResponse> {
     return apiFetch<AuthResponse>(`get_user.php?user_id=${userId}`);
+}
+
+export async function apiRequestPasswordReset(
+    email: string
+): Promise<PasswordResetRequestResponse> {
+    return apiFetch<PasswordResetRequestResponse>('request_password_reset.php', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function apiResetPassword(
+    token: string,
+    password: string
+): Promise<PasswordResetResponse> {
+    return apiFetch<PasswordResetResponse>('reset_password.php', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+    });
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────
