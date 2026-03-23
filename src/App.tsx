@@ -31,6 +31,8 @@ import { ARLoginGuard } from './components/ARLoginGuard';
 import { useIsMobile } from './components/ui/use-mobile';
 import { isEditableTarget, useSiteFullscreen } from './hooks/useSiteFullscreen';
 
+const FULLSCREEN_PROMPT_SEEN_KEY = 'st-geoargen-fullscreen-prompt-seen';
+
 
 interface Station {
   id: number;
@@ -170,6 +172,14 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const savedPromptSeen = localStorage.getItem(FULLSCREEN_PROMPT_SEEN_KEY);
+
+    if (savedPromptSeen === 'true') {
+      setFullscreenPromptDismissed(true);
+    }
+  }, []);
+
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
   useEffect(() => {
     if (!user) return;
@@ -270,7 +280,8 @@ export default function App() {
       setFallbackAppModeActive(true);
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
-      setFullscreenPromptDismissed(false);
+      setFullscreenPromptDismissed(true);
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       return;
     }
@@ -279,7 +290,8 @@ export default function App() {
     if (entered) {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
-      setFullscreenPromptDismissed(false);
+      setFullscreenPromptDismissed(true);
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
       return;
     }
 
@@ -290,14 +302,27 @@ export default function App() {
     setShowFullscreenPrompt(false);
     if (!wasPausedForInput) {
       setFullscreenPromptDismissed(true);
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
     }
   }, [wasPausedForInput]);
+
+  const handleFullscreenToggle = useCallback(async (enabled: boolean) => {
+    if (!enabled) {
+      setFallbackAppModeActive(false);
+      setShowFullscreenPrompt(false);
+      if (isFullscreen) {
+        await exitFullscreen();
+      }
+      return;
+    }
+
+    await requestSiteFullscreen();
+  }, [exitFullscreen, isFullscreen, requestSiteFullscreen]);
 
   useEffect(() => {
     if (!isMobile) {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
-      setFullscreenPromptDismissed(false);
       return;
     }
 
@@ -834,6 +859,9 @@ export default function App() {
       {currentView === 'settings' && (
         <Settings
           onResetProgress={handleResetProgress}
+          fullscreenActive={isFullscreen || fallbackAppModeActive}
+          fullscreenAvailable={isMobile}
+          onToggleFullscreen={handleFullscreenToggle}
           onBack={handleBackToDashboard}
           onNavigateToProfile={() => {
             setCurrentView('profile');
