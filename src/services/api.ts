@@ -1,10 +1,12 @@
 /**
  * api.ts – Zentraler API-Client
  * 
- * WICHTIG: Trage hier die URL deines Servers ein!
- * Beispiel: 'https://mein-server.de/stgeoargen/api'
+ * API-URL kann ueber VITE_API_BASE_URL konfiguriert werden.
  */
-export const API_BASE_URL = 'https://stgeoargen.iiius.de/api';
+const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const defaultApiBaseUrl = isLocalHost ? '/api' : 'https://stgeoargen.iiius.de/api';
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl).replace(/\/+$/, '');
 
 export interface ApiResponse<T = unknown> {
     success: boolean;
@@ -22,18 +24,32 @@ async function apiFetch<T>(
 ): Promise<T> {
     const url = `${API_BASE_URL}/${endpoint}`;
 
-    const response = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-        ...options,
-    });
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+            ...options,
+        });
+    } catch {
+        throw new Error(`API nicht erreichbar (${url}).`);
+    }
 
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+
+    let data: ApiResponse;
+    try {
+        data = (await response.json()) as ApiResponse;
+    } catch {
+        throw new Error(
+            `Ungueltige API-Antwort (${url}) - HTTP ${response.status}, Content-Type: ${contentType || 'unbekannt'}.`
+        );
+    }
 
     if (!data.success) {
-        throw new Error(data.message || 'Ein unbekannter Fehler ist aufgetreten.');
+        throw new Error(data.message || `API-Fehler bei ${url}`);
     }
 
     return data as T;
