@@ -5,7 +5,7 @@ import { ARProfileMenu } from './ARProfileMenu';
 import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
 import { motion } from 'motion/react';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
@@ -33,6 +33,8 @@ interface ARComponentBaseProps {
   currentStationPoints?: number;
   /** Callback wenn User Station abschließt */
   onCompleteStation?: (stationId: number) => void;
+  /** Aktuelle Station wurde bereits früher abgeschlossen */
+  isCurrentStationCompleted?: boolean;
 }
 
 // Export Stations aus zentraler Config
@@ -127,6 +129,7 @@ export const ARComponentBase = ({
   currentStationTitle = 'Station',
   currentStationPoints = 0,
   onCompleteStation,
+  isCurrentStationCompleted = false,
 }: ARComponentBaseProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -241,7 +244,9 @@ export const ARComponentBase = ({
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
-    if (!canCompleteStation) return;
+    if (isCurrentStationCompleted) {
+      return;
+    }
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
@@ -310,22 +315,40 @@ export const ARComponentBase = ({
 
         <ARProgressBar progress={progress} stations={stations} />
 
-        {/* "Station abschließen"-Button */}
-        {canCompleteStation && (
-          <motion.button
-            onClick={handleCompleteStation}
-            className="ar-navigate-button"
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
+        {isCurrentStationCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            className="mx-3 mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3"
           >
-            <div className="ar-navigate-button-content">
-              <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
-              <span className="ar-navigate-button-text">Station abschließen</span>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-700" />
+              <div className="text-sm text-amber-900">
+                <p className="font-semibold">Station bereits abgeschlossen</p>
+                <p>Du kannst diese Station erneut erleben, aber bekommst dafuer keine weiteren Punkte.</p>
+              </div>
             </div>
-          </motion.button>
+          </motion.div>
         )}
+
+        {/* "Station abschließen"-Button */}
+        <motion.button
+          onClick={handleCompleteStation}
+          disabled={isCurrentStationCompleted}
+          className="ar-navigate-button"
+          style={isCurrentStationCompleted ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="ar-navigate-button-content">
+            <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
+            <span className="ar-navigate-button-text">
+              {isCurrentStationCompleted ? 'Bereits abgeschlossen' : 'Station abschließen'}
+            </span>
+          </div>
+        </motion.button>
 
         <ARProfileMenu
           isOpen={profileMenuOpen}

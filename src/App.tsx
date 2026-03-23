@@ -342,11 +342,23 @@ export default function App() {
     setCurrentView('station');
   };
 
-  const handleStationComplete = async (stationId: number) => {
-    // Lokal aktualisieren
-    let completedPathId: string | null = null;
-    let allStationsCompleted = false;
+  const isStationCompleted = (stationId: number): boolean => {
+    return paths.some((path) =>
+      path.stations.some((station) => station.id === stationId && station.status === 'completed')
+    );
+  };
 
+  const handleStationComplete = async (stationId: number) => {
+    // Bereits abgeschlossene Stationen bleiben wiederholbar, geben aber keine Punkte mehr.
+    if (isStationCompleted(stationId)) {
+      toast.info('Station bereits abgeschlossen', {
+        description: 'Beim Wiederholen dieser Station erhältst du keine weiteren Punkte.',
+        duration: 3500,
+      });
+      return;
+    }
+
+    // Lokal aktualisieren
     setPaths((prev) => {
       const updated = prev.map((path) => {
         const updatedPath = {
@@ -357,12 +369,6 @@ export default function App() {
               : station
           ),
         };
-        // Prüfen ob dieser Pfad jetzt vollständig abgeschlossen ist
-        const allDone = updatedPath.stations.every((s) => s.status === 'completed');
-        if (allDone && !claimedPathBonuses[path.id]) {
-          completedPathId = path.id;
-          allStationsCompleted = true;
-        }
         return updatedPath;
       });
       return updated;
@@ -572,6 +578,22 @@ export default function App() {
   const selectedStation = selectedStationId && selectedPath
     ? selectedPath.stations.find(s => s.id === selectedStationId)
     : null;
+
+  const getStationById = (stationId: number) => {
+    for (const path of paths) {
+      const station = path.stations.find((s) => s.id === stationId);
+      if (station) return station;
+    }
+    return null;
+  };
+
+  const glockenspielStation = getStationById(1);
+  const phonomuseumStation = getStationById(3);
+  const klosterweiherStation = getStationById(5);
+
+  const isGlockenspielCompleted = glockenspielStation?.status === 'completed';
+  const isPhonomuseumCompleted = phonomuseumStation?.status === 'completed';
+  const isKlosterweiherCompleted = klosterweiherStation?.status === 'completed';
 
   const pathsWithProgress = paths.map(path => {
     const progress = getPathProgress(path);
@@ -810,6 +832,7 @@ export default function App() {
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={isKlosterweiherCompleted}
           />
         )
       )}
@@ -833,6 +856,7 @@ export default function App() {
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={isPhonomuseumCompleted}
           />
         )
       )}
@@ -856,6 +880,7 @@ export default function App() {
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={isGlockenspielCompleted}
           />
         )
       )}

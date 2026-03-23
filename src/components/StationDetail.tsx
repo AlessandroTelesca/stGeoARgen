@@ -30,7 +30,7 @@ interface StationDetailProps {
     longitude: number;
   };
   onClose: () => void;
-  onComplete: (stationId: number, earnedPoints: number) => void;
+  onComplete: (stationId: number) => void;
   isLoggedIn?: boolean;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
@@ -46,11 +46,12 @@ const STATION_AR_ROUTES: Record<number, string> = {
 export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const navigate = useNavigate();
+  const isCompleted = station.status === 'completed';
 
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const hasARRoute = !!STATION_AR_ROUTES[station.id];
-  const needsLogin = isLoggedIn === false && hasARRoute && station.status !== 'completed';
+  const needsLogin = isLoggedIn === false && hasARRoute;
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,
@@ -81,7 +82,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
       navigate(arRoute);
     } else {
       // Fallback: Mark as completed if no AR route
-      onComplete(station.id, station.points);
+      onComplete(station.id);
     }
   };
 
@@ -117,7 +118,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
             alt={station.title}
             className="w-full h-full object-cover"
           />
-          {station.status === 'completed' && (
+          {isCompleted && (
             <div className="absolute top-4 right-4 bg-black text-white rounded-full p-2">
               <CheckCircle2 className="w-6 h-6" />
             </div>
@@ -168,7 +169,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           )}
 
           {/* Location Error */}
-          {!needsLogin && hasARRoute && locationError && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && locationError && !isCompleted && (
             <motion.div
               className="bg-warning/10 border border-warning/30 rounded-2xl p-6"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -194,7 +195,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           )}
 
           {/* Distance Check - Too Far (Echtzeit-Anzeige) */}
-          {!needsLogin && hasARRoute && !locationError && distance !== null && !isWithinRadius && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && !locationError && distance !== null && !isWithinRadius && !isCompleted && (
             <motion.div
               className="bg-black text-white rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -225,7 +226,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           )}
 
           {/* AR Experience Button - Within Radius */}
-          {!needsLogin && hasARRoute && !locationError && isWithinRadius && station.status !== 'completed' && (
+          {!needsLogin && hasARRoute && !locationError && isWithinRadius && !isCompleted && (
             <motion.div
               className="bg-primary text-white rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -262,7 +263,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           )}
 
           {/* No AR available - fallback */}
-          {station.status !== 'completed' && !STATION_AR_ROUTES[station.id] && (
+          {!isCompleted && !STATION_AR_ROUTES[station.id] && (
             <motion.div
               className="bg-muted rounded-2xl p-6 text-center"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -283,13 +284,20 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           )}
 
           {/* Completed State */}
-          {station.status === 'completed' && (
+          {isCompleted && (
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 text-center">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
               <h3 className="font-semibold mb-2">Station abgeschlossen</h3>
-              <p className="text-sm text-muted-foreground">
-                Du hast diese Station bereits besucht und {station.points} Punkte gesammelt.
+              <p className="text-sm text-muted-foreground mb-4">
+                Du hast diese Station bereits besucht. Du kannst sie erneut starten, erhältst aber keine weiteren Punkte.
               </p>
+              <button
+                onClick={handleStartARExperience}
+                className="w-full bg-white text-primary border border-primary/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              >
+                <Play className="w-5 h-5" />
+                <span>Station wiederholen</span>
+              </button>
             </div>
           )}
 
@@ -325,7 +333,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
             ? `Du bist noch ${Math.round(distance)}m entfernt. Nutze die Navigation!`
             : "Besuche diese Station vor Ort für mehr Informationen!"
         }
-        show={showGeorgi && station.status !== 'completed'}
+        show={showGeorgi && !isCompleted}
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />

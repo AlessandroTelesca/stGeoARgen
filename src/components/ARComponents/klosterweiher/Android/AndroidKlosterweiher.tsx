@@ -26,6 +26,7 @@ interface ARViewProps {
   totalStations?: number;
   totalPoints?: number;
   onCompleteStation?: (stationId: number) => void;
+  isCurrentStationCompleted?: boolean;
 }
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
@@ -403,6 +404,7 @@ export const AndroidKlosterweiherView = ({
   totalStations,
   totalPoints,
   onCompleteStation,
+  isCurrentStationCompleted = false,
 }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -557,6 +559,7 @@ export const AndroidKlosterweiherView = ({
         currentStationTitle="Klosterweiher"
         currentStationPoints={45}
         onCompleteStation={onCompleteStation}
+        isCurrentStationCompleted={isCurrentStationCompleted}
       />
 
       {isAuthorized && !hasStarted && (

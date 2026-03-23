@@ -15,6 +15,7 @@ interface ARViewProps {
   totalStations?: number;
   totalPoints?: number;
   onCompleteStation?: (stationId: number) => void;
+  isCurrentStationCompleted?: boolean;
 }
 
 class PhonomuseumARSession extends ARVisualizer {
@@ -26,7 +27,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -83,6 +84,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         currentStationTitle="Phonomuseum"
         currentStationPoints={50}
         onCompleteStation={onCompleteStation}
+        isCurrentStationCompleted={isCurrentStationCompleted}
       />
     </ARProximityGate>
   );

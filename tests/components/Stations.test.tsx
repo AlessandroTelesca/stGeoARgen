@@ -2,6 +2,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { StationDetail } from '../../src/components/StationDetail';
 import { StationsView } from '../../src/components/StationsView';
 
@@ -36,24 +37,26 @@ const samplePaths = [
 ];
 
 describe('StationDetail', () => {
-  test('invokes onComplete when marking as done', async () => {
+  test('starts AR experience from detail button', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();
     const onClose = vi.fn();
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     render(
-      <StationDetail
-        station={{ ...sampleStation }}
-        onClose={onClose}
-        onComplete={onComplete}
-      />
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation }}
+          onClose={onClose}
+          onComplete={onComplete}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByText(sampleStation.title)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /als erledigt markieren/i }));
-    expect(onComplete).toHaveBeenCalledWith(sampleStation.id, sampleStation.points);
+    await user.click(screen.getByRole('button', { name: /ar-erlebnis starten/i }));
+    expect(onComplete).not.toHaveBeenCalled();
 
     openSpy.mockRestore();
   });
@@ -64,11 +67,13 @@ describe('StationDetail', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     render(
-      <StationDetail
-        station={{ ...sampleStation }}
-        onClose={onClose}
-        onComplete={vi.fn()}
-      />
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation }}
+          onClose={onClose}
+          onComplete={vi.fn()}
+        />
+      </MemoryRouter>
     );
 
     const closeButtons = screen.getAllByRole('button');
@@ -83,14 +88,16 @@ describe('StationDetail', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     render(
-      <StationDetail
-        station={{ ...sampleStation }}
-        onClose={vi.fn()}
-        onComplete={vi.fn()}
-      />
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation }}
+          onClose={vi.fn()}
+          onComplete={vi.fn()}
+        />
+      </MemoryRouter>
     );
 
-    await user.click(screen.getByRole('button', { name: /zur station navigieren/i }));
+    await user.click(screen.getByRole('button', { name: /navigation zur station/i }));
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringContaining('google.com/maps'),
       '_blank'
@@ -103,15 +110,17 @@ describe('StationDetail', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     render(
-      <StationDetail
-        station={{ ...sampleStation, status: 'completed' }}
-        onClose={vi.fn()}
-        onComplete={vi.fn()}
-      />
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation, status: 'completed' }}
+          onClose={vi.fn()}
+          onComplete={vi.fn()}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByText(/station abgeschlossen/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /als erledigt markieren/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /station wiederholen/i })).toBeInTheDocument();
 
     openSpy.mockRestore();
   });

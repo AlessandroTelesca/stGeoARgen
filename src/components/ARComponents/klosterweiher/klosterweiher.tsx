@@ -3,7 +3,7 @@ import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean }) => {
 
 	// Detect device and open appropriate maps app
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -24,6 +24,7 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				totalStations={totalStations}
 				totalPoints={totalPoints}
 				onCompleteStation={onCompleteStation}
+				isCurrentStationCompleted={isCurrentStationCompleted}
 			/>
 		);
 	} else if (isAndroid) {
@@ -38,7 +39,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				completedStations={completedStations} 
 				totalStations={totalStations} 
 				totalPoints={totalPoints} 
-				onCompleteStation={onCompleteStation} />
+				onCompleteStation={onCompleteStation}
+				isCurrentStationCompleted={isCurrentStationCompleted} />
 		);
 	} else if (isNotMobile) {
 		return (

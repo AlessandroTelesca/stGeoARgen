@@ -26,6 +26,7 @@ interface ARViewProps {
   totalStations?: number;
   totalPoints?: number;
   onCompleteStation?: (stationId: number) => void;
+  isCurrentStationCompleted?: boolean;
 }
 
 class IOSKlosterweiherARSession extends ARVisualizer {
@@ -431,6 +432,7 @@ export const IOSKlosterweiherView = ({
   totalStations,
   totalPoints,
   onCompleteStation,
+  isCurrentStationCompleted = false,
 }: ARViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -578,6 +580,7 @@ export const IOSKlosterweiherView = ({
         currentStationTitle="Klosterweiher"
         currentStationPoints={45}
         onCompleteStation={onCompleteStation}
+        isCurrentStationCompleted={isCurrentStationCompleted}
       />
 
       {waitingForReady && overlayRootRef.current && (
