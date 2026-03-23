@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
-import { getUserProgress, saveStationProgress } from './services/auth';
+import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
 import { apiSavePathBonus } from './services/api';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -449,18 +449,39 @@ export default function App() {
     }
   };
 
-  const handleResetProgress = () => {
-    setPaths(paths.map(path => ({
-      ...path,
-      stations: path.stations.map(station => ({
-        ...station,
-        status: 'available' as const,
-      })),
-    })));
+  const handleResetProgress = async () => {
+    if (user) {
+      try {
+        await resetUserProgress(user.id);
+      } catch (error) {
+        toast.error('Fortschritt konnte nicht zurueckgesetzt werden.', {
+          description: error instanceof Error ? error.message : 'Bitte versuche es erneut.',
+          duration: 4000,
+        });
+        return;
+      }
+    }
+
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) => ({
+          ...station,
+          status: 'available' as const,
+        })),
+      }))
+    );
     setRewardClaimed(false);
+    setClaimedPathBonuses({});
+
     // Also reset onboarding
     localStorage.removeItem('st-geoargen-onboarding-complete');
     setShowOnboarding(true);
+
+    toast.success('Fortschritt zurueckgesetzt.', {
+      description: user ? 'Dein Fortschritt wurde auch in der Datenbank geloescht.' : 'Lokaler Fortschritt wurde geloescht.',
+      duration: 3000,
+    });
   };
 
   const handleNavigate = (view: string) => {

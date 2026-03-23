@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 
 interface SettingsProps {
-  onResetProgress: () => void;
+  onResetProgress: () => Promise<void> | void;
   onBack?: () => void;
   onNavigateToProfile?: () => void;
 }
@@ -159,9 +159,9 @@ export function Settings({ onResetProgress, onBack, onNavigateToProfile }: Setti
             
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
-                    onResetProgress();
+                    await onResetProgress();
                   }
                 }}
                 className="w-full p-4 flex items-center gap-3 transition-colors rounded-xl"

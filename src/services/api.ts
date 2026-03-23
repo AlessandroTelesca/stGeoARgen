@@ -106,6 +106,15 @@ export async function apiSaveProgress(
     });
 }
 
+export async function apiResetProgress(
+    userId: number
+): Promise<{ success: boolean; message: string; deleted_rows: number }> {
+    return apiFetch('reset_progress.php', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId }),
+    });
+}
+
 export interface PathBonusResponse {
     success: boolean;
     message: string;

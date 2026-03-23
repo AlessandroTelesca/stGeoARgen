@@ -11,6 +11,7 @@ import {
     apiGetUser,
     apiGetProgress,
     apiSaveProgress,
+    apiResetProgress,
     UserData,
     ProgressEntry,
 } from './api';
@@ -114,4 +115,11 @@ export async function saveStationProgress(
     stationId: number
 ): Promise<void> {
     await apiSaveProgress(userId, pathId, stationId);
+}
+
+/**
+ * Setzt den kompletten Fortschritt eines Users in der Datenbank zurueck.
+ */
+export async function resetUserProgress(userId: number): Promise<void> {
+    await apiResetProgress(userId);
 }
