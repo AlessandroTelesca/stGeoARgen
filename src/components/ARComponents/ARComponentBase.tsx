@@ -138,6 +138,7 @@ export const ARComponentBase = ({
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [stationStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [hasClickedComplete, setHasClickedComplete] = useState(false);
   // Snapshot: gespeicherter Wert beim Klick auf "Station abschließen" (VOR props-Update)
   const [remainingAtCompletion, setRemainingAtCompletion] = useState(0);
 
@@ -240,6 +241,10 @@ export const ARComponentBase = ({
     return () => window.clearInterval(intervalId);
   }, [stationStartTime]);
 
+  useEffect(() => {
+    setHasClickedComplete(false);
+  }, [currentStationId]);
+
   const canCompleteStation = elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
@@ -247,6 +252,8 @@ export const ARComponentBase = ({
     if (isCurrentStationCompleted || !canCompleteStation) {
       return;
     }
+
+    setHasClickedComplete(true);
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
@@ -332,7 +339,7 @@ export const ARComponentBase = ({
         )}
 
         {/* "Station abschließen"-Button */}
-        {(canCompleteStation || isCurrentStationCompleted) && (
+        {canCompleteStation && !hasClickedComplete && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}
