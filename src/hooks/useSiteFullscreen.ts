@@ -14,18 +14,6 @@ const getFullscreenElement = (doc: FullscreenDocument): Element | null => {
   return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
 };
 
-const canUseFullscreen = (doc: FullscreenDocument): boolean => {
-  if (doc.fullscreenEnabled !== undefined) {
-    return doc.fullscreenEnabled;
-  }
-
-  if (doc.webkitFullscreenEnabled !== undefined) {
-    return doc.webkitFullscreenEnabled;
-  }
-
-  return true;
-};
-
 export const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof Element)) {
     return false;
@@ -44,14 +32,13 @@ export const useSiteFullscreen = (rootRef: RefObject<HTMLElement>) => {
       return false;
     }
 
-    const fullscreenDocument = document as FullscreenDocument;
     const probe = document.documentElement as FullscreenElement;
 
     const hasApi =
       typeof probe.requestFullscreen === 'function' ||
       typeof probe.webkitRequestFullscreen === 'function';
 
-    return hasApi && canUseFullscreen(fullscreenDocument);
+    return hasApi;
   }, []);
 
   useEffect(() => {

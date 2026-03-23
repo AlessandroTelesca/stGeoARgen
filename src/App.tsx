@@ -76,6 +76,8 @@ export default function App() {
   const [showPostOnboardingLoginPrompt, setShowPostOnboardingLoginPrompt] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [wasPausedForInput, setWasPausedForInput] = useState(false);
+  const [fullscreenPromptDismissed, setFullscreenPromptDismissed] = useState(false);
+  const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
@@ -253,7 +255,7 @@ export default function App() {
   }, [location.pathname]);
 
   const requestSiteFullscreen = useCallback(async () => {
-    if (!isMobile || !isSupported || isFullscreen) {
+    if (!isMobile || isFullscreen || fallbackAppModeActive) {
       return;
     }
 
@@ -263,31 +265,61 @@ export default function App() {
     }
 
     fullscreenAttemptRef.current = now;
+    if (!isSupported) {
+      // Safari on iOS may not expose Fullscreen API for arbitrary elements.
+      setFallbackAppModeActive(true);
+      setShowFullscreenPrompt(false);
+      setWasPausedForInput(false);
+      setFullscreenPromptDismissed(false);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      return;
+    }
+
     const entered = await enterFullscreen();
     if (entered) {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
+      setFullscreenPromptDismissed(false);
       return;
     }
 
     setShowFullscreenPrompt(true);
-  }, [enterFullscreen, isFullscreen, isMobile, isSupported]);
+  }, [enterFullscreen, fallbackAppModeActive, isFullscreen, isMobile, isSupported]);
+
+  const dismissFullscreenPrompt = useCallback(() => {
+    setShowFullscreenPrompt(false);
+    if (!wasPausedForInput) {
+      setFullscreenPromptDismissed(true);
+    }
+  }, [wasPausedForInput]);
 
   useEffect(() => {
-    if (!isMobile || !isSupported) {
+    if (!isMobile) {
+      setShowFullscreenPrompt(false);
+      setWasPausedForInput(false);
+      setFullscreenPromptDismissed(false);
+      return;
+    }
+
+    if (isFullscreen || fallbackAppModeActive) {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
       return;
     }
 
-    setShowFullscreenPrompt(!isFullscreen);
-  }, [isFullscreen, isMobile, isSupported]);
+    if (wasPausedForInput) {
+      setShowFullscreenPrompt(true);
+      return;
+    }
+
+    setShowFullscreenPrompt(!fullscreenPromptDismissed);
+  }, [fallbackAppModeActive, fullscreenPromptDismissed, isFullscreen, isMobile, wasPausedForInput]);
 
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
 
-    if (isMobile && isFullscreen) {
+    if (isMobile && (isFullscreen || fallbackAppModeActive)) {
       html.classList.add('site-fullscreen-active');
       body.classList.add('site-fullscreen-active');
       return;
@@ -300,27 +332,7 @@ export default function App() {
       html.classList.remove('site-fullscreen-active');
       body.classList.remove('site-fullscreen-active');
     };
-  }, [isFullscreen, isMobile]);
-
-  useEffect(() => {
-    if (!isMobile || !isSupported) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (isFullscreen || isEditableTarget(event.target)) {
-        return;
-      }
-
-      void requestSiteFullscreen();
-    };
-
-    document.addEventListener('pointerdown', onPointerDown, { capture: true });
-
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, { capture: true });
-    };
-  }, [isFullscreen, isMobile, isSupported, requestSiteFullscreen]);
+  }, [fallbackAppModeActive, isFullscreen, isMobile]);
 
   useEffect(() => {
     if (!isMobile || !isSupported) {
@@ -328,13 +340,16 @@ export default function App() {
     }
 
     const onFocusIn = (event: FocusEvent) => {
-      if (!isEditableTarget(event.target) || !isFullscreen) {
+      if (!isEditableTarget(event.target) || (!isFullscreen && !fallbackAppModeActive)) {
         return;
       }
 
       setWasPausedForInput(true);
       setShowFullscreenPrompt(true);
-      void exitFullscreen();
+      setFallbackAppModeActive(false);
+      if (isFullscreen) {
+        void exitFullscreen();
+      }
     };
 
     const onFocusOut = (event: FocusEvent) => {
@@ -342,7 +357,8 @@ export default function App() {
         return;
       }
 
-      if (!isFullscreen) {
+      if (!isFullscreen && !fallbackAppModeActive) {
+        setWasPausedForInput(false);
         setShowFullscreenPrompt(true);
       }
     };
@@ -354,7 +370,7 @@ export default function App() {
       document.removeEventListener('focusin', onFocusIn);
       document.removeEventListener('focusout', onFocusOut);
     };
-  }, [exitFullscreen, isFullscreen, isMobile, isSupported]);
+  }, [exitFullscreen, fallbackAppModeActive, isFullscreen, isMobile, isSupported]);
 
 
   // Mock paths data - now only ONE path
@@ -741,7 +757,7 @@ export default function App() {
   };
 
   return (
-    <div ref={appRootRef} className="min-h-screen bg-background">
+    <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
         <Header
           title={getPageTitle()}
@@ -1017,15 +1033,37 @@ export default function App() {
         }}
       />
 
-      {isMobile && isSupported && showFullscreenPrompt && (
-        <button
-          type="button"
-          onClick={() => void requestSiteFullscreen()}
-          className="fixed right-4 z-50 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
-        >
-          {wasPausedForInput ? 'Zurueck in Vollbild' : 'Vollbild aktivieren'}
-        </button>
+      {isMobile && showFullscreenPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-5 text-card-foreground shadow-2xl">
+            <h2 className="text-lg font-semibold">
+              {wasPausedForInput ? 'Zurueck ins Vollbild?' : 'Vollbild aktivieren?'}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {isSupported
+                ? wasPausedForInput
+                ? 'Du hast ein Eingabefeld genutzt. Moechtest du jetzt wieder in den Vollbildmodus wechseln?'
+                : 'Fuer ein app-aehnliches Erlebnis kannst du die Website im Vollbildmodus nutzen.'
+                : 'Dein Browser unterstuetzt hier kein echtes Vollbild. Wir aktivieren stattdessen einen app-aehnlichen Modus mit optimierter Darstellung.'}
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={dismissFullscreenPrompt}
+                className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+              >
+                Nicht jetzt
+              </button>
+              <button
+                type="button"
+                onClick={() => void requestSiteFullscreen()}
+                className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                {isSupported ? 'Vollbild aktivieren' : 'App-Modus aktivieren'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
