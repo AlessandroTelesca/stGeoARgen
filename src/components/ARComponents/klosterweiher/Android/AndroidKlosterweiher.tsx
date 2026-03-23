@@ -10,7 +10,7 @@ import {
   FishingInstructions,
   FishCaughtDialog,
   FishActionButtons,
-  FishInfoPopup,
+  FishInfoPopupWebXR,
   TapInstructionGIF,
   DragInstructionGIF,
 } from "../KlosterweiherUI";
@@ -723,7 +723,7 @@ export const AndroidKlosterweiherView = ({
         )}
 
       {showFishInfo && overlayRootRef.current && (
-        <FishInfoPopup
+        <FishInfoPopupWebXR
           overlayRoot={overlayRootRef.current}
           fishName={caughtFishName}
           onClose={() => setShowFishInfo(false)}

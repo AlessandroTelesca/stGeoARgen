@@ -354,6 +354,12 @@ interface FishInfoPopupProps {
   onClose: () => void;
 }
 
+interface FishInfoPopupWebXRProps {
+  overlayRoot: HTMLDivElement;
+  fishName: string;
+  onClose: () => void;
+}
+
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -577,6 +583,141 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
         )}
       </SheetContent>
     </Sheet>,
+    overlayRoot
+  );
+};
+
+export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoPopupWebXRProps) => {
+  const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const loadFishInfo = async () => {
+      try {
+        setLoading(true);
+        setError(false);
+        const response = await fetch(`/fish_Information/${fishName}.json`);
+        if (!response.ok) {
+          throw new Error('Fish info not found');
+        }
+        const data = await response.json();
+        setFishInfo(data);
+      } catch (err) {
+        console.error(`Failed to load fish info for ${fishName}:`, err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFishInfo();
+  }, [fishName]);
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10004,
+        background: 'rgba(0, 0, 0, 0.55)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        pointerEvents: 'auto',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '92vh',
+          background: 'var(--color-white)',
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
+          boxShadow: '0 -8px 28px rgba(0,0,0,0.35)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px 0' }}>
+          <div style={{ width: '56px', height: '6px', borderRadius: '999px', background: '#c5c7cb' }} />
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 20px 12px 20px',
+            borderBottom: '1px solid rgba(0,0,0,0.08)',
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>
+              {fishInfo?.name || 'Fisch Information'}
+            </h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.75, fontStyle: 'italic' }}>
+              {fishInfo?.scientificName || 'Wissenschaftlicher Name'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              fontSize: '28px',
+              lineHeight: 1,
+              padding: '4px 8px',
+              cursor: 'pointer',
+              color: '#555',
+            }}
+            aria-label="Schließen"
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ overflowY: 'auto', padding: '18px 20px 28px 20px' }}>
+          {loading ? (
+            <p style={{ margin: 0, color: '#666' }}>Lade Informationen...</p>
+          ) : error || !fishInfo ? (
+            <p style={{ margin: 0, color: '#666' }}>
+              Informationen für diesen Fisch sind leider nicht verfügbar.
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <p style={{ margin: 0, lineHeight: 1.5, color: '#374151' }}>{fishInfo.description}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Lebensraum:</strong> {fishInfo.habitat}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Ernährung:</strong> {fishInfo.diet}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Größe:</strong> {fishInfo.size}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Gewicht:</strong> {fishInfo.weight}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Lebenserwartung:</strong> {fishInfo.lifespan}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Naturschutz:</strong> {fishInfo.conservation}</p>
+              <div>
+                <p style={{ margin: '0 0 8px 0', lineHeight: 1.5 }}><strong>Merkmale:</strong></p>
+                <ul style={{ margin: 0, paddingLeft: '20px', display: 'grid', gap: '6px' }}>
+                  {fishInfo.features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+              <div
+                style={{
+                  background: '#ecfdf5',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong>Wussten Sie schon?</strong> {fishInfo.funFact}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
     overlayRoot
   );
 };
