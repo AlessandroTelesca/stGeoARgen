@@ -626,11 +626,13 @@ export const AndroidKlosterweiherView = ({
         >
           <div
             style={{
+              width: "calc(100% - 40px)",
+              maxWidth: "420px",
+              boxSizing: "border-box",
               padding: "16px",
               background: "#fff",
               borderRadius: "12px",
               boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-              minWidth: "240px",
               textAlign: "center",
             }}
           >
