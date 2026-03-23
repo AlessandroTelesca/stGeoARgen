@@ -31,7 +31,9 @@ import { ARLoginGuard } from './components/ARLoginGuard';
 import { useIsMobile } from './components/ui/use-mobile';
 import { isEditableTarget, useSiteFullscreen } from './hooks/useSiteFullscreen';
 
-const FULLSCREEN_PROMPT_SEEN_KEY = 'st-geoargen-fullscreen-prompt-seen';
+const FULLSCREEN_PROMPT_SEEN_KEY_ANDROID = 'st-geoargen-fullscreen-prompt-seen-android';
+const FULLSCREEN_PROMPT_VERSION_KEY_ANDROID = 'st-geoargen-fullscreen-prompt-version-android';
+const FULLSCREEN_PROMPT_VERSION_ANDROID = '2';
 
 
 interface Station {
@@ -79,6 +81,7 @@ export default function App() {
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [wasPausedForInput, setWasPausedForInput] = useState(false);
   const [fullscreenPromptDismissed, setFullscreenPromptDismissed] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
@@ -173,11 +176,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const savedPromptSeen = localStorage.getItem(FULLSCREEN_PROMPT_SEEN_KEY);
+    const storedVersion = localStorage.getItem(FULLSCREEN_PROMPT_VERSION_KEY_ANDROID);
+    if (storedVersion !== FULLSCREEN_PROMPT_VERSION_ANDROID) {
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID, 'false');
+      localStorage.setItem(FULLSCREEN_PROMPT_VERSION_KEY_ANDROID, FULLSCREEN_PROMPT_VERSION_ANDROID);
+    }
+
+    const savedPromptSeen = localStorage.getItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID);
 
     if (savedPromptSeen === 'true') {
       setFullscreenPromptDismissed(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const detectedIOS = /iPad|iPhone|iPod/.test(userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(detectedIOS);
   }, []);
 
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
@@ -281,7 +297,7 @@ export default function App() {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
       setFullscreenPromptDismissed(true);
-      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID, 'true');
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       return;
     }
@@ -291,18 +307,18 @@ export default function App() {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
       setFullscreenPromptDismissed(true);
-      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID, 'true');
       return;
     }
 
-    setShowFullscreenPrompt(true);
-  }, [enterFullscreen, fallbackAppModeActive, isFullscreen, isMobile, isSupported]);
+    setShowFullscreenPrompt(!isIOS);
+  }, [enterFullscreen, fallbackAppModeActive, isFullscreen, isIOS, isMobile, isSupported]);
 
   const dismissFullscreenPrompt = useCallback(() => {
     setShowFullscreenPrompt(false);
     if (!wasPausedForInput) {
       setFullscreenPromptDismissed(true);
-      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY, 'true');
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID, 'true');
     }
   }, [wasPausedForInput]);
 
@@ -310,6 +326,8 @@ export default function App() {
     if (!enabled) {
       setFallbackAppModeActive(false);
       setShowFullscreenPrompt(false);
+      setFullscreenPromptDismissed(false);
+      localStorage.setItem(FULLSCREEN_PROMPT_SEEN_KEY_ANDROID, 'false');
       if (isFullscreen) {
         await exitFullscreen();
       }
@@ -320,7 +338,7 @@ export default function App() {
   }, [exitFullscreen, isFullscreen, requestSiteFullscreen]);
 
   useEffect(() => {
-    if (!isMobile) {
+    if (!isMobile || isIOS) {
       setShowFullscreenPrompt(false);
       setWasPausedForInput(false);
       return;
@@ -338,7 +356,7 @@ export default function App() {
     }
 
     setShowFullscreenPrompt(!fullscreenPromptDismissed);
-  }, [fallbackAppModeActive, fullscreenPromptDismissed, isFullscreen, isMobile, wasPausedForInput]);
+  }, [fallbackAppModeActive, fullscreenPromptDismissed, isFullscreen, isIOS, isMobile, wasPausedForInput]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -370,7 +388,7 @@ export default function App() {
       }
 
       setWasPausedForInput(true);
-      setShowFullscreenPrompt(true);
+      setShowFullscreenPrompt(!isIOS);
       setFallbackAppModeActive(false);
       if (isFullscreen) {
         void exitFullscreen();
@@ -384,7 +402,7 @@ export default function App() {
 
       if (!isFullscreen && !fallbackAppModeActive) {
         setWasPausedForInput(false);
-        setShowFullscreenPrompt(true);
+        setShowFullscreenPrompt(!isIOS);
       }
     };
 
@@ -395,7 +413,7 @@ export default function App() {
       document.removeEventListener('focusin', onFocusIn);
       document.removeEventListener('focusout', onFocusOut);
     };
-  }, [exitFullscreen, fallbackAppModeActive, isFullscreen, isMobile, isSupported]);
+  }, [exitFullscreen, fallbackAppModeActive, isFullscreen, isIOS, isMobile, isSupported]);
 
 
   // Mock paths data - now only ONE path
@@ -861,6 +879,7 @@ export default function App() {
           onResetProgress={handleResetProgress}
           fullscreenActive={isFullscreen || fallbackAppModeActive}
           fullscreenAvailable={isMobile}
+          isIOS={isIOS}
           onToggleFullscreen={handleFullscreenToggle}
           onBack={handleBackToDashboard}
           onNavigateToProfile={() => {
@@ -1061,7 +1080,7 @@ export default function App() {
         }}
       />
 
-      {isMobile && showFullscreenPrompt && (
+      {isMobile && !isIOS && showFullscreenPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-card p-5 text-card-foreground shadow-2xl">
             <h2 className="text-lg font-semibold">

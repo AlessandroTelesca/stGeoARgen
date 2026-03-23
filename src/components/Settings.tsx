@@ -6,6 +6,7 @@ interface SettingsProps {
   onResetProgress: () => Promise<void> | void;
   fullscreenActive: boolean;
   fullscreenAvailable: boolean;
+  isIOS: boolean;
   onToggleFullscreen: (enabled: boolean) => void;
   onBack?: () => void;
   onNavigateToProfile?: () => void;
@@ -15,6 +16,7 @@ export function Settings({
   onResetProgress,
   fullscreenActive,
   fullscreenAvailable,
+  isIOS,
   onToggleFullscreen,
   onBack,
   onNavigateToProfile,
@@ -126,7 +128,7 @@ export function Settings({
                     <Maximize2 className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Vollbildmodus</p>
+                    <p className="font-medium">Vollbildmodus{isIOS ? ' (BETA)' : ''}</p>
                     <p className="text-sm text-muted-foreground">
                       {fullscreenAvailable
                         ? 'Vollbildmodus an/aus'
