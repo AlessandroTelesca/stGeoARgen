@@ -22,6 +22,7 @@ function loadDbCredentialsFromFile(string $filePath): array {
     return $result;
 }
 
+
 /**
  * Holt den ersten nicht-leeren Wert aus ENV, Datei oder Fallback.
  */
