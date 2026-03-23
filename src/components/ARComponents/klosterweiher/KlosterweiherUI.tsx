@@ -397,6 +397,16 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
           <div className="w-16 h-1.5 bg-gray-400 rounded-full" />
         </div>
 
+        {/* Header - Always rendered for accessibility */}
+        <SheetHeader className="px-8 pb-6 pt-2">
+          <SheetTitle className="text-3xl font-bold text-primary">
+            {fishInfo?.name || 'Fisch Information'}
+          </SheetTitle>
+          <SheetDescription className="text-base italic opacity-80 mt-1">
+            {fishInfo?.scientificName || 'Wissenschaftlicher Name'}
+          </SheetDescription>
+        </SheetHeader>
+
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
             <p className="text-lg">Lade Informationen...</p>
@@ -407,16 +417,6 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
           </div>
         ) : (
           <div className="h-full flex flex-col overflow-hidden pb-6">
-            {/* Header */}
-            <SheetHeader className="px-8 pb-6 pt-2">
-              <SheetTitle className="text-3xl font-bold text-primary">
-                {fishInfo.name}
-              </SheetTitle>
-              <SheetDescription className="text-base italic opacity-80 mt-1">
-                {fishInfo.scientificName}
-              </SheetDescription>
-            </SheetHeader>
-
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto px-8 py-2">
               {/* Einleitungstext */}
