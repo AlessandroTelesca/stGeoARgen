@@ -67,24 +67,26 @@ export const ARStationCompletionDialog = ({
                     <motion.div
                         style={{
                             position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
+                            inset: 0,
                             zIndex: 210,
-                            padding: '0 16px 32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '16px',
                         }}
-                        initial={{ y: '100%', opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: '100%', opacity: 0 }}
+                        initial={{ y: 20, opacity: 0, scale: 0.98 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 20, opacity: 0, scale: 0.98 }}
                         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                     >
                         <div
                             style={{
                                 maxWidth: '440px',
-                                margin: '0 auto',
+                                width: '100%',
+                                maxHeight: '92vh',
                                 backgroundColor: '#fff',
                                 borderRadius: '24px',
-                                overflow: 'hidden',
+                                overflowY: 'auto',
                                 boxShadow: '0 -4px 40px rgba(0,0,0,0.3)',
                             }}
                         >

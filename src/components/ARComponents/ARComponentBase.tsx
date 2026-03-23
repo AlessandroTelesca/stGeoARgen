@@ -41,6 +41,7 @@ export const STATIONS = STATIONS_COORDINATES;
 // Globales Flag zum kompletten Abschalten von Geolocation
 const DISABLE_GEO = true;
 const MOCK_LOCATION = { lat: 48.0, lng: 11.0 };
+const MIN_SECONDS_BEFORE_COMPLETE = 30;
 
 // Haversine-Formel zur Berechnung der Distanz zwischen zwei Koordinaten
 export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -224,15 +225,24 @@ export const ARComponentBase = ({
     }
   }, [progress.current]);
 
-  // Timer läuft wenn Dialog offen ist (zeigt Aufenthaltsdauer)
+  // Laufender Timer seit Stationsstart
   useEffect(() => {
-    if (!showCompletionDialog) return;
-    const elapsed = Math.floor((Date.now() - stationStartTime) / 1000);
-    setElapsedSeconds(elapsed);
-  }, [showCompletionDialog, stationStartTime]);
+    const updateElapsed = () => {
+      const elapsed = Math.floor((Date.now() - stationStartTime) / 1000);
+      setElapsedSeconds(elapsed);
+    };
+
+    updateElapsed();
+    const intervalId = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [stationStartTime]);
+
+  const canCompleteStation = elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
+    if (!canCompleteStation) return;
+
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
     setRemainingAtCompletion(remaining);
@@ -301,19 +311,21 @@ export const ARComponentBase = ({
         <ARProgressBar progress={progress} stations={stations} />
 
         {/* "Station abschließen"-Button */}
-        <motion.button
-          onClick={handleCompleteStation}
-          className="ar-navigate-button"
-          whileTap={{ scale: 0.95 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="ar-navigate-button-content">
-            <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
-            <span className="ar-navigate-button-text">Station abschließen</span>
-          </div>
-        </motion.button>
+        {canCompleteStation && (
+          <motion.button
+            onClick={handleCompleteStation}
+            className="ar-navigate-button"
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="ar-navigate-button-content">
+              <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
+              <span className="ar-navigate-button-text">Station abschließen</span>
+            </div>
+          </motion.button>
+        )}
 
         <ARProfileMenu
           isOpen={profileMenuOpen}
