@@ -38,13 +38,13 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
     new URL("./../models/Forelle.glb", import.meta.url).href,
-    new URL('./../models/Neunauge.glb', import.meta.url).href,
-    new URL('./../models/Zander.glb', import.meta.url).href,
-    new URL('./../models/Schleie.glb', import.meta.url).href,
-    new URL('./../models/Doebel.glb', import.meta.url).href,
-    new URL('./../models/Rotfeder.glb', import.meta.url).href,
-    new URL('./../models/Stichling.glb', import.meta.url).href,
-    new URL('./../models/Karpfen.glb', import.meta.url).href,
+    new URL("./../models/Neunauge.glb", import.meta.url).href,
+    new URL("./../models/Zander.glb", import.meta.url).href,
+    new URL("./../models/Schleie.glb", import.meta.url).href,
+    new URL("./../models/Doebel.glb", import.meta.url).href,
+    new URL("./../models/Rotfeder.glb", import.meta.url).href,
+    new URL("./../models/Stichling.glb", import.meta.url).href,
+    new URL("./../models/Karpfen.glb", import.meta.url).href,
   ];
   protected waterUrl = new URL("./../models/Wasser.glb", import.meta.url).href;
   public fish: THREE.Object3D | null = null;
@@ -145,17 +145,20 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     };
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length > 0) {
-        this.handlePointerMove(event.touches[0].clientX, event.touches[0].clientY);
+        this.handlePointerMove(
+          event.touches[0].clientX,
+          event.touches[0].clientY,
+        );
       }
     };
     const onTouchEnd = () => {
       this.handlePointerUp();
     };
 
-    this.renderer.domElement.addEventListener('mousemove', onMouseMove);
-    this.renderer.domElement.addEventListener('mouseup', onMouseUp);
-    this.renderer.domElement.addEventListener('touchmove', onTouchMove);
-    this.renderer.domElement.addEventListener('touchend', onTouchEnd);
+    this.renderer.domElement.addEventListener("mousemove", onMouseMove);
+    this.renderer.domElement.addEventListener("mouseup", onMouseUp);
+    this.renderer.domElement.addEventListener("touchmove", onTouchMove);
+    this.renderer.domElement.addEventListener("touchend", onTouchEnd);
 
     // Store for cleanup
     (this.renderer.domElement as any)._orbitControlHandlers = {
@@ -167,7 +170,12 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   }
 
   private checkAllModelsLoaded(): void {
-    if (this.rodLoaded && this.fishesLoaded && this.waterLoaded && !this.modelsLoaded) {
+    if (
+      this.rodLoaded &&
+      this.fishesLoaded &&
+      this.waterLoaded &&
+      !this.modelsLoaded
+    ) {
       this.modelsLoaded = true;
       this.onModelsLoadedCallback?.();
     }
@@ -176,7 +184,9 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected initThree(): void {
     // Guard against double initialization
     if (this.threeInitialized) {
-      console.log("[AndroidKlosterweiher] initThree already called, skipping...");
+      console.log(
+        "[AndroidKlosterweiher] initThree already called, skipping...",
+      );
       return;
     }
     this.threeInitialized = true;
@@ -208,12 +218,12 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
     // Additional point lights around fish position for all-around lighting
     const fishLightPositions = [
-      { x: 0, y: 0, z: -200 },   // Front
+      { x: 0, y: 0, z: -200 }, // Front
       { x: -200, y: 0, z: -400 }, // Left
-      { x: 200, y: 0, z: -400 },  // Right
-      { x: 0, y: 200, z: -400 },  // Top
+      { x: 200, y: 0, z: -400 }, // Right
+      { x: 0, y: 200, z: -400 }, // Top
       { x: 0, y: -200, z: -400 }, // Bottom
-      { x: 0, y: 0, z: -600 },    // Behind fish
+      { x: 0, y: 0, z: -600 }, // Behind fish
     ];
 
     fishLightPositions.forEach((pos) => {
@@ -267,9 +277,11 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
                 child.receiveShadow = false;
                 // Flatten shading slightly for more even appearance
                 if (child.material) {
-                  const materials = Array.isArray(child.material) ? child.material : [child.material];
+                  const materials = Array.isArray(child.material)
+                    ? child.material
+                    : [child.material];
                   materials.forEach((mat) => {
-                    if ('flatShading' in mat) {
+                    if ("flatShading" in mat) {
                       mat.flatShading = false;
                     }
                   });
@@ -279,7 +291,10 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
             // Create and store backdrop for this fish
             if (this.camera) {
-              this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
+              this.fishBackdrops[index] = this.createFishBackdrop(
+                fishModel,
+                this.camera,
+              );
             }
 
             console.log(
@@ -292,6 +307,11 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
           }
           // Check if all fishes are loaded
           if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.currentFishIndex = Math.floor(
+              Math.random() * this.fishes.length,
+            );
+            this.fish =
+              this.fishes[this.currentFishIndex] || this.fishes[0] || null;
             this.fishesLoaded = true;
             this.checkAllModelsLoaded();
           }
@@ -377,10 +397,22 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     if (this.renderer) {
       const handlers = (this.renderer.domElement as any)._orbitControlHandlers;
       if (handlers) {
-        this.renderer.domElement.removeEventListener('mousemove', handlers.onMouseMove);
-        this.renderer.domElement.removeEventListener('mouseup', handlers.onMouseUp);
-        this.renderer.domElement.removeEventListener('touchmove', handlers.onTouchMove);
-        this.renderer.domElement.removeEventListener('touchend', handlers.onTouchEnd);
+        this.renderer.domElement.removeEventListener(
+          "mousemove",
+          handlers.onMouseMove,
+        );
+        this.renderer.domElement.removeEventListener(
+          "mouseup",
+          handlers.onMouseUp,
+        );
+        this.renderer.domElement.removeEventListener(
+          "touchmove",
+          handlers.onTouchMove,
+        );
+        this.renderer.domElement.removeEventListener(
+          "touchend",
+          handlers.onTouchEnd,
+        );
       }
     }
     super.stop();
@@ -435,7 +467,13 @@ export const AndroidKlosterweiherView = ({
 
   // Timer to show tap instruction after 5 seconds of inactivity
   useEffect(() => {
-    if (!hasStarted || fishCaught || tapsSinceStart >= 3 || waitingForGroundDetection) return;
+    if (
+      !hasStarted ||
+      fishCaught ||
+      tapsSinceStart >= 3 ||
+      waitingForGroundDetection
+    )
+      return;
 
     const timer = setInterval(() => {
       const timeSinceLastTap = Date.now() - lastTapTime;
@@ -445,20 +483,31 @@ export const AndroidKlosterweiherView = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [hasStarted, fishCaught, lastTapTime, tapsSinceStart, waitingForGroundDetection]);
+  }, [
+    hasStarted,
+    fishCaught,
+    lastTapTime,
+    tapsSinceStart,
+    waitingForGroundDetection,
+  ]);
 
   // Pre-create session and start loading models when authorized
   useEffect(() => {
-    if (isAuthorized && !sessionRef.current && !hasStarted && containerRef.current && overlayRootRef.current) {
-      console.log("[KlosterweiherView] Pre-creating AR session to load models...");
-      const session = new AndroidKlosterweiherARSession(
-        containerRef.current,
-        {
-          useWebXR: true,
-          domOverlayRoot: overlayRootRef.current,
-          onError: (e) => console.error("AR init failed", e),
-        }
+    if (
+      isAuthorized &&
+      !sessionRef.current &&
+      !hasStarted &&
+      containerRef.current &&
+      overlayRootRef.current
+    ) {
+      console.log(
+        "[KlosterweiherView] Pre-creating AR session to load models...",
       );
+      const session = new AndroidKlosterweiherARSession(containerRef.current, {
+        useWebXR: true,
+        domOverlayRoot: overlayRootRef.current,
+        onError: (e) => console.error("AR init failed", e),
+      });
 
       session.onFishCaught = (fishName: string) => {
         setFishCaught(true);
@@ -475,7 +524,7 @@ export const AndroidKlosterweiherView = ({
         setDragsSinceStart(0);
       };
       session.onDrag = () => {
-        setDragsSinceStart(prev => {
+        setDragsSinceStart((prev) => {
           const newCount = prev + 1;
           if (newCount >= 3) {
             setShowDragInstruction(false);
@@ -485,7 +534,7 @@ export const AndroidKlosterweiherView = ({
       };
       session.onTap = () => {
         setLastTapTime(Date.now());
-        setTapsSinceStart(prev => {
+        setTapsSinceStart((prev) => {
           const newCount = prev + 1;
           // Only hide GIF after reaching 3 taps
           if (newCount >= 3) {
@@ -508,7 +557,7 @@ export const AndroidKlosterweiherView = ({
       sessionRef.current = session;
 
       // Manually trigger initThree to start loading models without starting WebXR
-      session['initThree']();
+      session["initThree"]();
     }
   }, [isAuthorized, hasStarted]);
 
@@ -586,10 +635,18 @@ export const AndroidKlosterweiherView = ({
             }}
           >
             <p style={{ margin: "0 0 12px 0", fontWeight: 700 }}>
-              {modelsLoaded ? "Start AR to scan the ground" : "Loading models..."}
+              {modelsLoaded
+                ? "Start AR to scan the ground"
+                : "Loading models..."}
             </p>
             {!modelsLoaded && (
-              <p style={{ color: "#666", margin: "0 0 12px 0", fontSize: "14px" }}>
+              <p
+                style={{
+                  color: "#666",
+                  margin: "0 0 12px 0",
+                  fontSize: "14px",
+                }}
+              >
                 Please wait while AR models are loading
               </p>
             )}
@@ -610,7 +667,11 @@ export const AndroidKlosterweiherView = ({
                 opacity: modelsLoaded && !isStarting ? 1 : 0.6,
               }}
             >
-              {isStarting ? "Starting..." : modelsLoaded ? "Start AR" : "Loading..."}
+              {isStarting
+                ? "Starting..."
+                : modelsLoaded
+                  ? "Start AR"
+                  : "Loading..."}
             </button>
           </div>
         </div>
@@ -631,9 +692,12 @@ export const AndroidKlosterweiherView = ({
         />
       )}
 
-      {showTapInstruction && !fishCaught && tapsSinceStart < 3 && overlayRootRef.current && (
-        <TapInstructionGIF overlayRoot={overlayRootRef.current} />
-      )}
+      {showTapInstruction &&
+        !fishCaught &&
+        tapsSinceStart < 3 &&
+        overlayRootRef.current && (
+          <TapInstructionGIF overlayRoot={overlayRootRef.current} />
+        )}
 
       {fishCaught && overlayRootRef.current && (
         <>
@@ -649,9 +713,12 @@ export const AndroidKlosterweiherView = ({
         </>
       )}
 
-      {fishCaught && showDragInstruction && dragsSinceStart < 3 && overlayRootRef.current && (
-        <DragInstructionGIF overlayRoot={overlayRootRef.current} />
-      )}
+      {fishCaught &&
+        showDragInstruction &&
+        dragsSinceStart < 3 &&
+        overlayRootRef.current && (
+          <DragInstructionGIF overlayRoot={overlayRootRef.current} />
+        )}
 
       {showFishInfo && overlayRootRef.current && (
         <FishInfoPopup

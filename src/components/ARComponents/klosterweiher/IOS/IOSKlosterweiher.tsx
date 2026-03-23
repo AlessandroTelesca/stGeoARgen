@@ -38,13 +38,13 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
     new URL("./../models/Forelle.glb", import.meta.url).href,
-    new URL('./../models/Neunauge.glb', import.meta.url).href,
-    new URL('./../models/Zander.glb', import.meta.url).href,
-    new URL('./../models/Schleie.glb', import.meta.url).href,
-    new URL('./../models/Doebel.glb', import.meta.url).href,
-    new URL('./../models/Rotfeder.glb', import.meta.url).href,
-    new URL('./../models/Stichling.glb', import.meta.url).href,
-    new URL('./../models/Karpfen.glb', import.meta.url).href,
+    new URL("./../models/Neunauge.glb", import.meta.url).href,
+    new URL("./../models/Zander.glb", import.meta.url).href,
+    new URL("./../models/Schleie.glb", import.meta.url).href,
+    new URL("./../models/Doebel.glb", import.meta.url).href,
+    new URL("./../models/Rotfeder.glb", import.meta.url).href,
+    new URL("./../models/Stichling.glb", import.meta.url).href,
+    new URL("./../models/Karpfen.glb", import.meta.url).href,
   ];
   protected waterUrl = new URL("./../models/Wasser.glb", import.meta.url).href;
   public fish: THREE.Object3D | null = null;
@@ -145,17 +145,20 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     };
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length > 0) {
-        this.handlePointerMove(event.touches[0].clientX, event.touches[0].clientY);
+        this.handlePointerMove(
+          event.touches[0].clientX,
+          event.touches[0].clientY,
+        );
       }
     };
     const onTouchEnd = () => {
       this.handlePointerUp();
     };
 
-    this.renderer.domElement.addEventListener('mousemove', onMouseMove);
-    this.renderer.domElement.addEventListener('mouseup', onMouseUp);
-    this.renderer.domElement.addEventListener('touchmove', onTouchMove);
-    this.renderer.domElement.addEventListener('touchend', onTouchEnd);
+    this.renderer.domElement.addEventListener("mousemove", onMouseMove);
+    this.renderer.domElement.addEventListener("mouseup", onMouseUp);
+    this.renderer.domElement.addEventListener("touchmove", onTouchMove);
+    this.renderer.domElement.addEventListener("touchend", onTouchEnd);
 
     // Store for cleanup
     (this.renderer.domElement as any)._orbitControlHandlers = {
@@ -167,7 +170,12 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   }
 
   private checkAllModelsLoaded(): void {
-    if (this.rodLoaded && this.fishesLoaded && this.waterLoaded && !this.modelsLoaded) {
+    if (
+      this.rodLoaded &&
+      this.fishesLoaded &&
+      this.waterLoaded &&
+      !this.modelsLoaded
+    ) {
       this.modelsLoaded = true;
       this.onModelsLoadedCallback?.();
     }
@@ -206,12 +214,12 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
     // Additional point lights around fish position for all-around lighting
     const fishLightPositions = [
-      { x: 0, y: 0, z: -200 },   // Front
+      { x: 0, y: 0, z: -200 }, // Front
       { x: -200, y: 0, z: -400 }, // Left
-      { x: 200, y: 0, z: -400 },  // Right
-      { x: 0, y: 200, z: -400 },  // Top
+      { x: 200, y: 0, z: -400 }, // Right
+      { x: 0, y: 200, z: -400 }, // Top
       { x: 0, y: -200, z: -400 }, // Bottom
-      { x: 0, y: 0, z: -600 },    // Behind fish
+      { x: 0, y: 0, z: -600 }, // Behind fish
     ];
 
     fishLightPositions.forEach((pos) => {
@@ -266,7 +274,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             this.fishes[index] = fishModel;
             this.fishAnimations[index] = animations || [];
             this.fishMixers[index] = new THREE.AnimationMixer(fishModel);
-            
+
             // Disable shadows on fish for even lighting
             fishModel.traverse((child) => {
               if (child instanceof THREE.Mesh) {
@@ -274,19 +282,24 @@ class IOSKlosterweiherARSession extends ARVisualizer {
                 child.receiveShadow = false;
                 // Flatten shading slightly for more even appearance
                 if (child.material) {
-                  const materials = Array.isArray(child.material) ? child.material : [child.material];
+                  const materials = Array.isArray(child.material)
+                    ? child.material
+                    : [child.material];
                   materials.forEach((mat) => {
-                    if ('flatShading' in mat) {
+                    if ("flatShading" in mat) {
                       mat.flatShading = false;
                     }
                   });
                 }
               }
             });
-            
+
             // Create and store backdrop for this fish
-            this.fishBackdrops[index] = this.createFishBackdrop(fishModel, this.camera);
-            
+            this.fishBackdrops[index] = this.createFishBackdrop(
+              fishModel,
+              this.camera,
+            );
+
             console.log(
               `[IOSKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
@@ -297,6 +310,11 @@ class IOSKlosterweiherARSession extends ARVisualizer {
           }
           // Check if all fishes are loaded
           if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
+            this.currentFishIndex = Math.floor(
+              Math.random() * this.fishes.length,
+            );
+            this.fish =
+              this.fishes[this.currentFishIndex] || this.fishes[0] || null;
             this.fishesLoaded = true;
             this.checkAllModelsLoaded();
           }
@@ -350,7 +368,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected handlePointer(clientX: number, clientY: number): void {
     // Notify about tap
     this.onTap?.();
-    
+
     // If fish is caught, start orbit control; otherwise, cast rod
     if (this.hasCaughtFish) {
       this.startOrbitControl(clientX, clientY);
@@ -405,10 +423,22 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     if (this.renderer) {
       const handlers = (this.renderer.domElement as any)._orbitControlHandlers;
       if (handlers) {
-        this.renderer.domElement.removeEventListener('mousemove', handlers.onMouseMove);
-        this.renderer.domElement.removeEventListener('mouseup', handlers.onMouseUp);
-        this.renderer.domElement.removeEventListener('touchmove', handlers.onTouchMove);
-        this.renderer.domElement.removeEventListener('touchend', handlers.onTouchEnd);
+        this.renderer.domElement.removeEventListener(
+          "mousemove",
+          handlers.onMouseMove,
+        );
+        this.renderer.domElement.removeEventListener(
+          "mouseup",
+          handlers.onMouseUp,
+        );
+        this.renderer.domElement.removeEventListener(
+          "touchmove",
+          handlers.onTouchMove,
+        );
+        this.renderer.domElement.removeEventListener(
+          "touchend",
+          handlers.onTouchEnd,
+        );
       }
     }
     super.stop();
@@ -519,7 +549,7 @@ export const IOSKlosterweiherView = ({
         setDragsSinceStart(0);
       };
       session.onDrag = () => {
-        setDragsSinceStart(prev => {
+        setDragsSinceStart((prev) => {
           const newCount = prev + 1;
           if (newCount >= 3) {
             setShowDragInstruction(false);
@@ -529,7 +559,7 @@ export const IOSKlosterweiherView = ({
       };
       session.onTap = () => {
         setLastTapTime(Date.now());
-        setTapsSinceStart(prev => {
+        setTapsSinceStart((prev) => {
           const newCount = prev + 1;
           // Only hide GIF after reaching 3 taps
           if (newCount >= 3) {
@@ -608,9 +638,12 @@ export const IOSKlosterweiherView = ({
         />
       )}
 
-      {showTapInstruction && !fishCaught && tapsSinceStart < 3 && overlayRootRef.current && (
-        <TapInstructionGIF overlayRoot={overlayRootRef.current} />
-      )}
+      {showTapInstruction &&
+        !fishCaught &&
+        tapsSinceStart < 3 &&
+        overlayRootRef.current && (
+          <TapInstructionGIF overlayRoot={overlayRootRef.current} />
+        )}
 
       {fishCaught && overlayRootRef.current && (
         <>
@@ -626,9 +659,12 @@ export const IOSKlosterweiherView = ({
         </>
       )}
 
-      {fishCaught && showDragInstruction && dragsSinceStart < 3 && overlayRootRef.current && (
-        <DragInstructionGIF overlayRoot={overlayRootRef.current} />
-      )}
+      {fishCaught &&
+        showDragInstruction &&
+        dragsSinceStart < 3 &&
+        overlayRootRef.current && (
+          <DragInstructionGIF overlayRoot={overlayRootRef.current} />
+        )}
 
       {showFishInfo && overlayRootRef.current && (
         <FishInfoPopup

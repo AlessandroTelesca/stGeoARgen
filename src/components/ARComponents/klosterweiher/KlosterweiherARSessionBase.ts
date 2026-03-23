@@ -11,13 +11,13 @@ export abstract class KlosterweiherARSessionBase {
   protected fishUrls = [
     new URL("./models/Rotauge.glb", import.meta.url).href,
     new URL("./models/Forelle.glb", import.meta.url).href,
-    new URL('./models/Neunauge.glb', import.meta.url).href,
-    new URL('./models/Zander.glb', import.meta.url).href,
-    new URL('./models/Schleie.glb', import.meta.url).href,
-    new URL('./models/Doebel.glb', import.meta.url).href,
-    new URL('./models/Rotfeder.glb', import.meta.url).href,
-    new URL('./models/Stichling.glb', import.meta.url).href,
-    new URL('./models/Karpfen.glb', import.meta.url).href,
+    new URL("./models/Neunauge.glb", import.meta.url).href,
+    new URL("./models/Zander.glb", import.meta.url).href,
+    new URL("./models/Schleie.glb", import.meta.url).href,
+    new URL("./models/Doebel.glb", import.meta.url).href,
+    new URL("./models/Rotfeder.glb", import.meta.url).href,
+    new URL("./models/Stichling.glb", import.meta.url).href,
+    new URL("./models/Karpfen.glb", import.meta.url).href,
   ];
   protected waterUrl = new URL("./models/Wasser.glb", import.meta.url).href;
 
@@ -55,7 +55,7 @@ export abstract class KlosterweiherARSessionBase {
     if (!this.rod) return;
     if (this.hasCaughtFish) return; // Wait for release before next catch
     if (this.rodAnimationInProgress) return; // Prevent animation while one is running
-    
+
     this.rodAnimationInProgress = true;
     const tl = gsap.timeline();
 
@@ -103,7 +103,7 @@ export abstract class KlosterweiherARSessionBase {
       this.playCurrentFishAnimation();
     }
     this.fish.visible = true;
-    
+
     // Show backdrop for visibility
     const backdrop = this.fishBackdrops[this.currentFishIndex];
     // if (backdrop) backdrop.visible = true; // Backdrop deactivated
@@ -144,7 +144,7 @@ export abstract class KlosterweiherARSessionBase {
     const activeMixer = this.fishMixers[this.currentFishIndex];
     activeMixer?.stopAllAction();
     this.fish.visible = false;
-    
+
     // Hide current fish backdrop
     const oldBackdrop = this.fishBackdrops[this.currentFishIndex];
     if (oldBackdrop) oldBackdrop.visible = false;
@@ -160,11 +160,11 @@ export abstract class KlosterweiherARSessionBase {
       .map((f, i) => (f ? i : -1))
       .filter((i) => i >= 0);
     let newIndex = this.currentFishIndex;
+
     if (loadedIndices.length > 1) {
       do {
-        newIndex = loadedIndices[
-          Math.floor(Math.random() * loadedIndices.length)
-        ];
+        newIndex =
+          loadedIndices[Math.floor(Math.random() * loadedIndices.length)];
       } while (newIndex === this.currentFishIndex);
     }
     this.currentFishIndex = newIndex;
@@ -196,26 +196,29 @@ export abstract class KlosterweiherARSessionBase {
   /**
    * Create a semi-transparent white backdrop mesh for a fish model
    */
-  protected createFishBackdrop(fishModel: THREE.Object3D, camera: THREE.Camera): THREE.Mesh {
+  protected createFishBackdrop(
+    fishModel: THREE.Object3D,
+    camera: THREE.Camera,
+  ): THREE.Mesh {
     const shape = new THREE.Shape();
     const radiusX = 700;
     const radiusY = 300;
     const segments = 128;
-    
+
     for (let i = 0; i <= segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
       const x = Math.cos(angle) * radiusX;
       const y = Math.sin(angle) * radiusY;
-      
+
       if (i === 0) {
         shape.moveTo(x, y);
       } else {
         shape.lineTo(x, y);
       }
     }
-    
+
     const geometry = new THREE.ShapeGeometry(shape);
-    
+
     // Create semi-transparent white material
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
@@ -224,13 +227,13 @@ export abstract class KlosterweiherARSessionBase {
       side: THREE.DoubleSide,
       depthWrite: false, // Ensure proper transparency rendering
     });
-    
+
     const backdrop = new THREE.Mesh(geometry, material);
     backdrop.visible = false;
-    
+
     // Add backdrop to camera (not as child of fish) so it doesn't rotate with fish
     camera.add(backdrop);
-    
+
     return backdrop;
   }
 
@@ -262,7 +265,7 @@ export abstract class KlosterweiherARSessionBase {
     if (!this.fish || !this.hasCaughtFish) return;
     const backdrop = this.fishBackdrops[this.currentFishIndex];
     if (!backdrop || !backdrop.visible) return;
-    
+
     // Copy fish position but keep backdrop facing camera (no rotation)
     backdrop.position.copy(this.fish.position);
     // Offset slightly behind the fish (towards camera)
@@ -312,7 +315,10 @@ export abstract class KlosterweiherARSessionBase {
     this.fish.rotation.x += deltaY * sensitivity;
 
     // Clamp x rotation to prevent flipping
-    this.fish.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.fish.rotation.x));
+    this.fish.rotation.x = Math.max(
+      -Math.PI / 2,
+      Math.min(Math.PI / 2, this.fish.rotation.x),
+    );
 
     this.orbitStartX = clientX;
     this.orbitStartY = clientY;
@@ -333,7 +339,10 @@ export abstract class KlosterweiherARSessionBase {
     if (!this.fish || this.orbitEnabled) return;
 
     const friction = 0.95; // Friction coefficient
-    if (Math.abs(this.fishRotationVelocity.x) > 0.001 || Math.abs(this.fishRotationVelocity.y) > 0.001) {
+    if (
+      Math.abs(this.fishRotationVelocity.x) > 0.001 ||
+      Math.abs(this.fishRotationVelocity.y) > 0.001
+    ) {
       this.fish.rotation.y += this.fishRotationVelocity.y * deltaSeconds;
       this.fish.rotation.x += this.fishRotationVelocity.x * deltaSeconds;
 
@@ -342,7 +351,10 @@ export abstract class KlosterweiherARSessionBase {
       this.fishRotationVelocity.y *= friction;
 
       // Clamp x rotation
-      this.fish.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.fish.rotation.x));
+      this.fish.rotation.x = Math.max(
+        -Math.PI / 2,
+        Math.min(Math.PI / 2, this.fish.rotation.x),
+      );
     }
   }
 
@@ -350,16 +362,16 @@ export abstract class KlosterweiherARSessionBase {
    * Extract fish name from model URL
    */
   protected extractFishName(url: string): string {
-    // Extract filename from URL (e.g., "Rotauge.glb" or "Rotauge-DCD9klYJ.glb")    
+    // Extract filename from URL (e.g., "Rotauge.glb" or "Rotauge-DCD9klYJ.glb")
 
     const match = url.match(/([^/]+)\.glb(?:\?.*)?$/);
-    let name = match && match[1] ? match[1] : '';
+    let name = match && match[1] ? match[1] : "";
 
     // Delete everything after the first hyphen (including the hyphen)
-    if (name && name.includes('-')) {
-      name = name.split('-')[0];
+    if (name && name.includes("-")) {
+      name = name.split("-")[0];
     }
-    return name || 'Fisch';
+    return name || "Fisch";
   }
 
   // Platform-specific overridable methods for position/timing differences
