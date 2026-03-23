@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -28,6 +28,8 @@ import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
 import { ARLoginGuard } from './components/ARLoginGuard';
+import { useIsMobile } from './components/ui/use-mobile';
+import { isEditableTarget, useSiteFullscreen } from './hooks/useSiteFullscreen';
 
 
 interface Station {
@@ -61,6 +63,10 @@ interface Path {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const appRootRef = useRef<HTMLDivElement>(null);
+  const fullscreenAttemptRef = useRef(0);
+  const isMobile = useIsMobile();
+  const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
@@ -68,6 +74,8 @@ export default function App() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostOnboardingLoginPrompt, setShowPostOnboardingLoginPrompt] = useState(false);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+  const [wasPausedForInput, setWasPausedForInput] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
@@ -243,6 +251,110 @@ export default function App() {
       setCurrentView('home');
     }
   }, [location.pathname]);
+
+  const requestSiteFullscreen = useCallback(async () => {
+    if (!isMobile || !isSupported || isFullscreen) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - fullscreenAttemptRef.current < 1200) {
+      return;
+    }
+
+    fullscreenAttemptRef.current = now;
+    const entered = await enterFullscreen();
+    if (entered) {
+      setShowFullscreenPrompt(false);
+      setWasPausedForInput(false);
+      return;
+    }
+
+    setShowFullscreenPrompt(true);
+  }, [enterFullscreen, isFullscreen, isMobile, isSupported]);
+
+  useEffect(() => {
+    if (!isMobile || !isSupported) {
+      setShowFullscreenPrompt(false);
+      setWasPausedForInput(false);
+      return;
+    }
+
+    setShowFullscreenPrompt(!isFullscreen);
+  }, [isFullscreen, isMobile, isSupported]);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    if (isMobile && isFullscreen) {
+      html.classList.add('site-fullscreen-active');
+      body.classList.add('site-fullscreen-active');
+      return;
+    }
+
+    html.classList.remove('site-fullscreen-active');
+    body.classList.remove('site-fullscreen-active');
+
+    return () => {
+      html.classList.remove('site-fullscreen-active');
+      body.classList.remove('site-fullscreen-active');
+    };
+  }, [isFullscreen, isMobile]);
+
+  useEffect(() => {
+    if (!isMobile || !isSupported) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (isFullscreen || isEditableTarget(event.target)) {
+        return;
+      }
+
+      void requestSiteFullscreen();
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, { capture: true });
+
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, { capture: true });
+    };
+  }, [isFullscreen, isMobile, isSupported, requestSiteFullscreen]);
+
+  useEffect(() => {
+    if (!isMobile || !isSupported) {
+      return;
+    }
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (!isEditableTarget(event.target) || !isFullscreen) {
+        return;
+      }
+
+      setWasPausedForInput(true);
+      setShowFullscreenPrompt(true);
+      void exitFullscreen();
+    };
+
+    const onFocusOut = (event: FocusEvent) => {
+      if (!isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (!isFullscreen) {
+        setShowFullscreenPrompt(true);
+      }
+    };
+
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  }, [exitFullscreen, isFullscreen, isMobile, isSupported]);
 
 
   // Mock paths data - now only ONE path
@@ -629,7 +741,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div ref={appRootRef} className="min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
         <Header
           title={getPageTitle()}
@@ -904,6 +1016,17 @@ export default function App() {
           setCurrentView('rewards');
         }}
       />
+
+      {isMobile && isSupported && showFullscreenPrompt && (
+        <button
+          type="button"
+          onClick={() => void requestSiteFullscreen()}
+          className="fixed right-4 z-50 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+        >
+          {wasPausedForInput ? 'Zurueck in Vollbild' : 'Vollbild aktivieren'}
+        </button>
+      )}
     </div>
   );
 }
