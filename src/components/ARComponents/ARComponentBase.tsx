@@ -244,7 +244,7 @@ export const ARComponentBase = ({
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
-    if (isCurrentStationCompleted) {
+    if (isCurrentStationCompleted || !canCompleteStation) {
       return;
     }
 
@@ -332,23 +332,27 @@ export const ARComponentBase = ({
         )}
 
         {/* "Station abschließen"-Button */}
-        <motion.button
-          onClick={handleCompleteStation}
-          disabled={isCurrentStationCompleted}
-          className="ar-navigate-button"
-          style={isCurrentStationCompleted ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
-          whileTap={{ scale: 0.95 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="ar-navigate-button-content">
-            <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
-            <span className="ar-navigate-button-text">
-              {isCurrentStationCompleted ? 'Bereits abgeschlossen' : 'Station abschließen'}
-            </span>
-          </div>
-        </motion.button>
+        {(canCompleteStation || isCurrentStationCompleted) && (
+          <motion.button
+            onClick={handleCompleteStation}
+            disabled={isCurrentStationCompleted}
+            className="ar-navigate-button"
+            style={isCurrentStationCompleted ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="ar-navigate-button-content">
+              <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
+              <span className="ar-navigate-button-text">
+                {isCurrentStationCompleted
+                  ? 'Bereits abgeschlossen'
+                  : 'Station abschließen'}
+              </span>
+            </div>
+          </motion.button>
+        )}
 
         <ARProfileMenu
           isOpen={profileMenuOpen}
