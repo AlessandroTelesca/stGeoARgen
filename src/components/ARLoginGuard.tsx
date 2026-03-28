@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Lock, LogIn, ArrowLeft, Trophy, Bookmark, Gift } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ARLoginGuardProps {
   onLogin: () => void;
@@ -7,13 +8,14 @@ interface ARLoginGuardProps {
   onBack: () => void;
 }
 
-const benefits = [
-  { icon: Bookmark, text: 'Fortschritt wird gespeichert' },
-  { icon: Trophy, text: 'Punkte & Level freischalten' },
-  { icon: Gift, text: 'Belohnungen & Gutscheine sichern' },
-];
-
 export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps) {
+  const { t } = useLanguage();
+  const benefits = [
+    { icon: Bookmark, text: t('arBenefitProgress') },
+    { icon: Trophy, text: t('arBenefitPoints') },
+    { icon: Gift, text: t('arBenefitRewards') },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col px-6 sm:px-8 py-10">
       {/* Content */}
@@ -34,7 +36,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
               transition={{ delay: 0.2 }}
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="text-base font-medium">Zurück</span>
+              <span className="text-base font-medium">{t('back')}</span>
             </motion.button>
           </div>
           {/* Lock icon */}
@@ -54,7 +56,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            Anmeldung erforderlich
+            {t('loginRequired')}
           </motion.h2>
           <motion.p
             className="text-gray-500 text-base leading-relaxed mb-8"
@@ -62,7 +64,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Um das AR-Erlebnis zu starten und deinen Fortschritt zu speichern, musst du angemeldet sein.
+            {t('loginToStartAR')}
           </motion.p>
 
           {/* Benefits */}
@@ -100,13 +102,13 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
               className="w-full h-14 sm:h-16 text-lg sm:text-xl bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
             >
               <LogIn className="w-5 h-5" />
-              Jetzt anmelden
+              {t('loginNow')}
             </button>
             <button
               onClick={onRegister}
               className="w-full h-14 sm:h-16 text-lg sm:text-xl rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
             >
-              Konto erstellen
+              {t('createAccount')}
             </button>
           </motion.div>
         </motion.div>

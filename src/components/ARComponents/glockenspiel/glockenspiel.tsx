@@ -3,6 +3,8 @@ import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { getGlockenspielTexts } from '../../../i18n/stations/glockenspiel';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -28,6 +30,8 @@ class GlockenspielARSession extends ARVisualizer {
 }
 
 export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+  const { language } = useLanguage();
+  const glockenspielTexts = getGlockenspielTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<GlockenspielARSession | null>(null);
@@ -63,7 +67,7 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
   return (
     <ARProximityGate
       stationId={AR_VIEW_STATION_MAP['glockenspiel']}
-      stationName="Glockenspiel"
+      stationName={glockenspielTexts.stationName}
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >
@@ -81,7 +85,7 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
         totalStations={totalStations}
         totalPoints={totalPoints}
         currentStationId={1}
-        currentStationTitle="Glockenspiel"
+        currentStationTitle={glockenspielTexts.stationName}
         currentStationPoints={50}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}

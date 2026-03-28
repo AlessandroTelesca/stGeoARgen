@@ -1,0 +1,7 @@
+{
+  "stationName": "Bell Tower",
+  "description": "Experience the historic bell tower in AR",
+  "longDescription": "The bell tower is a fascinating historical instrument. Discover in the AR experience how the mechanics work and listen to the traditional melodies.",
+  "quizQuestion": "How many bells does the bell tower have?",
+  "quizOptions": ["12 bells", "18 bells", "24 bells", "30 bells"]
+}

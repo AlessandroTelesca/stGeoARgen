@@ -30,6 +30,10 @@ import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPromp
 import { ARLoginGuard } from './components/ARLoginGuard';
 import { useIsMobile } from './components/ui/use-mobile';
 import { useSiteFullscreen } from './hooks/useSiteFullscreen';
+import { useLanguage } from './contexts/LanguageContext';
+import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
+import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
+import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 
 
 interface Station {
@@ -61,6 +65,10 @@ interface Path {
 }
 
 export default function App() {
+  const { t, language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+  const glockenspielTexts = getGlockenspielTexts(language);
+  const phonomuseumTexts = getPhonomuseumTexts(language);
   const navigate = useNavigate();
   const location = useLocation();
   const appRootRef = useRef<HTMLDivElement>(null);
@@ -94,8 +102,8 @@ export default function App() {
     // lesen wir die Session direkt aus dem Objekt das login() geliefert hat
     setCurrentView('home');
     navigate('/');
-    toast.success('Erfolgreich angemeldet!', {
-      description: `Willkommen zurück!`,
+    toast.success(t('loginSuccessTitle'), {
+      description: t('welcomeBack'),
       duration: 3000,
     });
   };
@@ -105,8 +113,8 @@ export default function App() {
     await register(uname, email, password); // setzt user in useAuth
     setCurrentView('home');
     navigate('/');
-    toast.success('Konto erstellt!', {
-      description: `Willkommen, ${uname}!`,
+    toast.success(t('accountCreatedTitle'), {
+      description: t('welcomeUser').replace('{username}', uname),
       duration: 3000,
     });
   };
@@ -127,8 +135,8 @@ export default function App() {
       }))
     );
     setRewardClaimed(false);
-    toast.success('Erfolgreich abgemeldet!', {
-      description: 'Bis bald!',
+    toast.success(t('logoutSuccessTitle'), {
+      description: t('seeYouSoon'),
       duration: 3000,
     });
   };
@@ -344,57 +352,57 @@ export default function App() {
   const [paths, setPaths] = useState<Path[]>([
     {
       id: 'tourist',
-      title: 'Touristischer Themenpfad',
-      description: 'Entdecke die Highlights von St.Georgen auf diesem spannenden touristischen Rundgang durch Geschichte, Kultur und Natur.',
+      title: t('touristPathTitle'),
+      description: t('touristPathDescription'),
       imageUrl: 'https://images.unsplash.com/photo-1751876150574-a518cdbf84e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMHRvd24lMjBhcmNoaXRlY3R1cmV8ZW58MXx8fHwxNzYyMzU0ODk5fDA&ixlib=rb-4.1.0&q=80&w=1080',
       difficulty: 'Einfach',
       estimatedTime: '2-3 Std',
       stations: [
         {
           id: 1,
-          title: 'Glockenspiel',
-          description: 'Erlebe das historische Glockenspiel in AR',
-          longDescription: 'Das Glockenspiel ist ein faszinierendes historisches Instrument. Entdecke in der AR-Experience, wie die Mechanik funktioniert und höre die traditionellen Melodien.',
+          title: glockenspielTexts.stationName,
+          description: glockenspielTexts.description,
+          longDescription: glockenspielTexts.longDescription,
           imageUrl: 'https://images.unsplash.com/photo-1637255854315-ef173df43eaa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnZXJtYW4lMjBibGFjayUyMGZvcmVzdCUyMHRvd258ZW58MXx8fHwxNzYyMzUzMDI0fDA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(1)?.lat || 48.1242,
           longitude: getStationCoordinates(1)?.lng || 8.3336,
           quiz: {
-            question: 'Wie viele Glocken hat das Glockenspiel?',
-            options: ['12 Glocken', '18 Glocken', '24 Glocken', '30 Glocken'],
+            question: glockenspielTexts.quizQuestion,
+            options: glockenspielTexts.quizOptions,
             correctAnswer: 1,
           },
         },
         {
           id: 3,
-          title: 'Phonomuseum',
-          description: 'Entdecke historische Musikinstrumente in AR',
-          longDescription: 'Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.',
+          title: phonomuseumTexts.stationName,
+          description: phonomuseumTexts.description,
+          longDescription: phonomuseumTexts.longDescription,
           imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
           longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
-            question: 'Wann wurde der Phonograph erfunden?',
-            options: ['1857', '1877', '1897', '1917'],
+            question: phonomuseumTexts.quizQuestion,
+            options: phonomuseumTexts.quizOptions,
             correctAnswer: 1,
           },
         },
         {
           id: 5,
-          title: 'Klosterweiher',
-          description: 'Erkunde die Natur am historischen Klosterweiher',
-          longDescription: 'Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.',
+          title: klosterweiherTexts.stationName,
+          description: klosterweiherTexts.description,
+          longDescription: klosterweiherTexts.longDescription,
           imageUrl: 'https://images.unsplash.com/photo-1587991993507-ff688501c2b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBwYXJrJTIwcGF0aHxlbnwxfHx8fDE3NjIyNzYzODd8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
           longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
-            question: 'Welche Tierart ist am Klosterweiher besonders häufig zu sehen?',
-            options: ['Frösche', 'Enten', 'Reiher', 'Biber'],
+            question: klosterweiherTexts.quizQuestion,
+            options: klosterweiherTexts.quizOptions,
             correctAnswer: 1,
           },
         },
@@ -427,6 +435,86 @@ export default function App() {
     return sum + progress.completedStations;
   }, 0);
 
+  useEffect(() => {
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) => {
+          if (station.id !== 5) return station;
+          return {
+            ...station,
+            title: klosterweiherTexts.stationName,
+            description: klosterweiherTexts.description,
+            longDescription: klosterweiherTexts.longDescription,
+            quiz: station.quiz
+              ? {
+                  ...station.quiz,
+                  question: klosterweiherTexts.quizQuestion,
+                  options: klosterweiherTexts.quizOptions,
+                }
+              : station.quiz,
+          };
+        }),
+      }))
+    );
+  }, [klosterweiherTexts]);
+
+  useEffect(() => {
+    setPaths((prev) =>
+      prev.map((path) => ({
+        ...path,
+        stations: path.stations.map((station) => {
+          if (station.id === 1) {
+            return {
+              ...station,
+              title: glockenspielTexts.stationName,
+              description: glockenspielTexts.description,
+              longDescription: glockenspielTexts.longDescription,
+              quiz: station.quiz
+                ? {
+                    ...station.quiz,
+                    question: glockenspielTexts.quizQuestion,
+                    options: glockenspielTexts.quizOptions,
+                  }
+                : station.quiz,
+            };
+          }
+          if (station.id === 3) {
+            return {
+              ...station,
+              title: phonomuseumTexts.stationName,
+              description: phonomuseumTexts.description,
+              longDescription: phonomuseumTexts.longDescription,
+              quiz: station.quiz
+                ? {
+                    ...station.quiz,
+                    question: phonomuseumTexts.quizQuestion,
+                    options: phonomuseumTexts.quizOptions,
+                  }
+                : station.quiz,
+            };
+          }
+          return station;
+        }),
+      }))
+    );
+  }, [glockenspielTexts, phonomuseumTexts]);
+
+  useEffect(() => {
+    setPaths((prev) =>
+      prev.map((path) => {
+        if (path.id === 'tourist') {
+          return {
+            ...path,
+            title: t('touristPathTitle'),
+            description: t('touristPathDescription'),
+          };
+        }
+        return path;
+      })
+    );
+  }, [language, t]);
+
   const handlePathSelect = (pathId: string) => {
     setSelectedPathId(pathId);
     setCurrentView('path');
@@ -446,8 +534,8 @@ export default function App() {
   const handleStationComplete = async (stationId: number) => {
     // Bereits abgeschlossene Stationen bleiben wiederholbar, geben aber keine Punkte mehr.
     if (isStationCompleted(stationId)) {
-      toast.info('Station bereits abgeschlossen', {
-        description: 'Beim Wiederholen dieser Station erhältst du keine weiteren Punkte.',
+      toast.info(t('stationAlreadyCompleted'), {
+        description: t('stationRepeatNoPoints'),
         duration: 3500,
       });
       return;
@@ -555,8 +643,8 @@ export default function App() {
       try {
         await resetUserProgress(user.id);
       } catch (error) {
-        toast.error('Fortschritt konnte nicht zurueckgesetzt werden.', {
-          description: error instanceof Error ? error.message : 'Bitte versuche es erneut.',
+        toast.error(t('progressResetFailed'), {
+          description: error instanceof Error ? error.message : t('pleaseTryAgain'),
           duration: 4000,
         });
         return;
@@ -579,8 +667,8 @@ export default function App() {
     localStorage.removeItem('st-geoargen-onboarding-complete');
     setShowOnboarding(true);
 
-    toast.success('Fortschritt zurueckgesetzt.', {
-      description: user ? 'Dein Fortschritt wurde auch in der Datenbank geloescht.' : 'Lokaler Fortschritt wurde geloescht.',
+    toast.success(t('progressResetDone'), {
+      description: user ? t('progressResetDoneDb') : t('progressResetDoneLocal'),
       duration: 3000,
     });
   };
@@ -642,7 +730,7 @@ export default function App() {
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
         window.open(arView, '_blank');
       } else {
-        alert(`QR Code gescannt: ${arView}`);
+        alert(t('qrCodeScannedContent').replace('{content}', arView));
       }
     }
   };
@@ -708,16 +796,16 @@ export default function App() {
 
   const getPageTitle = () => {
     if (currentView === 'home') return 'St.GeoARgen';
-    if (currentView === 'paths') return 'Themenpfade';
-    if (currentView === 'settings') return 'Einstellungen';
-    if (currentView === 'profile') return 'Profil';
-    if (currentView === 'points') return 'Punkte';
-    if (currentView === 'stations') return 'Stationen';
-    if (currentView === 'progress') return 'Fortschritt';
-    if (currentView === 'rewards') return 'Belohnungen';
-    if (currentView === 'login') return 'Anmeldung';
-    if (currentView === 'register') return 'Registrierung';
-    if (currentView === 'forgot-password') return 'Passwort vergessen';
+    if (currentView === 'paths') return t('paths');
+    if (currentView === 'settings') return t('settings');
+    if (currentView === 'profile') return t('profile');
+    if (currentView === 'points') return t('points');
+    if (currentView === 'stations') return t('stations');
+    if (currentView === 'progress') return t('progress');
+    if (currentView === 'rewards') return t('rewards');
+    if (currentView === 'login') return t('login');
+    if (currentView === 'register') return t('register');
+    if (currentView === 'forgot-password') return t('forgotPassword');
     if (currentView === 'path' && selectedPath) return selectedPath.title;
     if (currentView === 'station' && selectedStation) return selectedStation.title;
     return 'St.GeoARgen';

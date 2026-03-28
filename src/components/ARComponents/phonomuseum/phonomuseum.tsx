@@ -3,6 +3,8 @@ import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -28,6 +30,8 @@ class PhonomuseumARSession extends ARVisualizer {
 }
 
 export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+  const { language } = useLanguage();
+  const phonomuseumTexts = getPhonomuseumTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -63,7 +67,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   return (
     <ARProximityGate
       stationId={AR_VIEW_STATION_MAP['phonomuseum']}
-      stationName="Phonomuseum"
+      stationName={phonomuseumTexts.stationName}
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >
@@ -81,7 +85,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         totalStations={totalStations}
         totalPoints={totalPoints}
         currentStationId={3}
-        currentStationTitle="Phonomuseum"
+        currentStationTitle={phonomuseumTexts.stationName}
         currentStationPoints={50}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}

@@ -6,6 +6,7 @@ import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
 import { motion } from 'motion/react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
@@ -131,6 +132,7 @@ export const ARComponentBase = ({
   onCompleteStation,
   isCurrentStationCompleted = false,
 }: ARComponentBaseProps) => {
+  const { t } = useLanguage();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearestStation, setNearestStation] = useState<typeof STATIONS[0] | null>(null);
@@ -170,7 +172,7 @@ export const ARComponentBase = ({
     const incompleteStations = STATIONS.filter((station, index) => index >= progress.current - 1);
 
     if (incompleteStations.length === 0) {
-      console.log('Alle Stationen abgeschlossen!');
+      console.log(t('allStationsCompleted'));
       setNearestStation(STATIONS[STATIONS.length - 1]); // Fallback zur letzten Station
       setDistanceToNext(null);
       return;
@@ -331,8 +333,8 @@ export const ARComponentBase = ({
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-700" />
               <div className="text-sm text-amber-900">
-                <p className="font-semibold">Station bereits abgeschlossen</p>
-                <p>Du kannst diese Station erneut erleben, aber bekommst dafuer keine weiteren Punkte.</p>
+                <p className="font-semibold">{t('stationAlreadyCompleted')}</p>
+                <p>{t('canExperienceAgain')}</p>
               </div>
             </div>
           </motion.div>
@@ -354,8 +356,8 @@ export const ARComponentBase = ({
               <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
               <span className="ar-navigate-button-text">
                 {isCurrentStationCompleted
-                  ? 'Bereits abgeschlossen'
-                  : 'Station abschließen'}
+                  ? t('stationAlreadyCompleted')
+                  : t('completeStation')}
               </span>
             </div>
           </motion.button>

@@ -1,6 +1,7 @@
 import { Menu, X, Home, Map, QrCode, Settings, Gift, User, ChevronDown, LogIn, UserPlus, LogOut, MapPin, TrendingUp, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HeaderProps {
   title: string;
@@ -15,6 +16,7 @@ interface HeaderProps {
 export function Header({ title, onNavigate, currentView, username, onLogin, onLogout, onRegister }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const { t } = useLanguage();
 
   const handleLogin = () => {
     onLogin();
@@ -33,11 +35,11 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
   };
 
   const menuItems = [
-    { id: 'home', label: 'Startseite', Icon: Home },
-    { id: 'paths', label: 'Themenpfade', Icon: Map },
-    { id: 'rewards', label: 'Belohnungen', Icon: Gift },
-    { id: 'qr-scanner', label: 'QR Scanner', Icon: QrCode },
-    { id: 'settings', label: 'Einstellungen', Icon: Settings },
+    { id: 'home', label: t('home'), Icon: Home },
+    { id: 'paths', label: t('paths'), Icon: Map },
+    { id: 'rewards', label: t('rewards'), Icon: Gift },
+    { id: 'qr-scanner', label: t('qrScanner'), Icon: QrCode },
+    { id: 'settings', label: t('settings'), Icon: Settings },
   ];
 
   const handleNavigate = (view: string) => {
@@ -74,7 +76,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            aria-label="Menu"
+            aria-label={t('menu')}
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -108,7 +110,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                   <button
                     onClick={() => setMenuOpen(false)}
                     className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors relative"
-                    aria-label="Close menu"
+                    aria-label={t('closeMenu')}
                   >
                     <motion.div
                       initial="closed"
@@ -156,8 +158,8 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                       <User className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold">{username || 'Gast'}</p>
-                      <p className="text-xs text-muted-foreground">{username ? 'Angemeldet' : 'Nicht angemeldet'}</p>
+                      <p className="text-sm font-semibold">{username || t('guest')}</p>
+                      <p className="text-xs text-muted-foreground">{username ? t('loggedIn') : t('notLoggedIn')}</p>
                     </div>
                     <motion.div
                       animate={{ rotate: userDropdownOpen ? 180 : 0 }}
@@ -184,14 +186,14 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                               >
                                 <LogIn className="w-4 h-4" />
-                                Anmelden
+                                {t('login')}
                               </button>
                               <button
                                 onClick={handleRegister}
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                               >
                                 <UserPlus className="w-4 h-4" />
-                                Registrieren
+                                {t('register')}
                               </button>
                             </>
                           ) : (
@@ -205,14 +207,14 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                               >
                                 <User className="w-4 h-4" />
-                                Profil
+                                {t('profile')}
                               </button>
                               <button
                                 onClick={handleLogout}
                                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-red-600"
                               >
                                 <LogOut className="w-4 h-4" />
-                                Abmelden
+                                {t('logout')}
                               </button>
                             </>
                           )}
@@ -247,7 +249,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                 </nav>
 
                 <div className="mt-8 p-4 bg-muted/50 rounded-xl">
-                  <p className="text-xs text-muted-foreground mb-2">Version</p>
+                  <p className="text-xs text-muted-foreground mb-2">{t('version')}</p>
                   <p className="text-sm font-semibold">St.GeoARgen v1.0</p>
                 </div>
               </div>

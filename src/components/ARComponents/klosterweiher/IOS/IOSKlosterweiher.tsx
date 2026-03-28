@@ -4,6 +4,8 @@ import { ARComponentBase } from "../../ARComponentBase";
 import { ARProximityGate } from "../../ARProximityGate";
 import { ARVisualizer } from "../../../../ARbackend/ARVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
+import { useLanguage } from "../../../../contexts/LanguageContext";
+import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
 import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
 import {
   WaitingForReady,
@@ -464,6 +466,8 @@ export const IOSKlosterweiherView = ({
   onCompleteStation,
   isCurrentStationCompleted = false,
 }: ARViewProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -607,7 +611,7 @@ export const IOSKlosterweiherView = ({
         totalStations={totalStations}
         totalPoints={totalPoints}
         currentStationId={5}
-        currentStationTitle="Klosterweiher"
+        currentStationTitle={klosterweiherTexts.stationName}
         currentStationPoints={45}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
@@ -680,7 +684,7 @@ export const IOSKlosterweiherView = ({
   return (
     <ARProximityGate
       stationId={AR_VIEW_STATION_MAP["klosterweiher"]}
-      stationName="Klosterweiher"
+      stationName={klosterweiherTexts.stationName}
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >

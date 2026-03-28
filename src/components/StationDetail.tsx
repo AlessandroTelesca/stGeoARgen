@@ -8,6 +8,7 @@ import { Trophy } from 'lucide-react';
 import { MapPin, Clock, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface QuizQuestion {
   question: string;
@@ -46,6 +47,7 @@ const STATION_AR_ROUTES: Record<number, string> = {
 export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const isCompleted = station.status === 'completed';
 
   // Proximity check - only for stations with AR routes
@@ -144,9 +146,9 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
               <div className="w-20 h-20 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-4 flex items-center justify-center">
                 <Lock className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="font-semibold mb-2 text-lg text-gray-900">Anmeldung erforderlich</h3>
+              <h3 className="font-semibold mb-2 text-lg text-gray-900">{t('loginRequired')}</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Melde dich an, um das AR-Erlebnis zu starten und deinen Fortschritt zu speichern.
+                {t('loginToStartAR')}
               </p>
               <div className="space-y-3">
                 <button
@@ -154,14 +156,14 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
                   className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <LogIn className="w-5 h-5" />
-                  <span>Jetzt anmelden</span>
+                  <span>{t('loginNow')}</span>
                 </button>
                 {onNavigateToRegister && (
                   <button
                     onClick={onNavigateToRegister}
                     className="w-full bg-white text-primary border-2 border-primary py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
                   >
-                    Konto erstellen
+                    {t('createAccount')}
                   </button>
                 )}
               </div>
@@ -178,7 +180,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
                 <div className="w-full">
-                  <h3 className="font-semibold mb-1 text-warning">Standortzugriff erforderlich</h3>
+                  <h3 className="font-semibold mb-1 text-warning">{t('locationAccessRequired')}</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {locationError}
                   </p>
@@ -187,7 +189,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
                     className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                   >
                     <Navigation className="w-5 h-5" />
-                    <span>Zur Station navigieren</span>
+                    <span>{t('navigateToStation', { stationName: station.title })}</span>
                   </button>
                 </div>
               </div>
@@ -205,13 +207,13 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
               <div className="w-20 h-20 bg-warning/20 border-2 border-warning rounded-full mx-auto mb-4 flex items-center justify-center">
                 <MapPin className="w-10 h-10 text-warning" />
               </div>
-              <h3 className="font-semibold mb-2">Zu weit entfernt</h3>
+              <h3 className="font-semibold mb-2">{t('tooFarAway')}</h3>
               <div className="inline-block bg-warning/20 text-warning px-4 py-2 rounded-lg mb-4">
                 <p className="text-2xl font-bold">{Math.round(distance)}m</p>
-                <p className="text-xs opacity-75">Entfernung zur Station</p>
+                <p className="text-xs opacity-75">{t('estimatedDistance')}</p>
               </div>
               <p className="text-sm opacity-75 mb-6">
-                Nähere dich auf mindestens 100 Meter, um das AR-Erlebnis freizuschalten.
+                {t('getCloserDistance')}
               </p>
               <div className="space-y-3">
                 <button
@@ -219,7 +221,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
                   className="w-full bg-white text-black py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>Zur Station navigieren</span>
+                  <span>{t('navigateToStation', { stationName: station.title })}</span>
                 </button>
               </div>
             </motion.div>
@@ -237,11 +239,11 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
               </div>
               <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-3">
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="text-sm font-semibold">In Reichweite ({Math.round(distance!)}m)</span>
+                <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
               </div>
-              <h3 className="font-semibold mb-2">AR-Erlebnis verfügbar!</h3>
+              <h3 className="font-semibold mb-2">{t('arExperienceAvailable')}</h3>
               <p className="text-sm opacity-90 mb-6">
-                Du bist nah genug an der Station. Starte jetzt das AR-Erlebnis und entdecke mehr über diesen Ort.
+                {t('closeEnoughDescription')}
               </p>
               <div className="space-y-3">
                 <button
@@ -249,14 +251,14 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
                   className="w-full bg-white text-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
                 >
                   <Play className="w-5 h-5" />
-                  <span>AR-Erlebnis starten</span>
+                  <span>{t('startARExperience')}</span>
                 </button>
                 <button
                   onClick={handleNavigateToStation}
                   className="w-full bg-white/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>Navigation zur Station</span>
+                  <span>{t('navigateToStation', { stationName: station.title })}</span>
                 </button>
               </div>
             </motion.div>
@@ -269,16 +271,16 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <h3 className="font-semibold mb-2">Informationsstation</h3>
+              <h3 className="font-semibold mb-2">{t('informationStation')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Diese Station hat kein AR-Erlebnis. Besuche sie vor Ort für mehr Informationen.
+                {t('noARExperience')}
               </p>
               <button
                 onClick={handleNavigateToStation}
                 className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
                 <Navigation className="w-5 h-5" />
-                <span>Navigation zur Station</span>
+                <span>{t('navigateToStation', { stationName: station.title })}</span>
               </button>
             </motion.div>
           )}
@@ -287,35 +289,35 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
           {isCompleted && (
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 text-center">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Station abgeschlossen</h3>
+              <h3 className="font-semibold mb-2">{t('stationCompleted')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Du hast diese Station bereits besucht. Du kannst sie erneut starten, erhältst aber keine weiteren Punkte.
+                {t('stationCompletedReplay')}
               </p>
               <button
                 onClick={handleStartARExperience}
                 className="w-full bg-white text-primary border border-primary/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
                 <Play className="w-5 h-5" />
-                <span>Station wiederholen</span>
+                <span>{t('repeatStation')}</span>
               </button>
             </div>
           )}
 
           {/* Additional Info */}
           <div className="bg-white border border-border rounded-2xl p-4">
-            <h4 className="font-semibold mb-3">Wissenswertes</h4>
+            <h4 className="font-semibold mb-3">{t('stationFunFacts')}</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>Im Zentrum von St.Georgen</span>
+                <span>{t('stationLocation')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>Geschätzte Dauer: 10-15 Minuten</span>
+                <span>{t('stationEstimatedDuration')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                <span>Schwierigkeit: Einfach</span>
+                <span>{t('stationDifficulty')}</span>
               </div>
             </div>
           </div>

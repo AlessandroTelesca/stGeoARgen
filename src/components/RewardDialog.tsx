@@ -3,6 +3,7 @@ import { Trophy, X, MapPin, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Locality {
   id: string;
@@ -43,6 +44,7 @@ const localities: Locality[] = [
 
 export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
   const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleConfirm = () => {
     if (selectedLocality) {
@@ -83,9 +85,9 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
             >
               <Trophy className="w-12 h-12 text-yellow-300" />
             </motion.div>
-            <h2 className="text-2xl mb-2">Herzlichen Glückwunsch!</h2>
+            <h2 className="text-2xl mb-2">{t('congratulations')}</h2>
             <p className="text-white/90">
-              Du hast alle Stationen erfolgreich abgeschlossen und die volle Punktzahl erreicht!
+              {t('congratulationsDescription')}
             </p>
           </div>
         </div>
@@ -93,7 +95,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
         {/* Content */}
         <div className="p-6">
           <h3 className="text-lg mb-4 text-gray-900">
-            Wähle deinen Gutschein:
+            {t('chooseVoucher')}
           </h3>
 
           <div className="space-y-3">
@@ -148,19 +150,19 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
               onClick={onClose}
               className="flex-1"
             >
-              Später
+              {t('later')}
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={!selectedLocality}
               className="flex-1 bg-[#0C690F] hover:bg-[#0a5a0d] text-white"
             >
-              Gutschein einlösen
+              {t('redeemVoucher')}
             </Button>
           </div>
 
           <p className="text-xs text-center text-gray-500 mt-4">
-            Der Gutschein wird nach der Auswahl an deine E-Mail gesendet
+            {t('voucherEmailSent')}
           </p>
         </div>
       </motion.div>

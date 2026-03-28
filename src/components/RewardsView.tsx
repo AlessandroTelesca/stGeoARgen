@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Voucher {
   id: string;
@@ -77,6 +78,7 @@ const vouchers: Voucher[] = [
 ];
 
 export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
+  const { t } = useLanguage();
   const isVoucherUnlocked = (requiredPoints: number) => totalPoints >= requiredPoints;
   const unlockedCount = vouchers.filter(v => isVoucherUnlocked(v.requiredPoints)).length;
 
@@ -90,7 +92,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
         </div>
       </div>
@@ -107,9 +109,9 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
               <Gift className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Belohnungen</h1>
+              <h1 className="text-2xl font-bold">{t('rewardsTitle')}</h1>
               <p className="text-muted-foreground">
-                {unlockedCount} von {vouchers.length} Gutscheinen freigeschaltet
+                {t('unlockedVouchers').replace('{unlockedCount}', String(unlockedCount)).replace('{totalCount}', String(vouchers.length))}
               </p>
             </div>
           </div>
@@ -118,7 +120,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
           <Card className="p-6 bg-gradient-to-br from-primary to-primary-light text-white border-0">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <div className="text-white/80 text-sm mb-1">Deine Punkte</div>
+                <div className="text-white/80 text-sm mb-1">{t('yourPoints')}</div>
                 <p className="text-3xl font-bold">{totalPoints}</p>
               </div>
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -126,7 +128,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
               </div>
             </div>
             <div className="text-sm text-white/80">
-              Sammle mehr Punkte, um weitere Gutscheine freizuschalten!
+              {t('collectMorePoints')}
             </div>
           </Card>
         </motion.div>
@@ -168,7 +170,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
                         <div className="text-center text-white">
                           <Lock className="w-8 h-8 mx-auto mb-2" />
                           <p className="font-semibold">
-                            {voucher.requiredPoints - totalPoints} Punkte fehlen
+                            {t('pointsMissing').replace('{count}', String(voucher.requiredPoints - totalPoints))}
                           </p>
                         </div>
                       </div>
@@ -197,8 +199,8 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
                     {!unlocked && (
                       <div className="mb-4">
                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                          <span>Fortschritt</span>
-                          <span>{totalPoints} / {voucher.requiredPoints} Punkte</span>
+                          <span>{t('progressLabel')}</span>
+                          <span>{totalPoints} / {voucher.requiredPoints} {t('points')}</span>
                         </div>
                         <Progress value={progressToUnlock} className="h-2" />
                       </div>
@@ -216,12 +218,12 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
                       {unlocked ? (
                         <>
                           <Gift className="w-4 h-4 mr-2" />
-                          Gutschein einlösen
+                          {t('redeemVoucher')}
                         </>
                       ) : (
                         <>
                           <Lock className="w-4 h-4 mr-2" />
-                          {voucher.requiredPoints} Punkte nötig
+                          {t('pointsNeeded').replace('{count}', String(voucher.requiredPoints))}
                         </>
                       )}
                     </Button>
@@ -240,7 +242,7 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
           transition={{ delay: 0.6 }}
         >
           <p>
-            Tipp: Besuche mehr Stationen und beantworte Quiz-Fragen richtig, um Punkte zu sammeln!
+            {t('rewardsTip')}
           </p>
         </motion.div>
       </div>

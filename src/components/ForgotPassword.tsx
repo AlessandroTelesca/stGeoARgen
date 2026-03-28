@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ForgotPasswordProps {
   onNavigateBack?: () => void;
@@ -11,6 +12,7 @@ interface ForgotPasswordProps {
 }
 
 export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateToRegister }: ForgotPasswordProps) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -19,8 +21,8 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
 
   // Validation
   const validateEmail = (value: string) => {
-    if (!value) return 'E-Mail ist erforderlich';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Ungültige E-Mail-Adresse';
+    if (!value) return t('emailRequired');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t('invalidEmail');
     return '';
   };
 
@@ -98,7 +100,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              E-Mail gesendet!
+              {t('emailSent')}
             </motion.h1>
             <motion.p
               className="text-base sm:text-lg text-muted-foreground mb-8 px-4"
@@ -106,9 +108,9 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              Wir haben dir einen Link zum Zurücksetzen deines Passworts an{' '}
-              <span className="font-medium text-foreground">{email}</span> gesendet.
-              Überprüfe dein Postfach und folge den Anweisungen.
+              {t('emailSentDescStart')}{' '}
+              <span className="font-medium text-foreground">{email}</span>{' '}
+              {t('emailSentDescEnd')}
             </motion.p>
 
             {/* Logo */}
@@ -133,7 +135,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                 onClick={onNavigateToLogin}
                 className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
               >
-                Zurück zur Anmeldung
+                {t('backToLogin')}
               </Button>
             </motion.div>
 
@@ -144,12 +146,12 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
             >
-              Keine E-Mail erhalten?{' '}
+              {t('noEmailReceived')}{' '}
               <button
                 onClick={() => setIsSuccess(false)}
                 className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
               >
-                Erneut senden
+                {t('sendAgain')}
               </button>
             </motion.p>
           </motion.div>
@@ -176,7 +178,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
             transition={{ delay: 0.1 }}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-base font-medium">Zurück</span>
+            <span className="text-base font-medium">{t('back')}</span>
           </motion.button>
         )}
 
@@ -212,7 +214,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              Passwort vergessen?
+              {t('forgotPassword')}
             </motion.h1>
             <motion.p
               className="text-base sm:text-lg text-muted-foreground text-center px-4"
@@ -220,7 +222,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              Kein Problem! Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
+              {t('forgotPasswordSubtitle')}
             </motion.p>
           </div>
 
@@ -233,7 +235,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               transition={{ delay: 0.6 }}
             >
               <label htmlFor="email" className="block text-base sm:text-lg font-medium mb-4">
-                E-Mail-Adresse
+                {t('emailAddress')}
               </label>
               <div className="relative">
                 <Mail className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -243,7 +245,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                   value={email}
                   onChange={handleEmailChange}
                   onBlur={handleBlur}
-                  placeholder="deine@email.de"
+                  placeholder={t('emailPlaceholder')}
                   className={`pr-4 h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.email && errors.email ? 'border-destructive' : ''}`}
                   style={{ paddingLeft: '3.5rem' }}
                   disabled={isLoading}
@@ -285,10 +287,10 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     />
-                    Wird gesendet...
+                    {t('sending')}
                   </span>
                 ) : (
-                  'Link zum Zurücksetzen senden'
+                  t('sendResetLink')
                 )}
               </Button>
             </motion.div>
@@ -320,7 +322,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-sm sm:text-base uppercase">
-              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">oder</span>
+              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">{t('or')}</span>
             </div>
           </motion.div>
 
@@ -332,14 +334,14 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
             transition={{ delay: 0.9 }}
           >
             <p className="text-base sm:text-lg text-foreground">
-              Passwort wieder eingefallen?{' '}
+              {t('rememberedPassword')}{' '}
               <button
                 type="button"
                 onClick={onNavigateToLogin}
                 className="text-primary hover:text-primary/80 hover:underline font-semibold transition-colors"
                 disabled={isLoading}
               >
-                Jetzt anmelden
+                {t('loginNow')}
               </button>
             </p>
           </motion.div>
@@ -352,14 +354,14 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
           animate={{ opacity: 1 }}
           transition={{ delay: 1.0 }}
         >
-          Du erhältst nur eine E-Mail, wenn ein Konto mit dieser Adresse existiert. Falls nicht, kannst du dich{' '}
+          {t('forgotPasswordAccountHint')}{' '}
           <button
             type="button"
             onClick={onNavigateToRegister}
             className="text-primary hover:underline"
             disabled={isLoading}
           >
-            hier registrieren
+            {t('registerHere')}
           </button>
         </motion.p>
       </motion.div>
