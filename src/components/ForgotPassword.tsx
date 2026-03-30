@@ -339,7 +339,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
           )}
 
           <motion.div className="p-0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-            <div className="flex flex-col items-center mb-16" style={{ marginBottom: '5rem' }}>
+            <div className="flex flex-col items-center mb-12">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -365,9 +365,9 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               </motion.p>
             </div>
 
-            <form onSubmit={handleResetSubmit} className="space-y-8 sm:space-y-10">
+            <form onSubmit={handleResetSubmit} className="space-y-6 sm:space-y-7">
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}>
-                <label htmlFor="new-password" className="block text-base sm:text-lg font-medium mb-4">Neues Passwort</label>
+                <label htmlFor="new-password" className="block text-base sm:text-lg font-medium mb-3">Neues Passwort</label>
                 <Input
                   id="new-password"
                   type="password"
@@ -386,7 +386,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                     setTouched(prev => ({ ...prev, password: true }));
                     setErrors(prev => ({ ...prev, password: validatePassword(password) }));
                   }}
-                  className={`h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.password && errors.password ? 'border-destructive' : ''}`}
+                  className={`h-12 sm:h-14 text-base sm:text-lg bg-white ${touched.password && errors.password ? 'border-destructive' : ''}`}
                   disabled={isLoading}
                   autoComplete="new-password"
                 />
@@ -401,7 +401,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
               </motion.div>
 
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}>
-                <label htmlFor="confirm-password" className="block text-base sm:text-lg font-medium mb-4">Passwort bestätigen</label>
+                <label htmlFor="confirm-password" className="block text-base sm:text-lg font-medium mb-3">Passwort bestätigen</label>
                 <Input
                   id="confirm-password"
                   type="password"
@@ -417,7 +417,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                     setTouched(prev => ({ ...prev, confirmPassword: true }));
                     setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(password, confirmPassword) }));
                   }}
-                  className={`h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.confirmPassword && errors.confirmPassword ? 'border-destructive' : ''}`}
+                  className={`h-12 sm:h-14 text-base sm:text-lg bg-white ${touched.confirmPassword && errors.confirmPassword ? 'border-destructive' : ''}`}
                   disabled={isLoading}
                   autoComplete="new-password"
                 />
@@ -431,7 +431,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
                 </AnimatePresence>
               </motion.div>
 
-              <motion.div className="pt-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+              <motion.div className="pt-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
                 <Button
                   type="submit"
                   className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"

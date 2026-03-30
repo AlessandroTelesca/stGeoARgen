@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = json_decode(file_get_contents('php://input'), true);
 $token = trim($body['token'] ?? '');
-$newPassword = $body['password'] ?? '';
+$newPassword = $body['password'] ?? '';  // Note: Don't trim password - user might want leading/trailing spaces
 
 if (empty($token)) {
     sendResponse(['success' => false, 'message' => 'Reset-Token fehlt.'], 400);
@@ -41,7 +41,18 @@ try {
 
     if (!$resetEntry) {
         $db->rollBack();
-        sendResponse(['success' => false, 'message' => 'Der Reset-Link ist ungueltig oder abgelaufen.'], 400);
+        // Check if token exists but is expired or already used (for debugging)
+        $debugStmt = $db->prepare('SELECT id, user_id, used_at, expires_at FROM password_resets WHERE token_hash = ? LIMIT 1');
+        $debugStmt->execute([$tokenHash]);
+        $debugEntry = $debugStmt->fetch();
+        
+        if ($debugEntry && $debugEntry['used_at']) {
+            sendResponse(['success' => false, 'message' => 'Dieser Reset-Link wurde bereits verwendet.'], 400);
+        } elseif ($debugEntry && strtotime($debugEntry['expires_at']) < time()) {
+            sendResponse(['success' => false, 'message' => 'Der Reset-Link ist abgelaufen. Fordere einen neuen Link an.'], 400);
+        } else {
+            sendResponse(['success' => false, 'message' => 'Der Reset-Link ist ungueltig oder abgelaufen.'], 400);
+        }
     }
 
     $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
