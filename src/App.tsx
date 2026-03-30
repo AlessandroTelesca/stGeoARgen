@@ -18,6 +18,8 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
+import { VoucherRedeemPage } from './components/VoucherRedeemPage';
+import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
@@ -68,7 +70,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -80,6 +82,8 @@ export default function App() {
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
+  // Punkte aus Gutschein-Einlösungen (aus DB)
+  const [dbBonusPoints, setDbBonusPoints] = useState(0);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -213,6 +217,16 @@ export default function App() {
         }
       })
       .catch(() => { /* Progress konnte nicht geladen werden */ });
+
+    // DB-Punkte aus Gutschein-Einlösungen laden
+    fetch(`/api/get_user_points.php?user_id=${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setDbBonusPoints(data.total_points);
+        }
+      })
+      .catch(() => { /* Punkte konnten nicht geladen werden */ });
   }, [user?.id]); // nur wenn sich die User-ID ändert
 
   const handleOnboardingComplete = () => {
@@ -249,6 +263,12 @@ export default function App() {
       setCurrentView('progress');
     } else if (path === '/rewards') {
       setCurrentView('rewards');
+    } else if (path === '/my-voucher') {
+      navigate('/my-voucher');
+      setCurrentView('my-voucher');
+    } else if (path === '/partner') {
+      navigate('/partner');
+      setCurrentView('partner');
     } else if (path === '/paths') {
       setCurrentView('paths');
     } else if (path === '/login') {
@@ -420,7 +440,7 @@ export default function App() {
   const totalPoints = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.earnedPoints;
-  }, 0) + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500;
+  }, 0) + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500 + dbBonusPoints;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -616,6 +636,12 @@ export default function App() {
       setCurrentView('progress');
     } else if (view === 'rewards') {
       setCurrentView('rewards');
+    } else if (view === 'my-voucher') {
+      navigate('/my-voucher');
+      setCurrentView('my-voucher');
+    } else if (view === 'partner') {
+      navigate('/partner');
+      setCurrentView('partner');
     }
   };
 
@@ -715,6 +741,8 @@ export default function App() {
     if (currentView === 'stations') return 'Stationen';
     if (currentView === 'progress') return 'Fortschritt';
     if (currentView === 'rewards') return 'Belohnungen';
+    if (currentView === 'my-voucher') return 'Meine Gutscheine';
+    if (currentView === 'partner') return 'Partner Gutschein Validierung';
     if (currentView === 'login') return 'Anmeldung';
     if (currentView === 'register') return 'Registrierung';
     if (currentView === 'forgot-password') return 'Passwort vergessen';
@@ -1003,7 +1031,12 @@ export default function App() {
           setCurrentView('rewards');
         }}
       />
-
+      {currentView === 'my-voucher' && (
+        <VoucherRedeemPage userId={user?.id ?? 0} />
+      )}
+      {currentView === 'partner' && (
+        <PartnerVoucherValidation />
+      )}
     </div>
   );
 }
