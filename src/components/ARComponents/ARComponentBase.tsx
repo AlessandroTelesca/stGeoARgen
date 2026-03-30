@@ -5,7 +5,7 @@ import { ARProfileMenu } from './ARProfileMenu';
 import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
 import { motion } from 'motion/react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
@@ -321,22 +321,6 @@ export const ARComponentBase = ({
         />
 
         <ARProgressBar progress={progress} stations={stations} />
-
-        {isCurrentStationCompleted && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-3 mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3"
-          >
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-700" />
-              <div className="text-sm text-amber-900">
-                <p className="font-semibold">Station bereits abgeschlossen</p>
-                <p>Du kannst diese Station erneut erleben, aber bekommst dafuer keine weiteren Punkte.</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {/* "Station abschließen"-Button */}
         {canCompleteStation && !hasClickedComplete && (
