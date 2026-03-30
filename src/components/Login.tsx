@@ -277,7 +277,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               <button
                 type="button"
                 onClick={() => !isLoading && setRememberMe(v => !v)}
-                className="flex items-center gap-2.5 group"
+                className="flex items-center gap-4 group"
                 disabled={isLoading}
                 aria-label="Angemeldet bleiben"
               >
@@ -317,7 +317,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
             >
               <Button
                 type="submit"
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
+                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all"
                 disabled={isLoading || !isFormValid}
               >
                 {isLoading ? (

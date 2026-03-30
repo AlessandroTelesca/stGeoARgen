@@ -418,7 +418,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
             >
               <Button
                 type="submit"
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
+                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all"
                 disabled={isLoading || !isFormValid}
               >
                 {isLoading ? (
