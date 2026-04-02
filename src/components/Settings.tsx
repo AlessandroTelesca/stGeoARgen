@@ -2,7 +2,6 @@ import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User, Maximiz
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import type { Language } from '../i18n/translations';
 
 interface SettingsProps {
   onResetProgress: () => Promise<void> | void;
@@ -103,7 +102,7 @@ export function Settings({
                 </button>
               </div>
 
-              <div className="p-4 flex items-center justify-between">
+              <div className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Globe className="w-5 h-5 text-primary" />
@@ -113,14 +112,32 @@ export function Settings({
                     <p className="text-sm text-muted-foreground">{language === 'de' ? t('languageGerman') : t('languageEnglish')}</p>
                   </div>
                 </div>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value as Language)}
-                  className="px-4 py-2 bg-muted rounded-lg border border-border"
-                >
-                  <option value="de">{t('languageGerman')}</option>
-                  <option value="en">{t('languageEnglish')}</option>
-                </select>
+                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('de')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      language === 'de'
+                        ? 'bg-white text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    aria-pressed={language === 'de'}
+                  >
+                    {t('languageGerman')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('en')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      language === 'en'
+                        ? 'bg-white text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    aria-pressed={language === 'en'}
+                  >
+                    {t('languageEnglish')}
+                  </button>
+                </div>
               </div>
 
               <div className="p-4 flex items-center justify-between">
