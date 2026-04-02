@@ -20,6 +20,26 @@ const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
   'Karpfen': 'male',      // der Karpfen
 };
 
+// Model names are German, but English JSON files use translated filenames.
+const EN_FISH_FILE_MAP: Record<string, string> = {
+  Doebel: 'Chub',
+  Forelle: 'Trout',
+  Karpfen: 'Carp',
+  Neunauge: 'Lamprey',
+  Rotauge: 'Roach',
+  Rotfeder: 'Rudd',
+  Schleie: 'Tench',
+  Stichling: 'Stickleback',
+  Zander: 'Zander',
+};
+
+const getFishInfoFileName = (fishName: string, language: 'de' | 'en'): string => {
+  if (language === 'en') {
+    return EN_FISH_FILE_MAP[fishName] || fishName;
+  }
+  return fishName;
+};
+
 interface TapInstructionGIFProps {
   overlayRoot: HTMLDivElement;
 }
@@ -388,6 +408,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
+  const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -398,14 +419,14 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishInfoFileName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
         const data = await response.json();
         setFishInfo(data);
       } catch (err) {
-        console.error(`Failed to load fish info for ${fishName}:`, err);
+        console.error(`Failed to load fish info for ${fishInfoFileName}:`, err);
         setError(true);
       } finally {
         setLoading(false);
@@ -413,7 +434,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishInfoBasePath, fishName]);
+  }, [fishInfoBasePath, fishInfoFileName]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -618,6 +639,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
+  const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -627,14 +649,14 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishInfoFileName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
         const data = await response.json();
         setFishInfo(data);
       } catch (err) {
-        console.error(`Failed to load fish info for ${fishName}:`, err);
+        console.error(`Failed to load fish info for ${fishInfoFileName}:`, err);
         setError(true);
       } finally {
         setLoading(false);
@@ -642,7 +664,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
     };
 
     loadFishInfo();
-  }, [fishInfoBasePath, fishName]);
+  }, [fishInfoBasePath, fishInfoFileName]);
 
   return createPortal(
     <div
