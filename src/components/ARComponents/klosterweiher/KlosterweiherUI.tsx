@@ -387,6 +387,7 @@ interface FishInfoPopupWebXRProps {
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
+  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -397,7 +398,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`/fish_Information/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
@@ -412,7 +413,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishName]);
+  }, [fishInfoBasePath, fishName]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -616,6 +617,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
 export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoPopupWebXRProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
+  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -625,7 +627,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`/fish_Information/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
@@ -640,7 +642,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
     };
 
     loadFishInfo();
-  }, [fishName]);
+  }, [fishInfoBasePath, fishName]);
 
   return createPortal(
     <div
