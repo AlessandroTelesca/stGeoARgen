@@ -1,6 +1,7 @@
 import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 
@@ -37,6 +38,7 @@ interface StationsViewProps {
 }
 
 export function StationsView({ paths, onStationClick, onBack }: StationsViewProps) {
+  const { t } = useLanguage();
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -132,7 +134,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
                 {station.pathTitle}
               </Badge>
               <Badge variant="secondary" className="text-xs">
-                {station.points} Punkte
+                {station.points} {t('points')}
               </Badge>
               {station.status !== 'completed' && distance !== null && (
                 <Badge variant="outline" className="text-xs flex items-center gap-1">
@@ -157,7 +159,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
         </div>
       </div>
@@ -176,10 +178,12 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             <div className="flex-1">
               <p className="text-sm">
                 {completedStations === totalStations
-                  ? "Wow! Du hast alle Stationen besucht!"
+                  ? t('stationsMentorAllVisited')
                   : completedStations === 0
-                  ? "Hier findest du alle Stationen in St.Georgen. Wähle eine aus und starte dein Abenteuer!"
-                  : `Du hast bereits ${completedStations} von ${totalStations} Stationen besucht. Weiter so!`}
+                  ? t('stationsMentorStart')
+                  : t('stationsMentorProgress')
+                    .replace('{completed}', String(completedStations))
+                    .replace('{total}', String(totalStations))}
               </p>
             </div>
           </div>
@@ -199,7 +203,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
               </div>
             </div>
             <p className="text-xl mb-1">{totalStations}</p>
-            <p className="text-xs text-muted-foreground">Gesamt</p>
+            <p className="text-xs text-muted-foreground">{t('total')}</p>
           </motion.div>
 
           <motion.div
@@ -214,7 +218,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
               </div>
             </div>
             <p className="text-xl mb-1">{completedStations}</p>
-            <p className="text-xs text-muted-foreground">Abgeschlossen</p>
+            <p className="text-xs text-muted-foreground">{t('completed')}</p>
           </motion.div>
 
           <motion.div
@@ -229,7 +233,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
               </div>
             </div>
             <p className="text-xl mb-1">{availableStations}</p>
-            <p className="text-xs text-muted-foreground">Verfügbar</p>
+            <p className="text-xs text-muted-foreground">{t('available')}</p>
           </motion.div>
         </div>
 
@@ -244,7 +248,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Station oder Pfad suchen..."
+              placeholder={t('searchStationOrPath')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -267,7 +271,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            Alle
+            {t('all')}
           </button>
           <button
             onClick={() => setFilterStatus('available')}
@@ -277,7 +281,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            Verfügbar
+            {t('available')}
           </button>
           <button
             onClick={() => setFilterStatus('completed')}
@@ -287,7 +291,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            Abgeschlossen
+            {t('completed')}
           </button>
         </motion.div>
 
@@ -300,7 +304,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
         >
           {filteredStations.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Keine Stationen gefunden</p>
+              <p className="text-muted-foreground">{t('noStationsFound')}</p>
             </div>
           ) : (
             filteredStations.map((station, index) => (

@@ -1,6 +1,8 @@
 import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User, Maximize2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import type { Language } from '../i18n/translations';
 
 interface SettingsProps {
   onResetProgress: () => Promise<void> | void;
@@ -22,7 +24,7 @@ export function Settings({
   onNavigateToProfile,
 }: SettingsProps) {
   const [notifications, setNotifications] = useState(true);
-  const [language, setLanguage] = useState('de');
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -35,7 +37,7 @@ export function Settings({
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Zurück</span>
+              <span className="font-medium">{t('back')}</span>
             </button>
           </div>
         </div>
@@ -46,12 +48,12 @@ export function Settings({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-6">Einstellungen</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('settings')}</h2>
 
           {/* Account Settings */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Account
+              {t('account')}
             </h3>
             
             <div className="bg-white rounded-xl border border-border">
@@ -63,8 +65,8 @@ export function Settings({
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Profil verwalten</p>
-                  <p className="text-sm text-muted-foreground">Account-Informationen & Sicherheit</p>
+                  <p className="font-medium">{t('manageProfile')}</p>
+                  <p className="text-sm text-muted-foreground">{t('accountInfo')}</p>
                 </div>
               </button>
             </div>
@@ -73,7 +75,7 @@ export function Settings({
           {/* General Settings */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Allgemein
+              {t('general')}
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -83,8 +85,8 @@ export function Settings({
                     <Bell className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Benachrichtigungen</p>
-                    <p className="text-sm text-muted-foreground">Erhalte Updates zu neuen Pfaden</p>
+                    <p className="font-medium">{t('notifications')}</p>
+                    <p className="text-sm text-muted-foreground">{t('notificationsDesc')}</p>
                   </div>
                 </div>
                 <button
@@ -107,18 +109,17 @@ export function Settings({
                     <Globe className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Sprache</p>
-                    <p className="text-sm text-muted-foreground">Deutsch</p>
+                    <p className="font-medium">{t('language')}</p>
+                    <p className="text-sm text-muted-foreground">{language === 'de' ? t('languageGerman') : t('languageEnglish')}</p>
                   </div>
                 </div>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={(e) => setLanguage(e.target.value as Language)}
                   className="px-4 py-2 bg-muted rounded-lg border border-border"
                 >
-                  <option value="de">Deutsch</option>
-                  <option value="en">English</option>
-                  <option value="fr">Français</option>
+                  <option value="de">{t('languageGerman')}</option>
+                  <option value="en">{t('languageEnglish')}</option>
                 </select>
               </div>
 
@@ -128,11 +129,11 @@ export function Settings({
                     <Maximize2 className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Vollbildmodus{isIOS ? ' (BETA)' : ''}</p>
+                    <p className="font-medium">{isIOS ? t('fullscreenBeta') : t('fullscreen')}</p>
                     <p className="text-sm text-muted-foreground">
                       {fullscreenAvailable
-                        ? 'Vollbildmodus an/aus'
-                        : 'Nur auf Mobilgeraeten verfuegbar'}
+                        ? t('fullscreenOn')
+                        : t('fullscreenMobileOnly')}
                     </p>
                   </div>
                 </div>
@@ -158,7 +159,7 @@ export function Settings({
           {/* App Info */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              App Informationen
+              {t('appInfo')}
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -167,8 +168,8 @@ export function Settings({
                   <HelpCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Hilfe & Support</p>
-                  <p className="text-sm text-muted-foreground">FAQs und Kontakt</p>
+                  <p className="font-medium">{t('helpSupport')}</p>
+                  <p className="text-sm text-muted-foreground">{t('faqsContact')}</p>
                 </div>
               </button>
 
@@ -177,8 +178,8 @@ export function Settings({
                   <Info className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Über St.GeoARgen</p>
-                  <p className="text-sm text-muted-foreground">Version 1.0.0</p>
+                  <p className="font-medium">{t('aboutApp')}</p>
+                  <p className="text-sm text-muted-foreground">{t('appVersion')}</p>
                 </div>
               </button>
 
@@ -187,8 +188,8 @@ export function Settings({
                   <Shield className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Datenschutz</p>
-                  <p className="text-sm text-muted-foreground">Datenschutzerklärung</p>
+                  <p className="font-medium">{t('privacy')}</p>
+                  <p className="text-sm text-muted-foreground">{t('privacyPolicy')}</p>
                 </div>
               </button>
             </div>
@@ -197,13 +198,13 @@ export function Settings({
           {/* Danger Zone */}
           <div>
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              Gefahrenzone
+              {t('dangerZone')}
             </h3>
             
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
                 onClick={async () => {
-                  if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
+                  if (window.confirm(t('resetProgressConfirm'))) {
                     await onResetProgress();
                   }
                 }}
@@ -215,9 +216,9 @@ export function Settings({
                   <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>Fortschritt zurücksetzen</p>
+                  <p className="font-medium" style={{ color: '#dc2626' }}>{t('resetProgress')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Alle Punkte und abgeschlossenen Stationen löschen
+                    {t('resetProgressDesc')}
                   </p>
                 </div>
               </button>
@@ -227,7 +228,7 @@ export function Settings({
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
-              Made with 💚 in St.Georgen
+              {t('madeWith')}
             </p>
           </div>
         </motion.div>

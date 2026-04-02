@@ -1,0 +1,20 @@
+{
+  "name": "Tench",
+  "scientificName": "Tinca tinca",
+  "description": "The tench is a peaceful bottom fish from the carp family. It is known for its olive-green coloration and its preference for weedy waters.",
+  "habitat": "Tench prefer standing or slowly flowing waters with muddy bottoms and dense vegetation. They are often found in ponds, pools and weedy shore zones.",
+  "diet": "Bottom feeder - feeds on insect larvae, snails, worms and plant material at the bottom of the water",
+  "size": "20-35 cm (up to 70 cm possible)",
+  "weight": "300-1000 g (up to 7 kg possible)",
+  "lifespan": "15-20 years",
+  "features": [
+    "High-backed, stocky body",
+    "Olive-green to bronze coloration",
+    "Very small scales with thick mucus layer",
+    "Two short barbels on the mouth",
+    "Reddish eyes",
+    "Rounded fins"
+  ],
+  "conservation": "Not endangered - stable populations in suitable waters",
+  "funFact": "The tench is also called 'doctor fish'! In the past, people believed that its mucus had healing powers. In fact, the mucus layer contains antibacterial substances that protect it from infections."
+}

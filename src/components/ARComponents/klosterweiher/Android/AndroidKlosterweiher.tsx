@@ -4,6 +4,8 @@ import { ARComponentBase } from "../../ARComponentBase";
 import { ARProximityGate } from "../../ARProximityGate";
 import { WebXRVisualizer } from "../../../../ARbackend/WebXRVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
+import { useLanguage } from "../../../../contexts/LanguageContext";
+import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
 import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
 import {
   WaitingForGroundDetection,
@@ -438,6 +440,8 @@ export const AndroidKlosterweiherView = ({
   onCompleteStation,
   isCurrentStationCompleted = false,
 }: ARViewProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<AndroidKlosterweiherARSession | null>(null);
@@ -605,7 +609,7 @@ export const AndroidKlosterweiherView = ({
         totalStations={totalStations}
         totalPoints={totalPoints}
         currentStationId={5}
-        currentStationTitle="Klosterweiher"
+        currentStationTitle={klosterweiherTexts.stationName}
         currentStationPoints={45}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
@@ -638,8 +642,8 @@ export const AndroidKlosterweiherView = ({
           >
             <p style={{ margin: "0 0 12px 0", fontWeight: 700 }}>
               {modelsLoaded
-                ? "Start AR to scan the ground"
-                : "Loading models..."}
+                ? klosterweiherTexts.arStartTitleReady
+                : klosterweiherTexts.arStartTitleLoading}
             </p>
             {!modelsLoaded && (
               <p
@@ -649,7 +653,7 @@ export const AndroidKlosterweiherView = ({
                   fontSize: "14px",
                 }}
               >
-                Please wait while AR models are loading
+                {klosterweiherTexts.arStartHintLoading}
               </p>
             )}
             {error && (
@@ -670,10 +674,10 @@ export const AndroidKlosterweiherView = ({
               }}
             >
               {isStarting
-                ? "Starting..."
+                ? klosterweiherTexts.arStartButtonStarting
                 : modelsLoaded
-                  ? "Start AR"
-                  : "Loading..."}
+                  ? klosterweiherTexts.arStartButtonReady
+                  : klosterweiherTexts.arStartButtonLoading}
             </button>
           </div>
         </div>
@@ -736,7 +740,7 @@ export const AndroidKlosterweiherView = ({
   return (
     <ARProximityGate
       stationId={AR_VIEW_STATION_MAP["klosterweiher"]}
-      stationName="Klosterweiher"
+      stationName={klosterweiherTexts.stationName}
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >

@@ -1,6 +1,7 @@
 import { ArrowLeft, Navigation as NavigationIcon, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useEffect, useMemo } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { StationCard } from './StationCard';
 import { ProgressBar } from './ProgressBar';
 import { Input } from './ui/input';
@@ -51,6 +52,7 @@ export function PathView({
   onBack,
   userProgress,
 }: PathViewProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -111,7 +113,7 @@ export function PathView({
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
         </div>
       </div>
@@ -142,9 +144,9 @@ export function PathView({
         >
           <NavigationIcon className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-sm mb-1">Freie Stationswahl</h4>
+            <h4 className="font-semibold text-sm mb-1">{t('freeStationChoice')}</h4>
             <p className="text-sm text-muted-foreground">
-              Du kannst die Stationen in beliebiger Reihenfolge besuchen. Starte wo du möchtest!
+              {t('freeStationChoiceDesc')}
             </p>
           </div>
         </motion.div>
@@ -161,7 +163,7 @@ export function PathView({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Station suchen..."
+              placeholder={t('searchStation')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12"
@@ -172,11 +174,13 @@ export function PathView({
         {/* Stations Grid */}
         <div>
           <h3 className="font-semibold mb-4">
-            {searchQuery ? `Gefundene Stationen (${processedStations.length})` : `Alle Stationen (${stations.length})`}
+            {searchQuery
+              ? `${t('foundStations')} (${processedStations.length})`
+              : `${t('allStations')} (${stations.length})`}
           </h3>
           {processedStations.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Keine Stationen gefunden.</p>
+              <p className="text-muted-foreground">{t('noStationsFound')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

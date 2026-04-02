@@ -1,5 +1,6 @@
 import { User, Mail, Calendar, Trash2, LogOut, Shield, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProfileProps {
   username: string | null;
@@ -11,10 +12,11 @@ interface ProfileProps {
 }
 
 export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout }: ProfileProps) {
+  const { t } = useLanguage();
   const handleDeleteAccount = () => {
-    if (confirm('Möchtest du dein Konto wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+    if (confirm(t('confirmDeleteAccount'))) {
       // TODO: Implement account deletion
-      alert('Account-Löschung würde hier implementiert werden');
+      alert(t('deleteAccountNotImplemented'));
     }
   };
 
@@ -28,7 +30,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
         </div>
       </div>
@@ -45,8 +47,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                 <User className="w-10 h-10 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{username || 'Gast'}</h2>
-                <p className="text-sm text-muted-foreground">Mitglied seit Dezember 2025</p>
+                <h2 className="text-2xl font-bold">{username || t('guest')}</h2>
+                <p className="text-sm text-muted-foreground">{t('memberSince')}</p>
               </div>
             </div>
           </div>
@@ -54,7 +56,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
           {/* Account Information */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Account-Informationen
+              {t('accountInformation')}
             </h3>
 
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -63,8 +65,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Benutzername</p>
-                  <p className="text-sm text-muted-foreground">{username || 'Nicht angemeldet'}</p>
+                  <p className="font-medium">{t('username')}</p>
+                  <p className="text-sm text-muted-foreground">{username || t('notLoggedIn')}</p>
                 </div>
               </div>
 
@@ -73,8 +75,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <Mail className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">E-Mail</p>
-                  <p className="text-sm text-muted-foreground">{email || 'Nicht verfügbar'}</p>
+                  <p className="font-medium">{t('email')}</p>
+                  <p className="text-sm text-muted-foreground">{email || 'N/A'}</p>
                 </div>
               </div>
 
@@ -83,7 +85,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Registriert seit</p>
+                  <p className="font-medium">{t('registeredSince')}</p>
                   <p className="text-sm text-muted-foreground">
                     {createdAt
                       ? new Date(createdAt).toLocaleDateString('de-DE', {
@@ -99,7 +101,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
           {/* Privacy & Security */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Datenschutz & Sicherheit
+              {t('privacySecurity')}
             </h3>
 
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -108,8 +110,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <Shield className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Passwort ändern</p>
-                  <p className="text-sm text-muted-foreground">Aktualisiere dein Passwort</p>
+                  <p className="font-medium">{t('changePassword')}</p>
+                  <p className="text-sm text-muted-foreground">{t('updatePassword')}</p>
                 </div>
               </button>
 
@@ -118,8 +120,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <Shield className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">Datenschutzeinstellungen</p>
-                  <p className="text-sm text-muted-foreground">Verwalte deine Daten</p>
+                  <p className="font-medium">{t('privacySettings')}</p>
+                  <p className="text-sm text-muted-foreground">{t('manageData')}</p>
                 </div>
               </button>
             </div>
@@ -128,7 +130,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
           {/* Account Actions */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              Account
+              {t('accountActions')}
             </h3>
 
             <div className="bg-white rounded-xl border border-border">
@@ -140,8 +142,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <LogOut className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-orange-600">Abmelden</p>
-                  <p className="text-sm text-muted-foreground">Von diesem Gerät abmelden</p>
+                  <p className="font-medium text-orange-600">{t('logout')}</p>
+                  <p className="text-sm text-muted-foreground">{t('logoutDescription')}</p>
                 </div>
               </button>
             </div>
@@ -150,7 +152,7 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
           {/* Danger Zone */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              Gefahrenzone
+              {t('dangerZone')}
             </h3>
 
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
@@ -165,8 +167,8 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
                   <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>Account löschen</p>
-                  <p className="text-sm text-muted-foreground">Alle Daten werden unwiderruflich gelöscht</p>
+                  <p className="font-medium" style={{ color: '#dc2626' }}>{t('deleteAccount')}</p>
+                  <p className="text-sm text-muted-foreground">{t('deleteAccountDescription')}</p>
                 </div>
               </button>
             </div>

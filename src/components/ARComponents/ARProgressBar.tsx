@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Trophy, Gift } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARProgressBarProps {
   progress: { current: number; total: number; points: number };
@@ -7,6 +8,7 @@ interface ARProgressBarProps {
 }
 
 export const ARProgressBar = ({ progress, stations }: ARProgressBarProps) => {
+  const { t } = useLanguage();
   return (
     <div className="ar-bottom-bar">
       <motion.div
@@ -68,11 +70,11 @@ export const ARProgressBar = ({ progress, stations }: ARProgressBarProps) => {
         {/* Info Row */}
         <div className="ar-info-row">
           <span className="ar-station-text">
-            Station {progress.current}/{progress.total}
+            {t('station')} {progress.current}/{progress.total}
           </span>
           <div className="ar-points-badge">
             <Trophy style={{ width: '16px', height: '16px' }} />
-            <span className="ar-points-text">{progress.points} Punkte</span>
+            <span className="ar-points-text">{progress.points} {t('points')}</span>
           </div>
         </div>
       </motion.div>

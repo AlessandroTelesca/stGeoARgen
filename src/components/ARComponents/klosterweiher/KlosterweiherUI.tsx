@@ -4,6 +4,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Accordion, AccordionItem, AccordionContent } from '@/components/ui/accordion';
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus, X, Info } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { getKlosterweiherTexts } from '../../../i18n/stations/klosterweiher';
 
 // Fish gender mapping for correct German articles
 const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
@@ -23,6 +25,9 @@ interface TapInstructionGIFProps {
 }
 
 export const TapInstructionGIF = ({ overlayRoot }: TapInstructionGIFProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div
       style={{
@@ -40,7 +45,7 @@ export const TapInstructionGIF = ({ overlayRoot }: TapInstructionGIFProps) => {
     >
       <img
         src="/TapOnScreen.gif"
-        alt="Tap on screen"
+        alt={klosterweiherTexts.tapInstruction}
         style={{
           width: '80px',
           height: '80px',
@@ -56,7 +61,7 @@ export const TapInstructionGIF = ({ overlayRoot }: TapInstructionGIFProps) => {
           textShadow: '0 2px 8px rgba(0,0,0,0.8)',
         }}
       >
-        Tippen Sie auf den Bildschirm
+        {klosterweiherTexts.tapInstruction}
       </p>
     </div>,
     overlayRoot
@@ -68,6 +73,9 @@ interface DragInstructionGIFProps {
 }
 
 export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div
       style={{
@@ -84,7 +92,7 @@ export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => 
     >
       <img
         src="/dragAnimation.gif"
-        alt="Drag to rotate fish"
+        alt={klosterweiherTexts.dragInstruction}
         style={{
           width: '240px',
           height: '240px',
@@ -105,14 +113,16 @@ export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => 
           zIndex: 10003,
         }}
       >
-        Wische um den Fisch zu drehen
+        {klosterweiherTexts.dragInstruction}
       </p>
     </div>,
     overlayRoot
   );
 };
 
-const getArticle = (fishName: string): string => {
+const getArticle = (fishName: string, language: 'de' | 'en'): string => {
+  if (language === 'en') return 'a';
+
   const gender = FISH_GENDERS[fishName] || 'male';
   switch (gender) {
     case 'male':
@@ -146,6 +156,9 @@ interface WaitingForGroundProps {
 }
 
 export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div
       style={{
@@ -168,7 +181,7 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
         textAlign: 'center',
       }}
     >
-      Richten sie ihre kamera auf den See um mit dem Angeln zu beginnen
+      {klosterweiherTexts.waitingForGround}
     </div>,
     overlayRoot
   );
@@ -181,6 +194,9 @@ interface WaitingForReadyProps {
 }
 
 export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: WaitingForReadyProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div
       style={{
@@ -205,7 +221,7 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
       }}
     >
       <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        Richten sie ihre Kamera auf den See, um mit dem Angeln zu beginnen.
+        {klosterweiherTexts.waitingForReadyPrompt}
       </p>
       {modelsLoaded ? (
         <button
@@ -221,11 +237,11 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           }}
         >
-          Ich sehe den See
+          {klosterweiherTexts.waitingForReadyButton}
         </button>
       ) : (
         <p style={{ margin: 0, fontWeight: 400, fontSize: '14px', opacity: 0.8 }}>
-          Laden...
+          {klosterweiherTexts.waitingForReadyLoading}
         </p>
       )}
     </div>,
@@ -239,6 +255,9 @@ interface FishingInstructionsProps {
 }
 
 export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstructionsProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div
       style={{
@@ -263,7 +282,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
       }}
     >
       <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        Tippen sie mehrmals auf ihren bildschirm um zu Angeln
+        {klosterweiherTexts.fishingInstruction}
       </p>
       <button
         onClick={onStart}
@@ -278,7 +297,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         }}
       >
-        Mit dem Angeln beginnen
+        {klosterweiherTexts.fishingStartButton}
       </button>
     </div>,
     overlayRoot
@@ -292,14 +311,17 @@ interface FishActionButtonsProps {
 }
 
 export const FishActionButtons = ({ overlayRoot, onRelease, onLearnMore }: FishActionButtonsProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+
   return createPortal(
     <div className="ar-fish-action-row" style={{ zIndex: 10003 }}>
       <button className="ar-fish-btn-tertiary" onClick={onRelease}>
-        Freilassen
+        {klosterweiherTexts.fishActionRelease}
       </button>
       <button className="ar-fish-btn-secondary" onClick={onLearnMore}>
         <Info style={{ width: '16px', height: '16px' }} />
-        Mehr Infos
+        {klosterweiherTexts.fishActionLearnMore}
       </button>
     </div>,
     overlayRoot
@@ -312,7 +334,9 @@ interface FishCaughtDialogProps {
 }
 
 export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
-  const article = getArticle(fishName);
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+  const article = getArticle(fishName, language);
 
   return createPortal(
     <div
@@ -335,13 +359,13 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
       }}
     >
       <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        Glückwunsch! Du hast {article}
+        {klosterweiherTexts.fishCaughtPrefix.replace('{article}', article)}
       </p>
       <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
         {fishName}
       </p>
       <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        gefangen!
+        {klosterweiherTexts.fishCaughtSuffix}
       </p>
     </div>,
     overlayRoot
@@ -361,6 +385,9 @@ interface FishInfoPopupWebXRProps {
 }
 
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -371,7 +398,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`/fish_Information/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
@@ -386,7 +413,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishName]);
+  }, [fishInfoBasePath, fishName]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -415,20 +442,20 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
         {/* Header - Always rendered for accessibility */}
         <SheetHeader className="px-8 pb-6 pt-2">
           <SheetTitle className="text-3xl font-bold text-primary">
-            {fishInfo?.name || 'Fisch Information'}
+            {fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
           </SheetTitle>
           <SheetDescription className="text-base italic opacity-80 mt-1">
-            {fishInfo?.scientificName || 'Wissenschaftlicher Name'}
+            {fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
           </SheetDescription>
         </SheetHeader>
 
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-            <p className="text-lg">Lade Informationen...</p>
+            <p className="text-lg">{klosterweiherTexts.fishInfoLoading}</p>
           </div>
         ) : error || !fishInfo ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-            <p className="text-lg">Informationen für diesen Fisch sind leider nicht verfügbar.</p>
+            <p className="text-lg">{klosterweiherTexts.fishInfoUnavailable}</p>
           </div>
         ) : (
           <div className="h-full flex flex-col overflow-hidden pb-6">
@@ -445,7 +472,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="habitat" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Lebensraum</span>
+                      <span>{klosterweiherTexts.fishInfoHabitat}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -463,7 +490,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="diet" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Ernährung</span>
+                      <span>{klosterweiherTexts.fishInfoDiet}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -481,7 +508,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="dimensions" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Größe & Gewicht</span>
+                      <span>{klosterweiherTexts.fishInfoDimensions}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -491,11 +518,11 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                   <AccordionContent>
                     <div className="grid grid-cols-2 gap-4 pl-8 pb-2">
                       <div>
-                        <h4 className="text-base font-semibold text-primary mb-2">Größe</h4>
+                        <h4 className="text-base font-semibold text-primary mb-2">{klosterweiherTexts.fishInfoSize}</h4>
                         <p className="text-base text-gray-600">{fishInfo.size}</p>
                       </div>
                       <div>
-                        <h4 className="text-base font-semibold text-primary mb-2">Gewicht</h4>
+                        <h4 className="text-base font-semibold text-primary mb-2">{klosterweiherTexts.fishInfoWeight}</h4>
                         <p className="text-base text-gray-600">{fishInfo.weight}</p>
                       </div>
                     </div>
@@ -506,7 +533,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="features" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Merkmale</span>
+                      <span>{klosterweiherTexts.fishInfoFeatures}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -526,7 +553,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="lifespan" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Lebenserwartung</span>
+                      <span>{klosterweiherTexts.fishInfoLifespan}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -544,7 +571,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="conservation" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Naturschutz</span>
+                      <span>{klosterweiherTexts.fishInfoConservation}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -562,7 +589,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
                 <AccordionItem value="funfact" className="border-b-0">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between text-lg font-semibold text-primary hover:no-underline py-5 group">
-                      <span>Wussten Sie schon?</span>
+                      <span>{klosterweiherTexts.fishInfoFunFact}</span>
                       <div className="relative w-5 h-5">
                         <Plus className="w-5 h-5 absolute inset-0 transition-all duration-300 group-data-[state=open]:opacity-0 group-data-[state=open]:rotate-90" />
                         <X className="w-5 h-5 absolute inset-0 transition-all duration-300 opacity-0 rotate-90 group-data-[state=open]:opacity-100 group-data-[state=open]:rotate-0" />
@@ -588,6 +615,9 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
 };
 
 export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoPopupWebXRProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -597,7 +627,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
       try {
         setLoading(true);
         setError(false);
-        const response = await fetch(`/fish_Information/${fishName}.json`);
+        const response = await fetch(`${fishInfoBasePath}/${fishName}.json`);
         if (!response.ok) {
           throw new Error('Fish info not found');
         }
@@ -612,7 +642,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
     };
 
     loadFishInfo();
-  }, [fishName]);
+  }, [fishInfoBasePath, fishName]);
 
   return createPortal(
     <div
@@ -656,10 +686,10 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>
-              {fishInfo?.name || 'Fisch Information'}
+              {fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.75, fontStyle: 'italic' }}>
-              {fishInfo?.scientificName || 'Wissenschaftlicher Name'}
+              {fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
             </p>
           </div>
           <button
@@ -673,7 +703,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
               cursor: 'pointer',
               color: '#555',
             }}
-            aria-label="Schließen"
+            aria-label={klosterweiherTexts.close}
           >
             ×
           </button>
@@ -681,22 +711,22 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
 
         <div style={{ overflowY: 'auto', padding: '18px 20px 28px 20px' }}>
           {loading ? (
-            <p style={{ margin: 0, color: '#666' }}>Lade Informationen...</p>
+            <p style={{ margin: 0, color: '#666' }}>{klosterweiherTexts.fishInfoLoading}</p>
           ) : error || !fishInfo ? (
             <p style={{ margin: 0, color: '#666' }}>
-              Informationen für diesen Fisch sind leider nicht verfügbar.
+              {klosterweiherTexts.fishInfoUnavailable}
             </p>
           ) : (
             <div style={{ display: 'grid', gap: '16px' }}>
               <p style={{ margin: 0, lineHeight: 1.5, color: '#374151' }}>{fishInfo.description}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Lebensraum:</strong> {fishInfo.habitat}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Ernährung:</strong> {fishInfo.diet}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Größe:</strong> {fishInfo.size}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Gewicht:</strong> {fishInfo.weight}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Lebenserwartung:</strong> {fishInfo.lifespan}</p>
-              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>Naturschutz:</strong> {fishInfo.conservation}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoHabitat}:</strong> {fishInfo.habitat}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoDiet}:</strong> {fishInfo.diet}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoSize}:</strong> {fishInfo.size}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoWeight}:</strong> {fishInfo.weight}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoLifespan}:</strong> {fishInfo.lifespan}</p>
+              <p style={{ margin: 0, lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoConservation}:</strong> {fishInfo.conservation}</p>
               <div>
-                <p style={{ margin: '0 0 8px 0', lineHeight: 1.5 }}><strong>Merkmale:</strong></p>
+                <p style={{ margin: '0 0 8px 0', lineHeight: 1.5 }}><strong>{klosterweiherTexts.fishInfoFeatures}:</strong></p>
                 <ul style={{ margin: 0, paddingLeft: '20px', display: 'grid', gap: '6px' }}>
                   {fishInfo.features.map((feature, index) => (
                     <li key={index}>{feature}</li>
@@ -711,7 +741,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
                   lineHeight: 1.5,
                 }}
               >
-                <strong>Wussten Sie schon?</strong> {fishInfo.funFact}
+                <strong>{klosterweiherTexts.fishInfoFunFact}</strong> {fishInfo.funFact}
               </div>
             </div>
           )}

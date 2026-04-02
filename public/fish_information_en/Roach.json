@@ -1,0 +1,18 @@
+{
+  "name": "Roach",
+  "scientificName": "Rutilus rutilus",
+  "description": "The roach is a widespread freshwater fish from the carp family. It is easily recognizable by its characteristic red iris.",
+  "habitat": "Roach live in standing and slowly flowing waters. They prefer lakes, ponds and rivers with rich plant growth.",
+  "diet": "Omnivore - feeds on insect larvae, zooplankton, algae and aquatic plants",
+  "size": "15-25 cm (up to 35 cm possible)",
+  "weight": "100-300 g (up to 1 kg possible)",
+  "lifespan": "8-12 years",
+  "features": [
+    "Reddish iris",
+    "Silvery-gray flanks",
+    "Reddish pectoral and ventral fins",
+    "High-backed body shape"
+  ],
+  "conservation": "Not endangered - common species in European waters",
+  "funFact": "Roach are very social fish and live in large schools that can comprise several thousand individuals."
+}
