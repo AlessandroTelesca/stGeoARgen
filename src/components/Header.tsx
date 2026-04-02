@@ -37,6 +37,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
     { id: 'paths', label: 'Themenpfade', Icon: Map },
     { id: 'rewards', label: 'Belohnungen', Icon: Gift },
     { id: 'qr-scanner', label: 'QR Scanner', Icon: QrCode },
+    { id: 'my-voucher', label: 'Meine Gutscheine', Icon: Gift },
     { id: 'settings', label: 'Einstellungen', Icon: Settings },
   ];
 
@@ -56,6 +57,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
       'stations': <MapPin className="w-5 h-5 text-white" />,
       'progress': <TrendingUp className="w-5 h-5 text-white" />,
       'rewards': <Gift className="w-5 h-5 text-white" />,
+      'partner': <Gift className="w-5 h-5 text-white" />,
     };
     return iconMap[currentView] || <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />;
   };
