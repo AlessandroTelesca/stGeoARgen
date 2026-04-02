@@ -328,12 +328,12 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
       <Georgi
         message={
           needsLogin
-            ? "Melde dich an, um das AR-Erlebnis freizuschalten!"
+            ? t('georgiStationNeedsLogin')
             : hasARRoute && isWithinRadius && !locationError
-            ? "Super! Du bist nah genug. Starte das AR-Erlebnis!"
+            ? t('georgiStationCanStartAR')
             : hasARRoute && distance !== null
-            ? `Du bist noch ${Math.round(distance)}m entfernt. Nutze die Navigation!`
-            : "Besuche diese Station vor Ort für mehr Informationen!"
+            ? t('georgiStationDistanceHint', { distance: Math.round(distance) })
+            : t('georgiStationVisitOnSite')
         }
         show={showGeorgi && !isCompleted}
         onClose={() => setShowGeorgi(false)}

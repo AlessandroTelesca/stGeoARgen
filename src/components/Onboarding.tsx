@@ -16,25 +16,25 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
       id: 1,
       title: t('onboardingStep1Title'),
       description: t('onboardingStep1Description'),
-      georgiMessage: t('onboardingStep1Georgi'),
+      georgiMessage: t('georgiOnboardingStep1'),
     },
     {
       id: 2,
       title: t('onboardingStep2Title'),
       description: t('onboardingStep2Description'),
-      georgiMessage: t('onboardingStep2Georgi'),
+      georgiMessage: t('georgiOnboardingStep2'),
     },
     {
       id: 3,
       title: t('onboardingStep3Title'),
       description: t('onboardingStep3Description'),
-      georgiMessage: t('onboardingStep3Georgi'),
+      georgiMessage: t('georgiOnboardingStep3'),
     },
     {
       id: 4,
       title: t('onboardingStep4Title'),
       description: t('onboardingStep4Description'),
-      georgiMessage: t('onboardingStep4Georgi'),
+      georgiMessage: t('georgiOnboardingStep4'),
     },
   ];
   const [direction, setDirection] = useState(0);

@@ -64,7 +64,7 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
               </motion.div>
 
               <div className="flex-1 pt-1">
-                <p className="font-semibold text-sm mb-1">{t('georgiSays')}</p>
+                <p className="font-semibold text-sm mb-1">{t('georgiBubbleTitle')}</p>
                 <p className="text-sm text-muted-foreground">{message}</p>
               </div>
             </div>
