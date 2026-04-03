@@ -1,5 +1,6 @@
-import { Gift, Lock, Check, MapPin, ArrowLeft, Trophy } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useState } from 'react';
+import { Gift, Lock, Check, MapPin, ArrowLeft, Trophy, Copy, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
@@ -16,7 +17,10 @@ interface Voucher {
 
 interface RewardsViewProps {
   totalPoints: number;
+  userId?: number;
   onBack: () => void;
+  onPointsChange?: () => Promise<void> | void;
+  onNavigateToMyVouchers?: () => void;
 }
 
 const vouchers: Voucher[] = [
@@ -76,12 +80,169 @@ const vouchers: Voucher[] = [
   },
 ];
 
-export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
+export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNavigateToMyVouchers }: RewardsViewProps) {
+  const [redeemingVoucherId, setRedeemingVoucherId] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [createdVoucherCode, setCreatedVoucherCode] = useState<string | null>(null);
+  const [createdVoucherTitle, setCreatedVoucherTitle] = useState<string | null>(null);
+  const [createdVoucherDescription, setCreatedVoucherDescription] = useState<string | null>(null);
+  const [dialogMessage, setDialogMessage] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const isVoucherUnlocked = (requiredPoints: number) => totalPoints >= requiredPoints;
   const unlockedCount = vouchers.filter(v => isVoucherUnlocked(v.requiredPoints)).length;
 
+  const resetDialogState = () => {
+    setFeedbackOpen(false);
+    setCreatedVoucherCode(null);
+    setCreatedVoucherTitle(null);
+    setCreatedVoucherDescription(null);
+    setDialogMessage(null);
+    setCopiedCode(false);
+  };
+
+  const handleCopyCode = async () => {
+    if (!createdVoucherCode) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(createdVoucherCode);
+      setCopiedCode(true);
+    } catch {
+      setCopiedCode(false);
+    }
+  };
+
+  const handleRedeemVoucher = async (voucher: Voucher) => {
+    if (!userId) {
+      setDialogMessage('Bitte melde dich an, um einen Gutschein einzulösen.');
+      setFeedbackOpen(true);
+      return;
+    }
+
+    setRedeemingVoucherId(voucher.id);
+
+    try {
+      const response = await fetch('/api/redeem_voucher_from_shop.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          reward_voucher: {
+            id: voucher.id,
+            title: voucher.title,
+            description: voucher.description,
+            type: voucher.type,
+            address: voucher.address,
+            required_points: voucher.requiredPoints,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Gutschein konnte nicht erstellt werden.');
+      }
+
+      await onPointsChange?.();
+      setCreatedVoucherTitle(voucher.title);
+  setCreatedVoucherDescription(voucher.description);
+      setCreatedVoucherCode(typeof data.code === 'string' && data.code.length > 0 ? data.code : 'Code wird in Meine Gutscheine angezeigt');
+      setDialogMessage(null);
+      setFeedbackOpen(true);
+    } catch (error) {
+      setDialogMessage(error instanceof Error ? error.message : 'Fehler beim Einlösen des Gutscheins.');
+      setFeedbackOpen(true);
+    } finally {
+      setRedeemingVoucherId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
+      <AnimatePresence>
+        {feedbackOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={resetDialogState}
+          >
+            <motion.div
+              className="w-full max-w-md overflow-hidden rounded-3xl bg-background shadow-2xl"
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="relative bg-gradient-to-br from-primary to-primary-light px-6 py-8 text-white">
+                <button
+                  type="button"
+                  onClick={resetDialogState}
+                  className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white/90 transition hover:bg-white/25"
+                  aria-label="Fenster schließen"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-sm">
+                  <Gift className="h-8 w-8" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold">
+                    {createdVoucherCode ? 'Gutschein erstellt' : 'Hinweis'}
+                  </h2>
+                  <p className="mt-2 text-sm text-white/85">
+                    {createdVoucherCode
+                      ? 'Dein Gutschein ist jetzt unter Meine Gutscheine verfügbar.'
+                      : dialogMessage}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-5 px-6 py-6">
+                {createdVoucherCode ? (
+                  <>
+                    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                      <p className="text-lg font-semibold text-foreground">{createdVoucherTitle}</p>
+                      {createdVoucherDescription ? (
+                        <p className="mt-1 text-sm text-muted-foreground">{createdVoucherDescription}</p>
+                      ) : null}
+                      <p className="mt-4 text-sm text-muted-foreground">Dein Code</p>
+                      <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
+                        <span className="text-lg font-semibold tracking-[0.2em] text-primary">{createdVoucherCode}</span>
+                        <Button variant="outline" size="sm" onClick={handleCopyCode}>
+                          <Copy className="h-4 w-4" />
+                          {copiedCode ? 'Kopiert' : 'Code kopieren'}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                      <Button variant="outline" onClick={resetDialogState}>Später</Button>
+                      <Button
+                        onClick={() => {
+                          resetDialogState();
+                          onNavigateToMyVouchers?.();
+                        }}
+                      >
+                        Meine Gutscheine
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-end">
+                    <Button onClick={resetDialogState}>OK</Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Sticky Back Button Header */}
       <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-3">
@@ -211,12 +372,13 @@ export function RewardsView({ totalPoints, onBack }: RewardsViewProps) {
                           ? 'bg-primary hover:bg-primary-dark text-white'
                           : 'bg-muted text-muted-foreground cursor-not-allowed'
                       }`}
-                      disabled={!unlocked}
+                      disabled={!unlocked || redeemingVoucherId === voucher.id}
+                      onClick={() => handleRedeemVoucher(voucher)}
                     >
                       {unlocked ? (
                         <>
                           <Gift className="w-4 h-4 mr-2" />
-                          Gutschein einlösen
+                          {redeemingVoucherId === voucher.id ? 'Wird erstellt...' : 'Gutschein einlösen' + ` (${voucher.requiredPoints} Punkte)`}
                         </>
                       ) : (
                         <>

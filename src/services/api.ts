@@ -46,6 +46,7 @@ export interface UserData {
     username: string;
     email: string;
     created_at: string;
+    total_points?: number;
 }
 
 export interface AuthResponse {
@@ -120,6 +121,15 @@ export interface PathBonusResponse {
     message: string;
     already_claimed: boolean;
     bonus?: number;
+}
+
+export interface UserPointsResponse {
+    success: boolean;
+    total_points: number;
+}
+
+export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
+    return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
 }
 
 /**

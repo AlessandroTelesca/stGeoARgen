@@ -38,7 +38,19 @@ try {
         exit;
     }
 
-    if ($voucher['partner_id'] !== null && $voucher['partner_id'] !== (int)$partner['id']) {
+    if (strpos((string)$voucher['redeemed_by'], 'user:') !== 0) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein wurde noch nicht von einem Nutzer gekauft.']);
+        exit;
+    }
+
+    if ($voucher['partner_id'] === null) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein ist keinem Partner zugeordnet und kann nicht validiert werden.']);
+        exit;
+    }
+
+    if ((int)$voucher['partner_id'] !== (int)$partner['id']) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Dieser Code gehört nicht zu Ihrem Partnerkonto.']);
         exit;
@@ -50,8 +62,14 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_by = ?, redeemed_at = NOW() WHERE id = ?');
-    $stmt->execute([$partner['id'], $voucher['id']]);
+    if (!empty($voucher['expiry_date']) && $voucher['expiry_date'] < date('Y-m-d')) {
+        http_response_code(410);
+        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein ist abgelaufen und nicht mehr gültig.']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_at = NOW() WHERE id = ?');
+    $stmt->execute([$voucher['id']]);
 
     http_response_code(200);
     echo json_encode([

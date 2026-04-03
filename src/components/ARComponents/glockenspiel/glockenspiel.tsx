@@ -15,6 +15,7 @@ interface ARViewProps {
   totalStations?: number;
   totalPoints?: number;
   onCompleteStation?: (stationId: number) => void;
+  isCurrentStationCompleted?: boolean;
 }
 
 class GlockenspielARSession extends ARVisualizer {

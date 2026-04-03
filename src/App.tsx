@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
-import { apiSavePathBonus } from './services/api';
+import { apiSavePathBonus, apiGetUserPoints } from './services/api';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -70,7 +70,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'partner'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'my-voucher' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -82,8 +82,8 @@ export default function App() {
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
-  // Punkte aus Gutschein-Einlösungen (aus DB)
-  const [dbBonusPoints, setDbBonusPoints] = useState(0);
+  // Gesamtpunkte aus DB (Pfadabschluss + Stationen + eingelöste vouchers + shop-Einlösungen)
+  const [dbTotalPoints, setDbTotalPoints] = useState<number | null>(null);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -218,16 +218,32 @@ export default function App() {
       })
       .catch(() => { /* Progress konnte nicht geladen werden */ });
 
-    // DB-Punkte aus Gutschein-Einlösungen laden
-    fetch(`/api/get_user_points.php?user_id=${user.id}`)
-      .then(res => res.json())
-      .then(data => {
+    // DB-Punkte aus allen Quellen laden
+    apiGetUserPoints(user.id)
+      .then((data) => {
         if (data.success) {
-          setDbBonusPoints(data.total_points);
+          setDbTotalPoints(data.total_points);
         }
       })
-      .catch(() => { /* Punkte konnten nicht geladen werden */ });
+      .catch(() => {
+        /* Punkte konnten nicht geladen werden */
+      });
   }, [user?.id]); // nur wenn sich die User-ID ändert
+
+  const refreshUserPoints = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const data = await apiGetUserPoints(user.id);
+      if (data.success) {
+        setDbTotalPoints(data.total_points);
+      }
+    } catch {
+      // beim Aktualisieren der Punktezahlen ggf. Fehler ignorieren
+    }
+  };
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
@@ -437,10 +453,18 @@ export default function App() {
     };
   };
 
-  const totalPoints = paths.reduce((sum, path) => {
+  const localPathPoints = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.earnedPoints;
-  }, 0) + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500 + dbBonusPoints;
+  }, 0);
+
+  const localPathBonuses = Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500;
+
+  const totalPoints = user
+    ? dbTotalPoints !== null
+      ? dbTotalPoints
+      : localPathPoints + localPathBonuses
+    : localPathPoints + localPathBonuses;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -497,6 +521,7 @@ export default function App() {
       if (currentPath) {
         try {
           await saveStationProgress(user.id, currentPath.id, stationId);
+          await refreshUserPoints();
 
           // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
           // Da setState async ist, berechnen wir hier direkt
@@ -510,6 +535,7 @@ export default function App() {
               const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
               if (bonusRes.success && !bonusRes.already_claimed) {
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+                await refreshUserPoints();
                 const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
                 const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
                 setCelebrationData({
@@ -608,6 +634,7 @@ export default function App() {
   const handleNavigate = (view: string) => {
     if (view === 'home') {
       navigate('/');
+      setCurrentView('home');
       setSelectedPathId(null);
       setSelectedStationId(null);
     } else if (view === 'paths') {
@@ -629,12 +656,16 @@ export default function App() {
       navigate('/profile');
       setCurrentView('profile');
     } else if (view === 'points') {
+      navigate('/points');
       setCurrentView('points');
     } else if (view === 'stations') {
+      navigate('/stations');
       setCurrentView('stations');
     } else if (view === 'progress') {
+      navigate('/progress');
       setCurrentView('progress');
     } else if (view === 'rewards') {
+      navigate('/rewards');
       setCurrentView('rewards');
     } else if (view === 'my-voucher') {
       navigate('/my-voucher');
@@ -888,7 +919,13 @@ export default function App() {
       {currentView === 'rewards' && (
         <RewardsView
           totalPoints={totalPoints}
+          userId={user?.id}
           onBack={handleBackToDashboard}
+          onPointsChange={refreshUserPoints}
+          onNavigateToMyVouchers={() => {
+            navigate('/my-voucher');
+            setCurrentView('my-voucher');
+          }}
         />
       )}
 
@@ -1032,7 +1069,7 @@ export default function App() {
         }}
       />
       {currentView === 'my-voucher' && (
-        <VoucherRedeemPage userId={user?.id ?? 0} />
+        <VoucherRedeemPage userId={user?.id ?? 0} userPoints={totalPoints} onPointsChange={refreshUserPoints} />
       )}
       {currentView === 'partner' && (
         <PartnerVoucherValidation />

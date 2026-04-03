@@ -3,51 +3,63 @@ import { Button } from './ui/button';
 import { motion } from 'motion/react';
 import { Copy, Check, Gift, MapPin } from 'lucide-react';
 
-interface RedeemedVoucher {
+interface VoucherListItem {
   id: number;
   code: string;
   description: string;
   partner_name?: string;
-  redeemed_at?: string;
-}
-
-interface AvailableVoucher {
-  id: number;
-  description: string;
-  partner_name?: string;
   address?: string;
   points_value: number;
+  purchased_at?: string;
+  redeemed_at?: string;
   expiry_date?: string;
 }
 
+interface UserVouchersResponse {
+  success: boolean;
+  redeemable_vouchers: VoucherListItem[];
+  redeemed_vouchers: VoucherListItem[];
+  vouchers?: VoucherListItem[];
+}
+
 export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { userId: number; userPoints: number; onPointsChange?: () => void }) {
-  const [redeemedVouchers, setRedeemedVouchers] = useState<RedeemedVoucher[]>([]);
-  const [availableVouchers, setAvailableVouchers] = useState<AvailableVoucher[]>([]);
+  const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
+  const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'redeemed' | 'available'>('redeemed');
+  const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [userId]);
 
   const fetchData = async () => {
+    if (userId <= 0) {
+      setRedeemableVouchers([]);
+      setRedeemedVouchers([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const [redeemedRes, availableRes] = await Promise.all([
-        fetch(`/api/get_user_vouchers.php?user_id=${userId}`),
-        fetch('/api/get_available_vouchers.php')
-      ]);
-      const redeemedData = await redeemedRes.json();
-      const availableData = await availableRes.json();
-      if (redeemedData.success) {
-        setRedeemedVouchers(redeemedData.vouchers);
+      const response = await fetch(`/api/get_user_vouchers.php?user_id=${userId}`);
+      const data = await response.json() as UserVouchersResponse;
+      if (data.success) {
+        const redeemable = Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : [];
+        const redeemed = Array.isArray(data.redeemed_vouchers)
+          ? data.redeemed_vouchers
+          : Array.isArray(data.vouchers)
+            ? data.vouchers
+            : [];
+
+        setRedeemableVouchers(redeemable);
+        setRedeemedVouchers(redeemed);
       }
-      if (availableData.success) {
-        setAvailableVouchers(availableData.vouchers);
-      }
-    } catch (e) {
+    } catch {
       console.error('Fehler beim Laden der Daten');
+      setRedeemableVouchers([]);
+      setRedeemedVouchers([]);
     }
     setLoading(false);
   };
@@ -59,27 +71,6 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
       setTimeout(() => setCopiedId(null), 2000);
     } catch (e) {
       console.error('Fehler beim Kopieren');
-    }
-  };
-
-  const handleRedeem = async (voucher: AvailableVoucher) => {
-    try {
-      const res = await fetch('/api/redeem_voucher_from_shop.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voucher_id: voucher.id, user_id: userId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Gutschein eingelöst! Code: ${data.code}\n\nGutschein findest du im Tab "Eingelöst"`);
-        onPointsChange?.();
-        await fetchData(); // Aktualisieren
-        setActiveTab('redeemed'); // Automatisch zum "Eingelöst"-Tab wechseln
-      } else {
-        alert(data.message);
-      }
-    } catch (e) {
-      alert('Fehler beim Einlösen');
     }
   };
 
@@ -99,23 +90,23 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
           </div>
           <h1 className="text-3xl font-bold mb-1" style={{ marginTop: '10px' }}>Meine Gutscheine</h1>
           <p className="text-muted-foreground text-base font-semibold mb-1">Deine Punkte: {userPoints}</p>
-          <p className="text-muted-foreground text-base mb-2" style={{ marginTop: '10px' }}>Eingelöste und verfügbare Gutscheine.</p>
+          <p className="text-muted-foreground text-base mb-2" style={{ marginTop: '10px' }}>Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
         </div>
 
         {/* Tabs */}
         <div className="px-4 sm:px-10 pb-4">
           <div className="flex border-b">
             <button
+              onClick={() => setActiveTab('redeemable')}
+              className={`flex-1 py-2 text-center font-medium ${activeTab === 'redeemable' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+            >
+              Einlösbar ({redeemableVouchers.length})
+            </button>
+            <button
               onClick={() => setActiveTab('redeemed')}
               className={`flex-1 py-2 text-center font-medium ${activeTab === 'redeemed' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
             >
-              Eingelöst ({redeemedVouchers.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('available')}
-              className={`flex-1 py-2 text-center font-medium ${activeTab === 'available' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-            >
-              Verfügbar ({availableVouchers.length})
+              Bereits eingelöst ({redeemedVouchers.length})
             </button>
           </div>
         </div>
@@ -123,12 +114,12 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
         <div className="px-4 sm:px-10 pb-10" style={{ minHeight: '180px', marginTop: '10px' }}>
           {loading ? (
             <div className="text-center">Lade Gutscheine...</div>
-          ) : activeTab === 'redeemed' ? (
-            redeemedVouchers.length === 0 ? (
-              <div className="text-center text-muted-foreground">Keine eingelösten Gutscheine.</div>
+          ) : activeTab === 'redeemable' ? (
+            redeemableVouchers.length === 0 ? (
+              <div className="text-center text-muted-foreground">Keine einlösbaren Gutscheine vorhanden.</div>
             ) : (
               <div className="space-y-4">
-                {redeemedVouchers.map((voucher) => (
+                {redeemableVouchers.map((voucher) => (
                   <motion.div
                     key={voucher.id}
                     className="border rounded-xl p-4 bg-gray-50"
@@ -141,8 +132,20 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
                         {voucher.partner_name && (
                           <p className="text-sm text-muted-foreground">Partner: {voucher.partner_name}</p>
                         )}
-                        {voucher.redeemed_at && (
-                          <p className="text-sm text-muted-foreground">Eingelöst am: {new Date(voucher.redeemed_at).toLocaleDateString('de-DE')}</p>
+                        {voucher.purchased_at && (
+                          <p className="text-sm text-muted-foreground">Erworben am: {new Date(voucher.purchased_at).toLocaleString('de-DE')}</p>
+                        )}
+                        {voucher.expiry_date && (
+                          <p className="text-sm text-muted-foreground">Gültig bis: {new Date(voucher.expiry_date).toLocaleDateString('de-DE')}</p>
+                        )}
+                        {!voucher.expiry_date && (
+                          <p className="text-sm text-muted-foreground">Kein Ablaufdatum</p>
+                        )}
+                        {voucher.address && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                            <MapPin className="w-4 h-4" />
+                            <span>{voucher.address}</span>
+                          </div>
                         )}
                       </div>
                       <Button
@@ -169,11 +172,11 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
               </div>
             )
           ) : (
-            availableVouchers.length === 0 ? (
-              <div className="text-center text-muted-foreground">Keine verfügbaren Gutscheine.</div>
+            redeemedVouchers.length === 0 ? (
+              <div className="text-center text-muted-foreground">Noch keine bereits eingelösten Gutscheine vorhanden.</div>
             ) : (
               <div className="space-y-4">
-                {availableVouchers.map((voucher) => (
+                {redeemedVouchers.map((voucher) => (
                   <motion.div
                     key={voucher.id}
                     className="border rounded-xl p-4 bg-gray-50"
@@ -184,7 +187,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
                       <div>
                         <h3 className="font-semibold">{voucher.description}</h3>
                         {voucher.partner_name && (
-                          <p className="text-sm text-muted-foreground">Partner: {voucher.partner_name}</p>
+                          <p className="text-sm text-muted-foreground">{voucher.partner_name}</p>
                         )}
                         {voucher.address && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -192,17 +195,15 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
                             <span>{voucher.address}</span>
                           </div>
                         )}
-                        <p className="text-sm font-medium text-primary mt-1">{voucher.points_value} Punkte</p>
+                        {voucher.redeemed_at && (
+                          <p className="text-sm text-muted-foreground mt-1">Eingelöst am: {new Date(voucher.redeemed_at).toLocaleString('de-DE')}</p>
+                        )}
+                        <p className="text-sm font-medium text-primary mt-1">Kosten: {voucher.points_value} Punkte</p>
                       </div>
-                      <Button
-                        onClick={() => handleRedeem(voucher)}
-                        variant="default"
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
+                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                         <Gift className="w-4 h-4" />
-                        Einlösen
-                      </Button>
+                        Verwendet
+                      </div>
                     </div>
                   </motion.div>
                 ))}
