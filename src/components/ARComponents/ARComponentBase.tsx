@@ -394,6 +394,7 @@ export const ARComponentBase = ({
           handleNavigateHome();
         }}
         onNavigateToNextStation={handleNavigateToNextStation}
+        onClose={() => setShowCompletionDialog(false)}
       />
     </div>
   );

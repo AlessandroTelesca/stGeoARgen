@@ -312,11 +312,16 @@ class IOSKlosterweiherARSession extends ARVisualizer {
           }
           // Check if all fishes are loaded
           if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
-            this.currentFishIndex = Math.floor(
-              Math.random() * this.fishes.length,
-            );
-            this.fish =
-              this.fishes[this.currentFishIndex] || this.fishes[0] || null;
+            // Select a random fish from loaded fishes
+            const loadedIndices = this.fishes
+              .map((f, i) => (f ? i : -1))
+              .filter((i) => i >= 0);
+            if (loadedIndices.length > 0) {
+              this.currentFishIndex = loadedIndices[Math.floor(Math.random() * loadedIndices.length)];
+              this.fish = this.fishes[this.currentFishIndex] || this.fishes[0] || null;
+            } else {
+              this.fish = this.fishes[0] || null;
+            }
             this.fishesLoaded = true;
             this.checkAllModelsLoaded();
           }

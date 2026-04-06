@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy } from 'lucide-react';
+import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARStationCompletionDialogProps {
@@ -16,6 +16,7 @@ interface ARStationCompletionDialogProps {
     distanceToNextStation: number | null;
     onNavigateHome: () => void;
     onNavigateToNextStation: () => void;
+    onClose?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -42,6 +43,7 @@ export const ARStationCompletionDialog = ({
     distanceToNextStation,
     onNavigateHome,
     onNavigateToNextStation,
+    onClose,
 }: ARStationCompletionDialogProps) => {
     const { t } = useLanguage();
     const completedCount = totalStations - remainingStations;
@@ -90,8 +92,36 @@ export const ARStationCompletionDialog = ({
                                 borderRadius: '24px',
                                 overflowY: 'auto',
                                 boxShadow: '0 -4px 40px rgba(0,0,0,0.3)',
+                                position: 'relative',
                             }}
                         >
+                            {/* Close Button */}
+                            {onClose && (
+                                <button
+                                    onClick={onClose}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '12px',
+                                        right: '12px',
+                                        zIndex: 10001,
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '8px',
+                                        transition: 'background-color 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    aria-label="Schließen"
+                                >
+                                    <X style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                                </button>
+                            )}
+
                             {/* Green success header */}
                             <div
                                 style={{

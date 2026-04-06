@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Accordion, AccordionItem, AccordionContent } from '@/components/ui/accordion';
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus, X, Info } from 'lucide-react';
@@ -461,13 +461,17 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
         </div>
 
         {/* Header - Always rendered for accessibility */}
-        <SheetHeader className="px-8 pb-6 pt-2">
+        <SheetHeader className="px-8 pb-6 pt-2 relative">
           <SheetTitle className="text-3xl font-bold text-primary">
             {fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
           </SheetTitle>
           <SheetDescription className="text-base italic opacity-80 mt-1">
             {fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
           </SheetDescription>
+          <SheetClose className="absolute right-6 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+            <X className="h-5 w-5" />
+            <span className="sr-only">{klosterweiherTexts.close}</span>
+          </SheetClose>
         </SheetHeader>
 
         {loading ? (
