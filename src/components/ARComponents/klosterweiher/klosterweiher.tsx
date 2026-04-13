@@ -3,7 +3,7 @@ import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false, onTreasureCollect }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean; onTreasureCollect?: () => Promise<boolean> }) => {
 
 	// Detect device and open appropriate maps app
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -25,6 +25,7 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				totalPoints={totalPoints}
 				onCompleteStation={onCompleteStation}
 				isCurrentStationCompleted={isCurrentStationCompleted}
+				onTreasureCollect={onTreasureCollect}
 			/>
 		);
 	} else if (isAndroid) {
@@ -40,7 +41,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				totalStations={totalStations} 
 				totalPoints={totalPoints} 
 				onCompleteStation={onCompleteStation}
-				isCurrentStationCompleted={isCurrentStationCompleted} />
+				isCurrentStationCompleted={isCurrentStationCompleted}
+				onTreasureCollect={onTreasureCollect} />
 		);
 	} else if (isNotMobile) {
 		return (

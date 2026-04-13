@@ -6,7 +6,10 @@ import { ARVisualizer } from "../../../../ARbackend/ARVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
-import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
+import {
+  CaughtObjectPayload,
+  KlosterweiherARSessionBase,
+} from "../KlosterweiherARSessionBase";
 import {
   WaitingForReady,
   FishingInstructions,
@@ -29,6 +32,7 @@ interface ARViewProps {
   totalPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
+  onTreasureCollect?: () => Promise<boolean>;
 }
 
 class IOSKlosterweiherARSession extends ARVisualizer {
@@ -54,6 +58,8 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
+  public treasureChest: THREE.Mesh | null = null;
+  public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -68,9 +74,11 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   private fishesLoaded = false;
   private waterLoaded = false;
   public onFishCaught?: (fishName: string) => void;
+  public onCatchObjectCaught?: (payload: CaughtObjectPayload) => void;
   public onFishReleased?: () => void;
   public onTap?: () => void; // Callback for tap tracking
   public onDrag?: () => void; // Callback for drag tracking
+  protected treasureSpawnChance = 0.03;
   private lastFrameTime: number = 0;
 
   // Orbit controls for caught fish
@@ -135,6 +143,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     KlosterweiherARSessionBase.prototype["endOrbitControl"];
   protected applyOrbitMomentum =
     KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
+  protected ensureTreasureChest =
+    KlosterweiherARSessionBase.prototype["ensureTreasureChest"];
+  protected selectNextCatchObject =
+    KlosterweiherARSessionBase.prototype["selectNextCatchObject"];
 
   private setupOrbitControlListeners(): void {
     if (!this.renderer) return;
@@ -185,6 +197,10 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
   protected initThree(): void {
     super.initThree();
+
+    if (this.camera) {
+      this.ensureTreasureChest(this.camera);
+    }
 
     // Setup additional pointer handlers for orbit controls
     this.setupOrbitControlListeners();
@@ -470,6 +486,7 @@ export const IOSKlosterweiherView = ({
   totalPoints,
   onCompleteStation,
   isCurrentStationCompleted = false,
+  onTreasureCollect,
 }: ARViewProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
@@ -483,6 +500,8 @@ export const IOSKlosterweiherView = ({
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
+  const [isTreasureChestCaught, setIsTreasureChestCaught] = useState(false);
+  const [isCollectingTreasure, setIsCollectingTreasure] = useState(false);
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
   const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
@@ -543,15 +562,22 @@ export const IOSKlosterweiherView = ({
         },
       );
 
-      session.onFishCaught = (fishName: string) => {
+      session.onCatchObjectCaught = ({
+        fishName,
+        isChest,
+      }: CaughtObjectPayload) => {
         setFishCaught(true);
         setCaughtFishName(fishName);
+        setIsTreasureChestCaught(isChest);
         setShowTapInstruction(false); // Hide tap instruction when fish is caught
         setShowDragInstruction(true); // Show drag instruction when fish is caught
         setDragsSinceStart(0);
       };
       session.onFishReleased = () => {
         setFishCaught(false);
+        setShowFishInfo(false);
+        setIsTreasureChestCaught(false);
+        setIsCollectingTreasure(false);
         setTapsSinceStart(0); // Reset tap count for new fishing session
         setLastTapTime(Date.now());
         setShowDragInstruction(false);
@@ -597,6 +623,20 @@ export const IOSKlosterweiherView = ({
     } finally {
       setIsStarting(false);
     }
+  };
+
+  const handlePrimaryAction = async () => {
+    if (!sessionRef.current) return;
+
+    if (isTreasureChestCaught) {
+      if (!onTreasureCollect || isCollectingTreasure) return;
+      setIsCollectingTreasure(true);
+      const collected = await onTreasureCollect();
+      setIsCollectingTreasure(false);
+      if (!collected) return;
+    }
+
+    sessionRef.current.releaseCurrentFish();
   };
 
   const arContent = (
@@ -659,11 +699,14 @@ export const IOSKlosterweiherView = ({
           <FishCaughtDialog
             overlayRoot={overlayRootRef.current}
             fishName={caughtFishName}
+            isChest={isTreasureChestCaught}
           />
           <FishActionButtons
             overlayRoot={overlayRootRef.current}
-            onRelease={() => sessionRef.current?.releaseCurrentFish()}
+            onRelease={handlePrimaryAction}
             onLearnMore={() => setShowFishInfo(true)}
+            isChest={isTreasureChestCaught}
+            isBusy={isCollectingTreasure}
           />
         </>
       )}
@@ -679,6 +722,7 @@ export const IOSKlosterweiherView = ({
         <FishInfoPopup
           overlayRoot={overlayRootRef.current}
           fishName={caughtFishName}
+          isChest={isTreasureChestCaught}
           onClose={() => setShowFishInfo(false)}
         />
       )}

@@ -24,8 +24,13 @@ export interface KlosterweiherTexts {
   fishingStartButton: string;
   fishActionRelease: string;
   fishActionLearnMore: string;
+  treasureActionCollect: string;
   fishCaughtPrefix: string;
   fishCaughtSuffix: string;
+  treasureFoundTitle: string;
+  treasureFoundPoints: string;
+  treasureInfoTitle: string;
+  treasureInfoStory: string;
   fishInfoTitleFallback: string;
   fishScientificNameFallback: string;
   fishInfoLoading: string;

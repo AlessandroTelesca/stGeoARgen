@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import gsap from "gsap";
 
+export interface CaughtObjectPayload {
+  isChest: boolean;
+  fishName: string;
+}
+
 /**
  * Base class containing shared logic for both Android and iOS Klosterweiher AR sessions.
  * Handles fish models, rod animations, catching/releasing mechanics.
@@ -27,6 +32,8 @@ export abstract class KlosterweiherARSessionBase {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
+  public treasureChest: THREE.Mesh | null = null;
+  public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -36,9 +43,11 @@ export abstract class KlosterweiherARSessionBase {
   public tapCount = 0;
   public hasCaughtFish = false;
   public onFishCaught?: (fishName: string) => void;
+  public onCatchObjectCaught?: (payload: CaughtObjectPayload) => void;
   public onFishReleased?: () => void;
   public onDrag?: () => void;
   protected rodAnimationInProgress = false;
+  protected treasureSpawnChance = 0.03; // 3% chance to spawn treasure chest instead of fish  
 
   // Orbit controls for caught fish
   protected orbitEnabled = false;
@@ -93,19 +102,29 @@ export abstract class KlosterweiherARSessionBase {
     if (!this.rod) return;
     const tl = gsap.timeline();
 
-    gsap.to(this.fish.rotation, {
-      y: Math.PI * 8,
-      duration: 6,
-    });
+    if (this.isTreasureChestActive) {
+      gsap.to(this.fish.rotation, {
+        y: this.fish.rotation.y + Math.PI * 2,
+        duration: 2.2,
+      });
+    } else {
+      gsap.to(this.fish.rotation, {
+        y: Math.PI * 8,
+        duration: 6,
+      });
+    }
 
     // Only play animation if fish hasn't been rotated yet
-    if (!this.fishBeingRotated) {
+    if (!this.fishBeingRotated && !this.isTreasureChestActive) {
       this.playCurrentFishAnimation();
     }
     this.fish.visible = true;
 
     // Show backdrop for visibility
-    const backdrop = this.fishBackdrops[this.currentFishIndex];
+    const backdrop =
+      this.currentFishIndex >= 0
+        ? this.fishBackdrops[this.currentFishIndex]
+        : undefined;
     // if (backdrop) backdrop.visible = true; // Backdrop deactivated
 
     tl.to(this.rod.rotation, {
@@ -128,9 +147,13 @@ export abstract class KlosterweiherARSessionBase {
         duration: 0.3,
         onComplete: () => {
           this.hasCaughtFish = true;
-          const fishName = this.extractFishName(
-            this.fishUrls[this.currentFishIndex],
-          );
+          const fishName = this.isTreasureChestActive
+            ? "Schatzkiste"
+            : this.extractFishName(this.fishUrls[this.currentFishIndex]);
+          this.onCatchObjectCaught?.({
+            isChest: this.isTreasureChestActive,
+            fishName,
+          });
           this.onFishCaught?.(fishName);
         },
       });
@@ -141,12 +164,18 @@ export abstract class KlosterweiherARSessionBase {
    */
   releaseCurrentFish() {
     if (!this.fish) return;
-    const activeMixer = this.fishMixers[this.currentFishIndex];
+    const activeMixer =
+      this.currentFishIndex >= 0
+        ? this.fishMixers[this.currentFishIndex]
+        : undefined;
     activeMixer?.stopAllAction();
     this.fish.visible = false;
 
     // Hide current fish backdrop
-    const oldBackdrop = this.fishBackdrops[this.currentFishIndex];
+    const oldBackdrop =
+      this.currentFishIndex >= 0
+        ? this.fishBackdrops[this.currentFishIndex]
+        : undefined;
     if (oldBackdrop) oldBackdrop.visible = false;
     this.fish.position.set(
       0,
@@ -155,30 +184,20 @@ export abstract class KlosterweiherARSessionBase {
     );
     this.fish.rotation.set(0, Math.PI / 2, 0);
 
-    // Select a random fish that's different from current among loaded models
-    const loadedIndices = this.fishes
-      .map((f, i) => (f ? i : -1))
-      .filter((i) => i >= 0);
-    let newIndex = this.currentFishIndex;
+    this.selectNextCatchObject();
 
-    if (loadedIndices.length > 1) {
-      do {
-        newIndex =
-          loadedIndices[Math.floor(Math.random() * loadedIndices.length)];
-      } while (newIndex === this.currentFishIndex);
-    }
-    this.currentFishIndex = newIndex;
-    this.fish = this.fishes[this.currentFishIndex];
     console.log(
-      `[KlosterweiherARSessionBase] Released fish. New fish index: ${this.currentFishIndex}. Total fish available: ${this.fishes.length}`,
+      `[KlosterweiherARSessionBase] Released object. New fish index: ${this.currentFishIndex}. Chest active: ${this.isTreasureChestActive}`,
     );
-    this.fish.position.set(
-      0,
-      this.getFishInitialPositionY(),
-      this.getFishInitialPositionZ(),
-    );
-    this.fish.rotation.set(0, Math.PI / 2, 0);
-    this.fish.visible = false;
+    if (this.fish) {
+      this.fish.position.set(
+        0,
+        this.getFishInitialPositionY(),
+        this.getFishInitialPositionZ(),
+      );
+      this.fish.rotation.set(0, Math.PI / 2, 0);
+      this.fish.visible = false;
+    }
 
     this.tapCount = 0;
     this.hasCaughtFish = false;
@@ -191,6 +210,58 @@ export abstract class KlosterweiherARSessionBase {
         duration: this.getRodReleaseDuration(),
       });
     }
+  }
+
+  protected ensureTreasureChest(camera: THREE.Camera) {
+    if (this.treasureChest) return;
+
+    const chestGeometry = new THREE.BoxGeometry(560, 360, 420);
+    const chestMaterial = new THREE.MeshStandardMaterial({
+      color: 0x8b5a2b,
+      roughness: 0.5,
+      metalness: 0.2,
+    });
+
+    const chest = new THREE.Mesh(chestGeometry, chestMaterial);
+    chest.visible = false;
+    chest.position.set(0, this.getFishInitialPositionY(), this.getFishInitialPositionZ());
+    chest.rotation.set(0, Math.PI / 2, 0);
+
+    camera.add(chest);
+    this.treasureChest = chest;
+  }
+
+  protected selectNextCatchObject() {
+    if (this.treasureChest && Math.random() < this.treasureSpawnChance) {
+      this.isTreasureChestActive = true;
+      this.currentFishIndex = -1;
+      this.fish = this.treasureChest;
+      return;
+    }
+
+    this.isTreasureChestActive = false;
+
+    // Select a random fish that's different from current among loaded models
+    const loadedIndices = this.fishes
+      .map((f, i) => (f ? i : -1))
+      .filter((i) => i >= 0);
+
+    if (loadedIndices.length === 0) {
+      this.currentFishIndex = 0;
+      this.fish = null;
+      return;
+    }
+
+    let newIndex = loadedIndices[0];
+    if (loadedIndices.length > 1) {
+      do {
+        newIndex =
+          loadedIndices[Math.floor(Math.random() * loadedIndices.length)];
+      } while (newIndex === this.currentFishIndex);
+    }
+
+    this.currentFishIndex = newIndex;
+    this.fish = this.fishes[this.currentFishIndex];
   }
 
   /**
@@ -241,6 +312,8 @@ export abstract class KlosterweiherARSessionBase {
    * Play animation for the currently selected fish
    */
   protected playCurrentFishAnimation() {
+    if (this.currentFishIndex < 0) return;
+
     const mixer = this.fishMixers[this.currentFishIndex];
     const clips = this.fishAnimations[this.currentFishIndex];
 
@@ -263,6 +336,8 @@ export abstract class KlosterweiherARSessionBase {
    */
   protected updateFishBackdrop() {
     if (!this.fish || !this.hasCaughtFish) return;
+    if (this.currentFishIndex < 0) return;
+
     const backdrop = this.fishBackdrops[this.currentFishIndex];
     if (!backdrop || !backdrop.visible) return;
 
@@ -286,7 +361,10 @@ export abstract class KlosterweiherARSessionBase {
     // Stop fish animation when user starts rotating
     if (!this.fishBeingRotated) {
       this.fishBeingRotated = true;
-      const activeMixer = this.fishMixers[this.currentFishIndex];
+      const activeMixer =
+        this.currentFishIndex >= 0
+          ? this.fishMixers[this.currentFishIndex]
+          : undefined;
       activeMixer?.stopAllAction();
     }
 

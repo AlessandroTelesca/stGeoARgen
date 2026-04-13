@@ -168,6 +168,21 @@ export interface PathBonusResponse {
     bonus?: number;
 }
 
+export interface TreasureRewardSaveResponse {
+    success: boolean;
+    message: string;
+    already_claimed: boolean;
+    points_awarded: number;
+    points_total: number;
+}
+
+export interface TreasureRewardStatusResponse {
+    success: boolean;
+    claimed: boolean;
+    points: number;
+    reward_key: string;
+}
+
 /**
  * Speichert den Pfad-Abschluss-Bonus (500 Punkte) in der Datenbank.
  * Idempotent: Ein zweiter Aufruf liefert already_claimed: true.
@@ -181,4 +196,24 @@ export async function apiSavePathBonus(
         method: 'POST',
         body: JSON.stringify({ user_id: userId, path_id: pathId, bonus }),
     });
+}
+
+export async function apiSaveTreasureReward(
+    userId: number,
+    rewardKey: string = 'klosterweiher_treasure_chest',
+    points: number = 50
+): Promise<TreasureRewardSaveResponse> {
+    return apiFetch<TreasureRewardSaveResponse>('save_treasure_reward.php', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, reward_key: rewardKey, points }),
+    });
+}
+
+export async function apiGetTreasureReward(
+    userId: number,
+    rewardKey: string = 'klosterweiher_treasure_chest'
+): Promise<TreasureRewardStatusResponse> {
+    return apiFetch<TreasureRewardStatusResponse>(
+        `get_treasure_reward.php?user_id=${userId}&reward_key=${encodeURIComponent(rewardKey)}`,
+    );
 }
