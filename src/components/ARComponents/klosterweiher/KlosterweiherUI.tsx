@@ -328,16 +328,18 @@ interface FishActionButtonsProps {
   overlayRoot: HTMLDivElement;
   onRelease: () => void;
   onLearnMore: () => void;
+  isChest?: boolean;
+  isBusy?: boolean;
 }
 
-export const FishActionButtons = ({ overlayRoot, onRelease, onLearnMore }: FishActionButtonsProps) => {
+export const FishActionButtons = ({ overlayRoot, onRelease, onLearnMore, isChest = false, isBusy = false }: FishActionButtonsProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
 
   return createPortal(
     <div className="ar-fish-action-row" style={{ zIndex: 10003 }}>
-      <button className="ar-fish-btn-tertiary" onClick={onRelease}>
-        {klosterweiherTexts.fishActionRelease}
+      <button className="ar-fish-btn-tertiary" onClick={onRelease} disabled={isBusy}>
+        {isChest ? klosterweiherTexts.treasureActionCollect : klosterweiherTexts.fishActionRelease}
       </button>
       <button className="ar-fish-btn-secondary" onClick={onLearnMore}>
         <Info style={{ width: '16px', height: '16px' }} />
@@ -351,9 +353,10 @@ export const FishActionButtons = ({ overlayRoot, onRelease, onLearnMore }: FishA
 interface FishCaughtDialogProps {
   overlayRoot: HTMLDivElement;
   fishName: string;
+  isChest?: boolean;
 }
 
-export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProps) => {
+export const FishCaughtDialog = ({ overlayRoot, fishName, isChest = false }: FishCaughtDialogProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const article = getArticle(fishName, language);
@@ -376,17 +379,36 @@ export const FishCaughtDialog = ({ overlayRoot, fishName }: FishCaughtDialogProp
         textAlign: 'center',
         animation: 'slideInDown 0.4s ease-out',
         boxSizing: 'border-box',
+        minHeight: isChest ? '150px' : undefined,
       }}
     >
-      <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        {klosterweiherTexts.fishCaughtPrefix.replace('{article}', article)}
-      </p>
-      <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
-        {fishName}
-      </p>
-      <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
-        {klosterweiherTexts.fishCaughtSuffix}
-      </p>
+      {isChest ? (
+        <>
+          <div className="ar-chest-sparkles" aria-hidden="true">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <span key={index} className="ar-chest-sparkle" />
+            ))}
+          </div>
+          <p style={{ margin: '0 0 10px 0', fontWeight: 700, fontSize: '22px', color: 'var(--color-primary)', lineHeight: 1.25 }}>
+            {klosterweiherTexts.treasureFoundTitle}
+          </p>
+          <p style={{ margin: '0', fontWeight: 500, fontSize: '15px', letterSpacing: '0.4px' }}>
+            {klosterweiherTexts.treasureFoundPoints}
+          </p>
+        </>
+      ) : (
+        <>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
+            {klosterweiherTexts.fishCaughtPrefix.replace('{article}', article)}
+          </p>
+          <p style={{ margin: '0', fontWeight: 700, fontSize: '28px', color: 'var(--color-primary)' }}>
+            {fishName}
+          </p>
+          <p style={{ margin: '8px 0 0 0', fontWeight: 400, fontSize: '14px', letterSpacing: '0.5px' }}>
+            {klosterweiherTexts.fishCaughtSuffix}
+          </p>
+        </>
+      )}
     </div>,
     overlayRoot
   );
@@ -396,15 +418,17 @@ interface FishInfoPopupProps {
   overlayRoot: HTMLDivElement;
   fishName: string;
   onClose: () => void;
+  isChest?: boolean;
 }
 
 interface FishInfoPopupWebXRProps {
   overlayRoot: HTMLDivElement;
   fishName: string;
   onClose: () => void;
+  isChest?: boolean;
 }
 
-export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupProps) => {
+export const FishInfoPopup = ({ overlayRoot, fishName, onClose, isChest = false }: FishInfoPopupProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
@@ -415,6 +439,13 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
   const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
+    if (isChest) {
+      setLoading(false);
+      setError(false);
+      setFishInfo(null);
+      return;
+    }
+
     const loadFishInfo = async () => {
       try {
         setLoading(true);
@@ -434,7 +465,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
     };
 
     loadFishInfo();
-  }, [fishInfoBasePath, fishInfoFileName]);
+  }, [fishInfoBasePath, fishInfoFileName, isChest]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -463,10 +494,14 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
         {/* Header - Always rendered for accessibility */}
         <SheetHeader className="px-8 pb-6 pt-2 relative">
           <SheetTitle className="text-3xl font-bold text-primary">
-            {fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
+            {isChest
+              ? klosterweiherTexts.treasureInfoTitle
+              : fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
           </SheetTitle>
           <SheetDescription className="text-base italic opacity-80 mt-1">
-            {fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
+            {isChest
+              ? klosterweiherTexts.treasureFoundPoints
+              : fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
           </SheetDescription>
           <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
             <X className="h-5 w-5" />
@@ -474,7 +509,15 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
           </SheetClose>
         </SheetHeader>
 
-        {loading ? (
+        {isChest ? (
+          <div className="h-full flex flex-col overflow-hidden pb-6">
+            <div className="flex-1 overflow-y-auto px-8 py-2">
+              <p className="mb-8 text-lg leading-relaxed text-gray-700">
+                {klosterweiherTexts.treasureInfoStory}
+              </p>
+            </div>
+          </div>
+        ) : loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
             <p className="text-lg">{klosterweiherTexts.fishInfoLoading}</p>
           </div>
@@ -639,7 +682,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose }: FishInfoPopupP
   );
 };
 
-export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoPopupWebXRProps) => {
+export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose, isChest = false }: FishInfoPopupWebXRProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
@@ -649,6 +692,13 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (isChest) {
+      setLoading(false);
+      setError(false);
+      setFishInfo(null);
+      return;
+    }
+
     const loadFishInfo = async () => {
       try {
         setLoading(true);
@@ -668,7 +718,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
     };
 
     loadFishInfo();
-  }, [fishInfoBasePath, fishInfoFileName]);
+  }, [fishInfoBasePath, fishInfoFileName, isChest]);
 
   return createPortal(
     <div
@@ -712,10 +762,14 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>
-              {fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
+              {isChest
+                ? klosterweiherTexts.treasureInfoTitle
+                : fishInfo?.name || klosterweiherTexts.fishInfoTitleFallback}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.75, fontStyle: 'italic' }}>
-              {fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
+              {isChest
+                ? klosterweiherTexts.treasureFoundPoints
+                : fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
             </p>
           </div>
           <button
@@ -736,7 +790,11 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose }: FishInfoP
         </div>
 
         <div style={{ overflowY: 'auto', padding: '18px 20px 28px 20px' }}>
-          {loading ? (
+          {isChest ? (
+            <p style={{ margin: 0, lineHeight: 1.6, color: '#374151' }}>
+              {klosterweiherTexts.treasureInfoStory}
+            </p>
+          ) : loading ? (
             <p style={{ margin: 0, color: '#666' }}>{klosterweiherTexts.fishInfoLoading}</p>
           ) : error || !fishInfo ? (
             <p style={{ margin: 0, color: '#666' }}>

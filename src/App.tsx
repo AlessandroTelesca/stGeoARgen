@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
-import { apiSavePathBonus } from './services/api';
+import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -88,6 +88,7 @@ export default function App() {
   const [rewardClaimed, setRewardClaimed] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
+  const [treasurePoints, setTreasurePoints] = useState(0);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -135,6 +136,7 @@ export default function App() {
       }))
     );
     setRewardClaimed(false);
+    setTreasurePoints(0);
     toast.success(t('logoutSuccessTitle'), {
       description: t('seeYouSoon'),
       duration: 3000,
@@ -188,7 +190,11 @@ export default function App() {
 
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setTreasurePoints(0);
+      return;
+    }
+
     getUserProgress(user.id)
       .then((progressEntries) => {
         if (progressEntries.length > 0) {
@@ -221,6 +227,14 @@ export default function App() {
         }
       })
       .catch(() => { /* Progress konnte nicht geladen werden */ });
+
+    apiGetTreasureReward(user.id)
+      .then((rewardStatus) => {
+        setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
+      })
+      .catch(() => {
+        setTreasurePoints(0);
+      });
   }, [user?.id]); // nur wenn sich die User-ID ändert
 
   const handleOnboardingComplete = () => {
@@ -428,7 +442,9 @@ export default function App() {
   const totalPoints = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.earnedPoints;
-  }, 0) + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500;
+  }, 0)
+    + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500
+    + treasurePoints;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -635,6 +651,37 @@ export default function App() {
           });
         }
       }
+    }
+  };
+
+  const handleTreasureCollect = async (): Promise<boolean> => {
+    if (!user) {
+      toast.info(language === 'de' ? 'Bitte zuerst einloggen, um die Schatzkisten-Punkte zu erhalten.' : 'Please log in first to claim treasure points.', {
+        duration: 3500,
+      });
+      handleNavigateToLogin();
+      return false;
+    }
+
+    try {
+      const res = await apiSaveTreasureReward(user.id, 'klosterweiher_treasure_chest', 50);
+      setTreasurePoints((prev) => Math.max(prev, res.points_total));
+
+      if (res.already_claimed) {
+        toast.info(language === 'de' ? 'Diese Schatzkiste wurde bereits gutgeschrieben.' : 'This treasure chest reward has already been claimed.', {
+          duration: 3000,
+        });
+      } else {
+        toast.success(language === 'de' ? '50 Punkte gutgeschrieben!' : '50 points added!', {
+          duration: 3000,
+        });
+      }
+      return true;
+    } catch {
+      toast.error(language === 'de' ? 'Punkte konnten nicht gespeichert werden. Bitte erneut versuchen.' : 'Could not save points. Please try again.', {
+        duration: 3500,
+      });
+      return false;
     }
   };
 
@@ -1020,6 +1067,7 @@ export default function App() {
             totalPoints={totalPoints}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isKlosterweiherCompleted}
+            onTreasureCollect={handleTreasureCollect}
           />
         )
       )}

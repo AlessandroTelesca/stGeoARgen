@@ -360,6 +360,11 @@
   transition: all 0.15s ease;
 }
 
+.ar-fish-btn-tertiary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .ar-fish-btn-tertiary:active {
   transform: scale(0.96);
   background: var(--color-gray-100);
@@ -391,5 +396,98 @@
 @media (max-width: 480px) {
   .ar-fish-action-row {
     bottom: calc(290px + max(24px, env(safe-area-inset-bottom)));
+  }
+}
+
+.ar-chest-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ar-chest-sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #facc15 0%, #f59e0b 70%, rgba(245, 158, 11, 0) 100%);
+  opacity: 0;
+  animation: arChestSparkleFloat 1.8s ease-out infinite;
+}
+
+.ar-chest-sparkle:nth-child(1) {
+  top: 8%;
+  left: 8%;
+  animation-delay: 0s;
+}
+
+.ar-chest-sparkle:nth-child(2) {
+  top: 12%;
+  left: 88%;
+  animation-delay: 0.15s;
+}
+
+.ar-chest-sparkle:nth-child(3) {
+  top: 30%;
+  left: 14%;
+  animation-delay: 0.3s;
+}
+
+.ar-chest-sparkle:nth-child(4) {
+  top: 36%;
+  left: 82%;
+  animation-delay: 0.45s;
+}
+
+.ar-chest-sparkle:nth-child(5) {
+  top: 62%;
+  left: 12%;
+  animation-delay: 0.6s;
+}
+
+.ar-chest-sparkle:nth-child(6) {
+  top: 64%;
+  left: 86%;
+  animation-delay: 0.75s;
+}
+
+.ar-chest-sparkle:nth-child(7) {
+  top: 18%;
+  left: 50%;
+  animation-delay: 0.9s;
+}
+
+.ar-chest-sparkle:nth-child(8) {
+  top: 48%;
+  left: 45%;
+  animation-delay: 1.05s;
+}
+
+.ar-chest-sparkle:nth-child(9) {
+  top: 74%;
+  left: 42%;
+  animation-delay: 1.2s;
+}
+
+.ar-chest-sparkle:nth-child(10) {
+  top: 24%;
+  left: 62%;
+  animation-delay: 1.35s;
+}
+
+@keyframes arChestSparkleFloat {
+  0% {
+    transform: scale(0.2) translateY(8px);
+    opacity: 0;
+  }
+
+  30% {
+    transform: scale(1) translateY(0);
+    opacity: 0.95;
+  }
+
+  100% {
+    transform: scale(0.15) translateY(-14px);
+    opacity: 0;
   }
 }
