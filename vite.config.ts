@@ -6,10 +6,8 @@
 
   export default defineConfig(() => {
     const localApiTarget = process.env.VITE_LOCAL_API_TARGET || 'http://127.0.0.1:8000';
-    const basePath = process.env.VITE_BASE_PATH || '/stGeoARgen/';
 
     return {
-      base: basePath,
     plugins: [
       react(),
       {
