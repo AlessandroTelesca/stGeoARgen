@@ -8,6 +8,7 @@ import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
 import {
   CaughtObjectPayload,
+  DEFAULT_TREASURE_SPAWN_CHANCE,
   KlosterweiherARSessionBase,
 } from "../KlosterweiherARSessionBase";
 import {
@@ -74,7 +75,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   public onFishReleased?: () => void;
   public onTap?: () => void; // Callback for tap tracking
   public onDrag?: () => void; // Callback for drag tracking
-  protected treasureSpawnChance = 0.03;
+  protected treasureSpawnChance = DEFAULT_TREASURE_SPAWN_CHANCE;
   private modelsLoaded = false;
   private rodLoaded = false;
   private fishesLoaded = false;

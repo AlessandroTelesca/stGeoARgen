@@ -6,6 +6,8 @@ export interface CaughtObjectPayload {
   fishName: string;
 }
 
+export const DEFAULT_TREASURE_SPAWN_CHANCE = 0.03; // 3% chance to spawn treasure chest instead of fish
+
 /**
  * Base class containing shared logic for both Android and iOS Klosterweiher AR sessions.
  * Handles fish models, rod animations, catching/releasing mechanics.
@@ -47,7 +49,7 @@ export abstract class KlosterweiherARSessionBase {
   public onFishReleased?: () => void;
   public onDrag?: () => void;
   protected rodAnimationInProgress = false;
-  protected treasureSpawnChance = 0.03; // 3% chance to spawn treasure chest instead of fish  
+  protected treasureSpawnChance = DEFAULT_TREASURE_SPAWN_CHANCE;
 
   // Orbit controls for caught fish
   protected orbitEnabled = false;
