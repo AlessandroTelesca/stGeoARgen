@@ -31,6 +31,7 @@ interface ARViewProps {
   completedStations?: number;
   totalStations?: number;
   totalPoints?: number;
+  currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
   onTreasureCollect?: () => Promise<boolean>;
@@ -459,6 +460,7 @@ export const AndroidKlosterweiherView = ({
   completedStations,
   totalStations,
   totalPoints,
+  currentStationPoints = 0,
   onCompleteStation,
   isCurrentStationCompleted = false,
   onTreasureCollect,
@@ -656,7 +658,7 @@ export const AndroidKlosterweiherView = ({
         totalPoints={totalPoints}
         currentStationId={5}
         currentStationTitle={klosterweiherTexts.stationName}
-        currentStationPoints={45}
+        currentStationPoints={currentStationPoints}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
       />

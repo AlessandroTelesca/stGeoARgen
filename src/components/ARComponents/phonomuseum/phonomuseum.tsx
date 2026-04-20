@@ -16,6 +16,7 @@ interface ARViewProps {
   completedStations?: number;
   totalStations?: number;
   totalPoints?: number;
+  currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
 }
@@ -29,7 +30,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
   const { language } = useLanguage();
   const phonomuseumTexts = getPhonomuseumTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +87,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         totalPoints={totalPoints}
         currentStationId={3}
         currentStationTitle={phonomuseumTexts.stationName}
-        currentStationPoints={50}
+        currentStationPoints={currentStationPoints}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
       />
