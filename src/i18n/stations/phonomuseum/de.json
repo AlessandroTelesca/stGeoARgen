@@ -3,5 +3,47 @@
   "description": "Entdecke historische Musikinstrumente in AR",
   "longDescription": "Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.",
   "quizQuestion": "Wann wurde der Phonograph erfunden?",
-  "quizOptions": ["1857", "1877", "1897", "1917"]
+  "quizOptions": ["1857", "1877", "1897", "1917"],
+  "quizIntroTitle": "Klang-Quiz im Phonomuseum",
+  "quizIntroDescription": "Hore dir drei kurze Klange an und rate jeweils das passende Instrument. Du brauchst mindestens 2 von 3 richtigen Antworten, um die Station abzuschliessen.",
+  "quizIntroStart": "Quiz starten",
+  "quizSoundPrompt": "Welches Instrument hat diesen Klang gespielt?",
+  "playSound": "Sound abspielen",
+  "selectAnswer": "Antwort auswahlen",
+  "feedbackCorrectTitle": "Richtig!",
+  "feedbackWrongTitle": "Leider falsch",
+  "feedbackCorrectBody": "Stark erkannt - das war das richtige Instrument.",
+  "feedbackWrongBody": "Guter Versuch. Jetzt siehst du die richtige Losung.",
+  "revealInstrument": "Instrument anzeigen",
+  "dragInstruction": "Zum Drehen uber den Cube ziehen",
+  "continueButton": "Weiter",
+  "finishTitle": "Quiz abgeschlossen",
+  "finishSuccess": "Super! Du hast genug richtige Antworten gesammelt.",
+  "finishFailure": "Du hast weniger als 2 richtige Antworten. Spiele das Quiz noch einmal.",
+  "finishScore": "Richtig: {correct} von {total}",
+  "completionBlocked": "Station noch nicht abgeschlossen",
+  "completionBlockedHint": "Du brauchst mindestens 2 von 3 richtigen Antworten.",
+  "questions": [
+    {
+      "prompt": "Welches Instrument spielt diesen ersten Klang?",
+      "options": ["Phonograph", "Klavier", "Trompete", "Akkordeon"],
+      "correctIndex": 0,
+      "instrumentName": "Phonograph",
+      "soundType": "pluck"
+    },
+    {
+      "prompt": "Welches Instrument ist beim zweiten Klang zu horen?",
+      "options": ["Gramophon", "Violine", "Schallplattenspieler", "Xylophon"],
+      "correctIndex": 2,
+      "instrumentName": "Schallplattenspieler",
+      "soundType": "wind"
+    },
+    {
+      "prompt": "Welches Instrument erklingt im dritten Ausschnitt?",
+      "options": ["Klarinette", "Phonograph", "Gramophon", "Becken"],
+      "correctIndex": 2,
+      "instrumentName": "Gramophon",
+      "soundType": "keys"
+    }
+  ]
 }

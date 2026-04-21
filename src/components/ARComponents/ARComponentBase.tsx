@@ -36,6 +36,12 @@ interface ARComponentBaseProps {
   onCompleteStation?: (stationId: number) => void;
   /** Aktuelle Station wurde bereits früher abgeschlossen */
   isCurrentStationCompleted?: boolean;
+  /** Zeigt den manuellen "Station abschließen"-Button */
+  showCompleteButton?: boolean;
+  /** Optionaler Guard um Stationsabschluss zu blockieren */
+  canCompleteOverride?: boolean;
+  /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
+  onCompleteBlocked?: () => void;
 }
 
 // Export Stations aus zentraler Config
@@ -131,6 +137,9 @@ export const ARComponentBase = ({
   currentStationPoints = 0,
   onCompleteStation,
   isCurrentStationCompleted = false,
+  showCompleteButton = true,
+  canCompleteOverride = true,
+  onCompleteBlocked,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -255,6 +264,11 @@ export const ARComponentBase = ({
       return;
     }
 
+    if (!canCompleteOverride) {
+      onCompleteBlocked?.();
+      return;
+    }
+
     setHasClickedComplete(true);
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
@@ -324,7 +338,7 @@ export const ARComponentBase = ({
 
         <ARProgressBar progress={progress} stations={stations} />
         {/* "Station abschließen"-Button */}
-        {canCompleteStation && !hasClickedComplete && (
+        {showCompleteButton && canCompleteStation && !hasClickedComplete && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}

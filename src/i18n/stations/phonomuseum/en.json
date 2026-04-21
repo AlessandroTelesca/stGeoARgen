@@ -3,5 +3,47 @@
   "description": "Discover historic musical instruments in AR",
   "longDescription": "The Phono Museum showcases the fascinating history of sound recording and playback. Experience in AR how historic phonographs and gramophones worked.",
   "quizQuestion": "When was the phonograph invented?",
-  "quizOptions": ["1857", "1877", "1897", "1917"]
+  "quizOptions": ["1857", "1877", "1897", "1917"],
+  "quizIntroTitle": "Sound Quiz at the Phono Museum",
+  "quizIntroDescription": "Listen to three short sound clips and guess the matching instrument each time. You need at least 2 of 3 correct answers to complete the station.",
+  "quizIntroStart": "Start quiz",
+  "quizSoundPrompt": "Which instrument played this sound?",
+  "playSound": "Play sound",
+  "selectAnswer": "Select answer",
+  "feedbackCorrectTitle": "Correct!",
+  "feedbackWrongTitle": "Not quite",
+  "feedbackCorrectBody": "Nice one - that was the correct instrument.",
+  "feedbackWrongBody": "Good try. Now you can see the correct instrument.",
+  "revealInstrument": "Reveal instrument",
+  "dragInstruction": "Drag across the cube to rotate",
+  "continueButton": "Continue",
+  "finishTitle": "Quiz complete",
+  "finishSuccess": "Great! You reached enough correct answers.",
+  "finishFailure": "You have fewer than 2 correct answers. Please play again.",
+  "finishScore": "Correct: {correct} of {total}",
+  "completionBlocked": "Station not complete yet",
+  "completionBlockedHint": "You need at least 2 of 3 correct answers.",
+  "questions": [
+    {
+      "prompt": "Which instrument plays this first sound clip?",
+      "options": ["Phonograph", "Piano", "Trumpet", "Accordion"],
+      "correctIndex": 0,
+      "instrumentName": "Phonograph",
+      "soundType": "pluck"
+    },
+    {
+      "prompt": "Which instrument can be heard in the second clip?",
+      "options": ["Gramophone", "Violin", "Record player", "Xylophone"],
+      "correctIndex": 2,
+      "instrumentName": "Record player",
+      "soundType": "wind"
+    },
+    {
+      "prompt": "Which instrument is playing in the third clip?",
+      "options": ["Clarinet", "Phonograph", "Gramophone", "Cymbals"],
+      "correctIndex": 2,
+      "instrumentName": "Gramophone",
+      "soundType": "keys"
+    }
+  ]
 }

@@ -8,6 +8,32 @@ export interface StationTexts {
   longDescription: string;
   quizQuestion: string;
   quizOptions: string[];
+  quizIntroTitle: string;
+  quizIntroDescription: string;
+  quizIntroStart: string;
+  quizSoundPrompt: string;
+  playSound: string;
+  selectAnswer: string;
+  feedbackCorrectTitle: string;
+  feedbackWrongTitle: string;
+  feedbackCorrectBody: string;
+  feedbackWrongBody: string;
+  revealInstrument: string;
+  dragInstruction: string;
+  continueButton: string;
+  finishTitle: string;
+  finishSuccess: string;
+  finishFailure: string;
+  finishScore: string;
+  completionBlocked: string;
+  completionBlockedHint: string;
+  questions: Array<{
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+    instrumentName: string;
+    soundType: 'pluck' | 'wind' | 'keys';
+  }>;
 }
 
 const de: StationTexts = deJson;
