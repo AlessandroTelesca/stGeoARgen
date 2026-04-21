@@ -18,6 +18,7 @@ interface ARViewProps {
   completedStations?: number;
   totalStations?: number;
   totalPoints?: number;
+  currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
 }
@@ -31,15 +32,11 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-<<<<<<< Updated upstream
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
-=======
 type QuizPhase = 'question' | 'feedback' | 'reveal' | 'summary';
 
 const REQUIRED_CORRECT_ANSWERS = 2;
 
 export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
->>>>>>> Stashed changes
   const { language } = useLanguage();
   const phonomuseumTexts = getPhonomuseumTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -267,27 +264,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >
-<<<<<<< Updated upstream
-      <ARComponentBase
-        onNavigateHome={onNavigateHome}
-        closeARViewKey="closePhonomuseumView"
-        containerRef={containerRef as React.RefObject<HTMLDivElement>}
-        videoRef={videoRef as React.RefObject<HTMLVideoElement>}
-        username={username}
-        onLogin={onLogin}
-        onLogout={onLogout}
-        onNavigateProfile={onNavigateProfile}
-        onRegister={onRegister}
-        completedStations={completedStations}
-        totalStations={totalStations}
-        totalPoints={totalPoints}
-        currentStationId={3}
-        currentStationTitle={phonomuseumTexts.stationName}
-        currentStationPoints={50}
-        onCompleteStation={onCompleteStation}
-        isCurrentStationCompleted={isCurrentStationCompleted}
-      />
-=======
       <>
         <ARComponentBase
           onNavigateHome={onNavigateHome}
@@ -631,7 +607,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           )}
         </div>
       </>
->>>>>>> Stashed changes
     </ARProximityGate>
   );
 };
