@@ -182,6 +182,9 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const totalQuestions = questions.length;
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = React.useState<number | null>(null);
+  const [wrongAnswerSelections, setWrongAnswerSelections] = React.useState<Array<number[]>>(() =>
+    questions.map(() => [])
+  );
   const [questionResults, setQuestionResults] = React.useState<Array<boolean | null>>(() =>
     questions.map(() => null)
   );
@@ -250,12 +253,29 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
   const handleAnswerSelection = (answerIndex: number) => {
     if (phase !== 'question') return;
+
+    const currentWrongSelections = wrongAnswerSelections[currentQuestionIndex] ?? [];
+    if (currentWrongSelections.includes(answerIndex)) return;
+
     const isCorrect = answerIndex === currentQuestion.correctIndex;
+
+    if (!isCorrect) {
+      setWrongAnswerSelections((prev) => {
+        const next = [...prev];
+        const existing = next[currentQuestionIndex] ?? [];
+        if (!existing.includes(answerIndex)) {
+          next[currentQuestionIndex] = [...existing, answerIndex];
+        }
+        return next;
+      });
+      return;
+    }
+
     setSelectedAnswerIndex(answerIndex);
-    setLastAnswerCorrect(isCorrect);
+    setLastAnswerCorrect(true);
     setQuestionResults((prev) => {
       const next = [...prev];
-      next[currentQuestionIndex] = isCorrect;
+      next[currentQuestionIndex] = true;
       setCorrectAnswers(next.filter((value) => value === true).length);
       return next;
     });
@@ -325,6 +345,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   useEffect(() => {
     setCurrentQuestionIndex(0);
     setSelectedAnswerIndex(null);
+    setWrongAnswerSelections(questions.map(() => []));
     setQuestionResults(questions.map(() => null));
     setCorrectAnswers(0);
     setLastAnswerCorrect(null);
@@ -574,26 +595,41 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
                   <div style={{ display: 'grid', gap: '8px' }}>
                     {currentQuestion.options.map((option, index) => (
-                      <button
-                        key={`${option}-${index}`}
-                        onClick={() => handleAnswerSelection(index)}
-                        style={{
-                          border: selectedAnswerIndex === index
-                            ? '1px solid var(--color-primary)'
-                            : '1px solid var(--color-gray-200)',
-                          borderRadius: '12px',
-                          background: selectedAnswerIndex === index
-                            ? 'var(--color-primary-light)'
-                            : 'var(--color-white)',
-                          color: 'var(--color-gray-900)',
-                          padding: '10px 12px',
-                          textAlign: 'left',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {option}
-                      </button>
+                      (() => {
+                        const isWrongSelection = (wrongAnswerSelections[currentQuestionIndex] ?? []).includes(index);
+                        const isSelectedCorrect = selectedAnswerIndex === index;
+
+                        return (
+                          <button
+                            key={`${option}-${index}`}
+                            onClick={() => handleAnswerSelection(index)}
+                            disabled={isWrongSelection}
+                            style={{
+                              border: isWrongSelection
+                                ? '1px solid var(--color-danger)'
+                                : isSelectedCorrect
+                                  ? '1px solid var(--color-primary)'
+                                  : '1px solid var(--color-gray-200)',
+                              borderRadius: '12px',
+                              background: isWrongSelection
+                                ? '#ffe8e8'
+                                : isSelectedCorrect
+                                  ? 'var(--color-primary-light)'
+                                  : 'var(--color-white)',
+                              color: isWrongSelection
+                                ? 'var(--color-danger)'
+                                : 'var(--color-gray-900)',
+                              padding: '10px 12px',
+                              textAlign: 'left',
+                              fontWeight: 600,
+                              cursor: isWrongSelection ? 'not-allowed' : 'pointer',
+                              opacity: isWrongSelection ? 0.9 : 1,
+                            }}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })()
                     ))}
                   </div>
                 </>
@@ -734,6 +770,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                   onClick={() => {
                     setCurrentQuestionIndex(0);
                     setSelectedAnswerIndex(null);
+                    setWrongAnswerSelections(questions.map(() => []));
                     setQuestionResults(questions.map(() => null));
                     setCorrectAnswers(0);
                     setLastAnswerCorrect(null);
