@@ -32,7 +32,7 @@ export interface StationTexts {
     options: string[];
     correctIndex: number;
     instrumentName: string;
-    soundType: 'pluck' | 'wind' | 'keys';
+    soundType: 'phonograph' | 'gramophone' | 'plattenspieler';
   }>;
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Check, X } from 'lucide-react';
+import * as Tone from 'tone';
 import { toast } from 'sonner';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
@@ -33,6 +34,136 @@ class PhonomuseumARSession extends ARVisualizer {
 }
 
 type QuizPhase = 'question' | 'feedback' | 'reveal' | 'summary';
+type SoundType = 'phonograph' | 'gramophone' | 'plattenspieler';
+
+type MelodyStep = {
+  midi: number;
+  duration: string;
+  velocity?: number;
+  rest?: boolean;
+};
+
+type TonePlayableInstrument = {
+  triggerAttackRelease: (note: string, duration: string, time: number, velocity?: number) => unknown;
+  dispose: () => void;
+};
+
+const PHONOMUSEUM_SOUND_SCENES: Record<
+  SoundType,
+  {
+    createInstrument: () => TonePlayableInstrument;
+    melody: MelodyStep[];
+  }
+> = {
+  phonograph: {
+    createInstrument: () => {
+      const synth = new Tone.MonoSynth({
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.03, decay: 0.16, sustain: 0.08, release: 0.28 },
+        filterEnvelope: { attack: 0.01, decay: 0.12, sustain: 0.18, release: 0.2, baseFrequency: 220, octaves: 1.4 },
+        filter: { Q: 4, type: 'lowpass', rolloff: -24 },
+        portamento: 0.06,
+      });
+      const distortion = new Tone.Distortion(0.12);
+      const filter = new Tone.Filter(1150, 'lowpass');
+      const compressor = new Tone.Compressor(-24, 3.5);
+      synth.connect(distortion);
+      distortion.connect(filter);
+      filter.connect(compressor);
+      compressor.toDestination();
+
+      return {
+        triggerAttackRelease: synth.triggerAttackRelease.bind(synth),
+        dispose: () => {
+          synth.dispose();
+          distortion.dispose();
+          filter.dispose();
+          compressor.dispose();
+        },
+      };
+    },
+    melody: [
+      { midi: 55, duration: '8n', velocity: 0.72 },
+      { midi: 58, duration: '8n', velocity: 0.7 },
+      { midi: 62, duration: '8n', velocity: 0.68 },
+      { midi: 58, duration: '16n', velocity: 0.66 },
+      { midi: 55, duration: '8n', velocity: 0.7 },
+      { midi: 50, duration: '8n', velocity: 0.68 },
+      { midi: 48, duration: '8n', velocity: 0.66 },
+      { midi: 50, duration: '4n', velocity: 0.7 },
+    ],
+  },
+  gramophone: {
+    createInstrument: () => {
+      const synth = new Tone.AMSynth({
+        harmonicity: 2.4,
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.02, decay: 0.12, sustain: 0.16, release: 0.26 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.01, decay: 0.06, sustain: 0.14, release: 0.18 },
+      });
+      const filter = new Tone.Filter(1700, 'bandpass');
+      const distortion = new Tone.Distortion(0.06);
+      const compressor = new Tone.Compressor(-22, 2.8);
+      synth.connect(filter);
+      filter.connect(distortion);
+      distortion.connect(compressor);
+      compressor.toDestination();
+
+      return {
+        triggerAttackRelease: synth.triggerAttackRelease.bind(synth),
+        dispose: () => {
+          synth.dispose();
+          filter.dispose();
+          distortion.dispose();
+          compressor.dispose();
+        },
+      };
+    },
+    melody: [
+      { midi: 62, duration: '16n', velocity: 0.78 },
+      { midi: 67, duration: '16n', velocity: 0.8 },
+      { midi: 71, duration: '8n', velocity: 0.82 },
+      { midi: 74, duration: '8n', velocity: 0.8 },
+      { midi: 71, duration: '16n', velocity: 0.78 },
+      { midi: 67, duration: '16n', velocity: 0.76 },
+      { midi: 62, duration: '8n', velocity: 0.78 },
+      { midi: 67, duration: '4n', velocity: 0.8 },
+    ],
+  },
+  plattenspieler: {
+    createInstrument: () => {
+      const synth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.006, decay: 0.14, sustain: 0.18, release: 0.28 },
+      });
+      const filter = new Tone.Filter(2800, 'lowpass');
+      const compressor = new Tone.Compressor(-20, 2.5);
+      synth.connect(filter);
+      filter.connect(compressor);
+      compressor.toDestination();
+
+      return {
+        triggerAttackRelease: synth.triggerAttackRelease.bind(synth),
+        dispose: () => {
+          synth.dispose();
+          filter.dispose();
+          compressor.dispose();
+        },
+      };
+    },
+    melody: [
+      { midi: 60, duration: '8n', velocity: 0.74 },
+      { midi: 64, duration: '8n', velocity: 0.76 },
+      { midi: 67, duration: '8n', velocity: 0.78 },
+      { midi: 72, duration: '8n', velocity: 0.8 },
+      { midi: 67, duration: '8n', velocity: 0.76 },
+      { midi: 64, duration: '8n', velocity: 0.74 },
+      { midi: 62, duration: '8n', velocity: 0.72 },
+      { midi: 60, duration: '4n', velocity: 0.76 },
+    ],
+  },
+};
 
 const REQUIRED_CORRECT_ANSWERS = 2;
 
@@ -42,7 +173,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const activeToneInstrumentRef = useRef<TonePlayableInstrument | null>(null);
+  const toneCleanupTimeoutRef = useRef<number | null>(null);
   const [isAuthorized, setIsAuthorized] = React.useState(false);
   const [showIntro, setShowIntro] = React.useState(true);
   const [phase, setPhase] = React.useState<QuizPhase>('question');
@@ -77,48 +209,43 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       .replace('{total}', String(totalQuestions));
   }, [correctAnswers, phonomuseumTexts.finishScore, totalQuestions]);
 
-  const getAudioContext = () => {
-    if (audioContextRef.current) return audioContextRef.current;
-    const webkitWindow = window as Window & { webkitAudioContext?: new () => AudioContext };
-    const AudioContextCtor = window.AudioContext || webkitWindow.webkitAudioContext;
-    if (!AudioContextCtor) return null;
-    const ctx = new AudioContextCtor();
-    audioContextRef.current = ctx;
-    return ctx;
-  };
+  const playQuestionSound = async (soundType: SoundType) => {
+    try {
+      await Tone.start();
 
-  const playQuestionSound = (soundType: 'pluck' | 'wind' | 'keys') => {
-    const ctx = getAudioContext();
-    if (!ctx) return;
+      if (toneCleanupTimeoutRef.current !== null) {
+        window.clearTimeout(toneCleanupTimeoutRef.current);
+      }
 
-    const now = ctx.currentTime;
-    const patterns: Record<'pluck' | 'wind' | 'keys', { notes: number[]; osc: OscillatorType }> = {
-      pluck: { notes: [392, 523, 659, 523], osc: 'triangle' },
-      wind: { notes: [262, 392, 523, 698], osc: 'sawtooth' },
-      keys: { notes: [440, 554, 659, 554], osc: 'square' },
-    };
+      activeToneInstrumentRef.current?.dispose();
 
-    const selectedPattern = patterns[soundType];
+      const selectedPattern = PHONOMUSEUM_SOUND_SCENES[soundType];
+      const instrument = selectedPattern.createInstrument();
+      activeToneInstrumentRef.current = instrument;
 
-    selectedPattern.notes.forEach((freq, index) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const start = now + index * 0.22;
-      const stop = start + 0.17;
+      const startTime = Tone.now() + 0.05;
+      let elapsedSeconds = 0;
 
-      osc.type = selectedPattern.osc;
-      osc.frequency.setValueAtTime(freq, start);
+      selectedPattern.melody.forEach((step) => {
+        const stepDurationSeconds = Tone.Time(step.duration).toSeconds();
 
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, stop);
+        if (!step.rest) {
+          const note = Tone.Frequency(step.midi, 'midi').toNote();
+          instrument.triggerAttackRelease(note, step.duration, startTime + elapsedSeconds, step.velocity ?? 0.8);
+        }
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        elapsedSeconds += stepDurationSeconds;
+      });
 
-      osc.start(start);
-      osc.stop(stop);
-    });
+      toneCleanupTimeoutRef.current = window.setTimeout(() => {
+        instrument.dispose();
+        if (activeToneInstrumentRef.current === instrument) {
+          activeToneInstrumentRef.current = null;
+        }
+      }, Math.ceil((elapsedSeconds + 0.6) * 1000));
+    } catch (error) {
+      console.error('[PhonomuseumView] Tone playback failed:', error);
+    }
   };
 
   const handleAnswerSelection = (answerIndex: number) => {
@@ -249,12 +376,19 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     return () => {
       console.log('[PhonomuseumView] Cleaning up AR session');
       sessionRef.current?.stop();
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => undefined);
-        audioContextRef.current = null;
-      }
     };
   }, [isAuthorized]);
+
+  useEffect(() => {
+    return () => {
+      if (toneCleanupTimeoutRef.current !== null) {
+        window.clearTimeout(toneCleanupTimeoutRef.current);
+      }
+
+      activeToneInstrumentRef.current?.dispose();
+      activeToneInstrumentRef.current = null;
+    };
+  }, []);
 
   // Wrap with Proximity Gate - checks if user is within 100m of station
   return (

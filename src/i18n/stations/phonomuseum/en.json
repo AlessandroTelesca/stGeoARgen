@@ -3,7 +3,7 @@
   "description": "Discover historic musical instruments in AR",
   "longDescription": "The Phono Museum showcases the fascinating history of sound recording and playback. Experience in AR how historic phonographs and gramophones worked.",
   "quizQuestion": "When was the phonograph invented?",
-  "quizOptions": ["1857", "1877", "1897", "1917"],
+  "quizOptions": ["Gramophone", "Phonograph", "Record player"],
   "quizIntroTitle": "Sound Quiz at the Phono Museum",
   "quizIntroDescription": "Listen to three short sound clips and guess the matching instrument each time. You need at least 2 of 3 correct answers to complete the station.",
   "quizIntroStart": "Start quiz",
@@ -26,24 +26,24 @@
   "questions": [
     {
       "prompt": "Which instrument plays this first sound clip?",
-      "options": ["Phonograph", "Piano", "Trumpet", "Accordion"],
-      "correctIndex": 0,
+      "options": ["Gramophone", "Phonograph", "Record player"],
+      "correctIndex": 1,
       "instrumentName": "Phonograph",
-      "soundType": "pluck"
+      "soundType": "phonograph"
     },
     {
       "prompt": "Which instrument can be heard in the second clip?",
-      "options": ["Gramophone", "Violin", "Record player", "Xylophone"],
+      "options": ["Gramophone", "Phonograph", "Record player"],
       "correctIndex": 2,
       "instrumentName": "Record player",
-      "soundType": "wind"
+      "soundType": "plattenspieler"
     },
     {
       "prompt": "Which instrument is playing in the third clip?",
-      "options": ["Clarinet", "Phonograph", "Gramophone", "Cymbals"],
-      "correctIndex": 2,
+      "options": ["Gramophone", "Phonograph", "Record player"],
+      "correctIndex": 0,
       "instrumentName": "Gramophone",
-      "soundType": "keys"
+      "soundType": "gramophone"
     }
   ]
 }
