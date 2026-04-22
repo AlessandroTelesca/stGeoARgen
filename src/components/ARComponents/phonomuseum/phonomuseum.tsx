@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Check, X } from 'lucide-react';
 import * as Tone from 'tone';
-import { toast } from 'sonner';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
@@ -193,7 +192,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const [revealRotation, setRevealRotation] = React.useState({ x: -16, y: 24 });
   const [showDragInstruction, setShowDragInstruction] = React.useState(false);
   const [dragsSinceReveal, setDragsSinceReveal] = React.useState(0);
-  const [hasAutoCompletedStation, setHasAutoCompletedStation] = React.useState(false);
+  const [hideQuizSummary, setHideQuizSummary] = React.useState(false);
   const dragStateRef = useRef({
     active: false,
     startX: 0,
@@ -351,28 +350,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     setLastAnswerCorrect(null);
     setPhase('question');
     setShowIntro(true);
-    setHasAutoCompletedStation(false);
+    setHideQuizSummary(false);
   }, [language]);
-
-  useEffect(() => {
-    if (phase !== 'summary') return;
-    if (!hasPassedQuiz || isCurrentStationCompleted || hasAutoCompletedStation) return;
-
-    onCompleteStation?.(3);
-    setHasAutoCompletedStation(true);
-    toast.success(phonomuseumTexts.stationName, {
-      description: phonomuseumTexts.finishSuccess,
-      duration: 2800,
-    });
-  }, [
-    phase,
-    hasPassedQuiz,
-    isCurrentStationCompleted,
-    hasAutoCompletedStation,
-    onCompleteStation,
-    phonomuseumTexts.stationName,
-    phonomuseumTexts.finishSuccess,
-  ]);
 
   useEffect(() => {
     // Only initialize AR session after authorization
@@ -438,7 +417,9 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           currentStationPoints={currentStationPoints}
           onCompleteStation={onCompleteStation}
           isCurrentStationCompleted={isCurrentStationCompleted}
-          showCompleteButton={false}
+          ignoreCompleteTimer={true}
+          onCompleteInitiated={() => setHideQuizSummary(true)}
+          showCompleteButton={!showIntro && phase === 'summary' && !hideQuizSummary}
         />
 
         <div
@@ -749,7 +730,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             </div>
           )}
 
-          {!showIntro && phase === 'summary' && (
+          {!showIntro && phase === 'summary' && !hideQuizSummary && (
             <div
               style={{
                 pointerEvents: 'auto',

@@ -40,6 +40,10 @@ interface ARComponentBaseProps {
   showCompleteButton?: boolean;
   /** Optionaler Guard um Stationsabschluss zu blockieren */
   canCompleteOverride?: boolean;
+  /** Deaktiviert den 30s-Timer-Trigger für den Abschlussbutton */
+  ignoreCompleteTimer?: boolean;
+  /** Callback sobald der Abschlussbutton erfolgreich geklickt wurde */
+  onCompleteInitiated?: () => void;
   /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
   onCompleteBlocked?: () => void;
 }
@@ -139,6 +143,8 @@ export const ARComponentBase = ({
   isCurrentStationCompleted = false,
   showCompleteButton = true,
   canCompleteOverride = true,
+  ignoreCompleteTimer = false,
+  onCompleteInitiated,
   onCompleteBlocked,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
@@ -256,7 +262,7 @@ export const ARComponentBase = ({
     setHasClickedComplete(false);
   }, [currentStationId]);
 
-  const canCompleteStation = elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
+  const canCompleteStation = ignoreCompleteTimer || elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
@@ -270,6 +276,7 @@ export const ARComponentBase = ({
     }
 
     setHasClickedComplete(true);
+    onCompleteInitiated?.();
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
