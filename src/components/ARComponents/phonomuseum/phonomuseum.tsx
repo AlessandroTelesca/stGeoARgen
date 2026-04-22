@@ -607,6 +607,22 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                   <p style={{ marginBottom: '8px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                     {lastAnswerCorrect ? phonomuseumTexts.feedbackCorrectBody : phonomuseumTexts.feedbackWrongBody}
                   </p>
+                  {lastAnswerCorrect && (
+                    <p
+                      style={{
+                        marginBottom: '12px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        background: 'rgba(12, 16, 24, 0.5)',
+                        color: 'var(--color-white)',
+                        fontSize: '0.92rem',
+                        lineHeight: 1.45,
+                        textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      {currentQuestion.soundExplanation}
+                    </p>
+                  )}
                   {!lastAnswerCorrect && (
                     <p style={{ marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                       {`${phonomuseumTexts.selectAnswer}: ${currentQuestion.options[currentQuestion.correctIndex]}`}

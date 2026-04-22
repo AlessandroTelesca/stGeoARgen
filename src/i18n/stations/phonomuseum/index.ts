@@ -33,6 +33,7 @@ export interface StationTexts {
     correctIndex: number;
     instrumentName: string;
     soundType: 'phonograph' | 'gramophone' | 'plattenspieler';
+    soundExplanation: string;
   }>;
 }
 

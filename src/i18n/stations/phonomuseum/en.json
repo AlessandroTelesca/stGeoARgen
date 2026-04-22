@@ -29,21 +29,24 @@
       "options": ["Gramophone", "Phonograph", "Record player"],
       "correctIndex": 1,
       "instrumentName": "Phonograph",
-      "soundType": "phonograph"
+      "soundType": "phonograph",
+      "soundExplanation": "The phonograph sounds darker and rougher because the wax cylinder captures a narrower frequency range and the stylus loses some fine high-end detail."
     },
     {
       "prompt": "Which medium can be heard in the second clip?",
       "options": ["Gramophone", "Phonograph", "Record player"],
       "correctIndex": 2,
       "instrumentName": "Record player",
-      "soundType": "plattenspieler"
+      "soundType": "plattenspieler",
+      "soundExplanation": "The record player sounds cleaner and wider because vinyl playback preserves more detail and dynamic range than the early purely mechanical systems."
     },
     {
       "prompt": "Which medium is playing in the third clip?",
       "options": ["Gramophone", "Phonograph", "Record player"],
       "correctIndex": 0,
       "instrumentName": "Gramophone",
-      "soundType": "gramophone"
+      "soundType": "gramophone",
+      "soundExplanation": "The gramophone has a stronger midrange and a horn-like projection because the horn mechanically amplifies the sound, giving it that nasal vintage color."
     }
   ]
 }

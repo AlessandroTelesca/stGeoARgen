@@ -29,21 +29,24 @@
       "options": ["Grammophon", "Phonograph", "Plattenspieler"],
       "correctIndex": 1,
       "instrumentName": "Phonograph",
-      "soundType": "phonograph"
+      "soundType": "phonograph",
+      "soundExplanation": "Der Phonograph klingt etwas dumpfer und rauer, weil die Walze nur einen engeren Frequenzbereich abbildet und die Nadel viele feine Hohen nicht sauber ubertragt."
     },
     {
       "prompt": "Welches Medium ist beim zweiten Klang zu horen?",
       "options": ["Grammophon", "Phonograph", "Plattenspieler"],
       "correctIndex": 2,
       "instrumentName": "Plattenspieler",
-      "soundType": "plattenspieler"
+      "soundType": "plattenspieler",
+      "soundExplanation": "Der Plattenspieler klingt sauberer und breiter, weil die Schallplatte mehr Details im Signal speichern kann und der Tonabnehmer feine Dynamik besser wiedergibt."
     },
     {
       "prompt": "Welches Medium erklingt im dritten Ausschnitt?",
       "options": ["Grammophon", "Phonograph", "Plattenspieler"],
       "correctIndex": 0,
       "instrumentName": "Grammophon",
-      "soundType": "gramophone"
+      "soundType": "gramophone",
+      "soundExplanation": "Das Grammophon betont die Mitten stark und wirkt trichterartig, weil der Schall mechanisch uber den Horntrichter verstarkt wird und dadurch ein nasaler Charakter entsteht."
     }
   ]
 }
