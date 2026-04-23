@@ -23,6 +23,39 @@
   "finishScore": "Richtig: {correct} von {total}",
   "completionBlocked": "Station noch nicht abgeschlossen",
   "completionBlockedHint": "Du brauchst mindestens 2 von 3 richtigen Antworten.",
+  "mediumLesson": {
+    "title": "Klang-Training vor dem Quiz",
+    "subtitle": "Hoere die drei Medien und erkenne, wie sie sich im Klang unterscheiden.",
+    "playLabel": "Klang anhoeren",
+    "answerLabel": "Welches Medium passt am besten?",
+    "continueLabel": "Weiter",
+    "retryLabel": "Training wiederholen",
+    "startMainQuizLabel": "Zum Hauptquiz",
+    "resultTitle": "Training abgeschlossen",
+    "resultBody": "Du hast {correct} von {total} Trainingsfragen richtig beantwortet.",
+    "mediumNames": {
+      "phonograph": "Phonograph",
+      "gramophone": "Grammophon",
+      "plattenspieler": "Plattenspieler"
+    },
+    "questions": [
+      {
+        "prompt": "Welches Medium klingt am warmsten, etwas dumpf und leicht verzerrt?",
+        "correct": "phonograph",
+        "explanation": "Der Phonograph nutzt fruehe Walzenaufnahmen. Dadurch klingt er oft weicher und rauer."
+      },
+      {
+        "prompt": "Welches Medium klingt mittig-praesent mit hornartiger Projektion?",
+        "correct": "gramophone",
+        "explanation": "Das Grammophon betont Mitten stark. Das gibt den typischen hornartigen Klangcharakter."
+      },
+      {
+        "prompt": "Welches Medium klingt am ausgewogensten und moderner?",
+        "correct": "plattenspieler",
+        "explanation": "Der Plattenspieler liefert ein breiteres, saubereres Klangbild als die historischen Vorgaenger."
+      }
+    ]
+  },
   "questions": [
     {
       "prompt": "Welches Medium spielt diesen ersten Klang?",

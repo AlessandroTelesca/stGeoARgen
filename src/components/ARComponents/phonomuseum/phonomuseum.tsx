@@ -169,6 +169,7 @@ const REQUIRED_CORRECT_ANSWERS = 2;
 export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
   const { language } = useLanguage();
   const phonomuseumTexts = getPhonomuseumTexts(language);
+  const mediumLessonCopy = phonomuseumTexts.mediumLesson;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<PhonomuseumARSession | null>(null);
@@ -189,6 +190,17 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   );
   const [correctAnswers, setCorrectAnswers] = React.useState(0);
   const [lastAnswerCorrect, setLastAnswerCorrect] = React.useState<boolean | null>(null);
+  const [showMediumLesson, setShowMediumLesson] = React.useState(true);
+  const [mediumLessonQuestionIndex, setMediumLessonQuestionIndex] = React.useState(0);
+  const [mediumLessonSelectedAnswer, setMediumLessonSelectedAnswer] = React.useState<SoundType | null>(null);
+  const [mediumLessonLastCorrect, setMediumLessonLastCorrect] = React.useState<boolean | null>(null);
+  const [mediumLessonWrongSelections, setMediumLessonWrongSelections] = React.useState<Array<SoundType[]>>(() =>
+    mediumLessonCopy.questions.map(() => [])
+  );
+  const [mediumLessonResults, setMediumLessonResults] = React.useState<Array<boolean | null>>(() =>
+    mediumLessonCopy.questions.map(() => null)
+  );
+  const [mediumLessonFinished, setMediumLessonFinished] = React.useState(false);
   const [revealRotation, setRevealRotation] = React.useState({ x: -16, y: 24 });
   const [showDragInstruction, setShowDragInstruction] = React.useState(false);
   const [dragsSinceReveal, setDragsSinceReveal] = React.useState(0);
@@ -203,7 +215,19 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   });
 
   const currentQuestion = questions[currentQuestionIndex];
+  const currentMediumLessonQuestion = mediumLessonCopy.questions[mediumLessonQuestionIndex];
   const hasPassedQuiz = isCurrentStationCompleted || (phase === 'summary' && correctAnswers >= REQUIRED_CORRECT_ANSWERS);
+
+  const mediumLessonCorrectCount = useMemo(
+    () => mediumLessonResults.filter((result) => result === true).length,
+    [mediumLessonResults]
+  );
+
+  const mediumLessonScoreText = useMemo(() => {
+    return mediumLessonCopy.resultBody
+      .replace('{correct}', String(mediumLessonCorrectCount))
+      .replace('{total}', String(mediumLessonCopy.questions.length));
+  }, [mediumLessonCopy, mediumLessonCorrectCount]);
 
   const scoreText = useMemo(() => {
     return phonomuseumTexts.finishScore
@@ -295,6 +319,62 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     setPhase('question');
   };
 
+  const handleMediumLessonAnswerSelection = (answer: SoundType) => {
+    if (showIntro || !showMediumLesson || mediumLessonFinished || mediumLessonSelectedAnswer !== null) {
+      return;
+    }
+
+    const currentWrongSelections = mediumLessonWrongSelections[mediumLessonQuestionIndex] ?? [];
+    if (currentWrongSelections.includes(answer)) {
+      return;
+    }
+
+    const isCorrect = answer === currentMediumLessonQuestion.correct;
+
+    if (!isCorrect) {
+      setMediumLessonWrongSelections((prev) => {
+        const next = [...prev];
+        const existing = next[mediumLessonQuestionIndex] ?? [];
+        if (!existing.includes(answer)) {
+          next[mediumLessonQuestionIndex] = [...existing, answer];
+        }
+        return next;
+      });
+      return;
+    }
+
+    setMediumLessonSelectedAnswer(answer);
+    setMediumLessonLastCorrect(isCorrect);
+    setMediumLessonResults((prev) => {
+      const next = [...prev];
+      next[mediumLessonQuestionIndex] = isCorrect;
+      return next;
+    });
+  };
+
+  const handleContinueMediumLesson = () => {
+    const isLastLessonQuestion = mediumLessonQuestionIndex >= mediumLessonCopy.questions.length - 1;
+
+    if (isLastLessonQuestion) {
+      setMediumLessonFinished(true);
+      return;
+    }
+
+    setMediumLessonQuestionIndex((prev) => prev + 1);
+    setMediumLessonSelectedAnswer(null);
+    setMediumLessonLastCorrect(null);
+  };
+
+  const resetMediumLesson = () => {
+    setShowMediumLesson(true);
+    setMediumLessonQuestionIndex(0);
+    setMediumLessonSelectedAnswer(null);
+    setMediumLessonLastCorrect(null);
+    setMediumLessonWrongSelections(mediumLessonCopy.questions.map(() => []));
+    setMediumLessonResults(mediumLessonCopy.questions.map(() => null));
+    setMediumLessonFinished(false);
+  };
+
   const startCubeDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     dragStateRef.current = {
       active: true,
@@ -348,6 +428,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     setQuestionResults(questions.map(() => null));
     setCorrectAnswers(0);
     setLastAnswerCorrect(null);
+    resetMediumLesson();
     setPhase('question');
     setShowIntro(true);
     setHideQuizSummary(false);
@@ -465,7 +546,226 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             </div>
           )}
 
-          {!showIntro && phase !== 'summary' && (
+          {!showIntro && showMediumLesson && (
+            <div
+              style={{
+                pointerEvents: 'auto',
+                width: 'min(560px, 100%)',
+                padding: '8px',
+                color: 'var(--color-gray-900)',
+              }}
+            >
+              {!mediumLessonFinished && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', opacity: 0.95, color: 'var(--color-white)', textShadow: '0 2px 6px rgba(0,0,0,0.75)' }}>
+                    <span>{`${mediumLessonQuestionIndex + 1}/${mediumLessonCopy.questions.length}`}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {mediumLessonResults.map((result, index) => {
+                        if (result === true) {
+                          return (
+                            <span
+                              key={`lesson-icon-${index}`}
+                              style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '50%',
+                                background: 'var(--color-primary)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              <Check size={14} color="var(--color-white)" strokeWidth={3} />
+                            </span>
+                          );
+                        }
+
+                        if (result === false) {
+                          return (
+                            <span
+                              key={`lesson-icon-${index}`}
+                              style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '50%',
+                                background: 'var(--color-danger)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              <X size={14} color="var(--color-white)" strokeWidth={3} />
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <span
+                            key={`lesson-icon-${index}`}
+                            style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '50%',
+                              background: 'var(--color-gray-400)',
+                              display: 'inline-block',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <h3 style={{ fontWeight: 800, marginBottom: '6px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                    {mediumLessonCopy.title}
+                  </h3>
+                  <p style={{ marginBottom: '12px', fontSize: '0.9rem', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                    {mediumLessonCopy.subtitle}
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                    {(Object.keys(mediumLessonCopy.mediumNames) as SoundType[]).map((soundType) => (
+                      <button
+                        key={`lesson-play-${soundType}`}
+                        onClick={() => playQuestionSound(soundType)}
+                        style={{
+                          border: '1px solid var(--color-green-300)',
+                          borderRadius: '10px',
+                          background: 'var(--color-primary-light)',
+                          color: 'var(--color-primary)',
+                          padding: '8px 10px',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {`${mediumLessonCopy.playLabel}: ${mediumLessonCopy.mediumNames[soundType]}`}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p style={{ marginBottom: '8px', fontWeight: 700, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {currentMediumLessonQuestion.prompt}
+                  </p>
+                  <p style={{ marginBottom: '10px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {mediumLessonCopy.answerLabel}
+                  </p>
+
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {(Object.keys(mediumLessonCopy.mediumNames) as SoundType[]).map((soundType) => {
+                      const isWrongSelection = (mediumLessonWrongSelections[mediumLessonQuestionIndex] ?? []).includes(soundType);
+                      const isSelected = mediumLessonSelectedAnswer === soundType;
+                      const hasAnswered = mediumLessonSelectedAnswer !== null;
+                      const isCorrectChoice = soundType === currentMediumLessonQuestion.correct;
+
+                      return (
+                        <button
+                          key={`lesson-answer-${soundType}`}
+                          onClick={() => handleMediumLessonAnswerSelection(soundType)}
+                          disabled={isWrongSelection || hasAnswered}
+                          style={{
+                            border: isWrongSelection
+                              ? '1px solid var(--color-danger)'
+                              : isSelected
+                                ? '1px solid var(--color-primary)'
+                                : '1px solid var(--color-gray-200)',
+                            borderRadius: '12px',
+                            background: isWrongSelection
+                              ? '#ffe8e8'
+                              : isSelected
+                                ? 'var(--color-primary-light)'
+                                : 'var(--color-white)',
+                            color: isWrongSelection ? 'var(--color-danger)' : 'var(--color-gray-900)',
+                            padding: '10px 12px',
+                            textAlign: 'left',
+                            fontWeight: 700,
+                            cursor: isWrongSelection || hasAnswered ? 'default' : 'pointer',
+                          }}
+                        >
+                          {mediumLessonCopy.mediumNames[soundType]}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {mediumLessonSelectedAnswer !== null && (
+                    <>
+                      <p style={{ marginTop: '12px', marginBottom: '8px', color: mediumLessonLastCorrect ? 'var(--color-green-200)' : '#ffd3d3', textShadow: '0 2px 8px rgba(0,0,0,0.85)', fontWeight: 700 }}>
+                        {mediumLessonLastCorrect ? phonomuseumTexts.feedbackCorrectTitle : phonomuseumTexts.feedbackWrongTitle}
+                      </p>
+                      <p style={{ marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                        {currentMediumLessonQuestion.explanation}
+                      </p>
+                      <button
+                        onClick={handleContinueMediumLesson}
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          borderRadius: '12px',
+                          padding: '10px 12px',
+                          background: 'var(--color-primary)',
+                          color: 'var(--color-white)',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {mediumLessonCopy.continueLabel}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+              {mediumLessonFinished && (
+                <>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {mediumLessonCopy.resultTitle}
+                  </h3>
+                  <p style={{ marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {mediumLessonScoreText}
+                  </p>
+
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <button
+                      onClick={resetMediumLesson}
+                      style={{
+                        width: '100%',
+                        border: '1px solid var(--color-white)',
+                        borderRadius: '12px',
+                        padding: '10px 12px',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: 'var(--color-white)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mediumLessonCopy.retryLabel}
+                    </button>
+
+                    <button
+                      onClick={() => setShowMediumLesson(false)}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '10px 12px',
+                        background: 'var(--color-primary)',
+                        color: 'var(--color-white)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mediumLessonCopy.startMainQuizLabel}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {!showIntro && !showMediumLesson && phase !== 'summary' && (
             <div
               style={{
                 pointerEvents: 'auto',

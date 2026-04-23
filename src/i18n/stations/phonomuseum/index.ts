@@ -27,6 +27,27 @@ export interface StationTexts {
   finishScore: string;
   completionBlocked: string;
   completionBlockedHint: string;
+  mediumLesson: {
+    title: string;
+    subtitle: string;
+    playLabel: string;
+    answerLabel: string;
+    continueLabel: string;
+    retryLabel: string;
+    startMainQuizLabel: string;
+    resultTitle: string;
+    resultBody: string;
+    mediumNames: {
+      phonograph: string;
+      gramophone: string;
+      plattenspieler: string;
+    };
+    questions: Array<{
+      prompt: string;
+      correct: 'phonograph' | 'gramophone' | 'plattenspieler';
+      explanation: string;
+    }>;
+  };
   questions: Array<{
     prompt: string;
     options: string[];
