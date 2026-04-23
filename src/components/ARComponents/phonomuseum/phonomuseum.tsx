@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-react';
 import * as Tone from 'tone';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
-import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
+import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
@@ -23,7 +23,7 @@ interface ARViewProps {
   isCurrentStationCompleted?: boolean;
 }
 
-class PhonomuseumARSession extends ARVisualizer {
+class PhonomuseumARSession extends GyroARVisualizer {
   // You can override methods or add custom functionality here
   // For example:
   // private initThree(): void {
