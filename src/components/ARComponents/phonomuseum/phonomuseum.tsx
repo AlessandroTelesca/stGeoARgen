@@ -32,7 +32,7 @@ class PhonomuseumARSession extends ARVisualizer {
   // }
 }
 
-type QuizPhase = 'question' | 'feedback' | 'reveal' | 'summary';
+type QuizPhase = 'question' | 'feedback' | 'reveal' | 'yourTurn' | 'summary';
 type SoundType = 'phonograph' | 'gramophone' | 'plattenspieler';
 
 type MelodyStep = {
@@ -165,6 +165,20 @@ const PHONOMUSEUM_SOUND_SCENES: Record<
 };
 
 const REQUIRED_CORRECT_ANSWERS = 2;
+const YOUR_TURN_MIN_NOTES = 6;
+const YOUR_TURN_MAX_NOTES = 8;
+const QUIZ_UI_SAFE_VERTICAL_GAP = 88;
+const COMPLETE_BUTTON_SAFE_GAP = 110;
+const YOUR_TURN_NOTE_OPTIONS: Array<{ label: string; midi: number }> = [
+  { label: 'C4', midi: 60 },
+  { label: 'D4', midi: 62 },
+  { label: 'E4', midi: 64 },
+  { label: 'F4', midi: 65 },
+  { label: 'G4', midi: 67 },
+  { label: 'A4', midi: 69 },
+  { label: 'B4', midi: 71 },
+  { label: 'C5', midi: 72 },
+];
 
 export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
   const { language } = useLanguage();
@@ -205,6 +219,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const [showDragInstruction, setShowDragInstruction] = React.useState(false);
   const [dragsSinceReveal, setDragsSinceReveal] = React.useState(0);
   const [hideQuizSummary, setHideQuizSummary] = React.useState(false);
+  const [yourTurnMelody, setYourTurnMelody] = React.useState<number[]>([]);
+  const [hasPlayedYourTurnMelody, setHasPlayedYourTurnMelody] = React.useState(false);
   const dragStateRef = useRef({
     active: false,
     startX: 0,
@@ -217,6 +233,21 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const currentQuestion = questions[currentQuestionIndex];
   const currentMediumLessonQuestion = mediumLessonCopy.questions[mediumLessonQuestionIndex];
   const hasPassedQuiz = isCurrentStationCompleted || (phase === 'summary' && correctAnswers >= REQUIRED_CORRECT_ANSWERS);
+  const yourTurnMelodyValid = yourTurnMelody.length >= YOUR_TURN_MIN_NOTES && yourTurnMelody.length <= YOUR_TURN_MAX_NOTES;
+  const showStationCompleteButton =
+    !showIntro &&
+    ((phase === 'summary' && !hideQuizSummary) ||
+      (phase === 'yourTurn' && yourTurnMelodyValid && hasPlayedYourTurnMelody));
+  const quizPanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2 + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px)`;
+
+  const yourTurnMelodyDisplay = useMemo(() => {
+    const noteMap = new Map<number, string>(YOUR_TURN_NOTE_OPTIONS.map((option) => [option.midi, option.label]));
+    return yourTurnMelody.map((midi) => noteMap.get(midi) ?? Tone.Frequency(midi, 'midi').toNote()).join(' - ');
+  }, [yourTurnMelody]);
+
+  const yourTurnNotesCountText = useMemo(() => {
+    return phonomuseumTexts.yourTurn.notesCountLabel.replace('{count}', String(yourTurnMelody.length));
+  }, [phonomuseumTexts.yourTurn.notesCountLabel, yourTurnMelody.length]);
 
   const mediumLessonCorrectCount = useMemo(
     () => mediumLessonResults.filter((result) => result === true).length,
@@ -235,7 +266,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       .replace('{total}', String(totalQuestions));
   }, [correctAnswers, phonomuseumTexts.finishScore, totalQuestions]);
 
-  const playQuestionSound = async (soundType: SoundType) => {
+  const playMelodyByMedium = async (soundType: SoundType, melody: MelodyStep[]) => {
     try {
       await Tone.start();
 
@@ -252,7 +283,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       const startTime = Tone.now() + 0.05;
       let elapsedSeconds = 0;
 
-      selectedPattern.melody.forEach((step) => {
+      melody.forEach((step) => {
         const stepDurationSeconds = Tone.Time(step.duration).toSeconds();
 
         if (!step.rest) {
@@ -272,6 +303,49 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     } catch (error) {
       console.error('[PhonomuseumView] Tone playback failed:', error);
     }
+  };
+
+  const playQuestionSound = async (soundType: SoundType) => {
+    await playMelodyByMedium(soundType, PHONOMUSEUM_SOUND_SCENES[soundType].melody);
+  };
+
+  const playYourTurnMelody = async (soundType: SoundType) => {
+    if (!yourTurnMelodyValid) {
+      return;
+    }
+
+    const melody = yourTurnMelody.map((midi) => ({ midi, duration: '8n', velocity: 0.8 }));
+    await playMelodyByMedium(soundType, melody);
+    setHasPlayedYourTurnMelody(true);
+  };
+
+  const playClickedYourTurnNote = async (midi: number) => {
+    await playMelodyByMedium('plattenspieler', [{ midi, duration: '8n', velocity: 0.82 }]);
+  };
+
+  const addNoteToYourTurnMelody = (midi: number) => {
+    if (yourTurnMelody.length >= YOUR_TURN_MAX_NOTES) {
+      return;
+    }
+
+    void playClickedYourTurnNote(midi);
+
+    setYourTurnMelody((prev) => {
+      if (prev.length >= YOUR_TURN_MAX_NOTES) {
+        return prev;
+      }
+
+      return [...prev, midi];
+    });
+  };
+
+  const removeLastYourTurnNote = () => {
+    setYourTurnMelody((prev) => prev.slice(0, -1));
+  };
+
+  const clearYourTurnMelody = () => {
+    setYourTurnMelody([]);
+    setHasPlayedYourTurnMelody(false);
   };
 
   const handleAnswerSelection = (answerIndex: number) => {
@@ -309,7 +383,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     const isLastQuestion = currentQuestionIndex >= totalQuestions - 1;
 
     if (isLastQuestion) {
-      setPhase('summary');
+      setPhase('yourTurn');
       return;
     }
 
@@ -432,6 +506,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     setPhase('question');
     setShowIntro(true);
     setHideQuizSummary(false);
+    setYourTurnMelody([]);
+    setHasPlayedYourTurnMelody(false);
   }, [language]);
 
   useEffect(() => {
@@ -500,7 +576,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           isCurrentStationCompleted={isCurrentStationCompleted}
           ignoreCompleteTimer={true}
           onCompleteInitiated={() => setHideQuizSummary(true)}
-          showCompleteButton={!showIntro && phase === 'summary' && !hideQuizSummary}
+          showCompleteButton={showStationCompleteButton}
         />
 
         <div
@@ -512,14 +588,19 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '20px',
+            paddingTop: `${QUIZ_UI_SAFE_VERTICAL_GAP}px`,
+            paddingBottom: `${QUIZ_UI_SAFE_VERTICAL_GAP + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px`,
+            paddingLeft: '20px',
+            paddingRight: '20px',
           }}
         >
-          {showIntro && (
+          {!hideQuizSummary && showIntro && (
             <div
               style={{
                 pointerEvents: 'auto',
                 width: 'min(520px, 100%)',
+                maxHeight: quizPanelMaxHeight,
+                overflowY: 'auto',
                 padding: '8px',
                 color: 'var(--color-gray-900)',
                 textAlign: 'center',
@@ -546,11 +627,16 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             </div>
           )}
 
-          {!showIntro && showMediumLesson && (
+          {!hideQuizSummary && !showIntro && showMediumLesson && (
             <div
               style={{
                 pointerEvents: 'auto',
                 width: 'min(560px, 100%)',
+                maxHeight: quizPanelMaxHeight,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
                 padding: '8px',
                 color: 'var(--color-gray-900)',
               }}
@@ -765,11 +851,16 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             </div>
           )}
 
-          {!showIntro && !showMediumLesson && phase !== 'summary' && (
+          {!hideQuizSummary && !showIntro && !showMediumLesson && phase !== 'summary' && (
             <div
               style={{
                 pointerEvents: 'auto',
                 width: 'min(560px, 100%)',
+                maxHeight: quizPanelMaxHeight,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
                 padding: '8px',
                 color: 'var(--color-gray-900)',
               }}
@@ -1027,14 +1118,153 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                   </button>
                 </>
               )}
+
+              {phase === 'yourTurn' && (
+                <>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {phonomuseumTexts.yourTurn.title}
+                  </h3>
+                  <p style={{ marginBottom: '10px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {phonomuseumTexts.yourTurn.subtitle}
+                  </p>
+
+                  <p style={{ marginBottom: '6px', fontWeight: 700, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {phonomuseumTexts.yourTurn.melodyLabel}
+                  </p>
+                  <div
+                    style={{
+                      marginBottom: '8px',
+                      minHeight: '54px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.4)',
+                      background: 'rgba(12, 16, 24, 0.5)',
+                      padding: '10px 12px',
+                      color: 'var(--color-white)',
+                      textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {yourTurnMelody.length > 0 ? yourTurnMelodyDisplay : phonomuseumTexts.yourTurn.melodyHint}
+                  </div>
+                  <p style={{ marginBottom: '10px', fontSize: '0.86rem', color: yourTurnMelodyValid ? 'var(--color-green-200)' : '#ffd3d3', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {yourTurnNotesCountText}
+                  </p>
+
+                  <p style={{ marginBottom: '8px', fontWeight: 700, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {phonomuseumTexts.yourTurn.composeLabel}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '8px', marginBottom: '10px' }}>
+                    {YOUR_TURN_NOTE_OPTIONS.map((noteOption) => (
+                      <button
+                        key={`your-turn-note-${noteOption.label}`}
+                        onClick={() => addNoteToYourTurnMelody(noteOption.midi)}
+                        disabled={yourTurnMelody.length >= YOUR_TURN_MAX_NOTES}
+                        style={{
+                          border: '1px solid var(--color-gray-200)',
+                          borderRadius: '10px',
+                          background: 'var(--color-white)',
+                          color: 'var(--color-gray-900)',
+                          padding: '8px 10px',
+                          fontWeight: 700,
+                          cursor: yourTurnMelody.length >= YOUR_TURN_MAX_NOTES ? 'default' : 'pointer',
+                          opacity: yourTurnMelody.length >= YOUR_TURN_MAX_NOTES ? 0.65 : 1,
+                        }}
+                      >
+                        {noteOption.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                    <button
+                      onClick={removeLastYourTurnNote}
+                      disabled={yourTurnMelody.length === 0}
+                      style={{
+                        border: '1px solid var(--color-white)',
+                        borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: 'var(--color-white)',
+                        padding: '9px 10px',
+                        fontWeight: 700,
+                        cursor: yourTurnMelody.length === 0 ? 'default' : 'pointer',
+                        opacity: yourTurnMelody.length === 0 ? 0.6 : 1,
+                      }}
+                    >
+                      {phonomuseumTexts.yourTurn.removeLastLabel}
+                    </button>
+                    <button
+                      onClick={clearYourTurnMelody}
+                      disabled={yourTurnMelody.length === 0}
+                      style={{
+                        border: '1px solid var(--color-white)',
+                        borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: 'var(--color-white)',
+                        padding: '9px 10px',
+                        fontWeight: 700,
+                        cursor: yourTurnMelody.length === 0 ? 'default' : 'pointer',
+                        opacity: yourTurnMelody.length === 0 ? 0.6 : 1,
+                      }}
+                    >
+                      {phonomuseumTexts.yourTurn.clearLabel}
+                    </button>
+                  </div>
+
+                  <p style={{ marginBottom: '8px', fontWeight: 700, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {phonomuseumTexts.yourTurn.playByMediumLabel}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginBottom: '10px' }}>
+                    {(Object.keys(mediumLessonCopy.mediumNames) as SoundType[]).map((soundType) => (
+                      <button
+                        key={`your-turn-play-${soundType}`}
+                        onClick={() => playYourTurnMelody(soundType)}
+                        disabled={!yourTurnMelodyValid}
+                        style={{
+                          border: '1px solid var(--color-green-300)',
+                          borderRadius: '10px',
+                          background: 'var(--color-primary-light)',
+                          color: 'var(--color-primary)',
+                          padding: '8px 10px',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: !yourTurnMelodyValid ? 'default' : 'pointer',
+                          opacity: !yourTurnMelodyValid ? 0.6 : 1,
+                        }}
+                      >
+                        {mediumLessonCopy.mediumNames[soundType]}
+                      </button>
+                    ))}
+                  </div>
+
+                  {hasPlayedYourTurnMelody && (
+                    <p style={{ marginBottom: '10px', color: 'var(--color-green-200)', textShadow: '0 2px 8px rgba(0,0,0,0.85)', fontWeight: 700 }}>
+                      {phonomuseumTexts.yourTurn.playedBadge}
+                    </p>
+                  )}
+
+                  {!hasPlayedYourTurnMelody && yourTurnMelodyValid && (
+                    <p style={{ marginBottom: '10px', color: '#ffd3d3', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                      {phonomuseumTexts.yourTurn.requiredPlayHint}
+                    </p>
+                  )}
+
+                </>
+              )}
             </div>
           )}
 
-          {!showIntro && phase === 'summary' && !hideQuizSummary && (
+          {!hideQuizSummary && !showIntro && phase === 'summary' && (
             <div
               style={{
                 pointerEvents: 'auto',
                 width: 'min(560px, 100%)',
+                maxHeight: quizPanelMaxHeight,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
                 padding: '8px',
                 color: 'var(--color-gray-900)',
                 textAlign: 'center',
@@ -1055,6 +1285,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                     setQuestionResults(questions.map(() => null));
                     setCorrectAnswers(0);
                     setLastAnswerCorrect(null);
+                    setYourTurnMelody([]);
+                    setHasPlayedYourTurnMelody(false);
                     setPhase('question');
                   }}
                   style={{
@@ -1071,6 +1303,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                   {phonomuseumTexts.quizIntroStart}
                 </button>
               )}
+
             </div>
           )}
         </div>

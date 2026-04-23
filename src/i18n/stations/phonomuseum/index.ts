@@ -48,6 +48,20 @@ export interface StationTexts {
       explanation: string;
     }>;
   };
+  yourTurn: {
+    title: string;
+    subtitle: string;
+    melodyLabel: string;
+    melodyHint: string;
+    notesCountLabel: string;
+    composeLabel: string;
+    clearLabel: string;
+    removeLastLabel: string;
+    playByMediumLabel: string;
+    playedBadge: string;
+    continueLabel: string;
+    requiredPlayHint: string;
+  };
   questions: Array<{
     prompt: string;
     options: string[];

@@ -56,6 +56,20 @@
       }
     ]
   },
+  "yourTurn": {
+    "title": "Your turn",
+    "subtitle": "Build your own melody with 6 to 8 notes and hear it played by different media.",
+    "melodyLabel": "Your melody",
+    "melodyHint": "Select at least 6 and at most 8 notes.",
+    "notesCountLabel": "Notes: {count}/8",
+    "composeLabel": "Choose notes",
+    "clearLabel": "Clear all",
+    "removeLastLabel": "Remove last note",
+    "playByMediumLabel": "Play with medium",
+    "playedBadge": "Played",
+    "continueLabel": "Continue to result",
+    "requiredPlayHint": "Play your melody at least once with one medium."
+  },
   "questions": [
     {
       "prompt": "Which medium plays this first sound clip?",

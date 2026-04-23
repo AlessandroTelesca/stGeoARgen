@@ -56,6 +56,20 @@
       }
     ]
   },
+  "yourTurn": {
+    "title": "Jetzt bist du dran",
+    "subtitle": "Baue eine eigene Melodie mit 6 bis 8 Noten und hoere sie ueber verschiedene Medien.",
+    "melodyLabel": "Deine Melodie",
+    "melodyHint": "Waehle mindestens 6 und hoechstens 8 Noten aus.",
+    "notesCountLabel": "Noten: {count}/8",
+    "composeLabel": "Noten auswaehlen",
+    "clearLabel": "Alles loeschen",
+    "removeLastLabel": "Letzte Note entfernen",
+    "playByMediumLabel": "Mit Medium abspielen",
+    "playedBadge": "Abgespielt",
+    "continueLabel": "Zur Auswertung",
+    "requiredPlayHint": "Spiele deine Melodie mindestens einmal mit einem Medium ab."
+  },
   "questions": [
     {
       "prompt": "Welches Medium spielt diesen ersten Klang?",
