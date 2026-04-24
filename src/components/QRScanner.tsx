@@ -10,7 +10,7 @@ interface QRScannerProps {
 }
 
 // Verfügbare AR-Views basierend auf QR-Code URLs
-const VALID_AR_VIEWS = ['glockenspiel', 'phonomuseum', 'klosterweiher'];
+const VALID_AR_VIEWS = ['glockenspiel', 'bahnhof', 'phonomuseum', 'klosterweiher'];
 
 export function QRScanner({ onClose, onScan }: QRScannerProps) {
   const { t } = useLanguage();

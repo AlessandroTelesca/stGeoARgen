@@ -41,6 +41,7 @@ interface StationDetailProps {
 // Station ID to AR Route mapping
 const STATION_AR_ROUTES: Record<number, string> = {
   1: '/glockenspiel',    // Historisches Rathaus
+  2: '/bahnhof',         // Bahnhof
   3: '/phonomuseum',     // Heimatmuseum
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };

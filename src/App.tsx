@@ -24,6 +24,7 @@ import { ForgotPassword } from './components/ForgotPassword';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
+import { BahnhofView } from './components/ARComponents/bahnhof/bahnhof.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
@@ -34,6 +35,7 @@ import { useLanguage } from './contexts/LanguageContext';
 import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
 import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
+import { getBahnhofTexts } from './i18n/stations/bahnhof';
 
 const ALLOW_STATION_WITHOUT_LOGIN =
   String(import.meta.env.VITE_ALLOW_STATION_WITHOUT_LOGIN || 'false').toLowerCase() === 'true';
@@ -72,6 +74,7 @@ export default function App() {
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const glockenspielTexts = getGlockenspielTexts(language);
   const phonomuseumTexts = getPhonomuseumTexts(language);
+  const bahnhofTexts = getBahnhofTexts(language);
   const navigate = useNavigate();
   const location = useLocation();
   const appRootRef = useRef<HTMLDivElement>(null);
@@ -79,7 +82,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -258,6 +261,8 @@ export default function App() {
 
     if (path === '/klosterweiher') {
       setCurrentView('ar-klosterweiher');
+    } else if (path === '/bahnhof') {
+      setCurrentView('ar-bahnhof');
     } else if (path === '/phonomuseum') {
       setCurrentView('ar-phonomuseum');
     } else if (path === '/glockenspiel') {
@@ -392,6 +397,22 @@ export default function App() {
           },
         },
         {
+          id: 2,
+          title: bahnhofTexts.stationName,
+          description: bahnhofTexts.description,
+          longDescription: bahnhofTexts.longDescription,
+          imageUrl: 'https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMHRyYWluJTIwc3RhdGlvbnxlbnwxfHx8fDE3NjQwMjQwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+          status: 'available',
+          points: 50,
+          latitude: getStationCoordinates(2)?.lat || 48.1241,
+          longitude: getStationCoordinates(2)?.lng || 8.3341,
+          quiz: {
+            question: bahnhofTexts.quizQuestion,
+            options: bahnhofTexts.quizOptions,
+            correctAnswer: 1,
+          },
+        },
+        {
           id: 3,
           title: phonomuseumTexts.stationName,
           description: phonomuseumTexts.description,
@@ -498,6 +519,21 @@ export default function App() {
                 : station.quiz,
             };
           }
+          if (station.id === 2) {
+            return {
+              ...station,
+              title: bahnhofTexts.stationName,
+              description: bahnhofTexts.description,
+              longDescription: bahnhofTexts.longDescription,
+              quiz: station.quiz
+                ? {
+                    ...station.quiz,
+                    question: bahnhofTexts.quizQuestion,
+                    options: bahnhofTexts.quizOptions,
+                  }
+                : station.quiz,
+            };
+          }
           if (station.id === 3) {
             return {
               ...station,
@@ -517,7 +553,7 @@ export default function App() {
         }),
       }))
     );
-  }, [glockenspielTexts, phonomuseumTexts]);
+  }, [glockenspielTexts, bahnhofTexts, phonomuseumTexts]);
 
   useEffect(() => {
     setPaths((prev) =>
@@ -766,6 +802,9 @@ export default function App() {
     if (arView === 'glockenspiel') {
       setCurrentView('ar-glockenspiel');
       navigate('/glockenspiel');
+    } else if (arView === 'bahnhof') {
+      setCurrentView('ar-bahnhof');
+      navigate('/bahnhof');
     } else if (arView === 'phonomuseum') {
       setCurrentView('ar-phonomuseum');
       navigate('/phonomuseum');
@@ -821,10 +860,12 @@ export default function App() {
   };
 
   const glockenspielStation = getStationById(1);
+  const bahnhofStation = getStationById(2);
   const phonomuseumStation = getStationById(3);
   const klosterweiherStation = getStationById(5);
 
   const isGlockenspielCompleted = glockenspielStation?.status === 'completed';
+  const isBahnhofCompleted = bahnhofStation?.status === 'completed';
   const isPhonomuseumCompleted = phonomuseumStation?.status === 'completed';
   const isKlosterweiherCompleted = klosterweiherStation?.status === 'completed';
 
@@ -1098,6 +1139,31 @@ export default function App() {
             currentStationPoints={phonomuseumStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isPhonomuseumCompleted}
+          />
+        )
+      )}
+
+      {currentView === 'ar-bahnhof' && (
+        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
+          <BahnhofView
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            currentStationPoints={bahnhofStation?.points}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={isBahnhofCompleted}
           />
         )
       )}

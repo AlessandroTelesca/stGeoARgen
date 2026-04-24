@@ -1,0 +1,17 @@
+{
+  "stationName": "Train Station",
+  "description": "Discover the historic train station in AR",
+  "longDescription": "The train station was a central hub for the development of St. Georgen. Explore its architecture in AR and learn how rail transport shaped the region.",
+  "quizQuestion": "What made the station historically important?",
+  "arStartTitle": "Start Train Station AR",
+  "arStartDescription": "Tap Start to allow motion and gyroscope access and load the AR view.",
+  "arStartButton": "Start AR",
+  "arStartingButton": "Starting AR...",
+  "arStartErrorFallback": "Failed to start the AR view.",
+  "quizOptions": [
+    "It served only as a freight terminal",
+    "It was a central transport hub for travelers and trade",
+    "It worked mainly as a local post office",
+    "It was used as a timber storage site"
+  ]
+}

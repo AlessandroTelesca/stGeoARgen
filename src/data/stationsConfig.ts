@@ -18,6 +18,12 @@ export const STATIONS_COORDINATES: StationCoordinates[] = [
     lat: 48.134599538155655, // Testweise: Mein Zuhause
     lng: 8.245808734754021 
   },
+  {
+    id: 2,
+    name: 'Bahnhof',
+    lat: 48.1241,
+    lng: 8.3341
+  },
   { 
     id: 3, 
     name: 'Phonomuseum', 
@@ -38,6 +44,7 @@ export const AR_VIEW_STATION_MAP: Record<string, number> = {
   'klosterweiher': 5, // Aussichtspunkt Hörnle -> Klosterweiher AR
   'phonomuseum': 3,   // Heimatmuseum -> Phonomuseum AR
   'glockenspiel': 1,  // Historisches Rathaus -> Glockenspiel AR
+  'bahnhof': 2,       // Bahnhof -> Bahnhof AR
 };
 
 // Helper: Koordinaten nach Station-ID finden
