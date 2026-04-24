@@ -114,6 +114,12 @@
   border-radius: 20px;
   padding: 20px 16px;
   box-shadow: var(--shadow-sm);
+  transition: padding 0.35s ease, border-radius 0.35s ease;
+}
+
+.ar-progress-container-compact {
+  padding: 8px 10px;
+  border-radius: 999px;
 }
 
 .ar-stations-row {
@@ -122,6 +128,11 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
+  transition: margin-bottom 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-stations-row {
+  margin-bottom: 0;
 }
 
 .ar-station-wrapper {
@@ -134,13 +145,19 @@
 }
 
 .ar-station-circle {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-circle {
+  width: 20px;
+  height: 20px;
 }
 
 .ar-station-completed {
@@ -157,18 +174,29 @@
 }
 
 .ar-station-current-dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background-color: white;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-current-dot {
+  width: 8px;
+  height: 8px;
 }
 
 .ar-station-line {
   flex: 1;
-  height: 4px;
-  margin-left: 6px;
-  margin-right: 6px;
+  height: 3px;
+  margin-left: 4px;
+  margin-right: 4px;
   border-radius: 2px;
+  transition: height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-line {
+  height: 2px;
 }
 
 .ar-station-line-completed {
@@ -183,6 +211,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  max-height: 32px;
+  opacity: 1;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+}
+
+.ar-progress-container-compact .ar-info-row {
+  max-height: 0;
+  opacity: 0;
+  margin-top: -2px;
+  pointer-events: none;
 }
 
 .ar-station-text {
