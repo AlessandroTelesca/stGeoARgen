@@ -33,6 +33,7 @@ interface StationDetailProps {
   onClose: () => void;
   onComplete: (stationId: number) => void;
   isLoggedIn?: boolean;
+  requireLoginForAR?: boolean;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
 }
@@ -44,7 +45,7 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -53,7 +54,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavi
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const hasARRoute = !!STATION_AR_ROUTES[station.id];
-  const needsLogin = isLoggedIn === false && hasARRoute;
+  const needsLogin = requireLoginForAR && isLoggedIn === false && hasARRoute;
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,

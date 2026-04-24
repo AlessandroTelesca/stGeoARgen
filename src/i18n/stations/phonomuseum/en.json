@@ -1,7 +1,104 @@
 {
   "stationName": "Phono Museum",
-  "description": "Discover historic musical instruments in AR",
+  "description": "Discover historic audio media in AR",
   "longDescription": "The Phono Museum showcases the fascinating history of sound recording and playback. Experience in AR how historic phonographs and gramophones worked.",
   "quizQuestion": "When was the phonograph invented?",
-  "quizOptions": ["1857", "1877", "1897", "1917"]
+  "quizOptions": ["Gramophone", "Phonograph", "Record player"],
+  "quizIntroTitle": "Sound Quiz at the Phono Museum",
+  "quizIntroDescription": "Listen to three short sound clips and guess the matching medium each time. You need at least 2 of 3 correct answers to complete the station.",
+  "quizIntroStart": "Start quiz",
+  "quizSoundPrompt": "Which medium played this sound?",
+  "playSound": "Play sound",
+  "selectAnswer": "Select answer",
+  "feedbackCorrectTitle": "Correct!",
+  "feedbackWrongTitle": "Not quite",
+  "feedbackCorrectBody": "Nice one - that was the correct medium.",
+  "feedbackWrongBody": "Good try. Now you can see the correct medium.",
+  "revealInstrument": "Reveal medium",
+  "dragInstruction": "Drag across the cube to rotate",
+  "continueButton": "Continue",
+  "finishTitle": "Quiz complete",
+  "finishSuccess": "Great! You reached enough correct answers.",
+  "finishFailure": "You have fewer than 2 correct answers. Please play again.",
+  "finishScore": "Correct: {correct} of {total}",
+  "completionBlocked": "Station not complete yet",
+  "completionBlockedHint": "You need at least 2 of 3 correct answers.",
+  "arStartTitle": "Enable Motion Tracking",
+  "arStartDescription": "Tap start to allow motion and orientation access for gyroscope controls.",
+  "arStartButton": "Start AR",
+  "arStartingButton": "Starting AR...",
+  "arStartErrorFallback": "Failed to start AR session",
+  "mediumLesson": {
+    "title": "Sound Training Before the Quiz",
+    "subtitle": "Listen to all three media first and learn how their sound signatures differ.",
+    "playLabel": "Play sample",
+    "answerLabel": "Which medium matches best?",
+    "continueLabel": "Continue",
+    "retryLabel": "Retry training",
+    "startMainQuizLabel": "Start main quiz",
+    "resultTitle": "Training complete",
+    "resultBody": "You answered {correct} of {total} training questions correctly.",
+    "mediumNames": {
+      "phonograph": "Phonograph",
+      "gramophone": "Gramophone",
+      "plattenspieler": "Turntable"
+    },
+    "questions": [
+      {
+        "prompt": "Which medium sounds the warmest, most muffled, and slightly gritty?",
+        "correct": "phonograph",
+        "explanation": "Phonograph recordings on early cylinders often feel softer, darker, and rougher in timbre."
+      },
+      {
+        "prompt": "Which medium sounds most mid-focused with a horn-like projection?",
+        "correct": "gramophone",
+        "explanation": "Gramophones emphasize midrange frequencies, creating that classic horn-forward character."
+      },
+      {
+        "prompt": "Which medium sounds the most balanced and modern overall?",
+        "correct": "plattenspieler",
+        "explanation": "The turntable has a cleaner and fuller response than earlier mechanical playback systems."
+      }
+    ]
+  },
+  "yourTurn": {
+    "title": "Your turn",
+    "subtitle": "Build your own melody with 6 to 8 notes and hear it played by different media.",
+    "melodyLabel": "Your melody",
+    "melodyHint": "Select at least 6 and at most 8 notes.",
+    "notesCountLabel": "Notes: {count}/8",
+    "composeLabel": "Choose notes",
+    "clearLabel": "Clear all",
+    "removeLastLabel": "Remove last note",
+    "playByMediumLabel": "Play with medium",
+    "playedBadge": "Played",
+    "continueLabel": "Continue to result",
+    "requiredPlayHint": "Play your melody at least once with one medium."
+  },
+  "questions": [
+    {
+      "prompt": "Which medium plays this first sound clip?",
+      "options": ["Gramophone", "Phonograph", "Record player"],
+      "correctIndex": 1,
+      "instrumentName": "Phonograph",
+      "soundType": "phonograph",
+      "soundExplanation": "The phonograph sounds darker and rougher because the wax cylinder captures a narrower frequency range and the stylus loses some fine high-end detail."
+    },
+    {
+      "prompt": "Which medium can be heard in the second clip?",
+      "options": ["Gramophone", "Phonograph", "Record player"],
+      "correctIndex": 2,
+      "instrumentName": "Record player",
+      "soundType": "plattenspieler",
+      "soundExplanation": "The record player sounds cleaner and wider because vinyl playback preserves more detail and dynamic range than the early purely mechanical systems."
+    },
+    {
+      "prompt": "Which medium is playing in the third clip?",
+      "options": ["Gramophone", "Phonograph", "Record player"],
+      "correctIndex": 0,
+      "instrumentName": "Gramophone",
+      "soundType": "gramophone",
+      "soundExplanation": "The gramophone has a stronger midrange and a horn-like projection because the horn mechanically amplifies the sound, giving it that nasal vintage color."
+    }
+  ]
 }

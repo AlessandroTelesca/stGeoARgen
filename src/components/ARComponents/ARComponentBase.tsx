@@ -36,6 +36,16 @@ interface ARComponentBaseProps {
   onCompleteStation?: (stationId: number) => void;
   /** Aktuelle Station wurde bereits früher abgeschlossen */
   isCurrentStationCompleted?: boolean;
+  /** Zeigt den manuellen "Station abschließen"-Button */
+  showCompleteButton?: boolean;
+  /** Optionaler Guard um Stationsabschluss zu blockieren */
+  canCompleteOverride?: boolean;
+  /** Deaktiviert den 30s-Timer-Trigger für den Abschlussbutton */
+  ignoreCompleteTimer?: boolean;
+  /** Callback sobald der Abschlussbutton erfolgreich geklickt wurde */
+  onCompleteInitiated?: () => void;
+  /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
+  onCompleteBlocked?: () => void;
 }
 
 // Export Stations aus zentraler Config
@@ -131,6 +141,11 @@ export const ARComponentBase = ({
   currentStationPoints = 0,
   onCompleteStation,
   isCurrentStationCompleted = false,
+  showCompleteButton = true,
+  canCompleteOverride = true,
+  ignoreCompleteTimer = false,
+  onCompleteInitiated,
+  onCompleteBlocked,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -247,7 +262,7 @@ export const ARComponentBase = ({
     setHasClickedComplete(false);
   }, [currentStationId]);
 
-  const canCompleteStation = elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
+  const canCompleteStation = ignoreCompleteTimer || elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
@@ -255,7 +270,13 @@ export const ARComponentBase = ({
       return;
     }
 
+    if (!canCompleteOverride) {
+      onCompleteBlocked?.();
+      return;
+    }
+
     setHasClickedComplete(true);
+    onCompleteInitiated?.();
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
@@ -324,7 +345,7 @@ export const ARComponentBase = ({
 
         <ARProgressBar progress={progress} stations={stations} />
         {/* "Station abschließen"-Button */}
-        {canCompleteStation && !hasClickedComplete && (
+        {showCompleteButton && canCompleteStation && !hasClickedComplete && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}

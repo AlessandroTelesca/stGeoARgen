@@ -1,7 +1,104 @@
 {
   "stationName": "Phonomuseum",
-  "description": "Entdecke historische Musikinstrumente in AR",
+  "description": "Entdecke historische Audiomedien in AR",
   "longDescription": "Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.",
   "quizQuestion": "Wann wurde der Phonograph erfunden?",
-  "quizOptions": ["1857", "1877", "1897", "1917"]
+  "quizOptions": ["Grammophon", "Phonograph", "Plattenspieler"],
+  "quizIntroTitle": "Klang-Quiz im Phonomuseum",
+  "quizIntroDescription": "Hore dir drei kurze Klange an und rate jeweils das passende Medium. Du brauchst mindestens 2 von 3 richtigen Antworten, um die Station abzuschliessen.",
+  "quizIntroStart": "Quiz starten",
+  "quizSoundPrompt": "Welches Medium hat diesen Klang gespielt?",
+  "playSound": "Sound abspielen",
+  "selectAnswer": "Antwort auswahlen",
+  "feedbackCorrectTitle": "Richtig!",
+  "feedbackWrongTitle": "Leider falsch",
+  "feedbackCorrectBody": "Stark erkannt - das war das richtige Medium.",
+  "feedbackWrongBody": "Guter Versuch. Jetzt siehst du die richtige Losung.",
+  "revealInstrument": "Medium anzeigen",
+  "dragInstruction": "Zum Drehen uber den Cube ziehen",
+  "continueButton": "Weiter",
+  "finishTitle": "Quiz abgeschlossen",
+  "finishSuccess": "Super! Du hast genug richtige Antworten gesammelt.",
+  "finishFailure": "Du hast weniger als 2 richtige Antworten. Spiele das Quiz noch einmal.",
+  "finishScore": "Richtig: {correct} von {total}",
+  "completionBlocked": "Station noch nicht abgeschlossen",
+  "completionBlockedHint": "Du brauchst mindestens 2 von 3 richtigen Antworten.",
+  "arStartTitle": "Bewegungserfassung aktivieren",
+  "arStartDescription": "Tippe auf Start, um den Zugriff auf Bewegung und Orientierung für die Gyroskopsteuerung zu erlauben.",
+  "arStartButton": "AR starten",
+  "arStartingButton": "AR wird gestartet...",
+  "arStartErrorFallback": "AR-Sitzung konnte nicht gestartet werden",
+  "mediumLesson": {
+    "title": "Klang-Training vor dem Quiz",
+    "subtitle": "Hoere die drei Medien und erkenne, wie sie sich im Klang unterscheiden.",
+    "playLabel": "Klang anhoeren",
+    "answerLabel": "Welches Medium passt am besten?",
+    "continueLabel": "Weiter",
+    "retryLabel": "Training wiederholen",
+    "startMainQuizLabel": "Zum Hauptquiz",
+    "resultTitle": "Training abgeschlossen",
+    "resultBody": "Du hast {correct} von {total} Trainingsfragen richtig beantwortet.",
+    "mediumNames": {
+      "phonograph": "Phonograph",
+      "gramophone": "Grammophon",
+      "plattenspieler": "Plattenspieler"
+    },
+    "questions": [
+      {
+        "prompt": "Welches Medium klingt am warmsten, etwas dumpf und leicht verzerrt?",
+        "correct": "phonograph",
+        "explanation": "Der Phonograph nutzt fruehe Walzenaufnahmen. Dadurch klingt er oft weicher und rauer."
+      },
+      {
+        "prompt": "Welches Medium klingt mittig-praesent mit hornartiger Projektion?",
+        "correct": "gramophone",
+        "explanation": "Das Grammophon betont Mitten stark. Das gibt den typischen hornartigen Klangcharakter."
+      },
+      {
+        "prompt": "Welches Medium klingt am ausgewogensten und moderner?",
+        "correct": "plattenspieler",
+        "explanation": "Der Plattenspieler liefert ein breiteres, saubereres Klangbild als die historischen Vorgaenger."
+      }
+    ]
+  },
+  "yourTurn": {
+    "title": "Jetzt bist du dran",
+    "subtitle": "Baue eine eigene Melodie mit 6 bis 8 Noten und hoere sie ueber verschiedene Medien.",
+    "melodyLabel": "Deine Melodie",
+    "melodyHint": "Waehle mindestens 6 und hoechstens 8 Noten aus.",
+    "notesCountLabel": "Noten: {count}/8",
+    "composeLabel": "Noten auswaehlen",
+    "clearLabel": "Alles loeschen",
+    "removeLastLabel": "Letzte Note entfernen",
+    "playByMediumLabel": "Mit Medium abspielen",
+    "playedBadge": "Abgespielt",
+    "continueLabel": "Zur Auswertung",
+    "requiredPlayHint": "Spiele deine Melodie mindestens einmal mit einem Medium ab."
+  },
+  "questions": [
+    {
+      "prompt": "Welches Medium spielt diesen ersten Klang?",
+      "options": ["Grammophon", "Phonograph", "Plattenspieler"],
+      "correctIndex": 1,
+      "instrumentName": "Phonograph",
+      "soundType": "phonograph",
+      "soundExplanation": "Der Phonograph klingt etwas dumpfer und rauer, weil die Walze nur einen engeren Frequenzbereich abbildet und die Nadel viele feine Hohen nicht sauber ubertragt."
+    },
+    {
+      "prompt": "Welches Medium ist beim zweiten Klang zu horen?",
+      "options": ["Grammophon", "Phonograph", "Plattenspieler"],
+      "correctIndex": 2,
+      "instrumentName": "Plattenspieler",
+      "soundType": "plattenspieler",
+      "soundExplanation": "Der Plattenspieler klingt sauberer und breiter, weil die Schallplatte mehr Details im Signal speichern kann und der Tonabnehmer feine Dynamik besser wiedergibt."
+    },
+    {
+      "prompt": "Welches Medium erklingt im dritten Ausschnitt?",
+      "options": ["Grammophon", "Phonograph", "Plattenspieler"],
+      "correctIndex": 0,
+      "instrumentName": "Grammophon",
+      "soundType": "gramophone",
+      "soundExplanation": "Das Grammophon betont die Mitten stark und wirkt trichterartig, weil der Schall mechanisch uber den Horntrichter verstarkt wird und dadurch ein nasaler Charakter entsteht."
+    }
+  ]
 }

@@ -35,6 +35,9 @@ import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
 import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 
+const ALLOW_STATION_WITHOUT_LOGIN =
+  String(import.meta.env.VITE_ALLOW_STATION_WITHOUT_LOGIN || 'false').toLowerCase() === 'true';
+
 
 interface Station {
   id: number;
@@ -1006,6 +1009,7 @@ export default function App() {
             onClose={handleBackToPath}
             onComplete={handleStationComplete}
             isLoggedIn={!!username}
+            requireLoginForAR={!ALLOW_STATION_WITHOUT_LOGIN}
             onNavigateToLogin={handleNavigateToLogin}
             onNavigateToRegister={handleNavigateToRegister}
           />
@@ -1048,7 +1052,7 @@ export default function App() {
 
       {/* AR Views */}
       {currentView === 'ar-klosterweiher' && (
-        !isInitializing && !username ? (
+        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
           <ARLoginGuard
             onLogin={handleNavigateToLogin}
             onRegister={handleNavigateToRegister}
@@ -1074,7 +1078,7 @@ export default function App() {
       )}
 
       {currentView === 'ar-phonomuseum' && (
-        !isInitializing && !username ? (
+        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
           <ARLoginGuard
             onLogin={handleNavigateToLogin}
             onRegister={handleNavigateToRegister}
@@ -1099,7 +1103,7 @@ export default function App() {
       )}
 
       {currentView === 'ar-glockenspiel' && (
-        !isInitializing && !username ? (
+        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
           <ARLoginGuard
             onLogin={handleNavigateToLogin}
             onRegister={handleNavigateToRegister}

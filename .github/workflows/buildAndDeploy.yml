@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - PhonomuseumStation
   workflow_dispatch:
 
 permissions:
