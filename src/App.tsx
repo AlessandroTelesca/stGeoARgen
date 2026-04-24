@@ -1069,6 +1069,7 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
+            currentStationPoints={klosterweiherStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isKlosterweiherCompleted}
             onTreasureCollect={handleTreasureCollect}
@@ -1094,6 +1095,7 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
+            currentStationPoints={phonomuseumStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isPhonomuseumCompleted}
           />
@@ -1118,6 +1120,7 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
+            currentStationPoints={glockenspielStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isGlockenspielCompleted}
           />

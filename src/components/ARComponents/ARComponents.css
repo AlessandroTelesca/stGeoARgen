@@ -209,6 +209,7 @@
   inset: 0;
   background-color: var(--color-black-30);
   pointer-events: auto;
+  z-index: 10004;
 }
 
 .ar-menu-panel {
@@ -222,6 +223,7 @@
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
+  z-index: 10005;
 }
 
 .ar-menu-items {

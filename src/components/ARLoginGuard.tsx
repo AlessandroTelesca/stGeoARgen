@@ -92,7 +92,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
 
           {/* Buttons */}
           <motion.div
-            className="space-y-4"
+            className="space-y-4 mt-10"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
