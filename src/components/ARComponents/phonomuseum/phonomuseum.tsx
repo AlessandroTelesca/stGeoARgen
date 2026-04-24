@@ -24,6 +24,7 @@ interface ARViewProps {
 }
 
 class PhonomuseumARSession extends GyroARVisualizer {
+  public museumInteriorUrl = new URL('./models/museum_interior.glb', import.meta.url).href;
   // You can override methods or add custom functionality here
   // For example:
   // private initThree(): void {
@@ -511,6 +512,19 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
       await session.init();
       console.log('[PhonomuseumView] AR session initialized');
+      
+      // Load museum interior model and position camera at the center of the room
+      try {
+        await session.loadGLTFModel(session.museumInteriorUrl, {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: 1
+        });
+        console.log('[PhonomuseumView] Museum interior model loaded');
+      } catch (err) {
+        console.error('[PhonomuseumView] Failed to load museum model:', err);
+      }
+      
       sessionRef.current = session;
       setHasStarted(true);
     } catch (err: any) {

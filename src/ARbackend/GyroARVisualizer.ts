@@ -44,6 +44,28 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		window.addEventListener('resize', this.handleOwnResize);
 	}
 
+	public loadGLTFModel(
+		url: string,
+		options: {
+			position?: THREE.Vector3 | [number, number, number];
+			rotation?: THREE.Euler | [number, number, number];
+			scale?: number | [number, number, number];
+		} = {}
+	): Promise<THREE.Object3D> {
+		return super.loadGLTFModel(url, options);
+	}
+
+	public loadGLTFModelWithAnimations(
+		url: string,
+		options: {
+			position?: THREE.Vector3 | [number, number, number];
+			rotation?: THREE.Euler | [number, number, number];
+			scale?: number | [number, number, number];
+		} = {}
+	): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+		return super.loadGLTFModelWithAnimations(url, options);
+	}
+
 	protected animate = (): void => {
 		this.animationId = requestAnimationFrame(this.animate);
 		this.updateCameraFromGyro();
