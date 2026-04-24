@@ -6,9 +6,10 @@ import { useLanguage } from '../../contexts/LanguageContext';
 interface ARProgressBarProps {
   progress: { current: number; total: number; points: number };
   stations: string[];
+  onCompactChange?: (isCompact: boolean) => void;
 }
 
-export const ARProgressBar = ({ progress, stations }: ARProgressBarProps) => {
+export const ARProgressBar = ({ progress, stations, onCompactChange }: ARProgressBarProps) => {
   const { t } = useLanguage();
   const [isCompact, setIsCompact] = useState(false);
 
@@ -22,6 +23,10 @@ export const ARProgressBar = ({ progress, stations }: ARProgressBarProps) => {
       window.clearTimeout(compactTimer);
     };
   }, [progress.current]);
+
+  useEffect(() => {
+    onCompactChange?.(isCompact);
+  }, [isCompact, onCompactChange]);
 
   const completedIconSize = isCompact ? 14 : 22;
   const lockedIconSize = isCompact ? 12 : 18;

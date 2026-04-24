@@ -329,7 +329,7 @@
 /* Navigation Button - Above Progress Bar */
 .ar-navigate-button {
   position: absolute;
-  bottom: calc(140px + max(24px, env(safe-area-inset-bottom)));
+  bottom: calc(112px + max(24px, env(safe-area-inset-bottom)));
   right: 16px;
   padding: 0;
   background-color: var(--color-primary);
@@ -342,8 +342,12 @@
   pointer-events: auto;
   z-index: 25;
   color: var(--color-white);
-  transition: all 0.2s ease;
+  transition: bottom 0.35s ease, transform 0.2s ease, background-color 0.2s ease;
   border-radius: 32px;
+}
+
+.ar-navigate-button-compact {
+  bottom: calc(62px + max(24px, env(safe-area-inset-bottom)));
 }
 
 .ar-navigate-button-content {
@@ -368,7 +372,11 @@
 /* Mobile optimizations */
 @media (max-width: 480px) {
   .ar-navigate-button {
-    bottom: calc(130px + max(24px, env(safe-area-inset-bottom)));
+    bottom: calc(104px + max(24px, env(safe-area-inset-bottom)));
+  }
+
+  .ar-navigate-button-compact {
+    bottom: calc(56px + max(24px, env(safe-area-inset-bottom)));
   }
   
   .ar-navigate-button-text {

@@ -156,6 +156,7 @@ export const ARComponentBase = ({
   const [stationStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [hasClickedComplete, setHasClickedComplete] = useState(false);
+  const [isProgressCompact, setIsProgressCompact] = useState(false);
   // Snapshot: gespeicherter Wert beim Klick auf "Station abschließen" (VOR props-Update)
   const [remainingAtCompletion, setRemainingAtCompletion] = useState(0);
 
@@ -343,13 +344,17 @@ export const ARComponentBase = ({
           username={username || null}
         />
 
-        <ARProgressBar progress={progress} stations={stations} />
+        <ARProgressBar
+          progress={progress}
+          stations={stations}
+          onCompactChange={setIsProgressCompact}
+        />
         {/* "Station abschließen"-Button */}
         {showCompleteButton && canCompleteStation && !hasClickedComplete && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}
-            className="ar-navigate-button"
+            className={`ar-navigate-button ${isProgressCompact ? 'ar-navigate-button-compact' : ''}`}
             style={isCurrentStationCompleted ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
             whileTap={{ scale: 0.95 }}
             initial={{ opacity: 0, y: 20 }}
