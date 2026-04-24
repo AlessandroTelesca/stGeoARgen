@@ -74,27 +74,52 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 			return;
 		}
 
-		const orientationEventCtor = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-			requestPermission?: () => Promise<'granted' | 'denied'>;
-		};
-
-		if (typeof orientationEventCtor.requestPermission === 'function') {
-			try {
-				const permission = await orientationEventCtor.requestPermission();
-				if (permission !== 'granted') {
-					this.initOptions.onError?.(new Error('Device orientation permission denied'));
-					return;
-				}
-			} catch (err) {
-				this.initOptions.onError?.(err);
-				return;
-			}
+		const permissionGranted = await this.requestBrowserMotionPermissions();
+		if (!permissionGranted) {
+			this.initOptions.onError?.(
+				new Error('Browser denied motion/orientation permission for gyroscope access')
+			);
+			return;
 		}
 
 		this.screenOrientation = this.getScreenOrientation();
 		window.addEventListener('orientationchange', this.handleOrientationChange);
 		window.addEventListener('deviceorientation', this.handleDeviceOrientation, true);
 		this.gyroEnabled = true;
+	}
+
+	private async requestBrowserMotionPermissions(): Promise<boolean> {
+		type PermissionState = 'granted' | 'denied';
+		type PermissionRequestable = {
+			requestPermission?: () => Promise<PermissionState>;
+		};
+
+		const orientationCtor = DeviceOrientationEvent as typeof DeviceOrientationEvent & PermissionRequestable;
+		const motionCtor =
+			typeof DeviceMotionEvent !== 'undefined'
+				? (DeviceMotionEvent as typeof DeviceMotionEvent & PermissionRequestable)
+				: undefined;
+
+		try {
+			if (typeof orientationCtor.requestPermission === 'function') {
+				const orientationPermission = await orientationCtor.requestPermission();
+				if (orientationPermission !== 'granted') {
+					return false;
+				}
+			}
+
+			if (motionCtor && typeof motionCtor.requestPermission === 'function') {
+				const motionPermission = await motionCtor.requestPermission();
+				if (motionPermission !== 'granted') {
+					return false;
+				}
+			}
+
+			return true;
+		} catch (err) {
+			this.initOptions.onError?.(err);
+			return false;
+		}
 	}
 
 	private getScreenOrientation(): number {

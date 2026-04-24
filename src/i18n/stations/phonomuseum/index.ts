@@ -27,6 +27,11 @@ export interface StationTexts {
   finishScore: string;
   completionBlocked: string;
   completionBlockedHint: string;
+  arStartTitle: string;
+  arStartDescription: string;
+  arStartButton: string;
+  arStartingButton: string;
+  arStartErrorFallback: string;
   mediumLesson: {
     title: string;
     subtitle: string;

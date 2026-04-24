@@ -23,6 +23,11 @@
   "finishScore": "Correct: {correct} of {total}",
   "completionBlocked": "Station not complete yet",
   "completionBlockedHint": "You need at least 2 of 3 correct answers.",
+  "arStartTitle": "Enable Motion Tracking",
+  "arStartDescription": "Tap start to allow motion and orientation access for gyroscope controls.",
+  "arStartButton": "Start AR",
+  "arStartingButton": "Starting AR...",
+  "arStartErrorFallback": "Failed to start AR session",
   "mediumLesson": {
     "title": "Sound Training Before the Quiz",
     "subtitle": "Listen to all three media first and learn how their sound signatures differ.",

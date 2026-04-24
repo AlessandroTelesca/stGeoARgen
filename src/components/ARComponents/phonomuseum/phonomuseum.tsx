@@ -190,6 +190,9 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const activeToneInstrumentRef = useRef<TonePlayableInstrument | null>(null);
   const toneCleanupTimeoutRef = useRef<number | null>(null);
   const [isAuthorized, setIsAuthorized] = React.useState(false);
+  const [hasStarted, setHasStarted] = React.useState(false);
+  const [isStarting, setIsStarting] = React.useState(false);
+  const [startError, setStartError] = React.useState<string | null>(null);
   const [showIntro, setShowIntro] = React.useState(true);
   const [phase, setPhase] = React.useState<QuizPhase>('question');
   const questions = phonomuseumTexts.questions;
@@ -488,6 +491,37 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     dragStateRef.current.active = false;
   };
 
+  const startARSession = async () => {
+    if (!isAuthorized || !containerRef.current || !videoRef.current || isStarting || hasStarted) {
+      return;
+    }
+
+    setIsStarting(true);
+    setStartError(null);
+
+    try {
+      console.log('[PhonomuseumView] Initializing AR session...');
+      const session = new PhonomuseumARSession(
+        containerRef.current,
+        videoRef.current,
+        {
+          onError: (e) => console.error('AR init failed', e)
+        }
+      );
+
+      await session.init();
+      console.log('[PhonomuseumView] AR session initialized');
+      sessionRef.current = session;
+      setHasStarted(true);
+    } catch (err: any) {
+      const message = err?.message || phonomuseumTexts.arStartErrorFallback;
+      setStartError(message);
+      console.error('[PhonomuseumView] AR init error:', err);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   useEffect(() => {
     if (phase !== 'reveal') return;
     setRevealRotation({ x: -16, y: 24 });
@@ -511,30 +545,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   }, [language]);
 
   useEffect(() => {
-    // Only initialize AR session after authorization
-    if (!isAuthorized || !containerRef.current || !videoRef.current) return;
-
-    console.log('[PhonomuseumView] Initializing AR session...');
-    const session = new PhonomuseumARSession(
-      containerRef.current,
-      videoRef.current,
-      {
-        onError: (e) => console.error("AR init failed", e)
-      }
-    );
-
-    session.init().then(() => {
-      console.log('[PhonomuseumView] AR session initialized');
-      sessionRef.current = session;
-    }).catch(err => {
-      console.error('[PhonomuseumView] AR init error:', err);
-    });
-
     return () => {
       console.log('[PhonomuseumView] Cleaning up AR session');
       sessionRef.current?.stop();
     };
-  }, [isAuthorized]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -579,6 +594,65 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           showCompleteButton={showStationCompleteButton}
         />
 
+        {isAuthorized && !hasStarted && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10005,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              pointerEvents: 'auto',
+              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(460px, 100%)',
+                borderRadius: '16px',
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '20px',
+                textAlign: 'center',
+              }}
+            >
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)' }}>
+                {phonomuseumTexts.arStartTitle}
+              </h2>
+              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
+                {phonomuseumTexts.arStartDescription}
+              </p>
+              {startError && (
+                <p style={{ marginBottom: '12px', color: '#ffd3d3', fontWeight: 700 }}>
+                  {startError}
+                </p>
+              )}
+              <button
+                onClick={() => {
+                  void startARSession();
+                }}
+                disabled={isStarting}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--color-primary)',
+                  color: 'var(--color-white)',
+                  fontWeight: 700,
+                  cursor: isStarting ? 'default' : 'pointer',
+                  opacity: isStarting ? 0.75 : 1,
+                }}
+              >
+                {isStarting ? phonomuseumTexts.arStartingButton : phonomuseumTexts.arStartButton}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {hasStarted && (
         <div
           style={{
             position: 'fixed',
@@ -1307,6 +1381,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             </div>
           )}
         </div>
+        )}
       </>
     </ARProximityGate>
   );

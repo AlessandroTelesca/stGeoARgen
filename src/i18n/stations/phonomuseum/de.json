@@ -23,6 +23,11 @@
   "finishScore": "Richtig: {correct} von {total}",
   "completionBlocked": "Station noch nicht abgeschlossen",
   "completionBlockedHint": "Du brauchst mindestens 2 von 3 richtigen Antworten.",
+  "arStartTitle": "Bewegungserfassung aktivieren",
+  "arStartDescription": "Tippe auf Start, um den Zugriff auf Bewegung und Orientierung für die Gyroskopsteuerung zu erlauben.",
+  "arStartButton": "AR starten",
+  "arStartingButton": "AR wird gestartet...",
+  "arStartErrorFallback": "AR-Sitzung konnte nicht gestartet werden",
   "mediumLesson": {
     "title": "Klang-Training vor dem Quiz",
     "subtitle": "Hoere die drei Medien und erkenne, wie sie sich im Klang unterscheiden.",
