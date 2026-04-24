@@ -301,6 +301,7 @@ const YOUR_TURN_MIN_NOTES = 6;
 const YOUR_TURN_MAX_NOTES = 8;
 const QUIZ_UI_SAFE_VERTICAL_GAP = 88;
 const COMPLETE_BUTTON_SAFE_GAP = 110;
+const QUIZ_PANEL_GLASS_BACKGROUND = 'rgba(228, 232, 236, 0.24)';
 const YOUR_TURN_NOTE_OPTIONS: Array<{ label: string; midi: number }> = [
   { label: 'C4', midi: 60 },
   { label: 'D4', midi: 62 },
@@ -821,6 +822,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 maxHeight: quizPanelMaxHeight,
                 overflowY: 'auto',
                 padding: '8px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.35)',
+                background: QUIZ_PANEL_GLASS_BACKGROUND,
+                backdropFilter: 'blur(6px) grayscale(16%)',
+                WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
                 color: 'var(--color-gray-900)',
                 textAlign: 'center',
               }}
@@ -857,6 +863,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
                 padding: '8px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.35)',
+                background: QUIZ_PANEL_GLASS_BACKGROUND,
+                backdropFilter: 'blur(6px) grayscale(16%)',
+                WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
                 color: 'var(--color-gray-900)',
               }}
             >
@@ -1081,6 +1092,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
                 padding: '8px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.35)',
+                background: QUIZ_PANEL_GLASS_BACKGROUND,
+                backdropFilter: 'blur(6px) grayscale(16%)',
+                WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
                 color: 'var(--color-gray-900)',
               }}
             >
@@ -1485,6 +1501,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
                 padding: '8px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.35)',
+                background: QUIZ_PANEL_GLASS_BACKGROUND,
+                backdropFilter: 'blur(6px) grayscale(16%)',
+                WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
                 color: 'var(--color-gray-900)',
                 textAlign: 'center',
               }}
