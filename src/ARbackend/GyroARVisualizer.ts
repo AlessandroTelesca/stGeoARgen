@@ -220,8 +220,8 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		if (this.alphaDelta === 0 && this.betaDelta === 0 && this.gammaDelta === 0) return;
 
 		this.euler.set(
-			this.betaDelta * this.gyroSensitivity,
 			this.alphaDelta * this.gyroSensitivity,
+			this.betaDelta * this.gyroSensitivity,
 			-this.gammaDelta * this.gyroSensitivity,
 			'YXZ'
 		);
