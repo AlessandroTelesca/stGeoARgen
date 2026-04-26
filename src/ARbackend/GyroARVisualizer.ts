@@ -5,15 +5,18 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 	private readonly initOptions: ARInitOptions;
 	private readonly ownVideoElement: HTMLVideoElement;
 	private readonly euler = new THREE.Euler();
-	private readonly q0 = new THREE.Quaternion();
-	private readonly q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
-	private readonly zee = new THREE.Vector3(0, 0, 1);
-	private screenOrientation = 0;
-	private alpha = 0;
-	private beta = 0;
-	private gamma = 0;
+	private readonly deltaQuaternion = new THREE.Quaternion();
+	private alphaDelta = 0;
+	private betaDelta = 0;
+	private gammaDelta = 0;
+	private lastAlpha: number | null = null;
+	private lastBeta: number | null = null;
+	private lastGamma: number | null = null;
+	private lastMotionTimestamp: number | null = null;
 	private hasGyroData = false;
 	private gyroEnabled = false;
+	private usingMotionRate = false;
+	private readonly gyroSensitivity = 1;
 	private gridHelper: THREE.GridHelper | null = null;
 	private readonly handleOwnResize = (): void => {
 		if (!this.camera || !this.renderer) return;
@@ -104,8 +107,7 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 			return;
 		}
 
-		this.screenOrientation = this.getScreenOrientation();
-		window.addEventListener('orientationchange', this.handleOrientationChange);
+		window.addEventListener('devicemotion', this.handleDeviceMotion, true);
 		window.addEventListener('deviceorientation', this.handleDeviceOrientation, true);
 		this.gyroEnabled = true;
 	}
@@ -144,48 +146,109 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		}
 	}
 
-	private getScreenOrientation(): number {
-		const screenOrientation = window.screen.orientation;
-		if (screenOrientation && typeof screenOrientation.angle === 'number') {
-			return THREE.MathUtils.degToRad(screenOrientation.angle);
-		}
+	private normalizeAngleDelta(current: number, previous: number): number {
+		const tau = Math.PI * 2;
+		let delta = current - previous;
 
-		const legacyOrientation = (window as unknown as { orientation?: number }).orientation;
-		if (typeof legacyOrientation === 'number') {
-			return THREE.MathUtils.degToRad(legacyOrientation);
-		}
+		if (delta > Math.PI) delta -= tau;
+		if (delta < -Math.PI) delta += tau;
 
-		return 0;
+		return delta;
 	}
 
-	private handleOrientationChange = (): void => {
-		this.screenOrientation = this.getScreenOrientation();
+	private handleDeviceOrientation = (event: DeviceOrientationEvent): void => {
+		if (this.usingMotionRate) return;
+
+		const nextAlpha = THREE.MathUtils.degToRad(event.alpha ?? 0);
+		const nextBeta = THREE.MathUtils.degToRad(event.beta ?? 0);
+		const nextGamma = THREE.MathUtils.degToRad(event.gamma ?? 0);
+
+		if (
+			this.lastAlpha !== null &&
+			this.lastBeta !== null &&
+			this.lastGamma !== null
+		) {
+			this.alphaDelta += this.normalizeAngleDelta(nextAlpha, this.lastAlpha);
+			this.betaDelta += this.normalizeAngleDelta(nextBeta, this.lastBeta);
+			this.gammaDelta += this.normalizeAngleDelta(nextGamma, this.lastGamma);
+		}
+
+		this.lastAlpha = nextAlpha;
+		this.lastBeta = nextBeta;
+		this.lastGamma = nextGamma;
+		this.hasGyroData = true;
 	};
 
-	private handleDeviceOrientation = (event: DeviceOrientationEvent): void => {
-		this.alpha = THREE.MathUtils.degToRad(event.alpha ?? 0);
-		this.beta = THREE.MathUtils.degToRad(event.beta ?? 0);
-		this.gamma = THREE.MathUtils.degToRad(event.gamma ?? 0);
+	private handleDeviceMotion = (event: DeviceMotionEvent): void => {
+		const rotation = event.rotationRate;
+		if (!rotation) return;
+
+		const now = event.timeStamp;
+		if (this.lastMotionTimestamp === null) {
+			this.lastMotionTimestamp = now;
+			return;
+		}
+
+		const deltaSeconds = Math.max(0, (now - this.lastMotionTimestamp) / 1000);
+		this.lastMotionTimestamp = now;
+		if (deltaSeconds === 0) return;
+
+		const boundedDeltaSeconds = Math.min(deltaSeconds, 0.05);
+		const alphaRate = THREE.MathUtils.degToRad(rotation.alpha ?? 0);
+		const betaRate = THREE.MathUtils.degToRad(rotation.beta ?? 0);
+		const gammaRate = THREE.MathUtils.degToRad(rotation.gamma ?? 0);
+
+		if (!Number.isFinite(alphaRate) || !Number.isFinite(betaRate) || !Number.isFinite(gammaRate)) {
+			return;
+		}
+
+		const maxStep = Math.PI / 6;
+		const alphaStep = THREE.MathUtils.clamp(alphaRate * boundedDeltaSeconds, -maxStep, maxStep);
+		const betaStep = THREE.MathUtils.clamp(betaRate * boundedDeltaSeconds, -maxStep, maxStep);
+		const gammaStep = THREE.MathUtils.clamp(gammaRate * boundedDeltaSeconds, -maxStep, maxStep);
+
+		this.alphaDelta += alphaStep;
+		this.betaDelta += betaStep;
+		this.gammaDelta += gammaStep;
+
+		this.usingMotionRate = true;
 		this.hasGyroData = true;
 	};
 
 	private updateCameraFromGyro(): void {
 		if (!this.gyroEnabled || !this.hasGyroData || !this.camera) return;
+		if (this.alphaDelta === 0 && this.betaDelta === 0 && this.gammaDelta === 0) return;
 
-		this.euler.set(this.beta, this.alpha, -this.gamma, 'YXZ');
-		this.camera.quaternion.setFromEuler(this.euler);
-		this.camera.quaternion.multiply(this.q1);
-		this.q0.setFromAxisAngle(this.zee, -this.screenOrientation);
-		this.camera.quaternion.multiply(this.q0);
+		this.euler.set(
+			this.betaDelta * this.gyroSensitivity,
+			this.alphaDelta * this.gyroSensitivity,
+			-this.gammaDelta * this.gyroSensitivity,
+			'YXZ'
+		);
+		this.deltaQuaternion.setFromEuler(this.euler);
+		this.camera.quaternion.multiply(this.deltaQuaternion).normalize();
+
+		this.alphaDelta = 0;
+		this.betaDelta = 0;
+		this.gammaDelta = 0;
 	}
 
 	stop(): void {
 		window.removeEventListener('resize', this.handleOwnResize);
 
 		if (this.gyroEnabled) {
-			window.removeEventListener('orientationchange', this.handleOrientationChange);
+			window.removeEventListener('devicemotion', this.handleDeviceMotion, true);
 			window.removeEventListener('deviceorientation', this.handleDeviceOrientation, true);
 		}
+
+		this.alphaDelta = 0;
+		this.betaDelta = 0;
+		this.gammaDelta = 0;
+		this.lastAlpha = null;
+		this.lastBeta = null;
+		this.lastGamma = null;
+		this.lastMotionTimestamp = null;
+		this.usingMotionRate = false;
 
 		if (this.gridHelper && this.scene) {
 			this.scene.remove(this.gridHelper);
