@@ -30,6 +30,12 @@ export const STATIONS_COORDINATES: StationCoordinates[] = [
     lat: 48.12641591490427, 
     lng: 8.332870042354898 
   },
+  {
+    id: 4,
+    name: 'Schwarzes Tor',
+    lat: 48.126356459351896,
+    lng: 8.334404178366523
+  },
   { 
     id: 5, 
     name: 'Klosterweiher', 
@@ -45,6 +51,7 @@ export const AR_VIEW_STATION_MAP: Record<string, number> = {
   'phonomuseum': 3,   // Heimatmuseum -> Phonomuseum AR
   'glockenspiel': 1,  // Historisches Rathaus -> Glockenspiel AR
   'bahnhof': 2,       // Bahnhof -> Bahnhof AR
+  'schwarzes-tor': 4, // Schwarzes Tor
 };
 
 // Helper: Koordinaten nach Station-ID finden

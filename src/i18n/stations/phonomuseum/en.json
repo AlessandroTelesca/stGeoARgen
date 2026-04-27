@@ -5,7 +5,7 @@
   "quizQuestion": "When was the phonograph invented?",
   "quizOptions": ["Gramophone", "Phonograph", "Record player"],
   "quizIntroTitle": "Sound Quiz at the Phono Museum",
-  "quizIntroDescription": "Listen to three short sound clips and guess the matching medium each time. You need at least 2 of 3 correct answers to complete the station.",
+  "quizIntroDescription": "Listen carefully to each sound and match it to the right medium. You can retry every question as often as you like - this is about learning and having fun.",
   "quizIntroStart": "Start quiz",
   "quizSoundPrompt": "Which medium played this sound?",
   "playSound": "Play sound",
@@ -18,11 +18,11 @@
   "dragInstruction": "Drag across the cube to rotate",
   "continueButton": "Continue",
   "finishTitle": "Quiz complete",
-  "finishSuccess": "Great! You reached enough correct answers.",
-  "finishFailure": "You have fewer than 2 correct answers. Please play again.",
+  "finishSuccess": "Great! You completed the quiz.",
+  "finishFailure": "You can continue and complete the station now.",
   "finishScore": "Correct: {correct} of {total}",
   "completionBlocked": "Station not complete yet",
-  "completionBlockedHint": "You need at least 2 of 3 correct answers.",
+  "completionBlockedHint": "Take the quiz at your own pace and complete the station afterwards.",
   "arStartTitle": "Enable Motion Tracking",
   "arStartDescription": "Tap start to allow motion and orientation access for gyroscope controls.",
   "arStartButton": "Start AR",
@@ -73,7 +73,7 @@
     "playByMediumLabel": "Play with medium",
     "playedBadge": "Played",
     "continueLabel": "Continue to result",
-    "requiredPlayHint": "Play your melody at least once with one medium."
+    "requiredPlayHint": "Tip: Play your melody once with a medium to compare tonal character."
   },
   "questions": [
     {

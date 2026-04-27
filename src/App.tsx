@@ -25,6 +25,7 @@ import { KlosterweiherView } from './components/ARComponents/klosterweiher/klost
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
 import { BahnhofView } from './components/ARComponents/bahnhof/bahnhof.tsx';
+import { SchwarzesTorView } from './components/ARComponents/schwarzesTor/schwarzesTor.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
@@ -82,7 +83,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -267,6 +268,8 @@ export default function App() {
       setCurrentView('ar-phonomuseum');
     } else if (path === '/glockenspiel') {
       setCurrentView('ar-glockenspiel');
+    } else if (path === '/schwarzes-tor') {
+      setCurrentView('ar-schwarzes-tor');
     } else if (path === '/settings') {
       setCurrentView('settings');
     } else if (path === '/profile') {
@@ -429,6 +432,19 @@ export default function App() {
           },
         },
         {
+          id: 4,
+          title: language === 'de' ? 'Schwarzes Tor' : 'Black Gate',
+          description: language === 'de' ? 'Historisches Stadttor mit besonderem Charakter' : 'Historic city gate with a distinctive character',
+          longDescription: language === 'de'
+            ? 'Das Schwarze Tor zählt zu den markanten historischen Orten in St. Georgen. Als ehemaliger Zugang zur Stadt erinnert es an die früheren Befestigungen und den Wandel des Stadtbildes über die Jahrhunderte. Nimm dir vor Ort Zeit für Details in der Bausubstanz und den Verlauf der umliegenden Gassen.'
+            : 'The Black Gate is one of St. Georgen\'s notable historic landmarks. As a former city entrance, it reflects earlier fortifications and the town\'s development over time. On site, take a moment to observe details in the masonry and the layout of the surrounding streets.',
+          imageUrl: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+          status: 'available',
+          points: 50,
+          latitude: getStationCoordinates(4)?.lat || 48.126356459351896,
+          longitude: getStationCoordinates(4)?.lng || 8.334404178366523,
+        },
+        {
           id: 5,
           title: klosterweiherTexts.stationName,
           description: klosterweiherTexts.description,
@@ -549,11 +565,21 @@ export default function App() {
                 : station.quiz,
             };
           }
+          if (station.id === 4) {
+            return {
+              ...station,
+              title: language === 'de' ? 'Schwarzes Tor' : 'Black Gate',
+              description: language === 'de' ? 'Historisches Stadttor mit besonderem Charakter' : 'Historic city gate with a distinctive character',
+              longDescription: language === 'de'
+                ? 'Das Schwarze Tor zählt zu den markanten historischen Orten in St. Georgen. Als ehemaliger Zugang zur Stadt erinnert es an die früheren Befestigungen und den Wandel des Stadtbildes über die Jahrhunderte. Nimm dir vor Ort Zeit für Details in der Bausubstanz und den Verlauf der umliegenden Gassen.'
+                : 'The Black Gate is one of St. Georgen\'s notable historic landmarks. As a former city entrance, it reflects earlier fortifications and the town\'s development over time. On site, take a moment to observe details in the masonry and the layout of the surrounding streets.',
+            };
+          }
           return station;
         }),
       }))
     );
-  }, [glockenspielTexts, bahnhofTexts, phonomuseumTexts]);
+  }, [glockenspielTexts, bahnhofTexts, phonomuseumTexts, language]);
 
   useEffect(() => {
     setPaths((prev) =>
@@ -811,6 +837,9 @@ export default function App() {
     } else if (arView === 'klosterweiher') {
       setCurrentView('ar-klosterweiher');
       navigate('/klosterweiher');
+    } else if (arView === 'schwarzes-tor' || arView === 'schwarzestor') {
+      setCurrentView('ar-schwarzes-tor');
+      navigate('/schwarzes-tor');
     } else {
       // For any other QR code, try to open it as URL or show alert
       console.log('Generic QR code content:', arView);
@@ -1176,6 +1205,14 @@ export default function App() {
             currentStationPoints={bahnhofStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isBahnhofCompleted}
+          />
+        )
+      )}
+
+      {currentView === 'ar-schwarzes-tor' && (
+        renderARViewWithGate(
+          <SchwarzesTorView
+            onNavigateHome={() => navigate('/')}
           />
         )
       )}

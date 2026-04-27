@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, Music2, Play, Trash2, Undo2, Volume2, X } from 'lucide-react';
 import * as Tone from 'tone';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
@@ -296,12 +296,12 @@ const PHONOMUSEUM_SOUND_SCENES: Record<
   },
 };
 
-const REQUIRED_CORRECT_ANSWERS = 2;
 const YOUR_TURN_MIN_NOTES = 6;
 const YOUR_TURN_MAX_NOTES = 8;
 const QUIZ_UI_SAFE_VERTICAL_GAP = 88;
 const COMPLETE_BUTTON_SAFE_GAP = 110;
 const QUIZ_PANEL_GLASS_BACKGROUND = 'rgba(228, 232, 236, 0.24)';
+const QUIZ_PANEL_INNER_PADDING = '14px';
 const YOUR_TURN_NOTE_OPTIONS: Array<{ label: string; midi: number }> = [
   { label: 'C4', midi: 60 },
   { label: 'D4', midi: 62 },
@@ -357,6 +357,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const [hideQuizSummary, setHideQuizSummary] = React.useState(false);
   const [yourTurnMelody, setYourTurnMelody] = React.useState<number[]>([]);
   const [hasPlayedYourTurnMelody, setHasPlayedYourTurnMelody] = React.useState(false);
+  const [activeSoundButtonId, setActiveSoundButtonId] = React.useState<string | null>(null);
+  const soundIndicatorTimeoutRef = useRef<number | null>(null);
   const dragStateRef = useRef({
     active: false,
     startX: 0,
@@ -368,12 +370,13 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentMediumLessonQuestion = mediumLessonCopy.questions[mediumLessonQuestionIndex];
-  const hasPassedQuiz = isCurrentStationCompleted || (phase === 'summary' && correctAnswers >= REQUIRED_CORRECT_ANSWERS);
+  const melodyEditLabel = language === 'de' ? 'Bearbeiten' : 'Edit melody';
+  const hasPassedQuiz = isCurrentStationCompleted || phase === 'summary';
   const yourTurnMelodyValid = yourTurnMelody.length >= YOUR_TURN_MIN_NOTES && yourTurnMelody.length <= YOUR_TURN_MAX_NOTES;
   const showStationCompleteButton =
     !showIntro &&
-    ((phase === 'summary' && !hideQuizSummary) ||
-      (phase === 'yourTurn' && yourTurnMelodyValid && hasPlayedYourTurnMelody));
+    !showMediumLesson &&
+    ((phase === 'summary' && !hideQuizSummary) || phase === 'yourTurn');
   const quizPanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2 + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px)`;
 
   const yourTurnMelodyDisplay = useMemo(() => {
@@ -402,7 +405,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       .replace('{total}', String(totalQuestions));
   }, [correctAnswers, phonomuseumTexts.finishScore, totalQuestions]);
 
-  const playMelodyByMedium = async (soundType: SoundType, melody: MelodyStep[]) => {
+  const playMelodyByMedium = async (soundType: SoundType, melody: MelodyStep[], sourceButtonId?: string) => {
     try {
       await Tone.start();
 
@@ -430,33 +433,43 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         elapsedSeconds += stepDurationSeconds;
       });
 
+      if (soundIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(soundIndicatorTimeoutRef.current);
+      }
+
+      setActiveSoundButtonId(sourceButtonId ?? null);
+
       toneCleanupTimeoutRef.current = window.setTimeout(() => {
         instrument.dispose();
         if (activeToneInstrumentRef.current === instrument) {
           activeToneInstrumentRef.current = null;
         }
       }, Math.ceil((elapsedSeconds + 0.6) * 1000));
+
+      soundIndicatorTimeoutRef.current = window.setTimeout(() => {
+        setActiveSoundButtonId((current) => (current === (sourceButtonId ?? null) ? null : current));
+      }, Math.ceil((elapsedSeconds + 0.35) * 1000));
     } catch (error) {
       console.error('[PhonomuseumView] Tone playback failed:', error);
     }
   };
 
-  const playQuestionSound = async (soundType: SoundType) => {
-    await playMelodyByMedium(soundType, PHONOMUSEUM_SOUND_SCENES[soundType].melody);
+  const playQuestionSound = async (soundType: SoundType, sourceButtonId?: string) => {
+    await playMelodyByMedium(soundType, PHONOMUSEUM_SOUND_SCENES[soundType].melody, sourceButtonId);
   };
 
-  const playYourTurnMelody = async (soundType: SoundType) => {
+  const playYourTurnMelody = async (soundType: SoundType, sourceButtonId?: string) => {
     if (!yourTurnMelodyValid) {
       return;
     }
 
     const melody = yourTurnMelody.map((midi) => ({ midi, duration: '8n', velocity: 0.8 }));
-    await playMelodyByMedium(soundType, melody);
+    await playMelodyByMedium(soundType, melody, sourceButtonId);
     setHasPlayedYourTurnMelody(true);
   };
 
-  const playClickedYourTurnNote = async (midi: number) => {
-    await playMelodyByMedium('plattenspieler', [{ midi, duration: '8n', velocity: 0.82 }]);
+  const playClickedYourTurnNote = async (midi: number, sourceButtonId?: string) => {
+    await playMelodyByMedium('plattenspieler', [{ midi, duration: '8n', velocity: 0.82 }], sourceButtonId);
   };
 
   const addNoteToYourTurnMelody = (midi: number) => {
@@ -464,7 +477,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       return;
     }
 
-    void playClickedYourTurnNote(midi);
+    void playClickedYourTurnNote(midi, `note-${midi}`);
 
     setYourTurnMelody((prev) => {
       if (prev.length >= YOUR_TURN_MAX_NOTES) {
@@ -699,6 +712,10 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
   useEffect(() => {
     return () => {
+      if (soundIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(soundIndicatorTimeoutRef.current);
+      }
+
       if (toneCleanupTimeoutRef.current !== null) {
         window.clearTimeout(toneCleanupTimeoutRef.current);
       }
@@ -707,6 +724,40 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       activeToneInstrumentRef.current = null;
     };
   }, []);
+
+  const soundIndicator = (buttonId: string) => {
+    if (activeSoundButtonId !== buttonId) {
+      return null;
+    }
+
+    return (
+      <span
+        style={{
+          position: 'absolute',
+          top: '6px',
+          right: '8px',
+          display: 'inline-flex',
+          gap: '2px',
+          alignItems: 'flex-end',
+          pointerEvents: 'none',
+        }}
+      >
+        {[0, 1, 2].map((index) => (
+          <span
+            key={`sound-bar-${buttonId}-${index}`}
+            style={{
+              width: '3px',
+              height: '10px',
+              borderRadius: '999px',
+              background: 'currentColor',
+              transformOrigin: 'center bottom',
+              animation: `phonoSoundBars 0.6s ease-in-out ${index * 0.1}s infinite`,
+            }}
+          />
+        ))}
+      </span>
+    );
+  };
 
   // Wrap with Proximity Gate - checks if user is within 100m of station
   return (
@@ -717,6 +768,13 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       onAccessGranted={() => setIsAuthorized(true)}
     >
       <>
+        <style>{`
+          @keyframes phonoSoundBars {
+            0%, 100% { transform: scaleY(0.45); opacity: 0.65; }
+            50% { transform: scaleY(1); opacity: 1; }
+          }
+        `}</style>
+
         <ARComponentBase
           onNavigateHome={onNavigateHome}
           closeARViewKey="closePhonomuseumView"
@@ -821,7 +879,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 width: 'min(520px, 100%)',
                 maxHeight: quizPanelMaxHeight,
                 overflowY: 'auto',
-                padding: '8px',
+                padding: QUIZ_PANEL_INNER_PADDING,
                 borderRadius: '16px',
                 border: '1px solid rgba(255,255,255,0.35)',
                 background: QUIZ_PANEL_GLASS_BACKGROUND,
@@ -862,7 +920,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
-                padding: '8px',
+                padding: QUIZ_PANEL_INNER_PADDING,
                 borderRadius: '16px',
                 border: '1px solid rgba(255,255,255,0.35)',
                 background: QUIZ_PANEL_GLASS_BACKGROUND,
@@ -945,8 +1003,9 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                     {(Object.keys(mediumLessonCopy.mediumNames) as SoundType[]).map((soundType) => (
                       <button
                         key={`lesson-play-${soundType}`}
-                        onClick={() => playQuestionSound(soundType)}
+                        onClick={() => playQuestionSound(soundType, `lesson-play-${soundType}`)}
                         style={{
+                          position: 'relative',
                           border: '1px solid var(--color-green-300)',
                           borderRadius: '10px',
                           background: 'var(--color-primary-light)',
@@ -957,7 +1016,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           cursor: 'pointer',
                         }}
                       >
-                        {`${mediumLessonCopy.playLabel}: ${mediumLessonCopy.mediumNames[soundType]}`}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <Play size={14} />
+                          {`${mediumLessonCopy.playLabel}: ${mediumLessonCopy.mediumNames[soundType]}`}
+                        </span>
+                        {soundIndicator(`lesson-play-${soundType}`)}
                       </button>
                     ))}
                   </div>
@@ -1091,7 +1154,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
-                padding: '8px',
+                padding: QUIZ_PANEL_INNER_PADDING,
                 borderRadius: '16px',
                 border: '1px solid rgba(255,255,255,0.35)',
                 background: QUIZ_PANEL_GLASS_BACKGROUND,
@@ -1180,12 +1243,27 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                     </div>
                   </div>
 
-                  <h3 style={{ fontWeight: 700, marginBottom: '8px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{currentQuestion.prompt || phonomuseumTexts.quizSoundPrompt}</h3>
-                  <p style={{ marginBottom: '12px', fontSize: '0.9rem', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{phonomuseumTexts.quizSoundPrompt}</p>
+                  <div
+                    style={{
+                      marginBottom: '14px',
+                      borderRadius: '12px',
+                      padding: '14px 14px 12px',
+                      background: 'rgba(10, 14, 22, 0.52)',
+                      border: '1px solid rgba(255,255,255,0.32)',
+                    }}
+                  >
+                    <h3 style={{ fontWeight: 800, marginBottom: '8px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)', fontSize: '1.02rem' }}>
+                      {currentQuestion.prompt || phonomuseumTexts.quizSoundPrompt}
+                    </h3>
+                    <p style={{ marginBottom: 0, fontSize: '0.9rem', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.8)', opacity: 0.92 }}>
+                      {phonomuseumTexts.quizSoundPrompt}
+                    </p>
+                  </div>
 
                   <button
-                    onClick={() => playQuestionSound(currentQuestion.soundType)}
+                    onClick={() => playQuestionSound(currentQuestion.soundType, `main-question-${currentQuestionIndex}`)}
                     style={{
+                      position: 'relative',
                       width: '100%',
                       marginBottom: '12px',
                       border: '1px solid var(--color-green-300)',
@@ -1197,7 +1275,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                       cursor: 'pointer',
                     }}
                   >
-                    {phonomuseumTexts.playSound}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <Volume2 size={16} />
+                      {phonomuseumTexts.playSound}
+                    </span>
+                    {soundIndicator(`main-question-${currentQuestionIndex}`)}
                   </button>
 
                   <div style={{ display: 'grid', gap: '8px' }}>
@@ -1387,7 +1469,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                     {yourTurnNotesCountText}
                   </p>
 
-                  <p style={{ marginBottom: '8px', fontWeight: 700, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                  <p style={{ marginBottom: '8px', fontWeight: 800, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)', fontSize: '0.96rem', letterSpacing: '0.2px' }}>
                     {phonomuseumTexts.yourTurn.composeLabel}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '8px', marginBottom: '10px' }}>
@@ -1397,6 +1479,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                         onClick={() => addNoteToYourTurnMelody(noteOption.midi)}
                         disabled={yourTurnMelody.length >= YOUR_TURN_MAX_NOTES}
                         style={{
+                          position: 'relative',
                           border: '1px solid var(--color-gray-200)',
                           borderRadius: '10px',
                           background: 'var(--color-white)',
@@ -1407,11 +1490,18 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           opacity: yourTurnMelody.length >= YOUR_TURN_MAX_NOTES ? 0.65 : 1,
                         }}
                       >
-                        {noteOption.label}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <Music2 size={14} />
+                          {noteOption.label}
+                        </span>
+                        {soundIndicator(`note-${noteOption.midi}`)}
                       </button>
                     ))}
                   </div>
 
+                  <div style={{ marginBottom: '6px', fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.3px', color: 'rgba(255,255,255,0.88)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {melodyEditLabel}
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', marginBottom: '12px' }}>
                     <button
                       onClick={removeLastYourTurnNote}
@@ -1423,10 +1513,15 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                         color: 'var(--color-white)',
                         padding: '9px 10px',
                         fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
                         cursor: yourTurnMelody.length === 0 ? 'default' : 'pointer',
                         opacity: yourTurnMelody.length === 0 ? 0.6 : 1,
                       }}
                     >
+                      <Undo2 size={15} />
                       {phonomuseumTexts.yourTurn.removeLastLabel}
                     </button>
                     <button
@@ -1439,10 +1534,15 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                         color: 'var(--color-white)',
                         padding: '9px 10px',
                         fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
                         cursor: yourTurnMelody.length === 0 ? 'default' : 'pointer',
                         opacity: yourTurnMelody.length === 0 ? 0.6 : 1,
                       }}
                     >
+                      <Trash2 size={15} />
                       {phonomuseumTexts.yourTurn.clearLabel}
                     </button>
                   </div>
@@ -1454,9 +1554,10 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                     {(Object.keys(mediumLessonCopy.mediumNames) as SoundType[]).map((soundType) => (
                       <button
                         key={`your-turn-play-${soundType}`}
-                        onClick={() => playYourTurnMelody(soundType)}
+                        onClick={() => playYourTurnMelody(soundType, `your-turn-play-${soundType}`)}
                         disabled={!yourTurnMelodyValid}
                         style={{
+                          position: 'relative',
                           border: '1px solid var(--color-green-300)',
                           borderRadius: '10px',
                           background: 'var(--color-primary-light)',
@@ -1468,7 +1569,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           opacity: !yourTurnMelodyValid ? 0.6 : 1,
                         }}
                       >
-                        {mediumLessonCopy.mediumNames[soundType]}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <Play size={14} />
+                          {mediumLessonCopy.mediumNames[soundType]}
+                        </span>
+                        {soundIndicator(`your-turn-play-${soundType}`)}
                       </button>
                     ))}
                   </div>
@@ -1480,7 +1585,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                   )}
 
                   {!hasPlayedYourTurnMelody && yourTurnMelodyValid && (
-                    <p style={{ marginBottom: '10px', color: '#ffd3d3', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    <p style={{ marginBottom: '10px', color: 'rgba(255,255,255,0.92)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
                       {phonomuseumTexts.yourTurn.requiredPlayHint}
                     </p>
                   )}
@@ -1500,7 +1605,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
-                padding: '8px',
+                padding: QUIZ_PANEL_INNER_PADDING,
                 borderRadius: '16px',
                 border: '1px solid rgba(255,255,255,0.35)',
                 background: QUIZ_PANEL_GLASS_BACKGROUND,

@@ -5,24 +5,24 @@
   "quizQuestion": "Wann wurde der Phonograph erfunden?",
   "quizOptions": ["Grammophon", "Phonograph", "Plattenspieler"],
   "quizIntroTitle": "Klang-Quiz im Phonomuseum",
-  "quizIntroDescription": "Hore dir drei kurze Klange an und rate jeweils das passende Medium. Du brauchst mindestens 2 von 3 richtigen Antworten, um die Station abzuschliessen.",
+  "quizIntroDescription": "Höre dir die Klänge in Ruhe an und finde das passende Medium. Du kannst jede Frage so oft versuchen, bis es passt - hier geht es vor allem ums Lernen und Spaß haben.",
   "quizIntroStart": "Quiz starten",
   "quizSoundPrompt": "Welches Medium hat diesen Klang gespielt?",
   "playSound": "Sound abspielen",
-  "selectAnswer": "Antwort auswahlen",
+  "selectAnswer": "Antwort auswählen",
   "feedbackCorrectTitle": "Richtig!",
   "feedbackWrongTitle": "Leider falsch",
   "feedbackCorrectBody": "Stark erkannt - das war das richtige Medium.",
-  "feedbackWrongBody": "Guter Versuch. Jetzt siehst du die richtige Losung.",
+  "feedbackWrongBody": "Guter Versuch. Jetzt siehst du die richtige Lösung.",
   "revealInstrument": "Medium anzeigen",
-  "dragInstruction": "Zum Drehen uber den Cube ziehen",
+  "dragInstruction": "Zum Drehen über den Cube ziehen",
   "continueButton": "Weiter",
   "finishTitle": "Quiz abgeschlossen",
-  "finishSuccess": "Super! Du hast genug richtige Antworten gesammelt.",
-  "finishFailure": "Du hast weniger als 2 richtige Antworten. Spiele das Quiz noch einmal.",
+  "finishSuccess": "Super! Du hast das Quiz abgeschlossen.",
+  "finishFailure": "Du kannst direkt weitermachen und die Station abschließen.",
   "finishScore": "Richtig: {correct} von {total}",
   "completionBlocked": "Station noch nicht abgeschlossen",
-  "completionBlockedHint": "Du brauchst mindestens 2 von 3 richtigen Antworten.",
+  "completionBlockedHint": "Spiele das Quiz in deinem Tempo und schließe danach die Station ab.",
   "arStartTitle": "Bewegungserfassung aktivieren",
   "arStartDescription": "Tippe auf Start, um den Zugriff auf Bewegung und Orientierung für die Gyroskopsteuerung zu erlauben.",
   "arStartButton": "AR starten",
@@ -30,8 +30,8 @@
   "arStartErrorFallback": "AR-Sitzung konnte nicht gestartet werden",
   "mediumLesson": {
     "title": "Klang-Training vor dem Quiz",
-    "subtitle": "Hoere die drei Medien und erkenne, wie sie sich im Klang unterscheiden.",
-    "playLabel": "Klang anhoeren",
+    "subtitle": "Höre die drei Medien und erkenne, wie sie sich im Klang unterscheiden.",
+    "playLabel": "Klang anhören",
     "answerLabel": "Welches Medium passt am besten?",
     "continueLabel": "Weiter",
     "retryLabel": "Training wiederholen",
@@ -47,33 +47,33 @@
       {
         "prompt": "Welches Medium klingt am warmsten, etwas dumpf und leicht verzerrt?",
         "correct": "phonograph",
-        "explanation": "Der Phonograph nutzt fruehe Walzenaufnahmen. Dadurch klingt er oft weicher und rauer."
+        "explanation": "Der Phonograph nutzt frühe Walzenaufnahmen. Dadurch klingt er oft weicher und rauer."
       },
       {
-        "prompt": "Welches Medium klingt mittig-praesent mit hornartiger Projektion?",
+        "prompt": "Welches Medium klingt mittig-präsent mit hornartiger Projektion?",
         "correct": "gramophone",
         "explanation": "Das Grammophon betont Mitten stark. Das gibt den typischen hornartigen Klangcharakter."
       },
       {
         "prompt": "Welches Medium klingt am ausgewogensten und moderner?",
         "correct": "plattenspieler",
-        "explanation": "Der Plattenspieler liefert ein breiteres, saubereres Klangbild als die historischen Vorgaenger."
+        "explanation": "Der Plattenspieler liefert ein breiteres, saubereres Klangbild als die historischen Vorgänger."
       }
     ]
   },
   "yourTurn": {
     "title": "Jetzt bist du dran",
-    "subtitle": "Baue eine eigene Melodie mit 6 bis 8 Noten und hoere sie ueber verschiedene Medien.",
+    "subtitle": "Baue eine eigene Melodie mit 6 bis 8 Noten und höre sie über verschiedene Medien.",
     "melodyLabel": "Deine Melodie",
-    "melodyHint": "Waehle mindestens 6 und hoechstens 8 Noten aus.",
+    "melodyHint": "Wähle mindestens 6 und höchstens 8 Noten aus.",
     "notesCountLabel": "Noten: {count}/8",
-    "composeLabel": "Noten auswaehlen",
-    "clearLabel": "Alles loeschen",
+    "composeLabel": "Noten auswählen",
+    "clearLabel": "Alles löschen",
     "removeLastLabel": "Letzte Note entfernen",
     "playByMediumLabel": "Mit Medium abspielen",
     "playedBadge": "Abgespielt",
     "continueLabel": "Zur Auswertung",
-    "requiredPlayHint": "Spiele deine Melodie mindestens einmal mit einem Medium ab."
+    "requiredPlayHint": "Tipp: Spiele deine Melodie einmal mit einem Medium ab und vergleiche den Klangcharakter."
   },
   "questions": [
     {
@@ -82,10 +82,10 @@
       "correctIndex": 1,
       "instrumentName": "Phonograph",
       "soundType": "phonograph",
-      "soundExplanation": "Der Phonograph klingt etwas dumpfer und rauer, weil die Walze nur einen engeren Frequenzbereich abbildet und die Nadel viele feine Hohen nicht sauber ubertragt."
+      "soundExplanation": "Der Phonograph klingt etwas dumpfer und rauer, weil die Walze nur einen engeren Frequenzbereich abbildet und die Nadel viele feine Höhen nicht sauber überträgt."
     },
     {
-      "prompt": "Welches Medium ist beim zweiten Klang zu horen?",
+      "prompt": "Welches Medium ist beim zweiten Klang zu hören?",
       "options": ["Grammophon", "Phonograph", "Plattenspieler"],
       "correctIndex": 2,
       "instrumentName": "Plattenspieler",
@@ -98,7 +98,7 @@
       "correctIndex": 0,
       "instrumentName": "Grammophon",
       "soundType": "gramophone",
-      "soundExplanation": "Das Grammophon betont die Mitten stark und wirkt trichterartig, weil der Schall mechanisch uber den Horntrichter verstarkt wird und dadurch ein nasaler Charakter entsteht."
+      "soundExplanation": "Das Grammophon betont die Mitten stark und wirkt trichterartig, weil der Schall mechanisch über den Horntrichter verstärkt wird und dadurch ein nasaler Charakter entsteht."
     }
   ]
 }

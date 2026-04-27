@@ -37,7 +37,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10002;
+  z-index: 11000;
   pointer-events: none;
 }
 
@@ -47,6 +47,7 @@
   top: 0;
   left: 0;
   right: 0;
+  z-index: 20;
   padding: 16px;
   display: flex;
   align-items: flex-start;
@@ -103,6 +104,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 18;
   padding: 16px;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
   pointer-events: auto;
@@ -117,12 +119,15 @@
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: padding 0.35s ease, border-radius 0.35s ease;
+  transform: scaleX(1);
+  transform-origin: center bottom;
+  transition: padding 0.35s ease, border-radius 0.35s ease, transform 0.35s ease;
 }
 
 .ar-progress-container-compact {
   padding: 8px 10px;
   border-radius: 999px;
+  transform: scaleX(1.25);
 }
 
 .ar-stations-row {
@@ -252,7 +257,7 @@
   inset: 0;
   background-color: var(--color-black-30);
   pointer-events: auto;
-  z-index: 10004;
+  z-index: 30;
 }
 
 .ar-menu-panel {
@@ -266,7 +271,7 @@
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
-  z-index: 10005;
+  z-index: 31;
 }
 
 .ar-menu-items {
@@ -343,7 +348,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  z-index: 25;
+  z-index: 22;
   color: var(--color-white);
   transition: bottom 0.35s ease, transform 0.2s ease, background-color 0.2s ease;
   border-radius: 32px;
