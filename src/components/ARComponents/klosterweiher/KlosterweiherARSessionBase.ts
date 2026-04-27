@@ -150,7 +150,7 @@ export abstract class KlosterweiherARSessionBase {
         onComplete: () => {
           this.hasCaughtFish = true;
           const fishName = this.isTreasureChestActive
-            ? "Schatzkiste"
+            ? "Versunkene Glocke"
             : this.extractFishName(this.fishUrls[this.currentFishIndex]);
           this.onCatchObjectCaught?.({
             isChest: this.isTreasureChestActive,
