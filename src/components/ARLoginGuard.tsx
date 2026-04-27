@@ -17,17 +17,17 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col px-6 sm:px-8 py-10">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col px-4 sm:px-8 py-6 sm:py-10 pb-[max(1.5rem,env(safe-area-inset-bottom))] overflow-y-auto">
       {/* Content */}
-      <div className="flex-1 flex items-start justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <motion.div
-          className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 sm:p-10 text-center"
+          className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center my-4"
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', damping: 24, stiffness: 280, delay: 0.15 }}
         >
           {/* Back button inside card – left-aligned */}
-          <div className="flex justify-start mb-6">
+          <div className="flex justify-start mb-4 sm:mb-6">
             <motion.button
               onClick={onBack}
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -41,7 +41,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
           </div>
           {/* Lock icon */}
           <motion.div
-            className="w-22 h-22 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-6 flex items-center justify-center"
+            className="w-22 h-22 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-5 sm:mb-6 flex items-center justify-center"
             style={{ width: '88px', height: '88px' }}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -51,7 +51,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
           </motion.div>
 
           <motion.h2
-            className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3"
+            className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
@@ -59,7 +59,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
             {t('loginRequired')}
           </motion.h2>
           <motion.p
-            className="text-gray-500 text-base leading-relaxed mb-8"
+            className="text-gray-500 text-base leading-relaxed mb-6 sm:mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -69,7 +69,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
 
           {/* Benefits */}
           <motion.div
-            className="space-y-3 mb-10 text-left"
+            className="space-y-3 mb-7 sm:mb-10 text-left"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
@@ -92,7 +92,7 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
 
           {/* Buttons */}
           <motion.div
-            className="space-y-4 mt-10"
+            className="space-y-3 sm:space-y-4 mt-8 sm:mt-10"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}

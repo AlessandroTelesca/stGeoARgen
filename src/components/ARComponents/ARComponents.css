@@ -114,6 +114,9 @@
   border-radius: 20px;
   padding: 20px 16px;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   transition: padding 0.35s ease, border-radius 0.35s ease;
 }
 

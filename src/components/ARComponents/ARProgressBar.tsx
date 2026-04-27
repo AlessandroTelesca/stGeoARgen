@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Trophy, Gift } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -12,17 +12,30 @@ interface ARProgressBarProps {
 export const ARProgressBar = ({ progress, stations, onCompactChange }: ARProgressBarProps) => {
   const { t } = useLanguage();
   const [isCompact, setIsCompact] = useState(false);
+  const compactTimerRef = useRef<number | null>(null);
+
+  const startCompactTimer = () => {
+    if (compactTimerRef.current !== null) {
+      window.clearTimeout(compactTimerRef.current);
+    }
+
+    compactTimerRef.current = window.setTimeout(() => {
+      setIsCompact(true);
+    }, 3000);
+  };
 
   useEffect(() => {
     setIsCompact(false);
-    const compactTimer = window.setTimeout(() => {
-      setIsCompact(true);
-    }, 3500);
-
-    return () => {
-      window.clearTimeout(compactTimer);
-    };
+    startCompactTimer();
   }, [progress.current]);
+
+  useEffect(() => {
+    return () => {
+      if (compactTimerRef.current !== null) {
+        window.clearTimeout(compactTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     onCompactChange?.(isCompact);
@@ -34,10 +47,16 @@ export const ARProgressBar = ({ progress, stations, onCompactChange }: ARProgres
   const lockedGiftIconSize = isCompact ? 13 : 20;
   const trophyIconSize = isCompact ? 12 : 16;
 
+  const handleExpandTemporarily = () => {
+    setIsCompact(false);
+    startCompactTimer();
+  };
+
   return (
     <div className="ar-bottom-bar">
       <motion.div
         className={`ar-progress-container ${isCompact ? 'ar-progress-container-compact' : ''}`}
+        onClick={handleExpandTemporarily}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}

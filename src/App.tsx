@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -902,6 +902,36 @@ export default function App() {
     return 'St.GeoARgen';
   };
 
+  const renderARViewWithGate = (content: ReactNode) => {
+    if (ALLOW_STATION_WITHOUT_LOGIN) {
+      return content;
+    }
+
+    if (isInitializing) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl shadow-lg px-6 py-5 text-center max-w-sm w-full">
+            <p className="text-base font-semibold text-gray-900">
+              {language === 'de' ? 'Login wird geprüft...' : 'Checking login...'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!username) {
+      return (
+        <ARLoginGuard
+          onLogin={handleNavigateToLogin}
+          onRegister={handleNavigateToRegister}
+          onBack={() => navigate('/')}
+        />
+      );
+    }
+
+    return content;
+  };
+
   return (
     <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
       {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
@@ -1093,13 +1123,7 @@ export default function App() {
 
       {/* AR Views */}
       {currentView === 'ar-klosterweiher' && (
-        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
-          <ARLoginGuard
-            onLogin={handleNavigateToLogin}
-            onRegister={handleNavigateToRegister}
-            onBack={() => navigate('/')}
-          />
-        ) : (
+        renderARViewWithGate(
           <KlosterweiherView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1119,13 +1143,7 @@ export default function App() {
       )}
 
       {currentView === 'ar-phonomuseum' && (
-        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
-          <ARLoginGuard
-            onLogin={handleNavigateToLogin}
-            onRegister={handleNavigateToRegister}
-            onBack={() => navigate('/')}
-          />
-        ) : (
+        renderARViewWithGate(
           <PhonomuseumView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1144,13 +1162,7 @@ export default function App() {
       )}
 
       {currentView === 'ar-bahnhof' && (
-        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
-          <ARLoginGuard
-            onLogin={handleNavigateToLogin}
-            onRegister={handleNavigateToRegister}
-            onBack={() => navigate('/')}
-          />
-        ) : (
+        renderARViewWithGate(
           <BahnhofView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1169,13 +1181,7 @@ export default function App() {
       )}
 
       {currentView === 'ar-glockenspiel' && (
-        !ALLOW_STATION_WITHOUT_LOGIN && !isInitializing && !username ? (
-          <ARLoginGuard
-            onLogin={handleNavigateToLogin}
-            onRegister={handleNavigateToRegister}
-            onBack={() => navigate('/')}
-          />
-        ) : (
+        renderARViewWithGate(
           <GlockenspielView
             onNavigateHome={() => navigate('/')}
             username={username}
