@@ -15,26 +15,26 @@ export const STATIONS_COORDINATES: StationCoordinates[] = [
   { 
     id: 1, 
     name: 'Glockenspiel', 
-    lat: 48.134599538155655, // Testweise: Mein Zuhause
-    lng: 8.245808734754021 
+    lat: 48.125809028190275, 
+    lng: 8.333296868535312
   },
   {
     id: 2,
     name: 'Bahnhof',
-    lat: 48.1241,
-    lng: 8.3341
+    lat: 48.12442791310443,
+    lng: 8.34141162291187
   },
   { 
     id: 3, 
     name: 'Phonomuseum', 
-    lat: 48.1245, 
-    lng: 8.3345 
+    lat: 48.12641591490427, 
+    lng: 8.332870042354898 
   },
   { 
     id: 5, 
     name: 'Klosterweiher', 
-    lat: 48.1239, 
-    lng: 8.3352 
+    lat: 48.12106058037526, 
+    lng: 8.331670499276125
   },
 ];
 
