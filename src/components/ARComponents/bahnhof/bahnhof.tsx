@@ -22,6 +22,7 @@ interface ARViewProps {
 	currentStationPoints?: number;
 	onCompleteStation?: (stationId: number) => void;
 	isCurrentStationCompleted?: boolean;
+	isGuestMode?: boolean;
 }
 
 class BahnhofARSession extends GyroARVisualizer {
@@ -78,7 +79,7 @@ class BahnhofARSession extends GyroARVisualizer {
 	}
 }
 
-export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
 	const { language } = useLanguage();
 	const bahnhofTexts = getBahnhofTexts(language);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -192,9 +193,10 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					currentStationPoints={currentStationPoints}
 					onCompleteStation={onCompleteStation}
 					isCurrentStationCompleted={isCurrentStationCompleted}
-				/>
+				isGuestMode={isGuestMode}
+			/>
 
-				{isAuthorized && !hasStarted && (
+			{isAuthorized && !hasStarted && (
 					<div
 						style={{
 							position: 'fixed',

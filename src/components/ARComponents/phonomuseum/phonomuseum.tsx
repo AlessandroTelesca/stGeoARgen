@@ -21,6 +21,7 @@ interface ARViewProps {
   currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
+  isGuestMode?: boolean;
 }
 
 class PhonomuseumARSession extends GyroARVisualizer {
@@ -322,7 +323,7 @@ const YOUR_TURN_NOTE_OPTIONS: Array<{ label: string; midi: number }> = [
   { label: 'C5', midi: 72 },
 ];
 
-export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
   const { language } = useLanguage();
   const phonomuseumTexts = getPhonomuseumTexts(language);
   const mediumLessonCopy = phonomuseumTexts.mediumLesson;
@@ -809,6 +810,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           ignoreCompleteTimer={true}
           onCompleteInitiated={() => setHideQuizSummary(true)}
           showCompleteButton={showStationCompleteButton}
+          isGuestMode={isGuestMode}
         />
 
         {isAuthorized && !hasStarted && (

@@ -1,15 +1,18 @@
 import { motion } from 'motion/react';
-import { Lock, LogIn, ArrowLeft, Trophy, Bookmark, Gift } from 'lucide-react';
+import { Lock, LogIn, ArrowLeft, Trophy, Bookmark, Gift, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ARLoginGuardProps {
   onLogin: () => void;
   onRegister: () => void;
+  onContinueAsGuest: () => void;
   onBack: () => void;
 }
 
-export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps) {
+export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }: ARLoginGuardProps) {
   const { t } = useLanguage();
+  const [showGuestWarning, setShowGuestWarning] = useState(false);
   const benefits = [
     { icon: Bookmark, text: t('arBenefitProgress') },
     { icon: Trophy, text: t('arBenefitPoints') },
@@ -110,9 +113,64 @@ export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps)
             >
               {t('createAccount')}
             </button>
+            <button
+              onClick={() => setShowGuestWarning(true)}
+              className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-xl font-semibold active:scale-[0.98] transition-all"
+              style={{ backgroundColor: '#dc2626', color: '#ffffff', border: '2px solid #b91c1c' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+            >
+              {t('startStationAsGuest')}
+            </button>
           </motion.div>
         </motion.div>
       </div>
+
+      {showGuestWarning && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t('close')}
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            onClick={() => setShowGuestWarning(false)}
+          />
+          <motion.div
+            className="relative w-full max-w-md rounded-2xl border-2 border-red-500 bg-white p-6"
+            style={{ boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3), 0 0 30px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.25)' }}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-semibold">{t('guestStartWarningTitle')}</h3>
+            </div>
+            <p className="mb-6 text-sm text-muted-foreground">{t('guestStartWarningText')}</p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setShowGuestWarning(false)}
+                className="flex-1 rounded-lg border border-border bg-white px-6 py-4 font-semibold text-foreground hover:bg-muted/50 transition-colors text-lg"
+              >
+                {t('guestStartWarningCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGuestWarning(false);
+                  onContinueAsGuest();
+                }}
+                className="flex-1 rounded-lg bg-primary px-6 py-4 font-semibold text-white hover:opacity-90 transition-opacity text-lg"
+              >
+                {t('guestStartWarningContinue')}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

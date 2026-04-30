@@ -35,6 +35,7 @@ interface ARViewProps {
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
   onTreasureCollect?: () => Promise<boolean>;
+  isGuestMode?: boolean;
 }
 
 class AndroidKlosterweiherARSession extends WebXRVisualizer {
@@ -464,6 +465,7 @@ export const AndroidKlosterweiherView = ({
   onCompleteStation,
   isCurrentStationCompleted = false,
   onTreasureCollect,
+  isGuestMode = false,
 }: ARViewProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);

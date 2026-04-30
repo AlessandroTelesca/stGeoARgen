@@ -19,6 +19,7 @@ interface ARViewProps {
   currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
+  isGuestMode?: boolean;
 }
 
 class GlockenspielARSession extends ARVisualizer {
@@ -30,7 +31,7 @@ class GlockenspielARSession extends ARVisualizer {
   // }
 }
 
-export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false }: ARViewProps) => {
+export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
   const { language } = useLanguage();
   const glockenspielTexts = getGlockenspielTexts(language);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +91,7 @@ export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, 
         currentStationPoints={currentStationPoints}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
+        isGuestMode={isGuestMode}
       />
     </ARProximityGate>
   );

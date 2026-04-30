@@ -168,6 +168,11 @@
   "stationLocation": "In the center of St.Georgen",
   "stationEstimatedDuration": "Estimated Duration: 10-15 minutes",
   "stationDifficulty": "Difficulty: Easy",
+  "startStationAsGuest": "Start without login",
+  "guestStartWarningTitle": "Continue without login?",
+  "guestStartWarningText": "Without logging in, your progress cannot be saved and you cannot receive rewards or vouchers.",
+  "guestStartWarningCancel": "Cancel",
+  "guestStartWarningContinue": "Start anyway",
 
   "_STATION_COMPLETION": "STATION COMPLETION",
   "stationCompletedTitle": "Station completed!",

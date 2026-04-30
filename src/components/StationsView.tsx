@@ -34,10 +34,11 @@ interface StationsViewProps {
     }>;
   }>;
   onStationClick: (pathId: string, stationId: number) => void;
+  isLoggedIn: boolean;
   onBack: () => void;
 }
 
-export function StationsView({ paths, onStationClick, onBack }: StationsViewProps) {
+export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: StationsViewProps) {
   const { t } = useLanguage();
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,19 +92,20 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
   // Station Item Component with distance
   const StationItem = ({ station, index }: { station: Station; index: number }) => {
     const { distance } = useStationProximity(station.latitude, station.longitude, 100);
+    const displayStatus: Station['status'] = isLoggedIn ? station.status : 'locked';
     
     return (
       <motion.button
-        onClick={() => station.status !== 'locked' && onStationClick(station.pathId, station.id)}
-        disabled={station.status === 'locked'}
-        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(station.status)} ${
-          station.status !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
+        onClick={() => displayStatus !== 'locked' && onStationClick(station.pathId, station.id)}
+        disabled={displayStatus === 'locked'}
+        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(displayStatus)} ${
+          displayStatus !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
         }`}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.7 + index * 0.05 }}
-        whileHover={station.status !== 'locked' ? { scale: 1.01 } : {}}
-        whileTap={station.status !== 'locked' ? { scale: 0.99 } : {}}
+        whileHover={displayStatus !== 'locked' ? { scale: 1.01 } : {}}
+        whileTap={displayStatus !== 'locked' ? { scale: 0.99 } : {}}
       >
         <div className="flex gap-4">
           {/* Image */}
@@ -113,7 +115,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
               alt={station.title}
               className="w-full h-full object-cover"
             />
-            {station.status === 'completed' && (
+            {displayStatus === 'completed' && (
               <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
@@ -124,7 +126,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-1">
               <h4 className="truncate font-semibold">{station.title}</h4>
-              {getStatusIcon(station.status)}
+              {getStatusIcon(displayStatus)}
             </div>
             <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
               {station.description}
@@ -136,13 +138,14 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
               <Badge variant="secondary" className="text-xs">
                 {station.points} {t('points')}
               </Badge>
-              {station.status !== 'completed' && distance !== null && (
+              {displayStatus !== 'completed' && distance !== null && (
                 <Badge variant="outline" className="text-xs flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
                   {Math.round(distance)}m
                 </Badge>
               )}
             </div>
+
           </div>
         </div>
       </motion.button>
@@ -317,6 +320,7 @@ export function StationsView({ paths, onStationClick, onBack }: StationsViewProp
           )}
         </motion.div>
       </div>
+
     </div>
   );
 }

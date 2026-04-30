@@ -3,7 +3,7 @@ import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, onTreasureCollect }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; currentStationPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean; onTreasureCollect?: () => Promise<boolean> }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, onTreasureCollect, isGuestMode = false }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; currentStationPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean; onTreasureCollect?: () => Promise<boolean>; isGuestMode?: boolean }) => {
 
 	// Detect device and open appropriate maps app
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -27,6 +27,7 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				onCompleteStation={onCompleteStation}
 				isCurrentStationCompleted={isCurrentStationCompleted}
 				onTreasureCollect={onTreasureCollect}
+				isGuestMode={isGuestMode}
 			/>
 		);
 	} else if (isAndroid) {
@@ -44,7 +45,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				currentStationPoints={currentStationPoints}
 				onCompleteStation={onCompleteStation}
 				isCurrentStationCompleted={isCurrentStationCompleted}
-				onTreasureCollect={onTreasureCollect} />
+				onTreasureCollect={onTreasureCollect}
+				isGuestMode={isGuestMode} />
 		);
 	} else if (isNotMobile) {
 		return (

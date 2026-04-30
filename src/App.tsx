@@ -95,6 +95,7 @@ export default function App() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [allowGuestStationStart, setAllowGuestStationStart] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
   const [treasurePoints, setTreasurePoints] = useState(0);
@@ -154,18 +155,21 @@ export default function App() {
 
   // Navigate to login
   const handleNavigateToLogin = () => {
+    setAllowGuestStationStart(false);
     setCurrentView('login');
     navigate('/login');
   };
 
   // Navigate to register
   const handleNavigateToRegister = () => {
+    setAllowGuestStationStart(false);
     setCurrentView('register');
     navigate('/register');
   };
 
   // Navigate to forgot password
   const handleNavigateToForgotPassword = () => {
+    setAllowGuestStationStart(false);
     setCurrentView('forgot-password');
     navigate('/forgot-password');
   };
@@ -298,6 +302,19 @@ export default function App() {
       setCurrentView('datenschutz');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const isArPath =
+      location.pathname === '/klosterweiher' ||
+      location.pathname === '/bahnhof' ||
+      location.pathname === '/phonomuseum' ||
+      location.pathname === '/glockenspiel' ||
+      location.pathname === '/schwarzes-tor';
+
+    if (!isArPath) {
+      setAllowGuestStationStart(false);
     }
   }, [location.pathname]);
 
@@ -608,6 +625,7 @@ export default function App() {
   };
 
   const handleStationClick = (stationId: number) => {
+    setAllowGuestStationStart(false);
     setSelectedStationId(stationId);
     setCurrentView('station');
   };
@@ -626,6 +644,25 @@ export default function App() {
         duration: 3500,
       });
       return;
+    }
+
+    // Guest mode: mark as completed but don't award points or bonuses
+    if (allowGuestStationStart) {
+      setPaths((prev) => {
+        const updated = prev.map((path) => {
+          const updatedPath = {
+            ...path,
+            stations: path.stations.map((station) =>
+              station.id === stationId
+                ? { ...station, status: 'completed' as const }
+                : station
+            ),
+          };
+          return updatedPath;
+        });
+        return updated;
+      });
+      return; // Exit without saving to DB or awarding points
     }
 
     // Lokal aktualisieren
@@ -878,11 +915,13 @@ export default function App() {
   };
 
   const handleBackToPath = () => {
+    setAllowGuestStationStart(false);
     setCurrentView('path');
     setSelectedStationId(null);
   };
 
   const handleBackToDashboard = () => {
+    setAllowGuestStationStart(false);
     setCurrentView('home');
     setSelectedPathId(null);
   };
@@ -944,7 +983,7 @@ export default function App() {
   };
 
   const renderARViewWithGate = (content: ReactNode) => {
-    if (ALLOW_STATION_WITHOUT_LOGIN) {
+    if (ALLOW_STATION_WITHOUT_LOGIN || allowGuestStationStart) {
       return content;
     }
 
@@ -965,6 +1004,7 @@ export default function App() {
         <ARLoginGuard
           onLogin={handleNavigateToLogin}
           onRegister={handleNavigateToRegister}
+          onContinueAsGuest={() => setAllowGuestStationStart(true)}
           onBack={() => navigate('/')}
         />
       );
@@ -1089,7 +1129,9 @@ export default function App() {
       {currentView === 'stations' && (
         <StationsView
           paths={paths}
+          isLoggedIn={!!username}
           onStationClick={(pathId, stationId) => {
+            setAllowGuestStationStart(false);
             setSelectedPathId(pathId);
             setSelectedStationId(stationId);
             setCurrentView('station');
@@ -1129,7 +1171,9 @@ export default function App() {
             onClose={handleBackToPath}
             onComplete={handleStationComplete}
             isLoggedIn={!!username}
-            requireLoginForAR={!ALLOW_STATION_WITHOUT_LOGIN}
+            requireLoginForAR={!ALLOW_STATION_WITHOUT_LOGIN && !allowGuestStationStart}
+            allowGuestARStart={allowGuestStationStart && !username}
+            onEnableGuestStart={() => setAllowGuestStationStart(true)}
             onNavigateToLogin={handleNavigateToLogin}
             onNavigateToRegister={handleNavigateToRegister}
           />
@@ -1187,6 +1231,7 @@ export default function App() {
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isKlosterweiherCompleted}
             onTreasureCollect={handleTreasureCollect}
+            isGuestMode={allowGuestStationStart}
           />
         )
       )}
@@ -1206,6 +1251,7 @@ export default function App() {
             currentStationPoints={phonomuseumStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isPhonomuseumCompleted}
+            isGuestMode={allowGuestStationStart}
           />
         )
       )}
@@ -1225,6 +1271,7 @@ export default function App() {
             currentStationPoints={bahnhofStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isBahnhofCompleted}
+            isGuestMode={allowGuestStationStart}
           />
         )
       )}
@@ -1252,6 +1299,7 @@ export default function App() {
             currentStationPoints={glockenspielStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isGlockenspielCompleted}
+            isGuestMode={allowGuestStationStart}
           />
         )
       )}

@@ -46,6 +46,8 @@ interface ARComponentBaseProps {
   onCompleteInitiated?: () => void;
   /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
   onCompleteBlocked?: () => void;
+  /** Guest mode - no points awarded */
+  isGuestMode?: boolean;
 }
 
 // Export Stations aus zentraler Config
@@ -146,6 +148,7 @@ export const ARComponentBase = ({
   ignoreCompleteTimer = false,
   onCompleteInitiated,
   onCompleteBlocked,
+  isGuestMode = false,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -396,7 +399,7 @@ export const ARComponentBase = ({
       <ARStationCompletionDialog
         isOpen={showCompletionDialog}
         stationTitle={currentStationTitle}
-        stationPoints={currentStationPoints}
+        stationPoints={isGuestMode ? 0 : currentStationPoints}
         durationSeconds={elapsedSeconds}
         remainingStations={remainingAtCompletion}
         totalStations={totalStations || 1}

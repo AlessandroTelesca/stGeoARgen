@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn } from 'lucide-react';
+import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -34,6 +34,8 @@ interface StationDetailProps {
   onComplete: (stationId: number) => void;
   isLoggedIn?: boolean;
   requireLoginForAR?: boolean;
+  allowGuestARStart?: boolean;
+  onEnableGuestStart?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
 }
@@ -47,8 +49,9 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
+  const [showGuestWarning, setShowGuestWarning] = useState(false);
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isCompleted = station.status === 'completed';
@@ -84,7 +87,9 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
     // Navigate to AR view - proximity check happens there
     const arRoute = STATION_AR_ROUTES[station.id];
     if (arRoute) {
-      navigate(arRoute);
+      navigate(arRoute, {
+        state: allowGuestARStart ? { allowGuestStart: true } : undefined,
+      });
     } else {
       // Fallback: Mark as completed if no AR route
       onComplete(station.id);
@@ -169,6 +174,15 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                     {t('createAccount')}
                   </button>
                 )}
+                <button
+                  onClick={() => setShowGuestWarning(true)}
+                  className="w-full py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
+                  style={{ backgroundColor: '#dc2626', color: '#ffffff', border: '2px solid #b91c1c' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                >
+                  {t('startStationAsGuest')}
+                </button>
               </div>
             </motion.div>
           )}
@@ -342,6 +356,53 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />
+
+      {showGuestWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t('close')}
+            className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+            onClick={() => setShowGuestWarning(false)}
+          />
+          <motion.div
+            className="relative w-full max-w-md rounded-2xl bg-white p-6"
+            style={{ borderWidth: '2px', borderColor: '#ef4444', boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3), 0 0 30px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.25)' }}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-semibold">{t('guestStartWarningTitle')}</h3>
+            </div>
+            <p className="mb-6 text-sm text-muted-foreground">{t('guestStartWarningText')}</p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setShowGuestWarning(false)}
+                className="flex-1 rounded-lg border border-border bg-white px-6 py-4 font-semibold text-foreground hover:bg-muted/50 transition-colors text-lg"
+              >
+                {t('guestStartWarningCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGuestWarning(false);
+                  onEnableGuestStart?.();
+                  handleStartARExperience();
+                }}
+                className="flex-1 rounded-lg bg-primary px-6 py-4 font-semibold text-white hover:opacity-90 transition-opacity text-lg"
+              >
+                {t('guestStartWarningContinue')}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
