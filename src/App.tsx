@@ -21,6 +21,8 @@ import { RewardsView } from './components/RewardsView';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
+import { Impressum } from './components/Impressum';
+import { Datenschutz } from './components/Datenschutz';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
@@ -83,7 +85,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -290,6 +292,10 @@ export default function App() {
       setCurrentView('register');
     } else if (path === '/forgot-password') {
       setCurrentView('forgot-password');
+    } else if (path === '/impressum') {
+      setCurrentView('impressum');
+    } else if (path === '/datenschutz') {
+      setCurrentView('datenschutz');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
     }
@@ -816,6 +822,12 @@ export default function App() {
       setCurrentView('progress');
     } else if (view === 'rewards') {
       setCurrentView('rewards');
+    } else if (view === 'impressum') {
+      navigate('/impressum');
+      setCurrentView('impressum');
+    } else if (view === 'datenschutz') {
+      navigate('/datenschutz');
+      setCurrentView('datenschutz');
     }
   };
 
@@ -1100,6 +1112,14 @@ export default function App() {
           totalPoints={totalPoints}
           onBack={handleBackToDashboard}
         />
+      )}
+
+      {currentView === 'impressum' && (
+        <Impressum onBack={handleBackToDashboard} />
+      )}
+
+      {currentView === 'datenschutz' && (
+        <Datenschutz onBack={handleBackToDashboard} />
       )}
 
       <AnimatePresence>

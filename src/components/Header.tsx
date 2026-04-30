@@ -16,7 +16,7 @@ interface HeaderProps {
 export function Header({ title, onNavigate, currentView, username, onLogin, onLogout, onRegister }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const handleLogin = () => {
     onLogin();
@@ -248,9 +248,19 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
                   })}
                 </nav>
 
-                <div className="mt-8 p-4 bg-muted/50 rounded-xl">
-                  <p className="text-xs text-muted-foreground mb-2">{t('version')}</p>
-                  <p className="text-sm font-semibold">St.GeoARgen v1.0</p>
+                <div className="mt-8 border-t border-border pt-6 space-y-1">
+                  <button
+                    onClick={() => handleNavigate('impressum')}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-sm text-muted-foreground">{language === 'de' ? 'Impressum' : 'Legal Notice'}</span>
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('datenschutz')}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-sm text-muted-foreground">{language === 'de' ? 'Datenschutzerklärung' : 'Privacy Policy'}</span>
+                  </button>
                 </div>
               </div>
             </motion.div>

@@ -46,8 +46,8 @@
             "react-resizable-panels": "^2.1.7",
             "recharts": "^2.15.2",
             "tailwind-merge": "*",
-            "tone": "^15.1.22",
             "three": "^0.181.2",
+            "tone": "^15.1.22",
             "vaul": "^1.1.2"
       },
       "devDependencies": {
