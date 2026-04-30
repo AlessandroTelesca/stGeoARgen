@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username`      VARCHAR(100) NOT NULL,
   `email`         VARCHAR(255) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
+  `total_points`  INT NOT NULL DEFAULT 0,
   `created_at`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_email` (`email`)
@@ -47,6 +48,21 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
   KEY `idx_password_resets_user_id` (`user_id`),
   KEY `idx_password_resets_expires_at` (`expires_at`),
   CONSTRAINT `fk_password_resets_user`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabelle: user_rewards
+-- Speichert einmalige Sonderbelohnungen (z.B. Schatzkiste)
+CREATE TABLE IF NOT EXISTS `user_rewards` (
+  `id`           INT NOT NULL AUTO_INCREMENT,
+  `user_id`      INT NOT NULL,
+  `reward_key`   VARCHAR(120) NOT NULL,
+  `points`       INT NOT NULL DEFAULT 50,
+  `claimed_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_reward` (`user_id`, `reward_key`),
+  CONSTRAINT `fk_user_rewards_user`
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

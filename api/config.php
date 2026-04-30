@@ -1,13 +1,51 @@
 <?php
-// ============================================================
-// BITTE HIER DEINE ZUGANGSDATEN EINTRAGEN!
-// ============================================================
-define('DB_HOST', 'localhost');          // meist localhost
-define('DB_NAME', 'dein_datenbankname');  // Name der DB in phpMyAdmin
-define('DB_USER', 'dein_db_user');        // DB-Benutzername
-define('DB_PASS', 'dein_db_passwort');    // DB-Passwort
-define('DB_CHARSET', 'utf8mb4');
-// ============================================================
+/**
+ * Liest Zugangsdaten aus api/credentials.txt (Format: 'KEY', 'value').
+ */
+function loadDbCredentialsFromFile(string $filePath): array {
+    if (!is_file($filePath) || !is_readable($filePath)) {
+        return [];
+    }
+
+    $content = file_get_contents($filePath);
+    if ($content === false) {
+        return [];
+    }
+
+    $result = [];
+    if (preg_match_all("/'(DB_[A-Z_]+)'\s*,\s*'([^']*)'/", $content, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+            $result[$match[1]] = $match[2];
+        }
+    }
+
+    return $result;
+}
+
+
+/**
+ * Holt den ersten nicht-leeren Wert aus ENV, Datei oder Fallback.
+ */
+function resolveDbSetting(string $key, array $fileCreds, string $fallback): string {
+    $envValue = getenv($key);
+    if (is_string($envValue) && trim($envValue) !== '') {
+        return trim($envValue);
+    }
+
+    if (!empty($fileCreds[$key])) {
+        return trim((string) $fileCreds[$key]);
+    }
+
+    return $fallback;
+}
+
+$fileCredentials = loadDbCredentialsFromFile(__DIR__ . '/credentials.txt');
+
+define('DB_HOST', resolveDbSetting('DB_HOST', $fileCredentials, 'localhost'));
+define('DB_NAME', resolveDbSetting('DB_NAME', $fileCredentials, 'dein_datenbankname'));
+define('DB_USER', resolveDbSetting('DB_USER', $fileCredentials, 'dein_db_user'));
+define('DB_PASS', resolveDbSetting('DB_PASS', $fileCredentials, 'dein_db_passwort'));
+define('DB_CHARSET', resolveDbSetting('DB_CHARSET', $fileCredentials, 'utf8mb4'));
 
 // CORS-Header: erlaubt Anfragen vom React-Frontend
 // WICHTIG: Ersetze '*' mit deiner tatsächlichen Frontend-URL in Produktion
@@ -29,6 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
  * Gibt die PDO-Instanz zurück oder beendet mit Fehlermeldung.
  */
 function getDB(): PDO {
+    if (DB_NAME === 'dein_datenbankname' || DB_USER === 'dein_db_user' || DB_PASS === 'dein_db_passwort') {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Datenbank ist nicht konfiguriert. Bitte DB_* in der Umgebung oder api/credentials.txt setzen.'
+        ]);
+        exit();
+    }
+
     try {
         $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
