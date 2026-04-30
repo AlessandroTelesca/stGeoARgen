@@ -299,6 +299,15 @@ const PHONOMUSEUM_SOUND_SCENES: Record<
 const YOUR_TURN_MIN_NOTES = 6;
 const YOUR_TURN_MAX_NOTES = 8;
 const QUIZ_UI_SAFE_VERTICAL_GAP = 88;
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 const COMPLETE_BUTTON_SAFE_GAP = 110;
 const QUIZ_PANEL_GLASS_BACKGROUND = 'rgba(228, 232, 236, 0.24)';
 const QUIZ_PANEL_INNER_PADDING = '14px';
@@ -330,6 +339,9 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   const [phase, setPhase] = React.useState<QuizPhase>('question');
   const questions = phonomuseumTexts.questions;
   const totalQuestions = questions.length;
+  const [shuffledQuestionOrder, setShuffledQuestionOrder] = React.useState<number[]>(() =>
+    shuffleArray(questions.map((_, i) => i))
+  );
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = React.useState<number | null>(null);
   const [wrongAnswerSelections, setWrongAnswerSelections] = React.useState<Array<number[]>>(() =>
@@ -368,7 +380,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     counted: false,
   });
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = questions[shuffledQuestionOrder[currentQuestionIndex] ?? currentQuestionIndex];
   const currentMediumLessonQuestion = mediumLessonCopy.questions[mediumLessonQuestionIndex];
   const melodyEditLabel = language === 'de' ? 'Bearbeiten' : 'Edit melody';
   const hasPassedQuiz = isCurrentStationCompleted || phase === 'summary';
@@ -689,6 +701,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   }, [phase, currentQuestionIndex]);
 
   useEffect(() => {
+    setShuffledQuestionOrder(shuffleArray(questions.map((_, i) => i)));
     setCurrentQuestionIndex(0);
     setSelectedAnswerIndex(null);
     setWrongAnswerSelections(questions.map(() => []));
