@@ -151,8 +151,8 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <div className="w-20 h-20 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Lock className="w-10 h-10 text-primary" />
+              <div className="w-20 h-20 bg-white/20 border-2 border-white rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-gray-900" />
               </div>
               <h3 className="font-semibold mb-2 text-lg text-gray-900">{t('loginRequired')}</h3>
               <p className="text-sm text-gray-500 mb-6">
