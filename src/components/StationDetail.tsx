@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn, AlertTriangle, Glasses } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -247,18 +247,18 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {/* AR Experience Button - Within Radius */}
           {!needsLogin && hasARRoute && !locationError && isWithinRadius && !isCompleted && (
             <motion.div
-              className="bg-primary text-white rounded-2xl p-6 text-center"
+              className="bg-primary text-white rounded-2xl p-6"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <div className="w-20 h-20 bg-white/20 border-2 border-white rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Play className="w-10 h-10 text-white" />
-              </div>
-              <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-3">
+              <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-4">
                 <CheckCircle2 className="w-4 h-4" />
                 <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
               </div>
-              <h3 className="font-semibold mb-2">{t('arExperienceAvailable')}</h3>
+              <div className="flex items-center gap-3 mb-2">
+                <Glasses className="w-7 h-7 text-white shrink-0" />
+                <h3 className="text-xl font-bold leading-tight">{t('arExperienceAvailable')}</h3>
+              </div>
               <p className="text-sm opacity-90 mb-6">
                 {t('closeEnoughDescription')}
               </p>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"g:\\\\Fertige_Projekte\\\\Projekt\\\\StGeoARgen\\\\stGeoARgen\\\\src\\\\components\" -Recurse -Include \"*.tsx\",\"*.ts\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
+    ]
+  }
+}
