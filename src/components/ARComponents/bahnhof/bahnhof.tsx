@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import React, { useEffect, useRef } from 'react';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
@@ -26,6 +27,8 @@ interface ARViewProps {
 }
 
 class BahnhofARSession extends GyroARVisualizer {
+	private insideViewLight: THREE.AmbientLight | null = null;
+
 	async init(): Promise<void> {
 		await super.init();
 
@@ -62,6 +65,17 @@ class BahnhofARSession extends GyroARVisualizer {
 		this.camera.lookAt(0, 0, 0);
 	}
 
+	setInsideView(): void {
+		this.setCameraPositionAndLookAt(-1.5, 1, 0);
+
+		if (!this.scene) return;
+
+		if (!this.insideViewLight) {
+			this.insideViewLight = new THREE.AmbientLight(0xffffff, 6);
+			this.scene.add(this.insideViewLight);
+		}
+	}
+
 	moveLeft(step = 0.25): void {
 		this.camera?.translateX(-step);
 	}
@@ -76,6 +90,15 @@ class BahnhofARSession extends GyroARVisualizer {
 
 	moveBackward(step = 0.25): void {
 		this.camera?.translateZ(step);
+	}
+
+	stop(): void {
+		if (this.scene && this.insideViewLight) {
+			this.scene.remove(this.insideViewLight);
+		}
+		this.insideViewLight = null;
+
+		super.stop();
 	}
 }
 
@@ -265,10 +288,12 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							width: 'min(420px, calc(100vw - 24px))',
 							padding: '14px',
 							borderRadius: '16px',
-							background: 'var(--color-white)',
-							border: '1px solid rgba(0,0,0,0.08)',
-							boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
-							color: 'var(--color-gray-800)',
+								border: '1px solid rgba(255,255,255,0.35)',
+								background: 'rgba(228, 232, 236, 0.24)',
+								backdropFilter: 'blur(6px) grayscale(16%)',
+								WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
+								boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
+							color: 'white',
 						}}
 					>
 						<div style={{ fontSize: '0.78rem', opacity: 0.75, marginBottom: '10px', fontWeight: 700 }}>
@@ -277,7 +302,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 						<div
 							style={{
 								display: 'grid',
-								gridTemplateColumns: '1fr 1fr',
+								gridTemplateColumns: '1fr 1fr 1fr',
 								gap: '8px',
 							}}
 						>
@@ -300,23 +325,6 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							</button>
 							<button
 								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(7.5, 0.5, -2);
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Left Front
-							</button>
-							<button
-								onClick={() => {
 									sessionRef.current?.setCameraPositionAndLookAt(-6.5, 0.5, 2);
 								}}
 								style={{
@@ -334,7 +342,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							</button>
 							<button
 								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(-6.5, 0.5, -2);
+									sessionRef.current?.setInsideView();
 								}}
 								style={{
 									border: 'none',
@@ -347,7 +355,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 									fontSize: '0.85rem',
 								}}
 							>
-								Left Back
+								Inside View
 							</button>
 						</div>
 					</div>
