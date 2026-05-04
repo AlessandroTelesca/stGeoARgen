@@ -151,6 +151,7 @@ export const ARComponentBase = ({
   isGuestMode = false,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
+  const isLoggedIn = Boolean(username);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearestStation, setNearestStation] = useState<typeof STATIONS[0] | null>(null);
@@ -353,7 +354,7 @@ export const ARComponentBase = ({
           onCompactChange={setIsProgressCompact}
         />
         {/* "Station abschließen"-Button */}
-        {showCompleteButton && canCompleteStation && !hasClickedComplete && (
+        {showCompleteButton && canCompleteStation && !hasClickedComplete && isLoggedIn && !isGuestMode && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}

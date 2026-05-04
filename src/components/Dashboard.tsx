@@ -1,4 +1,4 @@
-import { Trophy, MapPin, Star, TrendingUp, Gift } from 'lucide-react';
+import { Trophy, MapPin, Star, TrendingUp, Gift, Lock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PathCard } from './PathCard';
@@ -25,10 +25,12 @@ interface DashboardProps {
   onOpenQRScanner?: () => void;
   onNavigate?: (view: string) => void;
   username?: string | null;
+  onNavigateToLogin?: () => void;
 }
 
-export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate, username }: DashboardProps) {
+export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSelect, onNavigateToPaths, onOpenQRScanner, onNavigate, username, onNavigateToLogin }: DashboardProps) {
   const { t } = useLanguage();
+  const isLoggedIn = Boolean(username);
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
 
@@ -67,7 +69,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
         {/* Stats Overview */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <motion.button
-            onClick={() => onNavigate?.('points')}
+            onClick={() => (isLoggedIn ? onNavigate?.('points') : onNavigateToLogin?.())}
             className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -77,15 +79,19 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-primary" />
+                {isLoggedIn ? (
+                  <Trophy className="w-5 h-5 text-primary" />
+                ) : (
+                  <Lock className="w-5 h-5 text-muted-foreground" />
+                )}
               </div>
             </div>
-            <p className="text-2xl font-bold mb-1">{totalPoints}</p>
+            <p className="text-2xl font-bold mb-1">{isLoggedIn ? totalPoints : '—'}</p>
             <p className="text-sm text-muted-foreground">{t('points')}</p>
           </motion.button>
 
           <motion.button
-            onClick={onNavigateToPaths}
+            onClick={() => (isLoggedIn ? onNavigateToPaths?.() : onNavigateToLogin?.())}
             className="bg-white rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all text-left"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -95,17 +101,21 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-primary" />
+                {isLoggedIn ? (
+                  <Star className="w-5 h-5 text-primary" />
+                ) : (
+                  <Lock className="w-5 h-5 text-muted-foreground" />
+                )}
               </div>
             </div>
-            <p className="text-2xl font-bold mb-1">{completedPaths}</p>
+            <p className="text-2xl font-bold mb-1">{isLoggedIn ? completedPaths : '—'}</p>
             <p className="text-sm text-muted-foreground">{t('completedPaths')}</p>
           </motion.button>
         </div>
 
         {/* Progress Card */}
         <motion.button
-          onClick={() => onNavigate?.('progress')}
+          onClick={() => (isLoggedIn ? onNavigate?.('progress') : onNavigateToLogin?.())}
           className="w-full bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 mb-8 shadow-lg hover:shadow-xl transition-all text-left"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -117,11 +127,17 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             <div>
               <h3 className="font-semibold mb-1">{t('yourJourney')}</h3>
               <p className="text-sm opacity-90">
-                {totalCompletedStations} {t('von')} {totalStations} {t('stationsExplored')}
+                {isLoggedIn
+                  ? `${totalCompletedStations} ${t('von')} ${totalStations} ${t('stationsExplored')}`
+                  : t('login')}
               </p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <MapPin className="w-6 h-6" />
+              {isLoggedIn ? (
+                <MapPin className="w-6 h-6" />
+              ) : (
+                <Lock className="w-6 h-6" />
+              )}
             </div>
           </div>
 
@@ -129,15 +145,17 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             <motion.div
               className="h-full bg-white rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${completionPercentage}%` }}
+              animate={{ width: isLoggedIn ? `${completionPercentage}%` : '0%' }}
               transition={{ duration: 1, delay: 0.7 }}
             />
           </div>
 
           <p className="text-sm opacity-90">
-            {completionPercentage === 100
-              ? t('pathCompleted')
-              : `${t('stationsRemaining').replace('{remaining}', String(totalStations - totalCompletedStations))}`}
+            {isLoggedIn
+              ? completionPercentage === 100
+                ? t('pathCompleted')
+                : `${t('stationsRemaining').replace('{remaining}', String(totalStations - totalCompletedStations))}`
+              : t('login')}
           </p>
         </motion.button>
 

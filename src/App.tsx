@@ -735,30 +735,6 @@ export default function App() {
           // Speichern fehlgeschlagen – Fortschritt ist lokal trotzdem sichtbar
         }
       }
-    } else {
-      // Kein User eingeloggt → Bonus nur lokal vergeben
-      const currentPath = paths.find((p) =>
-        p.stations.some((s) => s.id === stationId)
-      );
-      if (currentPath && !claimedPathBonuses[currentPath.id]) {
-        const updatedStations = currentPath.stations.map((s) =>
-          s.id === stationId ? { ...s, status: 'completed' as const } : s
-        );
-        const pathNowComplete = updatedStations.every((s) => s.status === 'completed');
-        if (pathNowComplete) {
-          setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
-          const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
-          const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
-          setCelebrationData({
-            isOpen: true,
-            pathTitle: currentPath.title,
-            pathDescription: currentPath.description || '',
-            stations: completedStationsList,
-            earnedStationPoints: earnedStationPts,
-            bonusPoints: 500,
-          });
-        }
-      }
     }
   };
 
@@ -1037,6 +1013,7 @@ export default function App() {
           onOpenQRScanner={handleOpenQRScanner}
           onNavigate={handleNavigate}
           username={username}
+          onNavigateToLogin={handleNavigateToLogin}
         />
       )}
 
