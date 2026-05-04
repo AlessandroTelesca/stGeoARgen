@@ -72,7 +72,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
       case 'completed':
         return <CheckCircle2 className="w-5 h-5 text-success" />;
       case 'available':
-        return null;
+        return <Play className="w-5 h-5 text-primary" />;
       case 'locked':
         return <Lock className="w-5 h-5 text-muted-foreground" />;
     }
