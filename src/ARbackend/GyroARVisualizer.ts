@@ -8,10 +8,10 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 	private readonly deltaQuaternion = new THREE.Quaternion();
 	private alphaDelta = 0;
 	private betaDelta = 0;
-	private gammaDelta = 0;
+	private readonly smoothingFactor = 0.2;
+	private readonly minResidualDelta = 1e-4;
 	private lastAlpha: number | null = null;
 	private lastBeta: number | null = null;
-	private lastGamma: number | null = null;
 	private lastMotionTimestamp: number | null = null;
 	private hasGyroData = false;
 	private gyroEnabled = false;
@@ -161,21 +161,14 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 
 		const nextAlpha = THREE.MathUtils.degToRad(event.alpha ?? 0);
 		const nextBeta = THREE.MathUtils.degToRad(event.beta ?? 0);
-		const nextGamma = THREE.MathUtils.degToRad(event.gamma ?? 0);
 
-		if (
-			this.lastAlpha !== null &&
-			this.lastBeta !== null &&
-			this.lastGamma !== null
-		) {
+		if (this.lastAlpha !== null && this.lastBeta !== null) {
 			this.alphaDelta += this.normalizeAngleDelta(nextAlpha, this.lastAlpha);
 			this.betaDelta += this.normalizeAngleDelta(nextBeta, this.lastBeta);
-			this.gammaDelta += this.normalizeAngleDelta(nextGamma, this.lastGamma);
 		}
 
 		this.lastAlpha = nextAlpha;
 		this.lastBeta = nextBeta;
-		this.lastGamma = nextGamma;
 		this.hasGyroData = true;
 	};
 
@@ -196,20 +189,17 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		const boundedDeltaSeconds = Math.min(deltaSeconds, 0.05);
 		const alphaRate = THREE.MathUtils.degToRad(rotation.alpha ?? 0);
 		const betaRate = THREE.MathUtils.degToRad(rotation.beta ?? 0);
-		const gammaRate = THREE.MathUtils.degToRad(rotation.gamma ?? 0);
 
-		if (!Number.isFinite(alphaRate) || !Number.isFinite(betaRate) || !Number.isFinite(gammaRate)) {
+		if (!Number.isFinite(alphaRate) || !Number.isFinite(betaRate)) {
 			return;
 		}
 
 		const maxStep = Math.PI / 6;
 		const alphaStep = THREE.MathUtils.clamp(alphaRate * boundedDeltaSeconds, -maxStep, maxStep);
 		const betaStep = THREE.MathUtils.clamp(betaRate * boundedDeltaSeconds, -maxStep, maxStep);
-		const gammaStep = THREE.MathUtils.clamp(gammaRate * boundedDeltaSeconds, -maxStep, maxStep);
 
 		this.alphaDelta += alphaStep;
 		this.betaDelta += betaStep;
-		this.gammaDelta += gammaStep;
 
 		this.usingMotionRate = true;
 		this.hasGyroData = true;
@@ -217,20 +207,25 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 
 	private updateCameraFromGyro(): void {
 		if (!this.gyroEnabled || !this.hasGyroData || !this.camera) return;
-		if (this.alphaDelta === 0 && this.betaDelta === 0 && this.gammaDelta === 0) return;
+		if (this.alphaDelta === 0 && this.betaDelta === 0) return;
+
+		const appliedAlpha = this.alphaDelta * this.smoothingFactor;
+		const appliedBeta = this.betaDelta * this.smoothingFactor;
 
 		this.euler.set(
-			this.alphaDelta * this.gyroSensitivity,
-			this.betaDelta * this.gyroSensitivity,
-			-this.gammaDelta * this.gyroSensitivity,
+			appliedAlpha * this.gyroSensitivity,
+			appliedBeta * this.gyroSensitivity,
+			0,
 			'YXZ'
 		);
 		this.deltaQuaternion.setFromEuler(this.euler);
 		this.camera.quaternion.multiply(this.deltaQuaternion).normalize();
 
-		this.alphaDelta = 0;
-		this.betaDelta = 0;
-		this.gammaDelta = 0;
+		this.alphaDelta -= appliedAlpha;
+		this.betaDelta -= appliedBeta;
+
+		if (Math.abs(this.alphaDelta) < this.minResidualDelta) this.alphaDelta = 0;
+		if (Math.abs(this.betaDelta) < this.minResidualDelta) this.betaDelta = 0;
 	}
 
 	stop(): void {
@@ -243,10 +238,8 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 
 		this.alphaDelta = 0;
 		this.betaDelta = 0;
-		this.gammaDelta = 0;
 		this.lastAlpha = null;
 		this.lastBeta = null;
-		this.lastGamma = null;
 		this.lastMotionTimestamp = null;
 		this.usingMotionRate = false;
 
