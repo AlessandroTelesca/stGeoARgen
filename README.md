@@ -113,14 +113,6 @@ Edit [src/data/stationsConfig.ts](src/data/stationsConfig.ts) to add new station
 - Quiz questions
 - AR content references
 
-### Stationen ohne Login freigeben
-
-Wenn du AR-Stationen ohne Nutzer-Login starten moechtest, setze in deiner Environment:
-
-`VITE_ALLOW_STATION_WITHOUT_LOGIN=true`
-
-Standard ist `false`.
-
 ## Resources
 
 - 📖 [AR Commands Documentation](AR-CONSOLE-COMMANDS.md)

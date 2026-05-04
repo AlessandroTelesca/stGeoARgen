@@ -40,9 +40,6 @@ import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 import { getBahnhofTexts } from './i18n/stations/bahnhof';
 
-const ALLOW_STATION_WITHOUT_LOGIN =
-  String(import.meta.env.VITE_ALLOW_STATION_WITHOUT_LOGIN || 'false').toLowerCase() === 'true';
-
 
 interface Station {
   id: number;
@@ -959,7 +956,7 @@ export default function App() {
   };
 
   const renderARViewWithGate = (content: ReactNode) => {
-    if (ALLOW_STATION_WITHOUT_LOGIN || allowGuestStationStart) {
+    if (allowGuestStationStart) {
       return content;
     }
 
@@ -1148,7 +1145,7 @@ export default function App() {
             onClose={handleBackToPath}
             onComplete={handleStationComplete}
             isLoggedIn={!!username}
-            requireLoginForAR={!ALLOW_STATION_WITHOUT_LOGIN && !allowGuestStationStart}
+            requireLoginForAR={!allowGuestStationStart}
             allowGuestARStart={allowGuestStationStart && !username}
             onEnableGuestStart={() => setAllowGuestStationStart(true)}
             onNavigateToLogin={handleNavigateToLogin}
