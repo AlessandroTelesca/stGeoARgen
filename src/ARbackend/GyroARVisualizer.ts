@@ -212,14 +212,17 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		const appliedAlpha = this.alphaDelta * this.smoothingFactor;
 		const appliedBeta = this.betaDelta * this.smoothingFactor;
 
-		this.euler.set(
-			appliedAlpha * this.gyroSensitivity,
-			appliedBeta * this.gyroSensitivity,
-			0,
-			'YXZ'
-		);
+		// Apply yaw rotation around world Y-axis (pre-multiply for world-space rotation)
+		this.euler.set(0, appliedBeta * this.gyroSensitivity, 0, 'XYZ');
 		this.deltaQuaternion.setFromEuler(this.euler);
-		this.camera.quaternion.multiply(this.deltaQuaternion).normalize();
+		this.camera.quaternion.multiplyQuaternions(this.deltaQuaternion, this.camera.quaternion);
+
+		// Apply pitch rotation around local X-axis (post-multiply for local-space rotation)
+		this.euler.set(appliedAlpha * this.gyroSensitivity, 0, 0, 'XYZ');
+		this.deltaQuaternion.setFromEuler(this.euler);
+		this.camera.quaternion.multiply(this.deltaQuaternion);
+
+		this.camera.quaternion.normalize();
 
 		this.alphaDelta -= appliedAlpha;
 		this.betaDelta -= appliedBeta;
