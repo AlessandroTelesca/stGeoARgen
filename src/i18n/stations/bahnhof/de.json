@@ -1,7 +1,7 @@
 {
   "stationName": "Bahnhof",
   "description": "Entdecke den historischen Bahnhof in AR",
-  "longDescription": "Der Bahnhof war ein zentraler Knotenpunkt fur die Entwicklung von St. Georgen. Erkunde in der AR-Experience die Architektur und erfahre, wie der Bahnverkehr die Region gepragt hat.",
+  "longDescription": "Der Bahnhof war ein zentraler Knotenpunkt fur die Entwicklung von St. Georgen. Erkunde in der AR-Experience wie der Bahnverkehr die Region geprägt hat.",
   "quizQuestion": "Wofur war der Bahnhof historisch besonders wichtig?",
   "arStartTitle": "Bahnhof-AR starten",
   "arStartDescription": "Tippe auf Start, um Bewegungs- und Gyrosensor-Zugriff zu erlauben und die AR-Ansicht zu laden.",

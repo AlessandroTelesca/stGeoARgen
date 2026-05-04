@@ -1,6 +1,6 @@
 {
   "stationName": "Phono Museum",
-  "description": "Discover historic audio media in AR",
+  "description": "Discover audio media in AR",
   "longDescription": "The Phono Museum showcases the fascinating history of sound recording and playback. Experience in AR how historic phonographs and gramophones worked.",
   "quizQuestion": "When was the phonograph invented?",
   "quizOptions": ["Gramophone", "Phonograph", "Record player"],

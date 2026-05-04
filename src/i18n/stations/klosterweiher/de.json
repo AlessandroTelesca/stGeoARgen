@@ -1,6 +1,6 @@
 {
   "stationName": "Klosterweiher",
-  "description": "Erkunde die Natur am historischen Klosterweiher",
+  "description": "Erkunde die Natur am Klosterweiher",
   "longDescription": "Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.",
   "quizQuestion": "Welche Tierart ist am Klosterweiher besonders häufig zu sehen?",
   "quizOptions": ["Frösche", "Enten", "Reiher", "Biber"],

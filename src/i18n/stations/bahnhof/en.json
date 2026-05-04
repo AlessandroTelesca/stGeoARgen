@@ -1,7 +1,7 @@
 {
   "stationName": "Train Station",
   "description": "Discover the historic train station in AR",
-  "longDescription": "The train station was a central hub for the development of St. Georgen. Explore its architecture in AR and learn how rail transport shaped the region.",
+  "longDescription": "The train station was a central hub for the development of St. Georgen. Use AR To learn how rail transport shaped the region.",
   "quizQuestion": "What made the station historically important?",
   "arStartTitle": "Start Train Station AR",
   "arStartDescription": "Tap Start to allow motion and gyroscope access and load the AR view.",
