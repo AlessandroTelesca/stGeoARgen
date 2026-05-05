@@ -11,7 +11,27 @@ interface LanguageContextType {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const LanguageContext = createContext<LanguageContextType | null>(null);
+function translate(language: Language, key: string, params?: Record<string, string | number>): string {
+  const dict = translations[language] as Record<string, string>;
+  let text = dict[key] ?? (translations['de'] as Record<string, string>)[key] ?? key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      const value = String(v);
+      text = text
+        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), value)
+        .replace(new RegExp(`\\{${k}\\}`, 'g'), value);
+    });
+  }
+  return text;
+}
+
+const defaultLanguageContext: LanguageContextType = {
+  language: 'de',
+  setLanguage: () => {},
+  t: (key, params) => translate('de', key, params),
+};
+
+const LanguageContext = createContext<LanguageContextType>(defaultLanguageContext);
 
 function getStoredLanguage(): Language {
   try {
@@ -40,17 +60,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
-      const dict = translations[language] as Record<string, string>;
-      let text = dict[key] ?? (translations['de'] as Record<string, string>)[key] ?? key;
-      if (params) {
-        Object.entries(params).forEach(([k, v]) => {
-          const value = String(v);
-          text = text
-            .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), value)
-            .replace(new RegExp(`\\{${k}\\}`, 'g'), value);
-        });
-      }
-      return text;
+      return translate(language, key, params);
     },
     [language]
   );
@@ -63,7 +73,5 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLanguage(): LanguageContextType {
-  const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error('useLanguage must be used within a LanguageProvider');
-  return ctx;
+  return useContext(LanguageContext);
 }

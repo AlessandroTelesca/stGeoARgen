@@ -23,15 +23,42 @@ const samplePaths = [
     id: 'alpha',
     title: 'Alpha Path',
     stations: [
-      { id: 1, title: 'Alpha One', description: 'First', imageUrl: 'img', status: 'available' as const, points: 10 },
-      { id: 2, title: 'Alpha Two', description: 'Locked', imageUrl: 'img', status: 'locked' as const, points: 10 },
+      {
+        id: 1,
+        title: 'Alpha One',
+        description: 'First',
+        imageUrl: 'img',
+        status: 'available' as const,
+        points: 10,
+        latitude: 1,
+        longitude: 2,
+      },
+      {
+        id: 2,
+        title: 'Alpha Two',
+        description: 'Locked',
+        imageUrl: 'img',
+        status: 'locked' as const,
+        points: 10,
+        latitude: 3,
+        longitude: 4,
+      },
     ],
   },
   {
     id: 'beta',
     title: 'Beta Path',
     stations: [
-      { id: 3, title: 'Beta Done', description: 'Done', imageUrl: 'img', status: 'completed' as const, points: 5 },
+      {
+        id: 3,
+        title: 'Beta Done',
+        description: 'Done',
+        imageUrl: 'img',
+        status: 'completed' as const,
+        points: 5,
+        latitude: 5,
+        longitude: 6,
+      },
     ],
   },
 ];
@@ -97,7 +124,7 @@ describe('StationDetail', () => {
       </MemoryRouter>
     );
 
-    await user.click(screen.getByRole('button', { name: /navigation zur station/i }));
+    await user.click(screen.getByRole('button', { name: /zu sample station navigieren/i }));
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringContaining('google.com/maps'),
       '_blank'
@@ -132,7 +159,7 @@ describe('StationsView', () => {
     const onStationClick = vi.fn();
 
     render(
-      <StationsView paths={samplePaths} onStationClick={onStationClick} onBack={vi.fn()} />
+      <StationsView paths={samplePaths} onStationClick={onStationClick} onBack={vi.fn()} isLoggedIn={true} />
     );
 
     await user.click(screen.getByRole('button', { name: /alpha one/i }));
@@ -145,7 +172,7 @@ describe('StationsView', () => {
   test('filters to completed stations', async () => {
     const user = userEvent.setup();
     render(
-      <StationsView paths={samplePaths} onStationClick={vi.fn()} onBack={vi.fn()} />
+      <StationsView paths={samplePaths} onStationClick={vi.fn()} onBack={vi.fn()} isLoggedIn={true} />
     );
 
     await user.click(screen.getByRole('button', { name: /abgeschlossen/i }));
