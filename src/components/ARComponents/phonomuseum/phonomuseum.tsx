@@ -1048,14 +1048,18 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           borderRadius: '10px',
                           background: 'var(--color-primary-light)',
                           color: 'var(--color-primary)',
-                          padding: '8px 10px',
+                          padding: '10px 6px',
                           fontWeight: 700,
                           fontSize: '0.82rem',
                           cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '5px',
                         }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <Play size={14} />
+                        <Play size={18} />
+                        <span style={{ textAlign: 'center', wordBreak: 'break-word', lineHeight: 1.25 }}>
                           {`${mediumLessonCopy.playLabel}: ${mediumLessonCopy.mediumNames[soundType]}`}
                         </span>
                         {soundIndicator(`lesson-play-${soundType}`)}
@@ -1075,7 +1079,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                       const isWrongSelection = (mediumLessonWrongSelections[mediumLessonQuestionIndex] ?? []).includes(soundType);
                       const isSelected = mediumLessonSelectedAnswer === soundType;
                       const hasAnswered = mediumLessonSelectedAnswer !== null;
-                      const isCorrectChoice = soundType === currentMediumLessonQuestion.correct;
 
                       return (
                         <button
@@ -1600,15 +1603,19 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           borderRadius: '10px',
                           background: 'var(--color-primary-light)',
                           color: 'var(--color-primary)',
-                          padding: '8px 10px',
+                          padding: '10px 6px',
                           fontWeight: 700,
                           fontSize: '0.82rem',
                           cursor: !yourTurnMelodyValid ? 'default' : 'pointer',
                           opacity: !yourTurnMelodyValid ? 0.6 : 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '5px',
                         }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <Play size={14} />
+                        <Play size={18} />
+                        <span style={{ textAlign: 'center', wordBreak: 'break-word', lineHeight: 1.25 }}>
                           {mediumLessonCopy.mediumNames[soundType]}
                         </span>
                         {soundIndicator(`your-turn-play-${soundType}`)}
