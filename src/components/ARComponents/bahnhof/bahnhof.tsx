@@ -9,7 +9,26 @@ import { getBahnhofTexts } from '../../../i18n/stations/bahnhof';
 import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
+const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
 const SHOW_DEBUG_CAMERA_UI = false;
+
+
+function loadPanoramaTexture(url: string): Promise<THREE.Texture> {
+	return new Promise((resolve, reject) => {
+		new THREE.TextureLoader().load(
+			url,
+			(texture) => {
+				texture.colorSpace = THREE.SRGBColorSpace;
+				texture.minFilter = THREE.LinearFilter;
+				texture.magFilter = THREE.LinearFilter;
+				texture.generateMipmaps = false;
+				resolve(texture);
+			},
+			undefined,
+			(error) => reject(error)
+		);
+	});
+}
 
 interface ARViewProps {
 	onNavigateHome?: () => void;
@@ -42,6 +61,12 @@ class BahnhofARSession extends GyroARVisualizer {
 				(child) => child.type === 'GridHelper' || child.type === 'AxesHelper'
 			);
 			debugHelpers.forEach((helper) => this.scene?.remove(helper));
+		}
+
+		try {
+			this.setPanoramaBackground(await loadPanoramaTexture(BAHNHOF_PANORAMA_URL));
+		} catch (err) {
+			console.error('[BahnhofARSession] Failed to load panorama texture', err);
 		}
 
 		// Set the default camera position and look at the train model

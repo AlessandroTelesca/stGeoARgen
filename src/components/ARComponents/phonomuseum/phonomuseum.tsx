@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Check, Music2, Play, Trash2, Undo2, Volume2, X } from 'lucide-react';
+import * as THREE from 'three';
 import * as Tone from 'tone';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
@@ -26,13 +27,39 @@ interface ARViewProps {
 }
 
 class PhonomuseumARSession extends GyroARVisualizer {
-  public museumInteriorUrl = new URL('./models/museum_interior.glb', import.meta.url).href;
-  // You can override methods or add custom functionality here
-  // For example:
-  // private initThree(): void {
-  //   super.initThree();
-  //   // Add custom Phonomuseum-specific 3D objects
-  // }
+  private readonly panoramaUrl = '/images/360/phonomuseum.jpg';
+
+  private loadPanoramaTexture(url: string): Promise<THREE.Texture> {
+    return new Promise((resolve, reject) => {
+      new THREE.TextureLoader().load(
+        url,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.generateMipmaps = false;
+          resolve(texture);
+        },
+        undefined,
+        (error) => reject(error)
+      );
+    });
+  }
+
+  async init(): Promise<void> {
+    await super.init();
+
+    try {
+      this.setPanoramaBackground(await this.loadPanoramaTexture(this.panoramaUrl));
+    } catch (err) {
+      console.error('[PhonomuseumARSession] Failed to load panorama texture', err);
+    }
+
+    if (this.camera) {
+      this.camera.position.set(0, 0, 0);
+      this.camera.lookAt(0, 0, -1);
+    }
+  }
 }
 
 type QuizPhase = 'question' | 'feedback' | 'reveal' | 'yourTurn' | 'summary';
@@ -678,18 +705,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
       await session.init();
       console.log('[PhonomuseumView] AR session initialized');
-      
-      // Load museum interior model and position camera at the center of the room
-      try {
-        await session.loadGLTFModel(session.museumInteriorUrl, {
-          position: [0, 0, 0],
-          rotation: [0, 0, 0],
-          scale: 1
-        });
-        console.log('[PhonomuseumView] Museum interior model loaded');
-      } catch (err) {
-        console.error('[PhonomuseumView] Failed to load museum model:', err);
-      }
       
       sessionRef.current = session;
       setHasStarted(true);

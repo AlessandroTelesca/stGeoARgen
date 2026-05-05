@@ -18,6 +18,7 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 	private usingMotionRate = false;
 	private readonly gyroSensitivity = 1;
 	private gridHelper: THREE.GridHelper | null = null;
+	private panoramaBackdrop: THREE.Mesh | null = null;
 	private readonly handleOwnResize = (): void => {
 		if (!this.camera || !this.renderer) return;
 		this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -67,6 +68,49 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		} = {}
 	): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
 		return super.loadGLTFModelWithAnimations(url, options);
+	}
+
+	public setPanoramaBackground(texture: THREE.Texture | null): void {
+		if (!this.scene) return;
+
+		if (this.panoramaBackdrop) {
+			this.disposePanoramaBackdrop();
+			this.panoramaBackdrop = null;
+		}
+
+		if (!texture) return;
+
+		texture.needsUpdate = true;
+
+		const geometry = new THREE.SphereGeometry(120, 64, 32);
+		const material = new THREE.MeshBasicMaterial({
+			map: texture,
+			side: THREE.BackSide,
+			depthWrite: false,
+		});
+		const backdrop = new THREE.Mesh(geometry, material);
+		backdrop.name = 'PanoramaBackdrop';
+		backdrop.renderOrder = -1000;
+		this.scene.add(backdrop);
+		this.panoramaBackdrop = backdrop;
+	}
+
+	private disposePanoramaBackdrop(): void {
+		if (!this.panoramaBackdrop) return;
+
+		if (this.scene) {
+			this.scene.remove(this.panoramaBackdrop);
+		}
+
+		this.panoramaBackdrop.geometry.dispose();
+		const material = this.panoramaBackdrop.material;
+		if (Array.isArray(material)) {
+			material.forEach((part) => part.dispose());
+		} else {
+			const meshMaterial = material as THREE.MeshBasicMaterial;
+			meshMaterial.map?.dispose();
+			meshMaterial.dispose();
+		}
 	}
 
 	protected animate = (): void => {
@@ -250,6 +294,11 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 			this.scene.remove(this.gridHelper);
 		}
 		this.gridHelper = null;
+
+		if (this.panoramaBackdrop && this.scene) {
+			this.disposePanoramaBackdrop();
+		}
+		this.panoramaBackdrop = null;
 		this.ownVideoElement.style.display = '';
 
 		super.stop();
