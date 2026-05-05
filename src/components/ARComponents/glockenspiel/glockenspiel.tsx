@@ -5,6 +5,7 @@ import { ARVisualizer } from '../../../ARbackend/ARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getGlockenspielTexts } from '../../../i18n/stations/glockenspiel';
+import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -34,10 +35,17 @@ class GlockenspielARSession extends ARVisualizer {
 export const GlockenspielView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
   const { language } = useLanguage();
   const glockenspielTexts = getGlockenspielTexts(language);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isNotMobile = !isIOS && !isAndroid;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<GlockenspielARSession | null>(null);
   const [isAuthorized, setIsAuthorized] = React.useState(false);
+
+  if (isNotMobile) {
+    return <MobileOnlyNotice />;
+  }
 
   useEffect(() => {
     // Only initialize AR session after authorization

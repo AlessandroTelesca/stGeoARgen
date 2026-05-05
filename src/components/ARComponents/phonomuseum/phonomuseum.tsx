@@ -7,6 +7,7 @@ import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
+import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -326,6 +327,9 @@ const YOUR_TURN_NOTE_OPTIONS: Array<{ label: string; midi: number }> = [
 export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
   const { language } = useLanguage();
   const phonomuseumTexts = getPhonomuseumTexts(language);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isNotMobile = !isIOS && !isAndroid;
   const mediumLessonCopy = phonomuseumTexts.mediumLesson;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -380,6 +384,10 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     startRotY: 24,
     counted: false,
   });
+
+  if (isNotMobile) {
+    return <MobileOnlyNotice />;
+  }
 
   const currentQuestion = questions[shuffledQuestionOrder[currentQuestionIndex] ?? currentQuestionIndex];
   const currentMediumLessonQuestion = mediumLessonCopy.questions[mediumLessonQuestionIndex];

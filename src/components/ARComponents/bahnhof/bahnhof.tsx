@@ -6,6 +6,7 @@ import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getBahnhofTexts } from '../../../i18n/stations/bahnhof';
+import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
 const SHOW_DEBUG_CAMERA_UI = false;
@@ -105,6 +106,9 @@ class BahnhofARSession extends GyroARVisualizer {
 export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
 	const { language } = useLanguage();
 	const bahnhofTexts = getBahnhofTexts(language);
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	const isAndroid = /Android/.test(navigator.userAgent);
+	const isNotMobile = !isIOS && !isAndroid;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const sessionRef = useRef<BahnhofARSession | null>(null);
@@ -114,6 +118,11 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const [cameraPosition, setCameraPosition] = React.useState<{ x: number; y: number; z: number } | null>(null);
 
 	const [startError, setStartError] = React.useState<string | null>(null);
+
+	if (isNotMobile) {
+		return <MobileOnlyNotice />;
+	}
+
 	const startARSession = async () => {
 		if (!isAuthorized || !containerRef.current || !videoRef.current || isStarting || hasStarted) {
 			return;

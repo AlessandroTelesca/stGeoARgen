@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
+import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 type SchwarzesTorViewProps = {
   onNavigateHome?: () => void;
@@ -9,6 +10,13 @@ type SchwarzesTorViewProps = {
 export const SchwarzesTorView = ({ onNavigateHome }: SchwarzesTorViewProps) => {
   const { language } = useLanguage();
   const texts = getSchwarzesTorTexts(language);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isNotMobile = !isIOS && !isAndroid;
+
+  if (isNotMobile) {
+    return <MobileOnlyNotice />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white px-6 py-8 flex items-center justify-center">

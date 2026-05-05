@@ -6,6 +6,7 @@ import { ARVisualizer } from "../../../../ARbackend/ARVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
+import { MobileOnlyNotice } from "../../MobileOnlyNotice";
 import {
   CaughtObjectPayload,
   DEFAULT_TREASURE_SPAWN_CHANCE,
@@ -495,6 +496,9 @@ export const IOSKlosterweiherView = ({
 }: ARViewProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isNotMobile = !isIOS && !isAndroid;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -516,6 +520,10 @@ export const IOSKlosterweiherView = ({
   const [lastTapTime, setLastTapTime] = useState<number>(Date.now());
   const [showDragInstruction, setShowDragInstruction] = useState(false);
   const [dragsSinceStart, setDragsSinceStart] = useState(0);
+
+  if (isNotMobile) {
+    return <MobileOnlyNotice />;
+  }
 
   // Cleanup on unmount
   useEffect(() => {
