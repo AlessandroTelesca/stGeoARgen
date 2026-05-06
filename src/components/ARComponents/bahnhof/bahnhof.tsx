@@ -10,6 +10,7 @@ import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
 const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
+const BAHNHOF_PARALLAX_URL = '/images/parallax/2203_w026_n002_1520b_p1_1520.jpg';
 const SHOW_DEBUG_CAMERA_UI = false;
 
 
@@ -48,12 +49,17 @@ interface ARViewProps {
 
 class BahnhofARSession extends GyroARVisualizer {
 	private insideViewLight: THREE.AmbientLight | null = null;
+	private trainModel: THREE.Object3D | null = null;
+	private parallaxMeshes: THREE.Mesh[] = [];
+	private parallaxTextures: THREE.Texture[] = [];
+	private parallaxStartMs: number | null = null;
+	private readonly parallaxSpeed = 0.1;
 
 	async init(): Promise<void> {
 		await super.init();
 
 		// Keep the locomotive's authored transform from the GLB (no manual position/rotation/scale).
-		await this.loadGLTFModel(BAHNHOF_LOCOMOTIVE_MODEL_URL);
+		this.trainModel = await this.loadGLTFModel(BAHNHOF_LOCOMOTIVE_MODEL_URL);
 
 		// Remove debug helpers so the model appears in an empty black space.
 		if (this.scene) {
@@ -118,11 +124,104 @@ class BahnhofARSession extends GyroARVisualizer {
 		this.camera?.translateZ(step);
 	}
 
+	async enableParallaxBackdrops(url: string): Promise<void> {
+		if (!this.scene) return;
+
+		this.setPanoramaBackground(null);
+		this.disposeParallaxMeshes();
+
+		const leftTexture = await loadPanoramaTexture(url);
+		leftTexture.wrapS = THREE.RepeatWrapping;
+		leftTexture.wrapT = THREE.ClampToEdgeWrapping;
+		leftTexture.repeat.set(2, 1);
+		leftTexture.offset.set(0, 0);
+		leftTexture.center.set(0.5, 0.5);
+
+		const rightTexture = await loadPanoramaTexture(url);
+		rightTexture.wrapS = THREE.RepeatWrapping;
+		rightTexture.wrapT = THREE.ClampToEdgeWrapping;
+		rightTexture.repeat.set(2, 1);
+		rightTexture.offset.set(0, 0);
+		rightTexture.center.set(0.5, 0.5);
+
+		const leftMaterial = new THREE.MeshBasicMaterial({
+			map: leftTexture,
+			transparent: true,
+			side: THREE.DoubleSide,
+			depthWrite: false,
+		});
+		const rightMaterial = new THREE.MeshBasicMaterial({
+			map: rightTexture,
+			transparent: true,
+			side: THREE.DoubleSide,
+			depthWrite: false,
+		});
+		const geometry = new THREE.PlaneGeometry(24, 12);
+
+		const leftPlane = new THREE.Mesh(geometry, leftMaterial);
+		leftPlane.position.set(0, 0, 5);
+		leftPlane.renderOrder = -10;
+
+		const rightPlane = new THREE.Mesh(geometry, rightMaterial);
+		rightPlane.position.set(0, 0, -5);
+		rightPlane.renderOrder = -10;
+
+		const onBeforeRender = () => {
+			this.updateParallaxOffset();
+			this.updateParallaxLookAt();
+		};
+		leftPlane.onBeforeRender = onBeforeRender;
+		rightPlane.onBeforeRender = onBeforeRender;
+
+		this.scene.add(leftPlane, rightPlane);
+		this.parallaxMeshes = [leftPlane, rightPlane];
+		this.parallaxTextures = [leftTexture, rightTexture];
+		this.parallaxStartMs = performance.now();
+	}
+
+	private updateParallaxOffset(): void {
+		if (this.parallaxTextures.length < 2 || this.parallaxStartMs === null) return;
+
+		const elapsedSeconds = (performance.now() - this.parallaxStartMs) / 1000;
+		const offset = (elapsedSeconds * this.parallaxSpeed) % 1;
+		this.parallaxTextures[0].offset.x = -offset;
+		this.parallaxTextures[1].offset.x = offset;
+	}
+
+	private updateParallaxLookAt(): void {
+		if (!this.trainModel || this.parallaxMeshes.length === 0) return;
+
+		const trainPosition = new THREE.Vector3();
+		this.trainModel.getWorldPosition(trainPosition);
+		this.parallaxMeshes.forEach((mesh) => mesh.lookAt(trainPosition));
+	}
+
+	private disposeParallaxMeshes(): void {
+		if (!this.scene || this.parallaxMeshes.length === 0) {
+			this.parallaxMeshes = [];
+			this.parallaxTextures = [];
+			this.parallaxStartMs = null;
+			return;
+		}
+
+		this.parallaxMeshes.forEach((mesh) => this.scene?.remove(mesh));
+		this.parallaxMeshes.forEach((mesh) => mesh.geometry.dispose());
+		const material = this.parallaxMeshes[0]?.material;
+		if (material && !Array.isArray(material)) {
+			material.dispose();
+		}
+		this.parallaxTextures.forEach((texture) => texture.dispose());
+		this.parallaxMeshes = [];
+		this.parallaxTextures = [];
+		this.parallaxStartMs = null;
+	}
+
 	stop(): void {
 		if (this.scene && this.insideViewLight) {
 			this.scene.remove(this.insideViewLight);
 		}
 		this.insideViewLight = null;
+		this.disposeParallaxMeshes();
 
 		super.stop();
 	}
@@ -131,16 +230,28 @@ class BahnhofARSession extends GyroARVisualizer {
 export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
 	const { language } = useLanguage();
 	const bahnhofTexts = getBahnhofTexts(language);
+	const guidedTexts = {
+		front: bahnhofTexts.tourFrontText,
+		back: bahnhofTexts.tourBackText,
+		inside: bahnhofTexts.tourInsideText,
+	};
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 	const isAndroid = /Android/.test(navigator.userAgent);
 	const isNotMobile = !isIOS && !isAndroid;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const sessionRef = useRef<BahnhofARSession | null>(null);
+	const locomotiveAudioRef = useRef<HTMLAudioElement | null>(null);
+	const hornAudioRef = useRef<HTMLAudioElement | null>(null);
 	const [isAuthorized, setIsAuthorized] = React.useState(false);
 	const [hasStarted, setHasStarted] = React.useState(false);
 	const [isStarting, setIsStarting] = React.useState(false);
 	const [cameraPosition, setCameraPosition] = React.useState<{ x: number; y: number; z: number } | null>(null);
+	const [isTrainMoving, setIsTrainMoving] = React.useState(false);
+	const [isInsideView, setIsInsideView] = React.useState(false);
+	const [tourStep, setTourStep] = React.useState<0 | 1 | 2>(0);
+	const [showTourText, setShowTourText] = React.useState(true);
+	const [showDriveHint, setShowDriveHint] = React.useState(false);
 
 	const [startError, setStartError] = React.useState<string | null>(null);
 
@@ -166,7 +277,17 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 			);
 
 			await session.init();
+			session.setCameraPositionAndLookAt(7.5, 0.5, 2);
 			sessionRef.current = session;
+			setTourStep(0);
+			setShowTourText(true);
+			setShowDriveHint(false);
+			setIsInsideView(false);
+			setIsTrainMoving(false);
+			if (locomotiveAudioRef.current) {
+				locomotiveAudioRef.current.pause();
+				locomotiveAudioRef.current.currentTime = 0;
+			}
 			setHasStarted(true);
 		} catch (err: any) {
 			const message = err?.message || bahnhofTexts.arStartErrorFallback;
@@ -178,7 +299,28 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	};
 
 	useEffect(() => {
+		const audio = new Audio('/sounds/steam-locomotive.mp3');
+		audio.loop = true;
+		audio.preload = 'auto';
+		audio.volume = 0.35;
+		locomotiveAudioRef.current = audio;
+
+		const hornAudio = new Audio('/sounds/steam-locomotive-horn.mp3');
+		hornAudio.preload = 'auto';
+		hornAudio.volume = 0.65;
+		hornAudioRef.current = hornAudio;
+
 		return () => {
+			if (locomotiveAudioRef.current) {
+				locomotiveAudioRef.current.pause();
+				locomotiveAudioRef.current.src = '';
+				locomotiveAudioRef.current.load();
+			}
+			if (hornAudioRef.current) {
+				hornAudioRef.current.pause();
+				hornAudioRef.current.src = '';
+				hornAudioRef.current.load();
+			}
 			sessionRef.current?.stop();
 		};
 	}, []);
@@ -224,6 +366,64 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		setCameraPosition(session.getCameraPosition());
 	};
 
+	const startTrain = () => {
+		if (!sessionRef.current || isTrainMoving || !isInsideView) return;
+
+		sessionRef.current
+			.enableParallaxBackdrops(BAHNHOF_PARALLAX_URL)
+			.then(() => {
+				setIsTrainMoving(true);
+				setShowTourText(false);
+				setShowDriveHint(true);
+				if (locomotiveAudioRef.current) {
+					locomotiveAudioRef.current.currentTime = 0;
+					void locomotiveAudioRef.current.play().catch((err) => {
+						console.warn('[BahnhofView] Failed to play locomotive audio', err);
+					});
+				}
+			})
+			.catch((err) => console.error('[BahnhofView] Failed to load parallax backdrop', err));
+	};
+
+	const playHorn = () => {
+		if (!hornAudioRef.current) return;
+		hornAudioRef.current.currentTime = 0;
+		void hornAudioRef.current.play().catch((err) => {
+			console.warn('[BahnhofView] Failed to play horn audio', err);
+		});
+	};
+
+	const handleNextStep = () => {
+		const session = sessionRef.current;
+		if (!session) return;
+
+		if (tourStep === 0) {
+			session.setCameraPositionAndLookAt(-6.5, 0.5, 2);
+			setTourStep(1);
+			return;
+		}
+
+		if (tourStep === 1) {
+			session.setInsideView();
+			setIsInsideView(true);
+			setTourStep(2);
+			return;
+		}
+	};
+
+	const getTourText = () => {
+		switch (tourStep) {
+			case 0:
+				return guidedTexts.front;
+			case 1:
+				return guidedTexts.back;
+			case 2:
+				return guidedTexts.inside;
+			default:
+				return guidedTexts.front;
+		}
+	};
+
 	return (
 		<ARProximityGate
 			stationId={AR_VIEW_STATION_MAP['bahnhof']}
@@ -249,11 +449,24 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					currentStationTitle={bahnhofTexts.stationName}
 					currentStationPoints={currentStationPoints}
 					onCompleteStation={onCompleteStation}
+					onCompleteInitiated={() => {
+						setShowTourText(false);
+						setShowDriveHint(false);
+						if (locomotiveAudioRef.current) {
+							locomotiveAudioRef.current.pause();
+							locomotiveAudioRef.current.currentTime = 0;
+						}
+						if (hornAudioRef.current) {
+							hornAudioRef.current.pause();
+							hornAudioRef.current.currentTime = 0;
+						}
+					}}
 					isCurrentStationCompleted={isCurrentStationCompleted}
-				isGuestMode={isGuestMode}
-			/>
-
-			{isAuthorized && !hasStarted && (
+					showCompleteButton={isTrainMoving}
+					ignoreCompleteTimer={true}
+					isGuestMode={isGuestMode}
+				/>
+				{isAuthorized && !hasStarted && (
 					<div
 						style={{
 							position: 'fixed',
@@ -311,7 +524,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					</div>
 				)}
 
-				{hasStarted && (
+				{hasStarted && showTourText && (
 					<div
 						style={{
 							position: 'fixed',
@@ -319,79 +532,102 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							bottom: 'max(140px, calc(env(safe-area-inset-bottom) + 120px))',
 							transform: 'translateX(-50%)',
 							zIndex: 10005,
-							width: 'min(420px, calc(100vw - 24px))',
-							padding: '14px',
+							width: 'min(440px, calc(100vw - 24px))',
+							padding: '16px',
 							borderRadius: '16px',
-								border: '1px solid rgba(255,255,255,0.35)',
-								background: 'rgba(228, 232, 236, 0.24)',
-								backdropFilter: 'blur(6px) grayscale(16%)',
-								WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
-								boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
+							border: '1px solid rgba(255,255,255,0.35)',
+							background: 'rgba(228, 232, 236, 0.24)',
+							backdropFilter: 'blur(6px) grayscale(16%)',
+							WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
+							boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
 							color: 'white',
 						}}
 					>
-						<div style={{ fontSize: '0.78rem', opacity: 0.75, marginBottom: '10px', fontWeight: 700 }}>
-							Camera Positions
+						<div style={{ fontSize: '0.9rem', lineHeight: 1.4, marginBottom: '12px' }}>
+							{getTourText()}
 						</div>
-						<div
+						{tourStep < 2 && (
+							<button
+								onClick={handleNextStep}
+								style={{
+									width: '100%',
+									border: 'none',
+									borderRadius: '12px',
+									padding: '12px 14px',
+									background: 'var(--color-primary)',
+									color: 'var(--color-white)',
+									fontWeight: 800,
+									cursor: 'pointer',
+								}}
+							>
+								{bahnhofTexts.tourNextButton}
+							</button>
+						)}
+						{tourStep === 2 && (
+							<button
+								onClick={startTrain}
+								disabled={isTrainMoving}
+								style={{
+									width: '100%',
+									border: 'none',
+									borderRadius: '12px',
+									padding: '12px 14px',
+									background: 'var(--color-primary)',
+									color: 'var(--color-white)',
+									fontWeight: 800,
+									cursor: isTrainMoving ? 'default' : 'pointer',
+									opacity: isTrainMoving ? 0.75 : 1,
+									fontSize: '0.9rem',
+								}}
+							>
+								{isTrainMoving ? bahnhofTexts.tourTrainStartedLabel : bahnhofTexts.trainStartButton}
+							</button>
+						)}
+					</div>
+				)}
+
+				{hasStarted && showDriveHint && (
+					<div
+						style={{
+							position: 'fixed',
+							left: '50%',
+							bottom: 'max(140px, calc(env(safe-area-inset-bottom) + 120px))',
+							transform: 'translateX(-50%)',
+							zIndex: 10005,
+							width: 'min(360px, calc(100vw - 24px))',
+							padding: '12px 14px',
+							borderRadius: '14px',
+							border: '1px solid rgba(255,255,255,0.35)',
+							background: 'rgba(228, 232, 236, 0.24)',
+							backdropFilter: 'blur(6px) grayscale(16%)',
+							WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
+							boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
+							color: 'white',
+							textAlign: 'center',
+							fontSize: '0.9rem',
+							lineHeight: 1.4,
+						}}
+					>
+						{bahnhofTexts.tourDriveHint}
+						<button
+							onClick={() => {
+								void playHorn();
+							}}
 							style={{
-								display: 'grid',
-								gridTemplateColumns: '1fr 1fr 1fr',
-								gap: '8px',
+								marginTop: '10px',
+								width: '100%',
+								border: 'none',
+								borderRadius: '12px',
+								padding: '10px 12px',
+								background: 'var(--color-primary)',
+								color: 'var(--color-white)',
+								fontWeight: 800,
+								cursor: 'pointer',
+								fontSize: '0.85rem',
 							}}
 						>
-							<button
-								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(7.5, 0.5, 2);
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Right Front
-							</button>
-							<button
-								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(-6.5, 0.5, 2);
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Right Back
-							</button>
-							<button
-								onClick={() => {
-									sessionRef.current?.setInsideView();
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Inside View
-							</button>
-						</div>
+							{bahnhofTexts.tourHornButton}
+						</button>
 					</div>
 				)}
 
