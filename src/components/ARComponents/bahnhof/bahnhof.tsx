@@ -10,6 +10,7 @@ import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
 const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
+const BAHNHOF_PARALLAX_URL = '/images/parallax/2203_w026_n002_1520b_p1_1520.jpg';
 const SHOW_DEBUG_CAMERA_UI = false;
 
 
@@ -48,12 +49,17 @@ interface ARViewProps {
 
 class BahnhofARSession extends GyroARVisualizer {
 	private insideViewLight: THREE.AmbientLight | null = null;
+	private trainModel: THREE.Object3D | null = null;
+	private parallaxMeshes: THREE.Mesh[] = [];
+	private parallaxTextures: THREE.Texture[] = [];
+	private parallaxStartMs: number | null = null;
+	private readonly parallaxSpeed = 0.1;
 
 	async init(): Promise<void> {
 		await super.init();
 
 		// Keep the locomotive's authored transform from the GLB (no manual position/rotation/scale).
-		await this.loadGLTFModel(BAHNHOF_LOCOMOTIVE_MODEL_URL);
+		this.trainModel = await this.loadGLTFModel(BAHNHOF_LOCOMOTIVE_MODEL_URL);
 
 		// Remove debug helpers so the model appears in an empty black space.
 		if (this.scene) {
@@ -118,11 +124,104 @@ class BahnhofARSession extends GyroARVisualizer {
 		this.camera?.translateZ(step);
 	}
 
+	async enableParallaxBackdrops(url: string): Promise<void> {
+		if (!this.scene) return;
+
+		this.setPanoramaBackground(null);
+		this.disposeParallaxMeshes();
+
+		const leftTexture = await loadPanoramaTexture(url);
+		leftTexture.wrapS = THREE.RepeatWrapping;
+		leftTexture.wrapT = THREE.ClampToEdgeWrapping;
+		leftTexture.repeat.set(2, 1);
+		leftTexture.offset.set(0, 0);
+		leftTexture.center.set(0.5, 0.5);
+
+		const rightTexture = await loadPanoramaTexture(url);
+		rightTexture.wrapS = THREE.RepeatWrapping;
+		rightTexture.wrapT = THREE.ClampToEdgeWrapping;
+		rightTexture.repeat.set(2, 1);
+		rightTexture.offset.set(0, 0);
+		rightTexture.center.set(0.5, 0.5);
+
+		const leftMaterial = new THREE.MeshBasicMaterial({
+			map: leftTexture,
+			transparent: true,
+			side: THREE.DoubleSide,
+			depthWrite: false,
+		});
+		const rightMaterial = new THREE.MeshBasicMaterial({
+			map: rightTexture,
+			transparent: true,
+			side: THREE.DoubleSide,
+			depthWrite: false,
+		});
+		const geometry = new THREE.PlaneGeometry(24, 12);
+
+		const leftPlane = new THREE.Mesh(geometry, leftMaterial);
+		leftPlane.position.set(0, 0, 5);
+		leftPlane.renderOrder = -10;
+
+		const rightPlane = new THREE.Mesh(geometry, rightMaterial);
+		rightPlane.position.set(0, 0, -5);
+		rightPlane.renderOrder = -10;
+
+		const onBeforeRender = () => {
+			this.updateParallaxOffset();
+			this.updateParallaxLookAt();
+		};
+		leftPlane.onBeforeRender = onBeforeRender;
+		rightPlane.onBeforeRender = onBeforeRender;
+
+		this.scene.add(leftPlane, rightPlane);
+		this.parallaxMeshes = [leftPlane, rightPlane];
+		this.parallaxTextures = [leftTexture, rightTexture];
+		this.parallaxStartMs = performance.now();
+	}
+
+	private updateParallaxOffset(): void {
+		if (this.parallaxTextures.length < 2 || this.parallaxStartMs === null) return;
+
+		const elapsedSeconds = (performance.now() - this.parallaxStartMs) / 1000;
+		const offset = (elapsedSeconds * this.parallaxSpeed) % 1;
+		this.parallaxTextures[0].offset.x = -offset;
+		this.parallaxTextures[1].offset.x = offset;
+	}
+
+	private updateParallaxLookAt(): void {
+		if (!this.trainModel || this.parallaxMeshes.length === 0) return;
+
+		const trainPosition = new THREE.Vector3();
+		this.trainModel.getWorldPosition(trainPosition);
+		this.parallaxMeshes.forEach((mesh) => mesh.lookAt(trainPosition));
+	}
+
+	private disposeParallaxMeshes(): void {
+		if (!this.scene || this.parallaxMeshes.length === 0) {
+			this.parallaxMeshes = [];
+			this.parallaxTextures = [];
+			this.parallaxStartMs = null;
+			return;
+		}
+
+		this.parallaxMeshes.forEach((mesh) => this.scene?.remove(mesh));
+		this.parallaxMeshes.forEach((mesh) => mesh.geometry.dispose());
+		const material = this.parallaxMeshes[0]?.material;
+		if (material && !Array.isArray(material)) {
+			material.dispose();
+		}
+		this.parallaxTextures.forEach((texture) => texture.dispose());
+		this.parallaxMeshes = [];
+		this.parallaxTextures = [];
+		this.parallaxStartMs = null;
+	}
+
 	stop(): void {
 		if (this.scene && this.insideViewLight) {
 			this.scene.remove(this.insideViewLight);
 		}
 		this.insideViewLight = null;
+		this.disposeParallaxMeshes();
 
 		super.stop();
 	}
@@ -141,6 +240,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const [hasStarted, setHasStarted] = React.useState(false);
 	const [isStarting, setIsStarting] = React.useState(false);
 	const [cameraPosition, setCameraPosition] = React.useState<{ x: number; y: number; z: number } | null>(null);
+	const [isTrainMoving, setIsTrainMoving] = React.useState(false);
+	const [isInsideView, setIsInsideView] = React.useState(false);
 
 	const [startError, setStartError] = React.useState<string | null>(null);
 
@@ -224,6 +325,15 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		setCameraPosition(session.getCameraPosition());
 	};
 
+	const startTrain = () => {
+		if (!sessionRef.current || isTrainMoving || !isInsideView) return;
+
+		sessionRef.current
+			.enableParallaxBackdrops(BAHNHOF_PARALLAX_URL)
+			.then(() => setIsTrainMoving(true))
+			.catch((err) => console.error('[BahnhofView] Failed to load parallax backdrop', err));
+	};
+
 	return (
 		<ARProximityGate
 			stationId={AR_VIEW_STATION_MAP['bahnhof']}
@@ -250,9 +360,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					currentStationPoints={currentStationPoints}
 					onCompleteStation={onCompleteStation}
 					isCurrentStationCompleted={isCurrentStationCompleted}
-				isGuestMode={isGuestMode}
+					isGuestMode={isGuestMode}
 			/>
-
 			{isAuthorized && !hasStarted && (
 					<div
 						style={{
@@ -330,6 +439,27 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							color: 'white',
 						}}
 					>
+						{isInsideView && (
+							<div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+								<button
+									onClick={startTrain}
+									disabled={isTrainMoving}
+									style={{
+										border: 'none',
+										borderRadius: '10px',
+										padding: '12px 14px',
+										background: 'var(--color-primary)',
+										color: 'var(--color-white)',
+										fontWeight: 800,
+										cursor: isTrainMoving ? 'default' : 'pointer',
+										fontSize: '0.9rem',
+										opacity: isTrainMoving ? 0.75 : 1,
+									}}
+								>
+									{isTrainMoving ? 'Train started' : bahnhofTexts.trainStartButton}
+								</button>
+							</div>
+						)}
 						<div style={{ fontSize: '0.78rem', opacity: 0.75, marginBottom: '10px', fontWeight: 700 }}>
 							Camera Positions
 						</div>
@@ -376,7 +506,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							</button>
 							<button
 								onClick={() => {
-									sessionRef.current?.setInsideView();
+								sessionRef.current?.setInsideView();
+								setIsInsideView(true);
 								}}
 								style={{
 									border: 'none',

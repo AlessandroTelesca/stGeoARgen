@@ -8,6 +8,7 @@
   "arStartButton": "Start AR",
   "arStartingButton": "Starting AR...",
   "arStartErrorFallback": "Failed to start the AR view.",
+  "trainStartButton": "Now drive the train!",
   "quizOptions": [
     "It served only as a freight terminal",
     "It was a central transport hub for travelers and trade",

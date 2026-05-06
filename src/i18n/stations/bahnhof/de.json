@@ -8,6 +8,7 @@
   "arStartButton": "AR starten",
   "arStartingButton": "AR wird gestartet...",
   "arStartErrorFallback": "Die AR-Ansicht konnte nicht gestartet werden.",
+  "trainStartButton": "Jetzt den Zug fahren!",
   "quizOptions": [
     "Als reiner Guterumschlagplatz",
     "Als zentraler Verkehrsknoten fur Reisende und Handel",

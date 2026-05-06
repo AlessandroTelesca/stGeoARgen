@@ -12,6 +12,7 @@ export interface BahnhofTexts {
   arStartButton: string;
   arStartingButton: string;
   arStartErrorFallback: string;
+  trainStartButton: string;
   quizOptions: string[];
 }
 
