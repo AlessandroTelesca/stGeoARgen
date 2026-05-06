@@ -9,6 +9,12 @@
   "arStartingButton": "Starting AR...",
   "arStartErrorFallback": "Failed to start the AR view.",
   "trainStartButton": "Now drive the train!",
+  "tourFrontText": "You are looking at the front of the historic Schwarzwaldbahn steam locomotive. Notice the powerful boiler and the classic front lamp assembly.",
+  "tourBackText": "Now you are behind the train. Here you can see the tender area where coal and water were stored to keep the locomotive running.",
+  "tourInsideText": "You are now in the driver's position. This is where the engineer controlled steam pressure, speed, and braking during the journey.",
+  "tourNextButton": "Next",
+  "tourTrainStartedLabel": "Train started",
+  "tourDriveHint": "Look around and move your phone to see out the windows.",
   "quizOptions": [
     "It served only as a freight terminal",
     "It was a central transport hub for travelers and trade",

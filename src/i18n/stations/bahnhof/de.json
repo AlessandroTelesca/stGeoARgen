@@ -9,6 +9,12 @@
   "arStartingButton": "AR wird gestartet...",
   "arStartErrorFallback": "Die AR-Ansicht konnte nicht gestartet werden.",
   "trainStartButton": "Jetzt den Zug fahren!",
+  "tourFrontText": "Du stehst vor der Front der historischen Schwarzwaldbahn-Dampflok. Achte auf den maechtigen Kessel und die klassische Frontlampe.",
+  "tourBackText": "Jetzt bist du am Zugende. Hier siehst du den Tender, in dem Kohle und Wasser gelagert wurden, um die Lok zu betreiben.",
+  "tourInsideText": "Du bist jetzt am Fahrerstand. Von hier aus regelte der Lokfuehrer Dampfdruck, Geschwindigkeit und Bremsen.",
+  "tourNextButton": "Weiter",
+  "tourTrainStartedLabel": "Zug gestartet",
+  "tourDriveHint": "Schau dich um und bewege dein Handy, um aus den Fenstern zu sehen.",
   "quizOptions": [
     "Als reiner Guterumschlagplatz",
     "Als zentraler Verkehrsknoten fur Reisende und Handel",

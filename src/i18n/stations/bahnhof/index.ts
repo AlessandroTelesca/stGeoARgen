@@ -13,6 +13,12 @@ export interface BahnhofTexts {
   arStartingButton: string;
   arStartErrorFallback: string;
   trainStartButton: string;
+  tourFrontText: string;
+  tourBackText: string;
+  tourInsideText: string;
+  tourNextButton: string;
+  tourTrainStartedLabel: string;
+  tourDriveHint: string;
   quizOptions: string[];
 }
 

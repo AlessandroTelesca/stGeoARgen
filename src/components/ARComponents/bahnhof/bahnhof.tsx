@@ -230,6 +230,11 @@ class BahnhofARSession extends GyroARVisualizer {
 export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false }: ARViewProps) => {
 	const { language } = useLanguage();
 	const bahnhofTexts = getBahnhofTexts(language);
+	const guidedTexts = {
+		front: bahnhofTexts.tourFrontText,
+		back: bahnhofTexts.tourBackText,
+		inside: bahnhofTexts.tourInsideText,
+	};
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 	const isAndroid = /Android/.test(navigator.userAgent);
 	const isNotMobile = !isIOS && !isAndroid;
@@ -242,6 +247,9 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const [cameraPosition, setCameraPosition] = React.useState<{ x: number; y: number; z: number } | null>(null);
 	const [isTrainMoving, setIsTrainMoving] = React.useState(false);
 	const [isInsideView, setIsInsideView] = React.useState(false);
+	const [tourStep, setTourStep] = React.useState<0 | 1 | 2>(0);
+	const [showTourText, setShowTourText] = React.useState(true);
+	const [showDriveHint, setShowDriveHint] = React.useState(false);
 
 	const [startError, setStartError] = React.useState<string | null>(null);
 
@@ -267,7 +275,13 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 			);
 
 			await session.init();
+			session.setCameraPositionAndLookAt(7.5, 0.5, 2);
 			sessionRef.current = session;
+			setTourStep(0);
+			setShowTourText(true);
+			setShowDriveHint(false);
+			setIsInsideView(false);
+			setIsTrainMoving(false);
 			setHasStarted(true);
 		} catch (err: any) {
 			const message = err?.message || bahnhofTexts.arStartErrorFallback;
@@ -330,8 +344,43 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 
 		sessionRef.current
 			.enableParallaxBackdrops(BAHNHOF_PARALLAX_URL)
-			.then(() => setIsTrainMoving(true))
+			.then(() => {
+				setIsTrainMoving(true);
+				setShowTourText(false);
+				setShowDriveHint(true);
+			})
 			.catch((err) => console.error('[BahnhofView] Failed to load parallax backdrop', err));
+	};
+
+	const handleNextStep = () => {
+		const session = sessionRef.current;
+		if (!session) return;
+
+		if (tourStep === 0) {
+			session.setCameraPositionAndLookAt(-6.5, 0.5, 2);
+			setTourStep(1);
+			return;
+		}
+
+		if (tourStep === 1) {
+			session.setInsideView();
+			setIsInsideView(true);
+			setTourStep(2);
+			return;
+		}
+	};
+
+	const getTourText = () => {
+		switch (tourStep) {
+			case 0:
+				return guidedTexts.front;
+			case 1:
+				return guidedTexts.back;
+			case 2:
+				return guidedTexts.inside;
+			default:
+				return guidedTexts.front;
+		}
 	};
 
 	return (
@@ -361,8 +410,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					onCompleteStation={onCompleteStation}
 					isCurrentStationCompleted={isCurrentStationCompleted}
 					isGuestMode={isGuestMode}
-			/>
-			{isAuthorized && !hasStarted && (
+				/>
+				{isAuthorized && !hasStarted && (
 					<div
 						style={{
 							position: 'fixed',
@@ -420,7 +469,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					</div>
 				)}
 
-				{hasStarted && (
+				{hasStarted && showTourText && (
 					<div
 						style={{
 							position: 'fixed',
@@ -428,101 +477,83 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 							bottom: 'max(140px, calc(env(safe-area-inset-bottom) + 120px))',
 							transform: 'translateX(-50%)',
 							zIndex: 10005,
-							width: 'min(420px, calc(100vw - 24px))',
-							padding: '14px',
+							width: 'min(440px, calc(100vw - 24px))',
+							padding: '16px',
 							borderRadius: '16px',
-								border: '1px solid rgba(255,255,255,0.35)',
-								background: 'rgba(228, 232, 236, 0.24)',
-								backdropFilter: 'blur(6px) grayscale(16%)',
-								WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
-								boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
+							border: '1px solid rgba(255,255,255,0.35)',
+							background: 'rgba(228, 232, 236, 0.24)',
+							backdropFilter: 'blur(6px) grayscale(16%)',
+							WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
+							boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
 							color: 'white',
 						}}
 					>
-						{isInsideView && (
-							<div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
-								<button
-									onClick={startTrain}
-									disabled={isTrainMoving}
-									style={{
-										border: 'none',
-										borderRadius: '10px',
-										padding: '12px 14px',
-										background: 'var(--color-primary)',
-										color: 'var(--color-white)',
-										fontWeight: 800,
-										cursor: isTrainMoving ? 'default' : 'pointer',
-										fontSize: '0.9rem',
-										opacity: isTrainMoving ? 0.75 : 1,
-									}}
-								>
-									{isTrainMoving ? 'Train started' : bahnhofTexts.trainStartButton}
-								</button>
-							</div>
+						<div style={{ fontSize: '0.9rem', lineHeight: 1.4, marginBottom: '12px' }}>
+							{getTourText()}
+						</div>
+						{tourStep < 2 && (
+							<button
+								onClick={handleNextStep}
+								style={{
+									width: '100%',
+									border: 'none',
+									borderRadius: '12px',
+									padding: '12px 14px',
+									background: 'var(--color-primary)',
+									color: 'var(--color-white)',
+									fontWeight: 800,
+									cursor: 'pointer',
+								}}
+							>
+								{bahnhofTexts.tourNextButton}
+							</button>
 						)}
-						<div style={{ fontSize: '0.78rem', opacity: 0.75, marginBottom: '10px', fontWeight: 700 }}>
-							Camera Positions
-						</div>
-						<div
-							style={{
-								display: 'grid',
-								gridTemplateColumns: '1fr 1fr 1fr',
-								gap: '8px',
-							}}
-						>
+						{tourStep === 2 && (
 							<button
-								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(7.5, 0.5, 2);
-								}}
+								onClick={startTrain}
+								disabled={isTrainMoving}
 								style={{
+									width: '100%',
 									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
+									borderRadius: '12px',
+									padding: '12px 14px',
 									background: 'var(--color-primary)',
 									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
+									fontWeight: 800,
+									cursor: isTrainMoving ? 'default' : 'pointer',
+									opacity: isTrainMoving ? 0.75 : 1,
+									fontSize: '0.9rem',
 								}}
 							>
-								Right Front
+								{isTrainMoving ? bahnhofTexts.tourTrainStartedLabel : bahnhofTexts.trainStartButton}
 							</button>
-							<button
-								onClick={() => {
-									sessionRef.current?.setCameraPositionAndLookAt(-6.5, 0.5, 2);
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Right Back
-							</button>
-							<button
-								onClick={() => {
-								sessionRef.current?.setInsideView();
-								setIsInsideView(true);
-								}}
-								style={{
-									border: 'none',
-									borderRadius: '10px',
-									padding: '10px 12px',
-									background: 'var(--color-primary)',
-									color: 'var(--color-white)',
-									fontWeight: 700,
-									cursor: 'pointer',
-									fontSize: '0.85rem',
-								}}
-							>
-								Inside View
-							</button>
-						</div>
+						)}
+					</div>
+				)}
+
+				{hasStarted && showDriveHint && (
+					<div
+						style={{
+							position: 'fixed',
+							left: '50%',
+							bottom: 'max(140px, calc(env(safe-area-inset-bottom) + 120px))',
+							transform: 'translateX(-50%)',
+							zIndex: 10005,
+							width: 'min(360px, calc(100vw - 24px))',
+							padding: '12px 14px',
+							borderRadius: '14px',
+							border: '1px solid rgba(255,255,255,0.35)',
+							background: 'rgba(228, 232, 236, 0.24)',
+							backdropFilter: 'blur(6px) grayscale(16%)',
+							WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
+							boxShadow: '0 10px 28px rgba(0,0,0,0.26)',
+							color: 'white',
+							textAlign: 'center',
+							fontSize: '0.9rem',
+							lineHeight: 1.4,
+						}}
+					>
+						{bahnhofTexts.tourDriveHint}
 					</div>
 				)}
 
