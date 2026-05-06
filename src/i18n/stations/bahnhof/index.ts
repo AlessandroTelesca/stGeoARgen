@@ -19,6 +19,7 @@ export interface BahnhofTexts {
   tourNextButton: string;
   tourTrainStartedLabel: string;
   tourDriveHint: string;
+  tourHornButton: string;
   quizOptions: string[];
 }
 

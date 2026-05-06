@@ -241,6 +241,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const containerRef = useRef<HTMLDivElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const sessionRef = useRef<BahnhofARSession | null>(null);
+	const locomotiveAudioRef = useRef<HTMLAudioElement | null>(null);
+	const hornAudioRef = useRef<HTMLAudioElement | null>(null);
 	const [isAuthorized, setIsAuthorized] = React.useState(false);
 	const [hasStarted, setHasStarted] = React.useState(false);
 	const [isStarting, setIsStarting] = React.useState(false);
@@ -282,6 +284,10 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 			setShowDriveHint(false);
 			setIsInsideView(false);
 			setIsTrainMoving(false);
+			if (locomotiveAudioRef.current) {
+				locomotiveAudioRef.current.pause();
+				locomotiveAudioRef.current.currentTime = 0;
+			}
 			setHasStarted(true);
 		} catch (err: any) {
 			const message = err?.message || bahnhofTexts.arStartErrorFallback;
@@ -293,7 +299,28 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	};
 
 	useEffect(() => {
+		const audio = new Audio('/sounds/steam-locomotive.mp3');
+		audio.loop = true;
+		audio.preload = 'auto';
+		audio.volume = 0.35;
+		locomotiveAudioRef.current = audio;
+
+		const hornAudio = new Audio('/sounds/steam-locomotive-horn.mp3');
+		hornAudio.preload = 'auto';
+		hornAudio.volume = 0.65;
+		hornAudioRef.current = hornAudio;
+
 		return () => {
+			if (locomotiveAudioRef.current) {
+				locomotiveAudioRef.current.pause();
+				locomotiveAudioRef.current.src = '';
+				locomotiveAudioRef.current.load();
+			}
+			if (hornAudioRef.current) {
+				hornAudioRef.current.pause();
+				hornAudioRef.current.src = '';
+				hornAudioRef.current.load();
+			}
 			sessionRef.current?.stop();
 		};
 	}, []);
@@ -348,8 +375,22 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 				setIsTrainMoving(true);
 				setShowTourText(false);
 				setShowDriveHint(true);
+				if (locomotiveAudioRef.current) {
+					locomotiveAudioRef.current.currentTime = 0;
+					void locomotiveAudioRef.current.play().catch((err) => {
+						console.warn('[BahnhofView] Failed to play locomotive audio', err);
+					});
+				}
 			})
 			.catch((err) => console.error('[BahnhofView] Failed to load parallax backdrop', err));
+	};
+
+	const playHorn = () => {
+		if (!hornAudioRef.current) return;
+		hornAudioRef.current.currentTime = 0;
+		void hornAudioRef.current.play().catch((err) => {
+			console.warn('[BahnhofView] Failed to play horn audio', err);
+		});
 	};
 
 	const handleNextStep = () => {
@@ -408,7 +449,20 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					currentStationTitle={bahnhofTexts.stationName}
 					currentStationPoints={currentStationPoints}
 					onCompleteStation={onCompleteStation}
+					onCompleteInitiated={() => {
+						setShowTourText(false);
+						setShowDriveHint(false);
+						if (locomotiveAudioRef.current) {
+							locomotiveAudioRef.current.pause();
+							locomotiveAudioRef.current.currentTime = 0;
+						}
+						if (hornAudioRef.current) {
+							hornAudioRef.current.pause();
+							hornAudioRef.current.currentTime = 0;
+						}
+					}}
 					isCurrentStationCompleted={isCurrentStationCompleted}
+					showCompleteButton={isTrainMoving}
 					isGuestMode={isGuestMode}
 				/>
 				{isAuthorized && !hasStarted && (
@@ -554,6 +608,25 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 						}}
 					>
 						{bahnhofTexts.tourDriveHint}
+						<button
+							onClick={() => {
+								void playHorn();
+							}}
+							style={{
+								marginTop: '10px',
+								width: '100%',
+								border: 'none',
+								borderRadius: '12px',
+								padding: '10px 12px',
+								background: 'var(--color-primary)',
+								color: 'var(--color-white)',
+								fontWeight: 800,
+								cursor: 'pointer',
+								fontSize: '0.85rem',
+							}}
+						>
+							{bahnhofTexts.tourHornButton}
+						</button>
 					</div>
 				)}
 
