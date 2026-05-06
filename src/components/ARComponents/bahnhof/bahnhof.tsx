@@ -463,6 +463,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 					}}
 					isCurrentStationCompleted={isCurrentStationCompleted}
 					showCompleteButton={isTrainMoving}
+					ignoreCompleteTimer={true}
 					isGuestMode={isGuestMode}
 				/>
 				{isAuthorized && !hasStarted && (
