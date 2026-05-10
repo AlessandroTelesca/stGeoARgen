@@ -45,6 +45,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
 
   // Properties from KlosterweiherARSessionBase
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
+  protected glockeUrl = new URL("./../models/Glocke.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
     new URL("./../models/Forelle.glb", import.meta.url).href,
@@ -62,7 +63,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
-  public treasureChest: THREE.Mesh | null = null;
+  public treasureChest: THREE.Object3D | null = null;
   public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
@@ -83,6 +84,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   private rodLoaded = false;
   private fishesLoaded = false;
   private waterLoaded = false;
+  private bellLoaded = false;
   private threeInitialized = false; // Guard to prevent double initialization
 
   // Orbit controls for caught fish
@@ -147,8 +149,6 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     KlosterweiherARSessionBase.prototype["endOrbitControl"];
   protected applyOrbitMomentum =
     KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
-  protected ensureTreasureChest =
-    KlosterweiherARSessionBase.prototype["ensureTreasureChest"];
   protected selectNextCatchObject =
     KlosterweiherARSessionBase.prototype["selectNextCatchObject"];
 
@@ -192,6 +192,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       this.rodLoaded &&
       this.fishesLoaded &&
       this.waterLoaded &&
+      this.bellLoaded &&
       !this.modelsLoaded
     ) {
       this.modelsLoaded = true;
@@ -210,10 +211,6 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     this.threeInitialized = true;
 
     super.initThree();
-
-    if (this.camera) {
-      this.ensureTreasureChest(this.camera);
-    }
 
     // Setup additional pointer handlers for orbit controls
     this.setupOrbitControlListeners();
@@ -371,6 +368,27 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
       .catch((err) => {
         console.error("Water model failed to load", err);
         this.waterLoaded = true;
+        this.checkAllModelsLoaded();
+      });
+
+    // Load Glocke model for the Easter egg catch
+    this.loadGLTFModel(this.glockeUrl, {
+      position: new THREE.Vector3(0, this.getFishInitialPositionY(), this.getFishInitialPositionZ()),
+      rotation: new THREE.Euler(0, Math.PI / 2, 0),
+      scale: 2,
+    })
+      .then((model) => {
+        if (model && this.camera) {
+          model.parent = this.camera;
+          model.visible = false;
+          this.treasureChest = model;
+        }
+        this.bellLoaded = true;
+        this.checkAllModelsLoaded();
+      })
+      .catch((err) => {
+        console.error("[AndroidKlosterweiher] Glocke model failed to load", err);
+        this.bellLoaded = true;
         this.checkAllModelsLoaded();
       });
   }

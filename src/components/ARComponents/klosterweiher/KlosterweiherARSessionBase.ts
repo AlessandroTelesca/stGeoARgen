@@ -6,7 +6,7 @@ export interface CaughtObjectPayload {
   fishName: string;
 }
 
-export const DEFAULT_TREASURE_SPAWN_CHANCE = 0.03; // 3% chance to spawn treasure chest instead of fish
+export const DEFAULT_TREASURE_SPAWN_CHANCE = 0.03;
 
 /**
  * Base class containing shared logic for both Android and iOS Klosterweiher AR sessions.
@@ -15,6 +15,7 @@ export const DEFAULT_TREASURE_SPAWN_CHANCE = 0.03; // 3% chance to spawn treasur
 export abstract class KlosterweiherARSessionBase {
   // Model URLs
   protected rodUrl = new URL("./models/Angel.glb", import.meta.url).href;
+  protected glockeUrl = new URL("./models/Glocke.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./models/Rotauge.glb", import.meta.url).href,
     new URL("./models/Forelle.glb", import.meta.url).href,
@@ -34,7 +35,7 @@ export abstract class KlosterweiherARSessionBase {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
-  public treasureChest: THREE.Mesh | null = null;
+  public treasureChest: THREE.Object3D | null = null;
   public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
@@ -214,24 +215,7 @@ export abstract class KlosterweiherARSessionBase {
     }
   }
 
-  protected ensureTreasureChest(camera: THREE.Camera) {
-    if (this.treasureChest) return;
-
-    const chestGeometry = new THREE.BoxGeometry(560, 360, 420);
-    const chestMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8b5a2b,
-      roughness: 0.5,
-      metalness: 0.2,
-    });
-
-    const chest = new THREE.Mesh(chestGeometry, chestMaterial);
-    chest.visible = false;
-    chest.position.set(0, this.getFishInitialPositionY(), this.getFishInitialPositionZ());
-    chest.rotation.set(0, Math.PI / 2, 0);
-
-    camera.add(chest);
-    this.treasureChest = chest;
-  }
+  // Bell loading is handled per-platform in initThree()
 
   protected selectNextCatchObject() {
     if (this.treasureChest && Math.random() < this.treasureSpawnChance) {

@@ -45,6 +45,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
   // Properties from KlosterweiherARSessionBase
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
+  protected glockeUrl = new URL("./../models/Glocke.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
     new URL("./../models/Forelle.glb", import.meta.url).href,
@@ -62,7 +63,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
-  public treasureChest: THREE.Mesh | null = null;
+  public treasureChest: THREE.Object3D | null = null;
   public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
@@ -77,6 +78,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   private rodLoaded = false;
   private fishesLoaded = false;
   private waterLoaded = false;
+  private bellLoaded = false;
   public onFishCaught?: (fishName: string) => void;
   public onCatchObjectCaught?: (payload: CaughtObjectPayload) => void;
   public onFishReleased?: () => void;
@@ -147,8 +149,6 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     KlosterweiherARSessionBase.prototype["endOrbitControl"];
   protected applyOrbitMomentum =
     KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
-  protected ensureTreasureChest =
-    KlosterweiherARSessionBase.prototype["ensureTreasureChest"];
   protected selectNextCatchObject =
     KlosterweiherARSessionBase.prototype["selectNextCatchObject"];
 
@@ -192,6 +192,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       this.rodLoaded &&
       this.fishesLoaded &&
       this.waterLoaded &&
+      this.bellLoaded &&
       !this.modelsLoaded
     ) {
       this.modelsLoaded = true;
@@ -201,10 +202,6 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
   protected initThree(): void {
     super.initThree();
-
-    if (this.camera) {
-      this.ensureTreasureChest(this.camera);
-    }
 
     // Setup additional pointer handlers for orbit controls
     this.setupOrbitControlListeners();
@@ -380,6 +377,28 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       .catch((err) => {
         console.error("Water model failed to load", err);
         this.waterLoaded = true;
+        this.checkAllModelsLoaded();
+      });
+
+    // Load Glocke model for the Easter egg catch
+    this.loadGLTFModel(this.glockeUrl, {
+      position: new THREE.Vector3(0, -500, -20),
+      rotation: new THREE.Euler(0, Math.PI / 2, 0),
+      scale: 2,
+    })
+      .then((model) => {
+        if (model && this.scene && this.camera) {
+          this.scene.remove(model);
+          this.camera.add(model);
+          model.visible = false;
+          this.treasureChest = model;
+        }
+        this.bellLoaded = true;
+        this.checkAllModelsLoaded();
+      })
+      .catch((err) => {
+        console.error("[IOSKlosterweiher] Glocke model failed to load", err);
+        this.bellLoaded = true;
         this.checkAllModelsLoaded();
       });
   }
