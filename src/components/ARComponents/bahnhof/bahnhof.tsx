@@ -13,6 +13,67 @@ const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
 const BAHNHOF_PARALLAX_URL = '/images/parallax/2203_w026_n002_1520b_p1_1520.jpg';
 const SHOW_DEBUG_CAMERA_UI = false;
 
+interface InfoMarkerDef {
+	id: string;
+	tourStep: 0 | 1 | 2;
+	position: [number, number, number];
+}
+
+// Positions are tuned to the german_steam_locomotive.glb at origin.
+// Step 0 camera: (7.5, 0.5, 2)  Step 1 camera: (-6.5, 0.5, 2)  Step 2 camera: (-1.5, 1, 0)
+const INFO_MARKER_DEFS: InfoMarkerDef[] = [
+	{ id: 'frontLamp',     tourStep: 0, position: [3.8,  2.6,  0.0] },
+	{ id: 'smokestack',    tourStep: 0, position: [2.0,  3.5,  0.0] },
+	{ id: 'boiler',        tourStep: 0, position: [0.0,  1.6,  0.9] },
+	{ id: 'tender',        tourStep: 1, position: [-3.5, 1.4,  0.0] },
+	{ id: 'rearBuffers',   tourStep: 1, position: [-5.8, 0.7,  0.6] },
+	{ id: 'pressureGauge', tourStep: 2, position: [-2.2, 1.6, -0.5] },
+	{ id: 'throttle',      tourStep: 2, position: [-2.0, 1.3,  0.5] },
+	{ id: 'brake',         tourStep: 2, position: [-1.1, 1.4, -0.5] },
+];
+
+// Desired icon diameter in CSS pixels — constant across all markers and distances.
+const INFO_MARKER_TARGET_PX = 88;
+
+function buildInfoIconTexture(): THREE.CanvasTexture {
+	const size = 256;
+	const canvas = document.createElement('canvas');
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext('2d')!;
+
+	// Outer glow ring — brand green
+	const glow = ctx.createRadialGradient(128, 128, 72, 128, 128, 128);
+	glow.addColorStop(0, 'rgba(12, 105, 15, 0)');
+	glow.addColorStop(1, 'rgba(12, 105, 15, 0.45)');
+	ctx.fillStyle = glow;
+	ctx.beginPath();
+	ctx.arc(128, 128, 128, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Solid circle — brand primary
+	ctx.fillStyle = '#0C690F';
+	ctx.beginPath();
+	ctx.arc(128, 128, 92, 0, Math.PI * 2);
+	ctx.fill();
+
+	// White border
+	ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+	ctx.lineWidth = 10;
+	ctx.beginPath();
+	ctx.arc(128, 128, 92, 0, Math.PI * 2);
+	ctx.stroke();
+
+	// "i" character
+	ctx.fillStyle = 'white';
+	ctx.font = 'bold 108px Georgia, serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillText('i', 128, 136);
+
+	return new THREE.CanvasTexture(canvas);
+}
+
 
 function loadPanoramaTexture(url: string): Promise<THREE.Texture> {
 	return new Promise((resolve, reject) => {
@@ -54,6 +115,9 @@ class BahnhofARSession extends GyroARVisualizer {
 	private parallaxTextures: THREE.Texture[] = [];
 	private parallaxStartMs: number | null = null;
 	private readonly parallaxSpeed = 0.1;
+	private infoMarkerSprites: THREE.Sprite[] = [];
+	private infoIconTexture: THREE.CanvasTexture | null = null;
+	private readonly markerRaycaster = new THREE.Raycaster();
 
 	async init(): Promise<void> {
 		await super.init();
@@ -216,12 +280,91 @@ class BahnhofARSession extends GyroARVisualizer {
 		this.parallaxStartMs = null;
 	}
 
+	addInfoMarkers(): void {
+		if (!this.scene) return;
+
+		this.infoIconTexture ??= buildInfoIconTexture();
+		const markerCreatedAt = performance.now();
+
+		for (const def of INFO_MARKER_DEFS) {
+			const material = new THREE.SpriteMaterial({
+				map: this.infoIconTexture,
+				transparent: true,
+				depthWrite: false,
+				depthTest: false,   // always render in front of 3D geometry
+				sizeAttenuation: true,
+			});
+			const sprite = new THREE.Sprite(material);
+			sprite.position.set(...def.position);
+			sprite.scale.set(1, 1, 1);
+			sprite.renderOrder = 100;
+			sprite.visible = false;
+			sprite.userData['markerId'] = def.id;
+			sprite.userData['tourStep'] = def.tourStep;
+
+			// Keep a constant screen-space size regardless of camera distance.
+			sprite.onBeforeRender = (renderer, _scene, camera) => {
+				if (!sprite.visible) return;
+				const t = (performance.now() - markerCreatedAt) / 1000;
+				const pulse = 0.92 + 0.08 * Math.sin(t * 2.2 + def.position[0]);
+				const dist = camera.position.distanceTo(sprite.position);
+				const fovY = (camera as THREE.PerspectiveCamera).fov ?? 75;
+				const h = renderer.domElement.clientHeight || renderer.domElement.height;
+				const focalPx = (h / 2) / Math.tan(THREE.MathUtils.degToRad(fovY / 2));
+				const worldScale = (INFO_MARKER_TARGET_PX * dist) / focalPx;
+				const s = worldScale * pulse;
+				sprite.scale.set(s, s, 1);
+			};
+
+			this.scene.add(sprite);
+			this.infoMarkerSprites.push(sprite);
+		}
+	}
+
+	showInfoMarkersForStep(step: 0 | 1 | 2): void {
+		this.infoMarkerSprites.forEach((sprite) => {
+			sprite.visible = sprite.userData['tourStep'] === step;
+		});
+	}
+
+	hideAllInfoMarkers(): void {
+		this.infoMarkerSprites.forEach((sprite) => { sprite.visible = false; });
+	}
+
+	getClickedInfoMarkerId(clientX: number, clientY: number): string | null {
+		if (!this.camera || !this.renderer || this.infoMarkerSprites.length === 0) return null;
+
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+		const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+		this.markerRaycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
+
+		const visible = this.infoMarkerSprites.filter((s) => s.visible);
+		const hits = this.markerRaycaster.intersectObjects(visible);
+		if (hits.length > 0) {
+			return (hits[0].object.userData['markerId'] as string) ?? null;
+		}
+		return null;
+	}
+
+	private removeInfoMarkers(): void {
+		this.infoMarkerSprites.forEach((sprite) => {
+			this.scene?.remove(sprite);
+			(sprite.material as THREE.SpriteMaterial).dispose();
+		});
+		this.infoMarkerSprites = [];
+		this.infoIconTexture?.dispose();
+		this.infoIconTexture = null;
+	}
+
 	stop(): void {
 		if (this.scene && this.insideViewLight) {
 			this.scene.remove(this.insideViewLight);
 		}
 		this.insideViewLight = null;
 		this.disposeParallaxMeshes();
+		this.removeInfoMarkers();
 
 		super.stop();
 	}
@@ -243,6 +386,9 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const sessionRef = useRef<BahnhofARSession | null>(null);
 	const locomotiveAudioRef = useRef<HTMLAudioElement | null>(null);
 	const hornAudioRef = useRef<HTMLAudioElement | null>(null);
+	// Tracks when a popup was last opened to prevent the backdrop click from closing
+	// it in the same gesture (pointerdown opens → synthetic click fires on backdrop).
+	const popupOpenedAtRef = useRef<number>(0);
 	const [isAuthorized, setIsAuthorized] = React.useState(false);
 	const [hasStarted, setHasStarted] = React.useState(false);
 	const [isStarting, setIsStarting] = React.useState(false);
@@ -252,6 +398,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	const [tourStep, setTourStep] = React.useState<0 | 1 | 2>(0);
 	const [showTourText, setShowTourText] = React.useState(true);
 	const [showDriveHint, setShowDriveHint] = React.useState(false);
+	const [activeInfoPopup, setActiveInfoPopup] = React.useState<string | null>(null);
 
 	const [startError, setStartError] = React.useState<string | null>(null);
 
@@ -278,12 +425,15 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 
 			await session.init();
 			session.setCameraPositionAndLookAt(7.5, 0.5, 2);
+			session.addInfoMarkers();
+			session.showInfoMarkersForStep(0);
 			sessionRef.current = session;
 			setTourStep(0);
 			setShowTourText(true);
 			setShowDriveHint(false);
 			setIsInsideView(false);
 			setIsTrainMoving(false);
+			setActiveInfoPopup(null);
 			if (locomotiveAudioRef.current) {
 				locomotiveAudioRef.current.pause();
 				locomotiveAudioRef.current.currentTime = 0;
@@ -344,6 +494,23 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		};
 	}, [hasStarted]);
 
+	useEffect(() => {
+		if (!hasStarted) return;
+
+		const handlePointerDown = (e: PointerEvent) => {
+			const id = sessionRef.current?.getClickedInfoMarkerId(e.clientX, e.clientY) ?? null;
+			if (id) {
+				popupOpenedAtRef.current = Date.now();
+				setActiveInfoPopup(id);
+			}
+		};
+
+		// The Three.js canvas is the first canvas inside the container
+		const canvas = containerRef.current?.querySelector('canvas');
+		canvas?.addEventListener('pointerdown', handlePointerDown);
+		return () => canvas?.removeEventListener('pointerdown', handlePointerDown);
+	}, [hasStarted]);
+
 	const moveCamera = (direction: 'left' | 'right' | 'forward' | 'backward') => {
 		const session = sessionRef.current;
 		if (!session) return;
@@ -372,9 +539,11 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		sessionRef.current
 			.enableParallaxBackdrops(BAHNHOF_PARALLAX_URL)
 			.then(() => {
+				sessionRef.current?.hideAllInfoMarkers();
 				setIsTrainMoving(true);
 				setShowTourText(false);
 				setShowDriveHint(true);
+				setActiveInfoPopup(null);
 				if (locomotiveAudioRef.current) {
 					locomotiveAudioRef.current.currentTime = 0;
 					void locomotiveAudioRef.current.play().catch((err) => {
@@ -399,14 +568,18 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 
 		if (tourStep === 0) {
 			session.setCameraPositionAndLookAt(-6.5, 0.5, 2);
+			session.showInfoMarkersForStep(1);
 			setTourStep(1);
+			setActiveInfoPopup(null);
 			return;
 		}
 
 		if (tourStep === 1) {
 			session.setInsideView();
+			session.showInfoMarkersForStep(2);
 			setIsInsideView(true);
 			setTourStep(2);
+			setActiveInfoPopup(null);
 			return;
 		}
 	};
@@ -630,6 +803,92 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 						</button>
 					</div>
 				)}
+
+				{hasStarted && activeInfoPopup && (() => {
+					const popup = bahnhofTexts.infoPopups[activeInfoPopup];
+					if (!popup) return null;
+					return (
+						<div
+							style={{
+								position: 'fixed',
+								inset: 0,
+								zIndex: 10015,
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								padding: '20px',
+								background: 'rgba(0,0,0,0.48)',
+								backdropFilter: 'blur(3px)',
+								WebkitBackdropFilter: 'blur(3px)',
+							}}
+							onClick={() => {
+							// Guard: ignore the synthetic click that fires right after
+							// the pointerdown that opened this popup.
+							if (Date.now() - popupOpenedAtRef.current < 300) return;
+							setActiveInfoPopup(null);
+						}}
+						>
+							<div
+								style={{
+									width: 'min(420px, calc(100vw - 32px))',
+									borderRadius: '20px',
+									background: 'rgba(17, 24, 39, 0.92)',
+									border: '1px solid rgba(255,255,255,0.15)',
+									padding: '20px',
+									boxShadow: 'var(--shadow-lg)',
+									backdropFilter: 'blur(14px)',
+									WebkitBackdropFilter: 'blur(14px)',
+									color: 'var(--color-white)',
+								}}
+								onClick={(e) => e.stopPropagation()}
+							>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+									<div
+										style={{
+											width: '38px',
+											height: '38px',
+											borderRadius: '50%',
+											background: 'var(--color-primary)',
+											border: '2px solid var(--color-white-70)',
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											fontSize: '1.1rem',
+											fontWeight: 800,
+											fontFamily: 'Georgia, serif',
+											color: 'var(--color-white)',
+											flexShrink: 0,
+										}}
+									>
+										i
+									</div>
+									<h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.2 }}>
+										{popup.title}
+									</h3>
+								</div>
+								<p style={{ margin: '0 0 18px', fontSize: '0.88rem', lineHeight: 1.55, opacity: 0.88 }}>
+									{popup.text}
+								</p>
+								<button
+									onClick={() => setActiveInfoPopup(null)}
+									style={{
+										width: '100%',
+										border: 'none',
+										borderRadius: 'var(--radius)',
+										padding: '10px',
+										background: 'var(--color-primary)',
+										color: 'var(--color-white)',
+										fontWeight: 700,
+										cursor: 'pointer',
+										fontSize: '0.9rem',
+									}}
+								>
+									{bahnhofTexts.infoPopupClose}
+								</button>
+							</div>
+						</div>
+					);
+				})()}
 
 				{hasStarted && SHOW_DEBUG_CAMERA_UI && (
 					<div

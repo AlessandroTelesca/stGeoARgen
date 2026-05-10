@@ -2,6 +2,11 @@ import deJson from './de.json';
 import enJson from './en.json';
 import type { Language } from '../../translations';
 
+export interface InfoPopupEntry {
+  title: string;
+  text: string;
+}
+
 export interface BahnhofTexts {
   stationName: string;
   description: string;
@@ -20,6 +25,8 @@ export interface BahnhofTexts {
   tourTrainStartedLabel: string;
   tourDriveHint: string;
   tourHornButton: string;
+  infoPopupClose: string;
+  infoPopups: Record<string, InfoPopupEntry>;
   quizOptions: string[];
 }
 
