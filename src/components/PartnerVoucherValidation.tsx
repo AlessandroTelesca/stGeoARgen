@@ -31,51 +31,86 @@ export function PartnerVoucherValidation() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex justify-center items-start sm:pt-12 pt-6 sm:pb-12 pb-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8">
       <motion.div
-        className="relative w-full max-w-2xl sm:max-w-2xl max-w-full mx-auto bg-white rounded-3xl shadow-2xl border border-border overflow-hidden"
-        style={{ minHeight: '420px', height: 'auto', maxWidth: '700px' }}
+        className="w-full max-w-md mx-auto"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 24 }}
       >
-        {/* Logo-Header */}
-        <div className="flex flex-col items-center text-center pt-24 pb-6 px-4 sm:px-10" style={{ marginTop: '10px' }}>
-          <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ marginTop: '10px' }}>
-            <img src="/Logo.svg" alt="St.GeoARgen" className="w-12 h-12 object-contain" style={{filter: 'brightness(0) invert(1)', marginTop: '10px'}} />
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-lg">
+            <img src="/Logo.svg" alt="St.GeoARgen" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" style={{filter: 'brightness(0) invert(1)'}} />
           </div>
-          <h1 className="text-3xl font-bold mb-1" style={{ marginTop: '10px' }}>Partner Gutschein Validierung</h1>
         </div>
-        <div className="px-4 sm:px-10 pb-10 flex flex-col items-center" style={{ minHeight: '180px', marginTop: '10px' }}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 w-full max-w-xs sm:max-w-2xl">
+
+        {/* Titel */}
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center mb-8 lg:mb-10">
+          Partner Gutschein Validierung
+        </h1>
+
+        {/* Form Container */}
+        <div className="w-full max-w-md mx-auto px-6 sm:px-8 lg:px-10 space-y-6">
+          {/* Login Felder */}
+          <div className="space-y-4 mb-6">
+            <div className="grid grid-cols-1 gap-3">
+              <input
+                className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+                placeholder="Partner Benutzername"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+              />
+              <input
+                className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+                placeholder="Passwort"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            {/* Gutscheincode */}
             <input
-              className="border rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-primary/30 transition w-full"
-              placeholder="Partner Benutzername"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoFocus
-            />
-            <input
-              className="border rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-primary/30 transition w-full"
-              placeholder="Passwort"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+              placeholder="Gutscheincode (z.B. ABC123DE)"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
             />
           </div>
-          <input
-            className="border rounded-xl px-4 sm:px-5 py-3 sm:py-4 mb-3 uppercase text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-primary/30 transition max-w-xs sm:max-w-sm w-full mx-auto"
-            placeholder="Gutscheincode"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-          />
-          <Button onClick={validateVoucher} disabled={loading || !username || !password || !code} className="w-full max-w-xs sm:max-w-sm h-12 sm:h-14 text-base sm:text-lg rounded-xl font-semibold mt-1 mx-auto" style={{ marginTop: '10px' }}>
-            {loading ? 'Validieren...' : 'Gutschein validieren'}
+
+          {/* Validieren Button */}
+          <Button
+            onClick={validateVoucher}
+            disabled={loading || !username || !password || !code}
+            className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-lg sm:rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Validiere...' : 'Gutschein validieren'}
           </Button>
-          {message && <p className="mt-4 text-sm font-medium text-center">{message}</p>}
-          <div className="mt-8 sm:mt-10 p-2 rounded-md bg-green-50 border border-green-200 text-green-900 w-full max-w-[220px] mx-auto flex flex-col items-center">
-            <p className="font-semibold text-xs mb-1 text-center">Hinweis:</p>
-            <p className="text-xs text-center">Nach erfolgreicher Validierung wird der Code als eingelöst markiert.</p>
+
+          {/* Nachricht */}
+          {message && (
+            <motion.div
+              className={`mt-4 p-3 rounded-lg text-center text-sm font-medium ${
+                message.startsWith('✅')
+                  ? 'bg-green-50 border border-green-200 text-green-800'
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 24 }}
+            >
+              {message}
+            </motion.div>
+          )}
+
+          {/* Hinweis */}
+          <div className="mt-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+            <p className="font-semibold text-sm mb-1 text-center">ℹ️ Hinweis:</p>
+            <p className="text-sm text-center leading-relaxed">
+              Nach erfolgreicher Validierung wird der Gutschein-Code als eingelöst markiert und kann nicht mehr verwendet werden.
+            </p>
           </div>
         </div>
       </motion.div>

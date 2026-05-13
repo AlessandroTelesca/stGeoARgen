@@ -70,5 +70,6 @@
     server: {
       port: 3000,
       open: true,
+      allowedHosts: ['peevedly-jaime-seismographic.ngrok-free.dev'],
     },
   });

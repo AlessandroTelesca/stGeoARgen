@@ -18,7 +18,6 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
-import { VoucherRedeemPage } from './components/VoucherRedeemPage';
 import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -70,7 +69,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'my-voucher' | 'partner'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -279,9 +278,6 @@ export default function App() {
       setCurrentView('progress');
     } else if (path === '/rewards') {
       setCurrentView('rewards');
-    } else if (path === '/my-voucher') {
-      navigate('/my-voucher');
-      setCurrentView('my-voucher');
     } else if (path === '/partner') {
       navigate('/partner');
       setCurrentView('partner');
@@ -667,9 +663,6 @@ export default function App() {
     } else if (view === 'rewards') {
       navigate('/rewards');
       setCurrentView('rewards');
-    } else if (view === 'my-voucher') {
-      navigate('/my-voucher');
-      setCurrentView('my-voucher');
     } else if (view === 'partner') {
       navigate('/partner');
       setCurrentView('partner');
@@ -772,7 +765,6 @@ export default function App() {
     if (currentView === 'stations') return 'Stationen';
     if (currentView === 'progress') return 'Fortschritt';
     if (currentView === 'rewards') return 'Belohnungen';
-    if (currentView === 'my-voucher') return 'Meine Gutscheine';
     if (currentView === 'partner') return 'Partner Gutschein Validierung';
     if (currentView === 'login') return 'Anmeldung';
     if (currentView === 'register') return 'Registrierung';
@@ -784,7 +776,7 @@ export default function App() {
 
   return (
     <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
-      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
+      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && currentView !== 'partner' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}
@@ -922,10 +914,6 @@ export default function App() {
           userId={user?.id}
           onBack={handleBackToDashboard}
           onPointsChange={refreshUserPoints}
-          onNavigateToMyVouchers={() => {
-            navigate('/my-voucher');
-            setCurrentView('my-voucher');
-          }}
         />
       )}
 
@@ -1068,9 +1056,6 @@ export default function App() {
           setCurrentView('rewards');
         }}
       />
-      {currentView === 'my-voucher' && (
-        <VoucherRedeemPage userId={user?.id ?? 0} userPoints={totalPoints} onPointsChange={refreshUserPoints} />
-      )}
       {currentView === 'partner' && (
         <PartnerVoucherValidation />
       )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { motion } from 'motion/react';
-import { Copy, Check, Gift, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Copy, Check, Gift, MapPin, X } from 'lucide-react';
 
 interface VoucherListItem {
   id: number;
@@ -22,19 +22,24 @@ interface UserVouchersResponse {
   vouchers?: VoucherListItem[];
 }
 
-export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { userId: number; userPoints: number; onPointsChange?: () => void }) {
+export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded = false }: { userId: number; userPoints: number; onPointsChange?: () => void; embedded?: boolean }) {
+  const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
   const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
   const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
+  const [showCodePopup, setShowCodePopup] = useState(false);
+  const [popupCode, setPopupCode] = useState<string | null>(null);
+  const [popupDescription, setPopupDescription] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchData();
   }, [userId]);
 
   const fetchData = async () => {
+    console.log('fetchData called with userId:', userId);
     if (userId <= 0) {
+      console.log('userId <= 0, setting empty arrays');
       setRedeemableVouchers([]);
       setRedeemedVouchers([]);
       setLoading(false);
@@ -43,8 +48,11 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
 
     setLoading(true);
     try {
+      console.log('Fetching vouchers from API...');
       const response = await fetch(`/api/get_user_vouchers.php?user_id=${userId}`);
+      console.log('API response:', response);
       const data = await response.json() as UserVouchersResponse;
+      console.log('API data:', data);
       if (data.success) {
         const redeemable = Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : [];
         const redeemed = Array.isArray(data.redeemed_vouchers)
@@ -53,21 +61,39 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
             ? data.vouchers
             : [];
 
+        console.log('Setting vouchers:', { redeemable, redeemed });
         setRedeemableVouchers(redeemable);
         setRedeemedVouchers(redeemed);
+      } else {
+        console.log('API returned success: false');
+        setRedeemableVouchers([]);
+        setRedeemedVouchers([]);
       }
-    } catch {
-      console.error('Fehler beim Laden der Daten');
+    } catch (error) {
+      console.error('Error fetching vouchers:', error);
       setRedeemableVouchers([]);
       setRedeemedVouchers([]);
     }
     setLoading(false);
   };
 
-  const copyToClipboard = async (code: string, id: number) => {
+  const openCodePopup = (code: string, description: string) => {
+    setPopupCode(code);
+    setPopupDescription(description);
+    setShowCodePopup(true);
+  };
+
+  const closeCodePopup = () => {
+    setShowCodePopup(false);
+    setPopupCode(null);
+    setPopupDescription(null);
+  };
+
+  const copyToClipboard = async () => {
+    if (!popupCode) return;
     try {
-      await navigator.clipboard.writeText(code);
-      setCopiedId(id);
+      await navigator.clipboard.writeText(popupCode);
+      setCopiedId(Date.now()); // Verwende Timestamp statt ID
       setTimeout(() => setCopiedId(null), 2000);
     } catch (e) {
       console.error('Fehler beim Kopieren');
@@ -84,13 +110,13 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
         transition={{ type: 'spring', stiffness: 200, damping: 24 }}
       >
         {/* Logo-Header */}
-        <div className="flex flex-col items-center text-center pt-24 pb-6 px-4 sm:px-10" style={{ marginTop: '10px' }}>
-          <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ marginTop: '10px' }}>
-            <img src="/Logo.svg" alt="St.GeoARgen" className="w-12 h-12 object-contain" style={{filter: 'brightness(0) invert(1)', marginTop: '10px'}} />
+        <div className="flex flex-col items-center text-center pt-16 sm:pt-24 pb-6 px-4 sm:px-10" style={{ marginTop: '10px' }}>
+          <div className="w-16 sm:w-20 h-16 sm:h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ marginTop: '10px' }}>
+            <img src="/Logo.svg" alt="St.GeoARgen" className="w-10 sm:w-12 h-10 sm:h-12 object-contain" style={{filter: 'brightness(0) invert(1)', marginTop: '10px'}} />
           </div>
-          <h1 className="text-3xl font-bold mb-1" style={{ marginTop: '10px' }}>Meine Gutscheine</h1>
-          <p className="text-muted-foreground text-base font-semibold mb-1">Deine Punkte: {userPoints}</p>
-          <p className="text-muted-foreground text-base mb-2" style={{ marginTop: '10px' }}>Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ marginTop: '10px' }}>Meine Gutscheine</h1>
+          <p className="text-muted-foreground text-sm sm:text-base font-semibold mb-1">Deine Punkte: {userPoints}</p>
+          <p className="text-muted-foreground text-xs sm:text-base mb-2" style={{ marginTop: '10px' }}>Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
         </div>
 
         {/* Tabs */}
@@ -149,22 +175,13 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
                         )}
                       </div>
                       <Button
-                        onClick={() => copyToClipboard(voucher.code, voucher.id)}
+                        onClick={() => openCodePopup(voucher.code, voucher.description)}
                         variant="outline"
                         size="sm"
                         className="flex items-center gap-2"
                       >
-                        {copiedId === voucher.id ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            Kopiert
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            Code kopieren
-                          </>
-                        )}
+                        <Copy className="w-4 h-4" />
+                        Code anzeigen
                       </Button>
                     </div>
                   </motion.div>
@@ -212,6 +229,62 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange }: { user
           )}
         </div>
       </motion.div>
+
+      {/* Code Popup */}
+      <AnimatePresence>
+        {showCodePopup && popupCode && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeCodePopup}
+          >
+            <motion.div
+              className="w-full max-w-md overflow-hidden rounded-3xl bg-background shadow-2xl"
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="relative bg-gradient-to-br from-primary to-primary-light px-6 py-8 text-white">
+                <button
+                  type="button"
+                  onClick={closeCodePopup}
+                  className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white/90 transition hover:bg-white/25"
+                  aria-label="Fenster schließen"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-sm">
+                  <Gift className="h-8 w-8" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold">Gutschein Code</h2>
+                  <p className="mt-2 text-sm text-white/85">{popupDescription}</p>
+                </div>
+              </div>
+
+              <div className="space-y-5 px-6 py-6">
+                <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                  <p className="text-sm text-muted-foreground">Dein Code</p>
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
+                    <span className="text-lg font-semibold tracking-[0.2em] text-primary">{popupCode}</span>
+                    <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                      <Copy className="h-4 w-4" />
+                      {copiedId ? 'Kopiert' : 'Code kopieren'}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={closeCodePopup}>Schließen</Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

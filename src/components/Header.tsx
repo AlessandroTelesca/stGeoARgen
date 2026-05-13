@@ -37,7 +37,6 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
     { id: 'paths', label: 'Themenpfade', Icon: Map },
     { id: 'rewards', label: 'Belohnungen', Icon: Gift },
     { id: 'qr-scanner', label: 'QR Scanner', Icon: QrCode },
-    { id: 'my-voucher', label: 'Meine Gutscheine', Icon: Gift },
     { id: 'settings', label: 'Einstellungen', Icon: Settings },
   ];
 

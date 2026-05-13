@@ -68,55 +68,53 @@ CREATE TABLE IF NOT EXISTS `user_rewards` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabelle: partners
--- Speichert Unternehmens-Login
+-- Speichert Partner-Unternehmen für Gutschein-Validierung
 CREATE TABLE IF NOT EXISTS `partners` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(100) NOT NULL,
-  `username` VARCHAR(100) NOT NULL UNIQUE,
-  `password` VARCHAR(255) NOT NULL,
-  `address` VARCHAR(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `id`            INT NOT NULL AUTO_INCREMENT,
+  `username`      VARCHAR(100) NOT NULL,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `name`          VARCHAR(255) NOT NULL,
+  `address`       VARCHAR(255),
+  `created_at`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_partner_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabelle: vouchers
--- Allgemeine und Partner-Gutscheine
+-- Speichert Gutscheine und deren Status
 CREATE TABLE IF NOT EXISTS `vouchers` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `description` VARCHAR(255) NOT NULL,
-  `partner_id` INT DEFAULT NULL,
-  `purchased_by_user_id` INT DEFAULT NULL,
-  `purchased_at` TIMESTAMP NULL DEFAULT NULL,
-  `is_redeemed` TINYINT(1) NOT NULL DEFAULT 0,
-  `points_value` INT DEFAULT NULL,
-  `redeemed_by` VARCHAR(255) DEFAULT NULL,
-  `redeemed_at` TIMESTAMP NULL DEFAULT NULL,
-  `expiry_date` DATE DEFAULT NULL,
+  `id`            INT NOT NULL AUTO_INCREMENT,
+  `code`          VARCHAR(50) NOT NULL,
+  `description`   VARCHAR(255) NOT NULL,
+  `points_value`  INT NOT NULL,
+  `partner_id`    INT,
+  `is_redeemed`   TINYINT(1) NOT NULL DEFAULT 0,
+  `redeemed_by`   VARCHAR(255),
+  `redeemed_at`   DATETIME,
+  `expiry_date`   DATE,
+  `created_at`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_code` (`code`),
-  KEY `idx_vouchers_purchased_by_user` (`purchased_by_user_id`),
-  CONSTRAINT `fk_voucher_partner`
+  UNIQUE KEY `unique_voucher_code` (`code`),
+  KEY `idx_vouchers_partner_id` (`partner_id`),
+  KEY `idx_vouchers_is_redeemed` (`is_redeemed`),
+  CONSTRAINT `fk_vouchers_partner`
     FOREIGN KEY (`partner_id`) REFERENCES `partners` (`id`)
-    ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_voucher_user`
-    FOREIGN KEY (`purchased_by_user_id`) REFERENCES `users` (`id`)
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Partner
-INSERT INTO partners (name, username, password, address) VALUES
-('Cafe Schwarzwald', 'cafe.schwarzwald', 'cafe1234', 'Hauptstraße 12, St.Georgen'),
-('Stadtmuseum St.Georgen', 'stadtmuseum', 'museum1234', 'Kulturplatz 5, St.Georgen'),
-('Schwarzwald Souvenirs', 'souvenirs', 'souvenir1234', 'Marktstraße 23, St.Georgen'),
-('Restaurant Zum Drachen', 'zumdrachen', 'drachen1234', 'Drachengasse 8, St.Georgen'),
-('Schwarzwald-Baeckerei', 'baeckerei', 'baeckerei1234', 'Bäckerstraße 15, St.Georgen'),
-('Wellness Schwarzwald', 'wellness', 'wellness1234', 'Kurstraße 42, St.Georgen');
-
--- kaufbare Gutscheine 
-INSERT INTO vouchers (code, description, partner_id, is_redeemed, points_value, expiry_date) VALUES
-('CAFE-10', '10% Rabatt auf alle Speisen und Getränke', 1, 0, 50, DATE_ADD(CURDATE(), INTERVAL 30 DAY)),
-('MUSEUM-FREI', 'Freier Eintritt für eine Person', 2, 0, 100, DATE_ADD(CURDATE(), INTERVAL 30 DAY)),
-('SOUVENIR-15', '15% Rabatt auf alle Artikel', 3, 0, 150, DATE_ADD(CURDATE(), INTERVAL 30 DAY)),
-('DRACHEN-DESSERT', 'Gratis Dessert bei Hauptgericht', 4, 0, 180, DATE_ADD(CURDATE(), INTERVAL 30 DAY)),
-('BAECKEREI-2ZU1', '2 Kaffee zum Preis von 1', 5, 0, 200, DATE_ADD(CURDATE(), INTERVAL 30 DAY)),
-('WELLNESS-20', '20% auf alle Wellness-Angebote', 6, 0, 225, DATE_ADD(CURDATE(), INTERVAL 30 DAY));
+-- Tabelle: user_vouchers
+-- Speichert welche Gutscheine ein User gekauft hat
+CREATE TABLE IF NOT EXISTS `user_vouchers` (
+  `id`           INT NOT NULL AUTO_INCREMENT,
+  `user_id`      INT NOT NULL,
+  `voucher_id`   INT NOT NULL,
+  `purchased_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_voucher` (`user_id`, `voucher_id`),
+  CONSTRAINT `fk_user_vouchers_user`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_vouchers_voucher`
+    FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

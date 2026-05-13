@@ -21,10 +21,38 @@ $stmt = $pdo->prepare('SELECT * FROM partners WHERE username = ?');
 $stmt->execute([$username]);
 $partner = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$partner || $partner['password'] !== $password) {
+if (!$partner) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Ungültige Zugangsdaten.']);
     exit;
+}
+
+$validPassword = false;
+$shouldRehash = false;
+$passwordColumn = array_key_exists('password_hash', $partner) ? 'password_hash' : 'password';
+$storedPassword = $partner[$passwordColumn] ?? null;
+
+if ($storedPassword !== null && password_verify($password, $storedPassword)) {
+    $validPassword = true;
+    if (password_needs_rehash($storedPassword, PASSWORD_BCRYPT)) {
+        $shouldRehash = true;
+    }
+} elseif ($storedPassword !== null && $storedPassword === $password) {
+    // Fallback für alte, unverschlüsselte Partner-Passwörter
+    $validPassword = true;
+    $shouldRehash = true;
+}
+
+if (!$validPassword) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Zugangsdaten.']);
+    exit;
+}
+
+if ($shouldRehash && $storedPassword !== null) {
+    $newHash = password_hash($password, PASSWORD_BCRYPT);
+    $updateStmt = $pdo->prepare("UPDATE partners SET {$passwordColumn} = ? WHERE id = ?");
+    $updateStmt->execute([$newHash, $partner['id']]);
 }
 
 try {
