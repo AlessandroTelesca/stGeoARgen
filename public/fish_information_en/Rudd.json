@@ -1,0 +1,20 @@
+{
+  "name": "Rudd",
+  "scientificName": "Scardinius erythrophthalmus",
+  "description": "The rudd is a lively schooling fish from the carp family. It is often confused with the roach, but has bright red fins and a superior mouth.",
+  "habitat": "Rudd live in standing and slowly flowing waters with dense vegetation. They like to stay in middle water layers and between aquatic plants.",
+  "diet": "Omnivore with preference for plant food - eats algae, aquatic plants, insect larvae and zooplankton",
+  "size": "15-25 cm (up to 40 cm possible)",
+  "weight": "100-300 g (up to 1.5 kg possible)",
+  "lifespan": "10-15 years",
+  "features": [
+    "Laterally strongly flattened, high-backed body",
+    "Bright red fins",
+    "Golden yellow iris",
+    "Superior mouth",
+    "Gold-green shining flanks",
+    "Back darker than roach"
+  ],
+  "conservation": "Not endangered - widespread and common",
+  "funFact": "Rudd are true vegetarians among fish! While most carp fish are omnivores, rudd prefer plant food and can even eat larger plant parts. Their superior mouth is perfectly adapted to search for food at the water surface."
+}

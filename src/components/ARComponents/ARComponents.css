@@ -37,7 +37,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10002;
+  z-index: 11000;
   pointer-events: none;
 }
 
@@ -47,6 +47,7 @@
   top: 0;
   left: 0;
   right: 0;
+  z-index: 20;
   padding: 16px;
   display: flex;
   align-items: flex-start;
@@ -103,6 +104,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 18;
   padding: 16px;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
   pointer-events: auto;
@@ -114,6 +116,18 @@
   border-radius: 20px;
   padding: 20px 16px;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: scaleX(1);
+  transform-origin: center bottom;
+  transition: padding 0.35s ease, border-radius 0.35s ease, transform 0.35s ease;
+}
+
+.ar-progress-container-compact {
+  padding: 8px 10px;
+  border-radius: 999px;
+  transform: scaleX(1.953125);
 }
 
 .ar-stations-row {
@@ -122,6 +136,11 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
+  transition: margin-bottom 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-stations-row {
+  margin-bottom: 0;
 }
 
 .ar-station-wrapper {
@@ -134,13 +153,19 @@
 }
 
 .ar-station-circle {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-circle {
+  width: 20px;
+  height: 20px;
 }
 
 .ar-station-completed {
@@ -157,18 +182,29 @@
 }
 
 .ar-station-current-dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background-color: white;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-current-dot {
+  width: 8px;
+  height: 8px;
 }
 
 .ar-station-line {
   flex: 1;
-  height: 4px;
-  margin-left: 6px;
-  margin-right: 6px;
+  height: 3px;
+  margin-left: 4px;
+  margin-right: 4px;
   border-radius: 2px;
+  transition: height 0.35s ease;
+}
+
+.ar-progress-container-compact .ar-station-line {
+  height: 2px;
 }
 
 .ar-station-line-completed {
@@ -183,6 +219,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  max-height: 32px;
+  opacity: 1;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+}
+
+.ar-progress-container-compact .ar-info-row {
+  max-height: 0;
+  opacity: 0;
+  margin-top: -2px;
+  pointer-events: none;
 }
 
 .ar-station-text {
@@ -209,6 +257,7 @@
   inset: 0;
   background-color: var(--color-black-30);
   pointer-events: auto;
+  z-index: 30;
 }
 
 .ar-menu-panel {
@@ -222,6 +271,7 @@
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
+  z-index: 31;
 }
 
 .ar-menu-items {
@@ -287,7 +337,7 @@
 /* Navigation Button - Above Progress Bar */
 .ar-navigate-button {
   position: absolute;
-  bottom: calc(140px + max(24px, env(safe-area-inset-bottom)));
+  bottom: calc(112px + max(24px, env(safe-area-inset-bottom)));
   right: 16px;
   padding: 0;
   background-color: var(--color-primary);
@@ -298,10 +348,14 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  z-index: 25;
+  z-index: 22;
   color: var(--color-white);
-  transition: all 0.2s ease;
+  transition: bottom 0.35s ease, transform 0.2s ease, background-color 0.2s ease;
   border-radius: 32px;
+}
+
+.ar-navigate-button-compact {
+  bottom: calc(62px + max(24px, env(safe-area-inset-bottom)));
 }
 
 .ar-navigate-button-content {
@@ -326,7 +380,11 @@
 /* Mobile optimizations */
 @media (max-width: 480px) {
   .ar-navigate-button {
-    bottom: calc(130px + max(24px, env(safe-area-inset-bottom)));
+    bottom: calc(104px + max(24px, env(safe-area-inset-bottom)));
+  }
+
+  .ar-navigate-button-compact {
+    bottom: calc(56px + max(24px, env(safe-area-inset-bottom)));
   }
   
   .ar-navigate-button-text {
@@ -360,6 +418,11 @@
   transition: all 0.15s ease;
 }
 
+.ar-fish-btn-tertiary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .ar-fish-btn-tertiary:active {
   transform: scale(0.96);
   background: var(--color-gray-100);
@@ -391,5 +454,98 @@
 @media (max-width: 480px) {
   .ar-fish-action-row {
     bottom: calc(290px + max(24px, env(safe-area-inset-bottom)));
+  }
+}
+
+.ar-chest-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ar-chest-sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #facc15 0%, #f59e0b 70%, rgba(245, 158, 11, 0) 100%);
+  opacity: 0;
+  animation: arChestSparkleFloat 1.8s ease-out infinite;
+}
+
+.ar-chest-sparkle:nth-child(1) {
+  top: 8%;
+  left: 8%;
+  animation-delay: 0s;
+}
+
+.ar-chest-sparkle:nth-child(2) {
+  top: 12%;
+  left: 88%;
+  animation-delay: 0.15s;
+}
+
+.ar-chest-sparkle:nth-child(3) {
+  top: 30%;
+  left: 14%;
+  animation-delay: 0.3s;
+}
+
+.ar-chest-sparkle:nth-child(4) {
+  top: 36%;
+  left: 82%;
+  animation-delay: 0.45s;
+}
+
+.ar-chest-sparkle:nth-child(5) {
+  top: 62%;
+  left: 12%;
+  animation-delay: 0.6s;
+}
+
+.ar-chest-sparkle:nth-child(6) {
+  top: 64%;
+  left: 86%;
+  animation-delay: 0.75s;
+}
+
+.ar-chest-sparkle:nth-child(7) {
+  top: 18%;
+  left: 50%;
+  animation-delay: 0.9s;
+}
+
+.ar-chest-sparkle:nth-child(8) {
+  top: 48%;
+  left: 45%;
+  animation-delay: 1.05s;
+}
+
+.ar-chest-sparkle:nth-child(9) {
+  top: 74%;
+  left: 42%;
+  animation-delay: 1.2s;
+}
+
+.ar-chest-sparkle:nth-child(10) {
+  top: 24%;
+  left: 62%;
+  animation-delay: 1.35s;
+}
+
+@keyframes arChestSparkleFloat {
+  0% {
+    transform: scale(0.2) translateY(8px);
+    opacity: 0;
+  }
+
+  30% {
+    transform: scale(1) translateY(0);
+    opacity: 0.95;
+  }
+
+  100% {
+    transform: scale(0.15) translateY(-14px);
+    opacity: 0;
   }
 }

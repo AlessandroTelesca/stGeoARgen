@@ -54,6 +54,17 @@ export interface AuthResponse {
     user: UserData;
 }
 
+export interface PasswordResetRequestResponse {
+    success: boolean;
+    message: string;
+    reset_token?: string;
+}
+
+export interface PasswordResetResponse {
+    success: boolean;
+    message: string;
+}
+
 export async function apiRegister(
     username: string,
     email: string,
@@ -77,6 +88,25 @@ export async function apiLogin(
 
 export async function apiGetUser(userId: number): Promise<AuthResponse> {
     return apiFetch<AuthResponse>(`get_user.php?user_id=${userId}`);
+}
+
+export async function apiRequestPasswordReset(
+    email: string
+): Promise<PasswordResetRequestResponse> {
+    return apiFetch<PasswordResetRequestResponse>('request_password_reset.php', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function apiResetPassword(
+    token: string,
+    password: string
+): Promise<PasswordResetResponse> {
+    return apiFetch<PasswordResetResponse>('reset_password.php', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+    });
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────
@@ -145,4 +175,39 @@ export async function apiSavePathBonus(
         method: 'POST',
         body: JSON.stringify({ user_id: userId, path_id: pathId, bonus }),
     });
+}
+
+export interface TreasureRewardSaveResponse {
+    success: boolean;
+    message: string;
+    already_claimed: boolean;
+    points_awarded: number;
+    points_total: number;
+}
+
+export interface TreasureRewardStatusResponse {
+    success: boolean;
+    claimed: boolean;
+    points: number;
+    reward_key: string;
+}
+
+export async function apiSaveTreasureReward(
+    userId: number,
+    rewardKey: string = 'klosterweiher_treasure_chest',
+    points: number = 50
+): Promise<TreasureRewardSaveResponse> {
+    return apiFetch<TreasureRewardSaveResponse>('save_treasure_reward.php', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, reward_key: rewardKey, points }),
+    });
+}
+
+export async function apiGetTreasureReward(
+    userId: number,
+    rewardKey: string = 'klosterweiher_treasure_chest'
+): Promise<TreasureRewardStatusResponse> {
+    return apiFetch<TreasureRewardStatusResponse>(
+        `get_treasure_reward.php?user_id=${userId}&reward_key=${encodeURIComponent(rewardKey)}`,
+    );
 }

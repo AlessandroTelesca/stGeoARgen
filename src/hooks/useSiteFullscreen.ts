@@ -24,7 +24,7 @@ export const isEditableTarget = (target: EventTarget | null): boolean => {
   );
 };
 
-export const useSiteFullscreen = (rootRef: RefObject<HTMLElement>) => {
+export const useSiteFullscreen = (rootRef: RefObject<HTMLElement | null>) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const isSupported = useMemo(() => {

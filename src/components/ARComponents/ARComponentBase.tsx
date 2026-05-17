@@ -5,15 +5,16 @@ import { ARProfileMenu } from './ARProfileMenu';
 import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
 import { motion } from 'motion/react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './ARComponents.css';
 
 interface ARComponentBaseProps {
-  onNavigateHome?: () => void;
-  closeARViewKey?: string;
   containerRef: RefObject<HTMLDivElement>;
   videoRef: RefObject<HTMLVideoElement>;
   overlayRootRef?: RefObject<HTMLDivElement | null>;
+  onNavigateHome?: () => void;
+  closeARViewKey?: string;
   username?: string | null;
   onLogin?: () => void;
   onLogout?: () => void;
@@ -35,6 +36,18 @@ interface ARComponentBaseProps {
   onCompleteStation?: (stationId: number) => void;
   /** Aktuelle Station wurde bereits früher abgeschlossen */
   isCurrentStationCompleted?: boolean;
+  /** Zeigt den manuellen "Station abschließen"-Button */
+  showCompleteButton?: boolean;
+  /** Optionaler Guard um Stationsabschluss zu blockieren */
+  canCompleteOverride?: boolean;
+  /** Deaktiviert den 30s-Timer-Trigger für den Abschlussbutton */
+  ignoreCompleteTimer?: boolean;
+  /** Callback sobald der Abschlussbutton erfolgreich geklickt wurde */
+  onCompleteInitiated?: () => void;
+  /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
+  onCompleteBlocked?: () => void;
+  /** Guest mode - no points awarded */
+  isGuestMode?: boolean;
 }
 
 // Export Stations aus zentraler Config
@@ -130,7 +143,15 @@ export const ARComponentBase = ({
   currentStationPoints = 0,
   onCompleteStation,
   isCurrentStationCompleted = false,
+  showCompleteButton = true,
+  canCompleteOverride = true,
+  ignoreCompleteTimer = false,
+  onCompleteInitiated,
+  onCompleteBlocked,
+  isGuestMode = false,
 }: ARComponentBaseProps) => {
+  const { t } = useLanguage();
+  const isLoggedIn = Boolean(username);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearestStation, setNearestStation] = useState<typeof STATIONS[0] | null>(null);
@@ -139,6 +160,7 @@ export const ARComponentBase = ({
   const [stationStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [hasClickedComplete, setHasClickedComplete] = useState(false);
+  const [isProgressCompact, setIsProgressCompact] = useState(false);
   // Snapshot: gespeicherter Wert beim Klick auf "Station abschließen" (VOR props-Update)
   const [remainingAtCompletion, setRemainingAtCompletion] = useState(0);
 
@@ -170,7 +192,7 @@ export const ARComponentBase = ({
     const incompleteStations = STATIONS.filter((station, index) => index >= progress.current - 1);
 
     if (incompleteStations.length === 0) {
-      console.log('Alle Stationen abgeschlossen!');
+      console.log(t('allStationsCompleted'));
       setNearestStation(STATIONS[STATIONS.length - 1]); // Fallback zur letzten Station
       setDistanceToNext(null);
       return;
@@ -245,7 +267,7 @@ export const ARComponentBase = ({
     setHasClickedComplete(false);
   }, [currentStationId]);
 
-  const canCompleteStation = elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
+  const canCompleteStation = ignoreCompleteTimer || elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
   const handleCompleteStation = () => {
@@ -253,7 +275,13 @@ export const ARComponentBase = ({
       return;
     }
 
+    if (!canCompleteOverride) {
+      onCompleteBlocked?.();
+      return;
+    }
+
     setHasClickedComplete(true);
+    onCompleteInitiated?.();
 
     // Snapshot BEFORE calling onCompleteStation (which may update completedStations prop)
     const remaining = Math.max(0, (totalStations || 1) - completedStations - 1);
@@ -320,30 +348,17 @@ export const ARComponentBase = ({
           username={username || null}
         />
 
-        <ARProgressBar progress={progress} stations={stations} />
-
-        {isCurrentStationCompleted && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-3 mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3"
-          >
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-700" />
-              <div className="text-sm text-amber-900">
-                <p className="font-semibold">Station bereits abgeschlossen</p>
-                <p>Du kannst diese Station erneut erleben, aber bekommst dafuer keine weiteren Punkte.</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
+        <ARProgressBar
+          progress={progress}
+          stations={stations}
+          onCompactChange={setIsProgressCompact}
+        />
         {/* "Station abschließen"-Button */}
-        {canCompleteStation && !hasClickedComplete && (
+        {showCompleteButton && canCompleteStation && !hasClickedComplete && isLoggedIn && !isGuestMode && (
           <motion.button
             onClick={handleCompleteStation}
             disabled={isCurrentStationCompleted}
-            className="ar-navigate-button"
+            className={`ar-navigate-button ${isProgressCompact ? 'ar-navigate-button-compact' : ''}`}
             style={isCurrentStationCompleted ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
             whileTap={{ scale: 0.95 }}
             initial={{ opacity: 0, y: 20 }}
@@ -354,8 +369,8 @@ export const ARComponentBase = ({
               <CheckCircle2 style={{ width: '22px', height: '22px', color: 'white', flexShrink: 0 }} />
               <span className="ar-navigate-button-text">
                 {isCurrentStationCompleted
-                  ? 'Bereits abgeschlossen'
-                  : 'Station abschließen'}
+                  ? t('stationAlreadyCompleted')
+                  : t('completeStation')}
               </span>
             </div>
           </motion.button>
@@ -385,7 +400,7 @@ export const ARComponentBase = ({
       <ARStationCompletionDialog
         isOpen={showCompletionDialog}
         stationTitle={currentStationTitle}
-        stationPoints={currentStationPoints}
+        stationPoints={isGuestMode ? 0 : currentStationPoints}
         durationSeconds={elapsedSeconds}
         remainingStations={remainingAtCompletion}
         totalStations={totalStations || 1}
@@ -395,6 +410,7 @@ export const ARComponentBase = ({
           handleNavigateHome();
         }}
         onNavigateToNextStation={handleNavigateToNextStation}
+        onClose={() => setShowCompletionDialog(false)}
       />
     </div>
   );

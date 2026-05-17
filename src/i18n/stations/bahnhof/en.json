@@ -1,0 +1,60 @@
+{
+  "stationName": "Train Station",
+  "description": "Discover the historic train station in AR",
+  "longDescription": "The train station was a central hub for the development of St. Georgen. Use AR To learn how rail transport shaped the region.",
+  "quizQuestion": "What made the station historically important?",
+  "arStartTitle": "Start Train Station AR",
+  "arStartDescription": "Tap Start to allow motion and gyroscope access and load the AR view.",
+  "arStartButton": "Start AR",
+  "arStartingButton": "Starting AR...",
+  "arStartErrorFallback": "Failed to start the AR view.",
+  "trainStartButton": "Now drive the train!",
+  "tourFrontText": "You are looking at the front of the historic Schwarzwaldbahn steam locomotive. Notice the powerful boiler and the classic front lamp assembly.",
+  "tourBackText": "Now you are behind the train. Here you can see the tender area where coal and water were stored to keep the locomotive running.",
+  "tourInsideText": "You are now in the driver's position. This is where the engineer controlled steam pressure, speed, and braking during the journey.",
+  "tourNextButton": "Next",
+  "tourTrainStartedLabel": "Train started",
+  "tourDriveHint": "Look around and move your phone to see out the windows.",
+  "tourHornButton": "Train horn",
+  "infoPopupClose": "Close",
+  "infoPopups": {
+    "frontLamp": {
+      "title": "Front Lamp",
+      "text": "The front lamp identified the train at night and illuminated the track ahead. Early lamps burned oil or carbide – electric lighting came only much later."
+    },
+    "smokestack": {
+      "title": "Smokestack",
+      "text": "Smoke from the firebox escaped through the smokestack. Wide spark-arrester caps protected the surrounding forests from fire – especially important in the Black Forest region."
+    },
+    "boiler": {
+      "title": "Steam Boiler",
+      "text": "Coal fire heated water inside the boiler to over 180 °C. The resulting high-pressure steam drove the pistons that turned the wheels – the true heart of every steam locomotive."
+    },
+    "tender": {
+      "title": "Tender",
+      "text": "The tender was the locomotive's rolling supply tank. It carried up to 8 tons of coal and thousands of litres of water consumed continuously during each journey."
+    },
+    "rearBuffers": {
+      "title": "Buffers",
+      "text": "Spring buffers absorbed shocks when coupling wagons and during braking. Every locomotive had two buffers at each end to protect both engine and carriages from damage."
+    },
+    "pressureGauge": {
+      "title": "Steam Pressure Gauge",
+      "text": "The pressure gauge showed the engineer the live boiler pressure. Optimal operating pressure was around 12–14 bar. If it rose too high, steam had to be released – otherwise an explosion was risk."
+    },
+    "throttle": {
+      "title": "Regulator Valve",
+      "text": "The regulator opened or closed the steam inlet valve to the cylinders. More steam meant more power and speed – precise, experienced hands were essential for smooth control."
+    },
+    "brake": {
+      "title": "Brake Lever",
+      "text": "Brake control was especially critical on the winding Black Forest Railway. Braking too late on a steep downgrade could make the train uncontrollable – every move had to be exact."
+    }
+  },
+  "quizOptions": [
+    "It served only as a freight terminal",
+    "It was a central transport hub for travelers and trade",
+    "It worked mainly as a local post office",
+    "It was used as a timber storage site"
+  ]
+}

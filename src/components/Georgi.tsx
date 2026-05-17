@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GeorgiProps {
   message: string;
@@ -12,6 +13,7 @@ interface GeorgiProps {
 
 export function Georgi({ message, show, onClose, position = 'bottom-right', autoHide = false }: GeorgiProps) {
   const [dismissed, setDismissed] = useState(false);
+  const { t } = useLanguage();
 
   const handleClose = () => {
     setDismissed(true);
@@ -62,7 +64,7 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
               </motion.div>
 
               <div className="flex-1 pt-1">
-                <p className="font-semibold text-sm mb-1">Georgi sagt:</p>
+                <p className="font-semibold text-sm mb-1">{t('georgiBubbleTitle')}</p>
                 <p className="text-sm text-muted-foreground">{message}</p>
               </div>
             </div>

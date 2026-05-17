@@ -4,7 +4,10 @@
   import path from 'path';
   import { copyFileSync } from 'fs';
 
-  export default defineConfig({
+  export default defineConfig(() => {
+    const localApiTarget = process.env.VITE_LOCAL_API_TARGET || 'http://127.0.0.1:8000';
+
+    return {
     plugins: [
       react(),
       {
@@ -70,6 +73,13 @@
     server: {
       port: 3000,
       open: true,
-      allowedHosts: ['peevedly-jaime-seismographic.ngrok-free.dev'],
+      proxy: {
+        '/api': {
+          target: localApiTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
-  });
+  };
+});

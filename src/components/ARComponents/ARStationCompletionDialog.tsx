@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy } from 'lucide-react';
+import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARStationCompletionDialogProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface ARStationCompletionDialogProps {
     distanceToNextStation: number | null;
     onNavigateHome: () => void;
     onNavigateToNextStation: () => void;
+    onClose?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -41,7 +43,9 @@ export const ARStationCompletionDialog = ({
     distanceToNextStation,
     onNavigateHome,
     onNavigateToNextStation,
+    onClose,
 }: ARStationCompletionDialogProps) => {
+    const { t } = useLanguage();
     const completedCount = totalStations - remainingStations;
 
     return (
@@ -88,8 +92,36 @@ export const ARStationCompletionDialog = ({
                                 borderRadius: '24px',
                                 overflowY: 'auto',
                                 boxShadow: '0 -4px 40px rgba(0,0,0,0.3)',
+                                position: 'relative',
                             }}
                         >
+                            {/* Close Button */}
+                            {onClose && (
+                                <button
+                                    onClick={onClose}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '12px',
+                                        right: '12px',
+                                        zIndex: 10001,
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '8px',
+                                        transition: 'background-color 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    aria-label="Schließen"
+                                >
+                                    <X style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                                </button>
+                            )}
+
                             {/* Green success header */}
                             <div
                                 style={{
@@ -118,7 +150,7 @@ export const ARStationCompletionDialog = ({
                                     <CheckCircle2 style={{ width: '40px', height: '40px', color: 'white' }} />
                                 </motion.div>
                                 <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 700 }}>
-                                    Station abgeschlossen!
+                                    {t('stationCompletedTitle')}
                                 </h2>
                                 <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>
                                     {stationTitle}
@@ -143,7 +175,7 @@ export const ARStationCompletionDialog = ({
                                 >
                                     <Trophy style={{ width: '20px', height: '20px', color: '#ca8a04' }} />
                                     <span style={{ fontWeight: 700, fontSize: '18px', color: '#854d0e' }}>
-                                        +{stationPoints} Punkte verdient!
+                                        +{stationPoints} {t('points')} {t('earned')}!
                                     </span>
                                 </div>
 
@@ -171,7 +203,7 @@ export const ARStationCompletionDialog = ({
                                             {formatDuration(durationSeconds)}
                                         </div>
                                         <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            Aufenthalt
+                                            {t('duration')}
                                         </div>
                                     </div>
 
@@ -190,7 +222,7 @@ export const ARStationCompletionDialog = ({
                                             {completedCount}/{totalStations}
                                         </div>
                                         <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            {remainingStations > 0 ? `noch ${remainingStations}` : 'Alle fertig!'}
+                                            {remainingStations > 0 ? `noch ${remainingStations}` : t('allFinished')}
                                         </div>
                                     </div>
 
@@ -209,7 +241,7 @@ export const ARStationCompletionDialog = ({
                                             {remainingStations > 0 ? formatDistance(distanceToNextStation) : '🎉'}
                                         </div>
                                         <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            {remainingStations > 0 ? 'Nächste' : 'Pfad fertig'}
+                                            {remainingStations > 0 ? t('nextStationLabel') : t('pathCompletedLabel')}
                                         </div>
                                     </div>
                                 </div>
@@ -240,7 +272,7 @@ export const ARStationCompletionDialog = ({
                                             onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '#0C690F')}
                                         >
                                             <Navigation style={{ width: '18px', height: '18px' }} />
-                                            Zur nächsten Station navigieren
+                                            {t('navigateToNextStation')}
                                         </button>
                                     )}
 
@@ -267,7 +299,7 @@ export const ARStationCompletionDialog = ({
                                         onTouchEnd={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
                                         <Home style={{ width: '18px', height: '18px' }} />
-                                        Zurück zur Startseite
+                                        {t('backToHome')}
                                     </button>
                                 </div>
                             </div>

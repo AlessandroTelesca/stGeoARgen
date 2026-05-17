@@ -3,13 +3,14 @@ import { Trophy, X, MapPin, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Locality {
   id: string;
-  name: string;
-  type: string;
-  description: string;
-  address: string;
+  nameKey: string;
+  typeKey: string;
+  descriptionKey: string;
+  addressKey: string;
 }
 
 interface RewardDialogProps {
@@ -20,29 +21,30 @@ interface RewardDialogProps {
 const localities: Locality[] = [
   {
     id: 'locality1',
-    name: 'Lokalität 1',
-    type: 'Café & Restaurant',
-    description: '10% Rabatt auf Speisen und Getränke',
-    address: 'Hauptstraße 12, St.Georgen',
+    nameKey: 'rewardLocality1Name',
+    typeKey: 'rewardLocality1Type',
+    descriptionKey: 'rewardLocality1Description',
+    addressKey: 'rewardLocality1Address',
   },
   {
     id: 'locality2',
-    name: 'Lokalität 2',
-    type: 'Museum & Kultur',
-    description: 'Freier Eintritt für eine Person',
-    address: 'Kulturplatz 5, St.Georgen',
+    nameKey: 'rewardLocality2Name',
+    typeKey: 'rewardLocality2Type',
+    descriptionKey: 'rewardLocality2Description',
+    addressKey: 'rewardLocality2Address',
   },
   {
     id: 'locality3',
-    name: 'Lokalität 3',
-    type: 'Souvenirshop',
-    description: '15% Rabatt auf alle Artikel',
-    address: 'Marktstraße 23, St.Georgen',
+    nameKey: 'rewardLocality3Name',
+    typeKey: 'rewardLocality3Type',
+    descriptionKey: 'rewardLocality3Description',
+    addressKey: 'rewardLocality3Address',
   },
 ];
 
 export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
   const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleConfirm = () => {
     if (selectedLocality) {
@@ -83,9 +85,9 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
             >
               <Trophy className="w-12 h-12 text-yellow-300" />
             </motion.div>
-            <h2 className="text-2xl mb-2">Herzlichen Glückwunsch!</h2>
+            <h2 className="text-2xl mb-2">{t('congratulations')}</h2>
             <p className="text-white/90">
-              Du hast alle Stationen erfolgreich abgeschlossen und die volle Punktzahl erreicht!
+              {t('congratulationsDescription')}
             </p>
           </div>
         </div>
@@ -93,7 +95,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
         {/* Content */}
         <div className="p-6">
           <h3 className="text-lg mb-4 text-gray-900">
-            Wähle deinen Gutschein:
+            {t('chooseVoucher')}
           </h3>
 
           <div className="space-y-3">
@@ -123,18 +125,18 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div>
-                        <h4 className="text-gray-900">{locality.name}</h4>
-                        <p className="text-sm text-gray-600">{locality.type}</p>
+                        <h4 className="text-gray-900">{t(locality.nameKey)}</h4>
+                        <p className="text-sm text-gray-600">{t(locality.typeKey)}</p>
                       </div>
                     </div>
                     
                     <p className="text-[#0C690F] mb-2">
-                      {locality.description}
+                      {t(locality.descriptionKey)}
                     </p>
                     
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <MapPin className="w-4 h-4" />
-                      <span>{locality.address}</span>
+                      <span>{t(locality.addressKey)}</span>
                     </div>
                   </div>
                 </div>
@@ -148,19 +150,19 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
               onClick={onClose}
               className="flex-1"
             >
-              Später
+              {t('later')}
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={!selectedLocality}
               className="flex-1 bg-[#0C690F] hover:bg-[#0a5a0d] text-white"
             >
-              Gutschein einlösen
+              {t('redeemVoucher')}
             </Button>
           </div>
 
           <p className="text-xs text-center text-gray-500 mt-4">
-            Der Gutschein wird nach der Auswahl an deine E-Mail gesendet
+            {t('voucherEmailSent')}
           </p>
         </div>
       </motion.div>

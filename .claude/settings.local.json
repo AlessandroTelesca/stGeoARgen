@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"g:\\\\Fertige_Projekte\\\\Projekt\\\\StGeoARgen\\\\stGeoARgen\" -Force)",
+      "Bash(Select-Object -First 30)",
+      "Bash(Format-Table Name, PSIsContainer)",
+      "PowerShell(Get-ChildItem -Path \"g:\\\\Fertige_Projekte\\\\Projekt\\\\StGeoARgen\\\\stGeoARgen\\\\src\" -Recurse | Where-Object { $_.Name -match \"\\(?i\\)\\(bahnhof|station|zug|train\\)\" } | Select-Object FullName)"
+    ]
+  }
+}

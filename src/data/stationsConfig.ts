@@ -15,20 +15,32 @@ export const STATIONS_COORDINATES: StationCoordinates[] = [
   { 
     id: 1, 
     name: 'Glockenspiel', 
-    lat: 48.134599538155655, // Testweise: Mein Zuhause
-    lng: 8.245808734754021 
+    lat: 48.125809028190275, 
+    lng: 8.333296868535312
+  },
+  {
+    id: 2,
+    name: 'Bahnhof',
+    lat: 48.12442791310443,
+    lng: 8.34141162291187
   },
   { 
     id: 3, 
     name: 'Phonomuseum', 
-    lat: 48.1245, 
-    lng: 8.3345 
+    lat: 48.12641591490427, 
+    lng: 8.332870042354898 
+  },
+  {
+    id: 4,
+    name: 'Schwarzes Tor',
+    lat: 48.126356459351896,
+    lng: 8.334404178366523
   },
   { 
     id: 5, 
     name: 'Klosterweiher', 
-    lat: 48.1239, 
-    lng: 8.3352 
+    lat: 48.12106058037526, 
+    lng: 8.331670499276125
   },
 ];
 
@@ -38,6 +50,8 @@ export const AR_VIEW_STATION_MAP: Record<string, number> = {
   'klosterweiher': 5, // Aussichtspunkt Hörnle -> Klosterweiher AR
   'phonomuseum': 3,   // Heimatmuseum -> Phonomuseum AR
   'glockenspiel': 1,  // Historisches Rathaus -> Glockenspiel AR
+  'bahnhof': 2,       // Bahnhof -> Bahnhof AR
+  'schwarzes-tor': 4, // Schwarzes Tor
 };
 
 // Helper: Koordinaten nach Station-ID finden

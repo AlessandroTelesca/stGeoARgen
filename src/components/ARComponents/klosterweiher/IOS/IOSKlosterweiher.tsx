@@ -4,7 +4,14 @@ import { ARComponentBase } from "../../ARComponentBase";
 import { ARProximityGate } from "../../ARProximityGate";
 import { ARVisualizer } from "../../../../ARbackend/ARVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
-import { KlosterweiherARSessionBase } from "../KlosterweiherARSessionBase";
+import { useLanguage } from "../../../../contexts/LanguageContext";
+import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
+import { MobileOnlyNotice } from "../../MobileOnlyNotice";
+import {
+  CaughtObjectPayload,
+  DEFAULT_TREASURE_SPAWN_CHANCE,
+  KlosterweiherARSessionBase,
+} from "../KlosterweiherARSessionBase";
 import {
   WaitingForReady,
   FishingInstructions,
@@ -25,8 +32,11 @@ interface ARViewProps {
   completedStations?: number;
   totalStations?: number;
   totalPoints?: number;
+  currentStationPoints?: number;
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
+  onTreasureCollect?: () => Promise<boolean>;
+  isGuestMode?: boolean;
 }
 
 class IOSKlosterweiherARSession extends ARVisualizer {
@@ -35,6 +45,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
 
   // Properties from KlosterweiherARSessionBase
   protected rodUrl = new URL("./../models/Angel.glb", import.meta.url).href;
+  protected glockeUrl = new URL("./../models/Glocke.glb", import.meta.url).href;
   protected fishUrls = [
     new URL("./../models/Rotauge.glb", import.meta.url).href,
     new URL("./../models/Forelle.glb", import.meta.url).href,
@@ -52,6 +63,8 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   protected fishMixers: THREE.AnimationMixer[] = [];
   protected fishAnimations: THREE.AnimationClip[][] = [];
   protected fishBackdrops: THREE.Mesh[] = []; // Semi-transparent backdrop meshes for visibility
+  public treasureChest: THREE.Object3D | null = null;
+  public isTreasureChestActive = false;
   public rod: THREE.Object3D | null = null;
   public water: THREE.Object3D | null = null;
   public currentFishIndex = 0;
@@ -65,10 +78,13 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   private rodLoaded = false;
   private fishesLoaded = false;
   private waterLoaded = false;
+  private bellLoaded = false;
   public onFishCaught?: (fishName: string) => void;
+  public onCatchObjectCaught?: (payload: CaughtObjectPayload) => void;
   public onFishReleased?: () => void;
   public onTap?: () => void; // Callback for tap tracking
   public onDrag?: () => void; // Callback for drag tracking
+  protected treasureSpawnChance = DEFAULT_TREASURE_SPAWN_CHANCE;
   private lastFrameTime: number = 0;
 
   // Orbit controls for caught fish
@@ -133,6 +149,8 @@ class IOSKlosterweiherARSession extends ARVisualizer {
     KlosterweiherARSessionBase.prototype["endOrbitControl"];
   protected applyOrbitMomentum =
     KlosterweiherARSessionBase.prototype["applyOrbitMomentum"];
+  protected selectNextCatchObject =
+    KlosterweiherARSessionBase.prototype["selectNextCatchObject"];
 
   private setupOrbitControlListeners(): void {
     if (!this.renderer) return;
@@ -174,6 +192,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       this.rodLoaded &&
       this.fishesLoaded &&
       this.waterLoaded &&
+      this.bellLoaded &&
       !this.modelsLoaded
     ) {
       this.modelsLoaded = true;
@@ -310,11 +329,16 @@ class IOSKlosterweiherARSession extends ARVisualizer {
           }
           // Check if all fishes are loaded
           if (this.fishes.filter(Boolean).length === this.fishUrls.length) {
-            this.currentFishIndex = Math.floor(
-              Math.random() * this.fishes.length,
-            );
-            this.fish =
-              this.fishes[this.currentFishIndex] || this.fishes[0] || null;
+            // Select a random fish from loaded fishes
+            const loadedIndices = this.fishes
+              .map((f, i) => (f ? i : -1))
+              .filter((i) => i >= 0);
+            if (loadedIndices.length > 0) {
+              this.currentFishIndex = loadedIndices[Math.floor(Math.random() * loadedIndices.length)];
+              this.fish = this.fishes[this.currentFishIndex] || this.fishes[0] || null;
+            } else {
+              this.fish = this.fishes[0] || null;
+            }
             this.fishesLoaded = true;
             this.checkAllModelsLoaded();
           }
@@ -353,6 +377,28 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       .catch((err) => {
         console.error("Water model failed to load", err);
         this.waterLoaded = true;
+        this.checkAllModelsLoaded();
+      });
+
+    // Load Glocke model for the Easter egg catch
+    this.loadGLTFModel(this.glockeUrl, {
+      position: new THREE.Vector3(0, -500, -20),
+      rotation: new THREE.Euler(0, Math.PI / 2, 0),
+      scale: 2,
+    })
+      .then((model) => {
+        if (model && this.scene && this.camera) {
+          this.scene.remove(model);
+          this.camera.add(model);
+          model.visible = false;
+          this.treasureChest = model;
+        }
+        this.bellLoaded = true;
+        this.checkAllModelsLoaded();
+      })
+      .catch((err) => {
+        console.error("[IOSKlosterweiher] Glocke model failed to load", err);
+        this.bellLoaded = true;
         this.checkAllModelsLoaded();
       });
   }
@@ -461,9 +507,17 @@ export const IOSKlosterweiherView = ({
   completedStations,
   totalStations,
   totalPoints,
+  currentStationPoints = 0,
   onCompleteStation,
   isCurrentStationCompleted = false,
+  onTreasureCollect,
+  isGuestMode = false,
 }: ARViewProps) => {
+  const { language } = useLanguage();
+  const klosterweiherTexts = getKlosterweiherTexts(language);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isNotMobile = !isIOS && !isAndroid;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -474,6 +528,8 @@ export const IOSKlosterweiherView = ({
   const [error, setError] = useState<string | null>(null);
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
+  const [isTreasureChestCaught, setIsTreasureChestCaught] = useState(false);
+  const [isCollectingTreasure, setIsCollectingTreasure] = useState(false);
   const [showFishingInstructions, setShowFishingInstructions] = useState(false);
   const [showFishInfo, setShowFishInfo] = useState(false);
   const [waitingForReady, setWaitingForReady] = useState(false);
@@ -483,6 +539,10 @@ export const IOSKlosterweiherView = ({
   const [lastTapTime, setLastTapTime] = useState<number>(Date.now());
   const [showDragInstruction, setShowDragInstruction] = useState(false);
   const [dragsSinceStart, setDragsSinceStart] = useState(0);
+
+  if (isNotMobile) {
+    return <MobileOnlyNotice />;
+  }
 
   // Cleanup on unmount
   useEffect(() => {
@@ -534,15 +594,22 @@ export const IOSKlosterweiherView = ({
         },
       );
 
-      session.onFishCaught = (fishName: string) => {
+      session.onCatchObjectCaught = ({
+        fishName,
+        isChest,
+      }: CaughtObjectPayload) => {
         setFishCaught(true);
         setCaughtFishName(fishName);
+        setIsTreasureChestCaught(isChest);
         setShowTapInstruction(false); // Hide tap instruction when fish is caught
         setShowDragInstruction(true); // Show drag instruction when fish is caught
         setDragsSinceStart(0);
       };
       session.onFishReleased = () => {
         setFishCaught(false);
+        setShowFishInfo(false);
+        setIsTreasureChestCaught(false);
+        setIsCollectingTreasure(false);
         setTapsSinceStart(0); // Reset tap count for new fishing session
         setLastTapTime(Date.now());
         setShowDragInstruction(false);
@@ -590,6 +657,20 @@ export const IOSKlosterweiherView = ({
     }
   };
 
+  const handlePrimaryAction = async () => {
+    if (!sessionRef.current) return;
+
+    if (isTreasureChestCaught) {
+      if (!onTreasureCollect || isCollectingTreasure) return;
+      setIsCollectingTreasure(true);
+      const collected = await onTreasureCollect();
+      setIsCollectingTreasure(false);
+      if (!collected) return;
+    }
+
+    sessionRef.current.releaseCurrentFish();
+  };
+
   const arContent = (
     <>
       <ARComponentBase
@@ -607,8 +688,8 @@ export const IOSKlosterweiherView = ({
         totalStations={totalStations}
         totalPoints={totalPoints}
         currentStationId={5}
-        currentStationTitle="Klosterweiher"
-        currentStationPoints={45}
+        currentStationTitle={klosterweiherTexts.stationName}
+        currentStationPoints={currentStationPoints}
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
       />
@@ -650,11 +731,14 @@ export const IOSKlosterweiherView = ({
           <FishCaughtDialog
             overlayRoot={overlayRootRef.current}
             fishName={caughtFishName}
+            isChest={isTreasureChestCaught}
           />
           <FishActionButtons
             overlayRoot={overlayRootRef.current}
-            onRelease={() => sessionRef.current?.releaseCurrentFish()}
+            onRelease={handlePrimaryAction}
             onLearnMore={() => setShowFishInfo(true)}
+            isChest={isTreasureChestCaught}
+            isBusy={isCollectingTreasure}
           />
         </>
       )}
@@ -670,6 +754,7 @@ export const IOSKlosterweiherView = ({
         <FishInfoPopup
           overlayRoot={overlayRootRef.current}
           fishName={caughtFishName}
+          isChest={isTreasureChestCaught}
           onClose={() => setShowFishInfo(false)}
         />
       )}
@@ -680,7 +765,7 @@ export const IOSKlosterweiherView = ({
   return (
     <ARProximityGate
       stationId={AR_VIEW_STATION_MAP["klosterweiher"]}
-      stationName="Klosterweiher"
+      stationName={klosterweiherTexts.stationName}
       onNavigateBack={onNavigateHome}
       onAccessGranted={() => setIsAuthorized(true)}
     >

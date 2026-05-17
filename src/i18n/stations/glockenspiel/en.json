@@ -1,0 +1,7 @@
+{
+  "stationName": "Glockenspiel",
+  "description": "Experience the 'glockenspiel' in AR",
+  "longDescription": "The glockenspiel is a fascinating historical instrument. Discover in the AR experience how the mechanics work and listen to the traditional melodies.",
+  "quizQuestion": "How many bells does the glockenspiel have?",
+  "quizOptions": ["12 bells", "18 bells", "24 bells", "30 bells"]
+}

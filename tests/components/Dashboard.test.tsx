@@ -24,6 +24,7 @@ describe('Dashboard', () => {
         totalPoints={120}
         totalCompletedStations={2}
         onPathSelect={vi.fn()}
+        username="Max"
       />
     );
 
@@ -40,6 +41,7 @@ describe('Dashboard', () => {
         totalPoints={80}
         totalCompletedStations={1}
         onPathSelect={onPathSelect}
+        username="Max"
       />
     );
 
@@ -56,6 +58,7 @@ describe('Dashboard', () => {
         totalCompletedStations={1}
         onPathSelect={vi.fn()}
         onOpenQRScanner={onOpenQRScanner}
+        username="Max"
       />
     );
 
@@ -72,6 +75,7 @@ describe('Dashboard', () => {
         totalCompletedStations={2}
         onPathSelect={vi.fn()}
         onNavigate={onNavigate}
+        username="Max"
       />
     );
 
@@ -91,6 +95,7 @@ describe('Dashboard', () => {
         totalCompletedStations={2}
         onPathSelect={vi.fn()}
         onNavigate={onNavigate}
+        username="Max"
       />
     );
 
@@ -103,7 +108,7 @@ describe('Dashboard', () => {
     }
   });
 
-  it('navigates to stations view', async () => {
+  it('navigates to progress view', async () => {
     const onNavigate = vi.fn();
     render(
       <Dashboard
@@ -112,14 +117,12 @@ describe('Dashboard', () => {
         totalCompletedStations={3}
         onPathSelect={vi.fn()}
         onNavigate={onNavigate}
+        username="Max"
       />
     );
 
-    const stationsButton = screen.getByText('3').closest('button');
-    if (stationsButton) {
-      await userEvent.click(stationsButton);
-      expect(onNavigate).toHaveBeenCalledWith('stations');
-    }
+    await userEvent.click(screen.getByRole('button', { name: /3 von 4 stationen erkundet/i }));
+    expect(onNavigate).toHaveBeenCalledWith('progress');
   });
 
   it('calls onNavigateToPaths when total stations clicked', async () => {
@@ -131,13 +134,11 @@ describe('Dashboard', () => {
         totalCompletedStations={2}
         onPathSelect={vi.fn()}
         onNavigateToPaths={onNavigateToPaths}
+        username="Max"
       />
     );
 
-    const totalStationsButton = screen.getByText('4').closest('button');
-    if (totalStationsButton) {
-      await userEvent.click(totalStationsButton);
-      expect(onNavigateToPaths).toHaveBeenCalledTimes(1);
-    }
+    await userEvent.click(screen.getByRole('button', { name: /alle ansehen/i }));
+    expect(onNavigateToPaths).toHaveBeenCalledTimes(1);
   });
 });

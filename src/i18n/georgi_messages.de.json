@@ -1,0 +1,12 @@
+{
+  "georgiBubbleTitle": "Georgi sagt:",
+  "georgiPathsOverviewMessage": "Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!",
+  "georgiOnboardingStep1": "Hey! Bereit für eine unvergessliche Entdeckungsreise?",
+  "georgiOnboardingStep2": "Der touristische Themenpfad ist perfekt für den Start!",
+  "georgiOnboardingStep3": "Die nächsten Stationen werden dir immer zuerst angezeigt!",
+  "georgiOnboardingStep4": "Sammle fleißig Punkte und genieße tolle Belohnungen vor Ort!",
+  "georgiStationNeedsLogin": "Melde dich an, um das AR-Erlebnis freizuschalten!",
+  "georgiStationCanStartAR": "Super! Du bist nah genug. Starte das AR-Erlebnis!",
+  "georgiStationDistanceHint": "Du bist noch {distance}m entfernt. Nutze die Navigation!",
+  "georgiStationVisitOnSite": "Besuche diese Station vor Ort für mehr Informationen!"
+}

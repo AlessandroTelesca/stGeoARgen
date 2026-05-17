@@ -1,0 +1,19 @@
+{
+  "name": "Zander",
+  "scientificName": "Sander lucioperca",
+  "description": "The zander is a popular predatory fish from the perch family. It is known for its tasty, firm flesh and its excellent hunting abilities.",
+  "habitat": "Zander prefer larger, deeper lakes and slowly flowing rivers with sandy or gravelly bottoms. They often stay near the bottom.",
+  "diet": "Predator - feeds mainly on smaller fish like roach, perch and ruffe",
+  "size": "40-70 cm (up to 120 cm possible)",
+  "weight": "1-4 kg (up to 20 kg possible)",
+  "lifespan": "12-20 years",
+  "features": [
+    "Elongated, spindle-shaped body",
+    "Large, glassy eyes",
+    "Two separate dorsal fins",
+    "Sharp canine teeth in the mouth",
+    "Greenish-gray coloration with dark transverse bands"
+  ],
+  "conservation": "Not endangered - important commercial fish in European waters",
+  "funFact": "Zander can see very well even in murky water. Their large eyes have a special layer that amplifies the available light - similar to cats!"
+}
