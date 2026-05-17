@@ -14,6 +14,19 @@
 
 require_once 'config.php';
 
+function getStationPointsForPath(string $pathId, int $stationId): ?int
+{
+    $stationPointsByPath = [
+        'tourist' => [
+            1 => 50,
+            3 => 50,
+            5 => 50,
+        ],
+    ];
+
+    return $stationPointsByPath[$pathId][$stationId] ?? null;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendResponse(['success' => false, 'message' => 'Methode nicht erlaubt.'], 405);
 }
@@ -34,6 +47,11 @@ if (!$stationId || $stationId <= 0) {
     sendResponse(['success' => false, 'message' => 'Ungültige station_id.'], 400);
 }
 
+$stationPoints = getStationPointsForPath($pathId, $stationId);
+if ($stationPoints === null) {
+    sendResponse(['success' => false, 'message' => 'Station oder Pfad unbekannt.'], 400);
+}
+
 $db = getDB();
 
 // Prüfen ob der User existiert
@@ -43,15 +61,29 @@ if (!$stmt->fetch()) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
-// INSERT OR UPDATE (ON DUPLICATE KEY) – idempotent
-$stmt = $db->prepare(
-    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
-     VALUES (?, ?, ?, 1, NOW())
-     ON DUPLICATE KEY UPDATE completed = 1, completed_at = NOW()'
-);
+// Prüfen ob der Stationsabschluss bereits existiert.
+$stmt = $db->prepare('SELECT id FROM user_progress WHERE user_id = ? AND path_id = ? AND station_id = ? AND completed = 1');
 $stmt->execute([$userId, $pathId, $stationId]);
+if ($stmt->fetch()) {
+    sendResponse([
+        'success' => true,
+        'message' => 'Station bereits abgeschlossen. Keine Punkte doppelt vergütet.',
+    ]);
+}
+
+// Stationsabschluss speichern und Punkte gutschreiben
+$insertStmt = $db->prepare(
+    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
+     VALUES (?, ?, ?, 1, NOW())'
+);
+$insertStmt->execute([$userId, $pathId, $stationId]);
+
+if ($stationPoints > 0) {
+    $updatePoints = $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?');
+    $updatePoints->execute([$stationPoints, $userId]);
+}
 
 sendResponse([
     'success' => true,
-    'message' => 'Fortschritt gespeichert.',
+    'message' => 'Fortschritt gespeichert und Punkte gutgeschrieben.',
 ]);

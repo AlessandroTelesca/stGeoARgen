@@ -1,12 +1,10 @@
 /**
  * api.ts – Zentraler API-Client
  * 
- * API-URL kann ueber VITE_API_BASE_URL konfiguriert werden.
+ * WICHTIG: Trage hier die URL deines Servers ein!
+ * Beispiel: 'https://mein-server.de/stgeoargen/api'
  */
-const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const defaultApiBaseUrl = isLocalHost && import.meta.env.DEV ? '/api' : 'https://stgeoargen.iiius.de/api';
-
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl).replace(/\/+$/, '');
+export const API_BASE_URL = 'https://stgeoargen.iiius.de/api';
 
 export interface ApiResponse<T = unknown> {
     success: boolean;
@@ -24,32 +22,18 @@ async function apiFetch<T>(
 ): Promise<T> {
     const url = `${API_BASE_URL}/${endpoint}`;
 
-    let response: Response;
-    try {
-        response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
-    } catch {
-        throw new Error(`API nicht erreichbar (${url}).`);
-    }
+    const response = await fetch(url, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        ...options,
+    });
 
-    const contentType = response.headers.get('content-type') || '';
-
-    let data: ApiResponse;
-    try {
-        data = (await response.json()) as ApiResponse;
-    } catch {
-        throw new Error(
-            `Ungueltige API-Antwort (${url}) - HTTP ${response.status}, Content-Type: ${contentType || 'unbekannt'}.`
-        );
-    }
+    const data = await response.json();
 
     if (!data.success) {
-        throw new Error(data.message || `API-Fehler bei ${url}`);
+        throw new Error(data.message || 'Ein unbekannter Fehler ist aufgetreten.');
     }
 
     return data as T;
@@ -62,6 +46,7 @@ export interface UserData {
     username: string;
     email: string;
     created_at: string;
+    total_points?: number;
 }
 
 export interface AuthResponse {
@@ -168,19 +153,13 @@ export interface PathBonusResponse {
     bonus?: number;
 }
 
-export interface TreasureRewardSaveResponse {
+export interface UserPointsResponse {
     success: boolean;
-    message: string;
-    already_claimed: boolean;
-    points_awarded: number;
-    points_total: number;
+    total_points: number;
 }
 
-export interface TreasureRewardStatusResponse {
-    success: boolean;
-    claimed: boolean;
-    points: number;
-    reward_key: string;
+export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
+    return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
 }
 
 /**
@@ -196,6 +175,21 @@ export async function apiSavePathBonus(
         method: 'POST',
         body: JSON.stringify({ user_id: userId, path_id: pathId, bonus }),
     });
+}
+
+export interface TreasureRewardSaveResponse {
+    success: boolean;
+    message: string;
+    already_claimed: boolean;
+    points_awarded: number;
+    points_total: number;
+}
+
+export interface TreasureRewardStatusResponse {
+    success: boolean;
+    claimed: boolean;
+    points: number;
+    reward_key: string;
 }
 
 export async function apiSaveTreasureReward(
