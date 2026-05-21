@@ -59,6 +59,13 @@ class PhonomuseumARSession extends GyroARVisualizer {
       this.camera.position.set(0, 0, 0);
       this.camera.lookAt(0, 0, -1);
     }
+
+    if (this.scene) {
+			const debugHelpers = this.scene.children.filter(
+				(child) => child.type === 'GridHelper' || child.type === 'AxesHelper'
+			);
+			debugHelpers.forEach((helper) => this.scene?.remove(helper));
+		}
   }
 }
 

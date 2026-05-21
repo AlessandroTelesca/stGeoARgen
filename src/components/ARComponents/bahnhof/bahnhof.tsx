@@ -165,8 +165,8 @@ class BahnhofARSession extends GyroARVisualizer {
 			new THREE.Vector3(0, 1, 0),
 			Math.PI / 2
 		);
-		this.camera.position.copy(rotatedPosition.add(trainposition));
-		this.camera.lookAt(trainposition);
+		this.camera.position.copy(rotatedPosition.add(trainposition ?? new THREE.Vector3(0, 0, 0)));
+		this.camera.lookAt(trainposition ?? new THREE.Vector3(0, 0, 0));
 	}
 
 	setInsideView(): void {
