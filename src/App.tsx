@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth';
 import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
 import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
 import { Header } from './components/Header';
+import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
 import { PathView } from './components/PathView';
@@ -82,7 +83,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -197,6 +198,30 @@ export default function App() {
     setIsIOS(detectedIOS);
     setIsAndroid(detectedAndroid);
   }, []);
+
+  // Sync path -> currentView so direct URL visits work (e.g. /partner)
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/klosterweiher') setCurrentView('ar-klosterweiher');
+    else if (path === '/phonomuseum') setCurrentView('ar-phonomuseum');
+    else if (path === '/glockenspiel') setCurrentView('ar-glockenspiel');
+    else if (path === '/bahnhof') setCurrentView('ar-bahnhof');
+    else if (path === '/schwarzes-tor' || path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
+    else if (path === '/settings') setCurrentView('settings');
+    else if (path === '/profile') setCurrentView('profile');
+    else if (path === '/points') setCurrentView('points');
+    else if (path === '/stations') setCurrentView('stations');
+    else if (path === '/progress') setCurrentView('progress');
+    else if (path === '/rewards') setCurrentView('rewards');
+    else if (path === '/paths') setCurrentView('paths');
+    else if (path === '/login') setCurrentView('login');
+    else if (path === '/register') setCurrentView('register');
+    else if (path === '/forgot-password') setCurrentView('forgot-password');
+    else if (path === '/impressum') setCurrentView('impressum');
+    else if (path === '/datenschutz') setCurrentView('datenschutz');
+    else if (path === '/partner') setCurrentView('partner');
+    else if (path === '/' || path === '/home') setCurrentView('home');
+  }, [location.pathname]);
 
   const refreshUserProgress = useCallback(async () => {
     if (!user) {
@@ -832,6 +857,9 @@ export default function App() {
       setCurrentView('points');
     } else if (view === 'stations') {
       setCurrentView('stations');
+    } else if (view === 'partner') {
+      setCurrentView('partner');
+      navigate('/partner');
     } else if (view === 'progress') {
       setCurrentView('progress');
     } else if (view === 'rewards') {
@@ -1134,6 +1162,10 @@ export default function App() {
           onBack={handleBackToDashboard}
           onPointsChange={refreshUserProgress}
         />
+      )}
+
+      {currentView === 'partner' && (
+        <PartnerVoucherValidation />
       )}
 
       {currentView === 'impressum' && (
