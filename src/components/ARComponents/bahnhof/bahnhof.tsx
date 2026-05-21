@@ -124,6 +124,9 @@ class BahnhofARSession extends GyroARVisualizer {
 
 		// Keep the locomotive's authored transform from the GLB (no manual position/rotation/scale).
 		this.trainModel = await this.loadGLTFModel(BAHNHOF_LOCOMOTIVE_MODEL_URL);
+		this.trainModel.position.x = -4;
+		this.trainModel.position.y = -5;
+		this.trainModel.rotation.y += Math.PI / 2;
 
 		// Remove debug helpers so the model appears in an empty black space.
 		if (this.scene) {
@@ -156,9 +159,14 @@ class BahnhofARSession extends GyroARVisualizer {
 	setCameraPositionAndLookAt(x: number, y: number, z: number): void {
 		if (!this.camera) return;
 
-		this.camera.position.set(x, y, z);
-		// Look at the train model (assumed to be at origin)
-		this.camera.lookAt(0, 0, 0);
+		const trainposition = this.trainModel?.position;
+
+		const rotatedPosition = new THREE.Vector3(x, y, z).applyAxisAngle(
+			new THREE.Vector3(0, 1, 0),
+			Math.PI / 2
+		);
+		this.camera.position.copy(rotatedPosition.add(trainposition));
+		this.camera.lookAt(trainposition);
 	}
 
 	setInsideView(): void {
@@ -223,11 +231,15 @@ class BahnhofARSession extends GyroARVisualizer {
 		const geometry = new THREE.PlaneGeometry(24, 12);
 
 		const leftPlane = new THREE.Mesh(geometry, leftMaterial);
-		leftPlane.position.set(0, 0, 5);
+		leftPlane.position
+			.set(0, 0, 5)
+			.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
 		leftPlane.renderOrder = -10;
 
 		const rightPlane = new THREE.Mesh(geometry, rightMaterial);
-		rightPlane.position.set(0, 0, -5);
+		rightPlane.position
+			.set(0, 0, -5)
+			.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
 		rightPlane.renderOrder = -10;
 
 		const onBeforeRender = () => {
@@ -286,6 +298,7 @@ class BahnhofARSession extends GyroARVisualizer {
 		this.infoIconTexture ??= buildInfoIconTexture();
 		const markerCreatedAt = performance.now();
 
+		const anchor = this.trainModel?.position ?? new THREE.Vector3(0, 0, 0);
 		for (const def of INFO_MARKER_DEFS) {
 			const material = new THREE.SpriteMaterial({
 				map: this.infoIconTexture,
@@ -295,7 +308,10 @@ class BahnhofARSession extends GyroARVisualizer {
 				sizeAttenuation: true,
 			});
 			const sprite = new THREE.Sprite(material);
-			sprite.position.set(...def.position);
+			sprite.position
+				.set(def.position[0], def.position[1], def.position[2])
+				.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
+				.add(anchor);
 			sprite.scale.set(1, 1, 1);
 			sprite.renderOrder = 100;
 			sprite.visible = false;
