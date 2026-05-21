@@ -31,7 +31,8 @@ interface VoucherRedeemPageProps {
 }
 
 export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded = false }: VoucherRedeemPageProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = language === 'de' ? 'de-DE' : 'en-US';
   const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
   const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
   const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
@@ -166,12 +167,12 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                         )}
                         {voucher.purchased_at && (
                           <p className="text-sm text-muted-foreground">
-                            {t('vouchersPurchasedAt').replace('{date}', new Date(voucher.purchased_at).toLocaleString('de-DE'))}
+                            {t('vouchersPurchasedAt').replace('{date}', new Date(voucher.purchased_at).toLocaleString(locale))}
                           </p>
                         )}
                         {voucher.expiry_date && (
                           <p className="text-sm text-muted-foreground">
-                            {t('vouchersValidUntil').replace('{date}', new Date(voucher.expiry_date).toLocaleDateString('de-DE'))}
+                            {t('vouchersValidUntil').replace('{date}', new Date(voucher.expiry_date).toLocaleDateString(locale))}
                           </p>
                         )}
                         {!voucher.expiry_date && (
@@ -224,7 +225,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                         )}
                         {voucher.redeemed_at && (
                           <p className="text-sm text-muted-foreground mt-1">
-                            {t('vouchersRedeemedAt').replace('{date}', new Date(voucher.redeemed_at).toLocaleString('de-DE'))}
+                            {t('vouchersRedeemedAt').replace('{date}', new Date(voucher.redeemed_at).toLocaleString(locale))}
                           </p>
                         )}
                         <p className="text-sm font-medium text-primary mt-1">

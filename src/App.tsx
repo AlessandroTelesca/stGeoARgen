@@ -198,54 +198,58 @@ export default function App() {
     setIsAndroid(detectedAndroid);
   }, []);
 
-  // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
-  useEffect(() => {
+  const refreshUserProgress = useCallback(async () => {
     if (!user) {
       setTreasurePoints(0);
       return;
     }
 
-    getUserProgress(user.id)
-      .then((progressEntries) => {
-        if (progressEntries.length > 0) {
-          // station_id === 0 = Pfad-Abschluss-Bonus
-          const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
-          const completedIds = new Set(
-            progressEntries.filter((p) => p.station_id !== 0).map((p) => p.station_id)
-          );
+    try {
+      const progressEntries = await getUserProgress(user.id);
+      if (progressEntries.length > 0) {
+        // station_id === 0 = Pfad-Abschluss-Bonus
+        const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
+        const completedIds = new Set(
+          progressEntries.filter((p) => p.station_id !== 0).map((p) => p.station_id)
+        );
 
-          // Stations-Fortschritt wiederherstellen
-          setPaths((prev) =>
-            prev.map((path) => ({
-              ...path,
-              stations: path.stations.map((station) =>
-                completedIds.has(station.id)
-                  ? { ...station, status: 'completed' as const }
-                  : station
-              ),
-            }))
-          );
+        // Stations-Fortschritt wiederherstellen
+        setPaths((prev) =>
+          prev.map((path) => ({
+            ...path,
+            stations: path.stations.map((station) =>
+              completedIds.has(station.id)
+                ? { ...station, status: 'completed' as const }
+                : station
+            ),
+          }))
+        );
 
-          // Pfad-Bonus-Status wiederherstellen
-          if (bonusEntries.length > 0) {
-            const restoredBonuses: Record<string, boolean> = {};
-            bonusEntries.forEach((entry) => {
-              restoredBonuses[entry.path_id] = true;
-            });
-            setClaimedPathBonuses(restoredBonuses);
-          }
+        // Pfad-Bonus-Status wiederherstellen
+        if (bonusEntries.length > 0) {
+          const restoredBonuses: Record<string, boolean> = {};
+          bonusEntries.forEach((entry) => {
+            restoredBonuses[entry.path_id] = true;
+          });
+          setClaimedPathBonuses(restoredBonuses);
         }
-      })
-      .catch(() => { /* Progress konnte nicht geladen werden */ });
+      }
+    } catch {
+      /* Progress konnte nicht geladen werden */
+    }
 
-    apiGetTreasureReward(user.id)
-      .then((rewardStatus) => {
-        setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
-      })
-      .catch(() => {
-        setTreasurePoints(0);
-      });
-  }, [user?.id]); // nur wenn sich die User-ID ändert
+    try {
+      const rewardStatus = await apiGetTreasureReward(user.id);
+      setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
+    } catch {
+      setTreasurePoints(0);
+    }
+  }, [user]);
+
+  // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
+  useEffect(() => {
+    void refreshUserProgress();
+  }, [refreshUserProgress]);
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
@@ -1128,6 +1132,7 @@ export default function App() {
           totalPoints={totalPoints}
           userId={user?.id}
           onBack={handleBackToDashboard}
+          onPointsChange={refreshUserProgress}
         />
       )}
 

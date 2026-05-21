@@ -26,20 +26,6 @@ const localities: Locality[] = [
     descriptionKey: 'rewardLocality1Description',
     addressKey: 'rewardLocality1Address',
   },
-  {
-    id: 'locality2',
-    nameKey: 'rewardLocality2Name',
-    typeKey: 'rewardLocality2Type',
-    descriptionKey: 'rewardLocality2Description',
-    addressKey: 'rewardLocality2Address',
-  },
-  {
-    id: 'locality3',
-    nameKey: 'rewardLocality3Name',
-    typeKey: 'rewardLocality3Type',
-    descriptionKey: 'rewardLocality3Description',
-    addressKey: 'rewardLocality3Address',
-  },
 ];
 
 export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {

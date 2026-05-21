@@ -37,51 +37,6 @@ const vouchers: Voucher[] = [
     requiredPoints: 50,
     imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWZlJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
   },
-  {
-    id: 'voucher2',
-    titleKey: 'rewardVoucher2Title',
-    descriptionKey: 'rewardVoucher2Description',
-    typeKey: 'rewardVoucher2Type',
-    addressKey: 'rewardVoucher2Address',
-    requiredPoints: 100,
-    imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher3',
-    titleKey: 'rewardVoucher3Title',
-    descriptionKey: 'rewardVoucher3Description',
-    typeKey: 'rewardVoucher3Type',
-    addressKey: 'rewardVoucher3Address',
-    requiredPoints: 150,
-    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaG9wJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher4',
-    titleKey: 'rewardVoucher4Title',
-    descriptionKey: 'rewardVoucher4Description',
-    typeKey: 'rewardVoucher4Type',
-    addressKey: 'rewardVoucher4Address',
-    requiredPoints: 180,
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwaW50ZXJpb3J8ZW58MXx8fHwxNzMyMzI2NDAwfDA&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher5',
-    titleKey: 'rewardVoucher5Title',
-    descriptionKey: 'rewardVoucher5Description',
-    typeKey: 'rewardVoucher5Type',
-    addressKey: 'rewardVoucher5Address',
-    requiredPoints: 200,
-    imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBzaG9wfGVufDF8fHx8MTczMjMyNjQwMHww&ixlib=rb-4.1.0&q=80&w=400',
-  },
-  {
-    id: 'voucher6',
-    titleKey: 'rewardVoucher6Title',
-    descriptionKey: 'rewardVoucher6Description',
-    typeKey: 'rewardVoucher6Type',
-    addressKey: 'rewardVoucher6Address',
-    requiredPoints: 225,
-    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzc3xlbnwxfHx8fDE3MzIzMjY0MDB8MA&ixlib=rb-4.1.0&q=80&w=400',
-  },
 ];
 
 export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNavigateToMyVouchers }: RewardsViewProps) {
@@ -272,9 +227,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                     {createdVoucherCode ? t('voucherCreatedTitle') : t('voucherNoticeTitle')}
                   </h2>
                   <p className="mt-2 text-sm text-white/85">
-                    {createdVoucherCode
-                      ? t('voucherCreatedMessage')
-                      : dialogMessage}
+                    {createdVoucherCode ? t('voucherCreatedMessage') : dialogMessage}
                   </p>
                 </div>
               </div>
@@ -319,6 +272,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
           </motion.div>
         )}
       </AnimatePresence>
+
       {/* Sticky Back Button Header */}
       <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-3">
@@ -420,7 +374,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                             <Lock className="w-5 h-5" />
                           </div>
                         )}
-                        
+
                         {/* Overlay for locked vouchers */}
                         {!unlocked && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -477,7 +431,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                             <>
                               <Gift className="w-4 h-4 mr-2" />
                               {redeemingVoucherId === voucher.id
-                                ? t('voucherRedeemProcessing')
+                                ? t('voucherPurchaseProcessing')
                                 : `${t('redeemVoucher')} (${voucher.requiredPoints} ${t('points')})`}
                             </>
                           ) : (

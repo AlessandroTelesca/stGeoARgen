@@ -1,7 +1,6 @@
 import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User, Maximize2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface SettingsProps {
   onResetProgress: () => Promise<void> | void;
@@ -23,7 +22,7 @@ export function Settings({
   onNavigateToProfile,
 }: SettingsProps) {
   const [notifications, setNotifications] = useState(true);
-  const { language, setLanguage, t } = useLanguage();
+  const [language, setLanguage] = useState('de');
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -36,7 +35,7 @@ export function Settings({
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">{t('back')}</span>
+              <span className="font-medium">Zurück</span>
             </button>
           </div>
         </div>
@@ -47,12 +46,12 @@ export function Settings({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-6">{t('settings')}</h2>
+          <h2 className="text-2xl font-bold mb-6">Einstellungen</h2>
 
           {/* Account Settings */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('account')}
+              Account
             </h3>
             
             <div className="bg-white rounded-xl border border-border">
@@ -64,8 +63,8 @@ export function Settings({
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">{t('manageProfile')}</p>
-                  <p className="text-sm text-muted-foreground">{t('accountInfo')}</p>
+                  <p className="font-medium">Profil verwalten</p>
+                  <p className="text-sm text-muted-foreground">Account-Informationen & Sicherheit</p>
                 </div>
               </button>
             </div>
@@ -74,7 +73,7 @@ export function Settings({
           {/* General Settings */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('general')}
+              Allgemein
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -84,8 +83,8 @@ export function Settings({
                     <Bell className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">{t('notifications')}</p>
-                    <p className="text-sm text-muted-foreground">{t('notificationsDesc')}</p>
+                    <p className="font-medium">Benachrichtigungen</p>
+                    <p className="text-sm text-muted-foreground">Erhalte Updates zu neuen Pfaden</p>
                   </div>
                 </div>
                 <button
@@ -102,42 +101,25 @@ export function Settings({
                 </button>
               </div>
 
-              <div className="p-4 flex items-center justify-between gap-4">
+              <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Globe className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">{t('language')}</p>
-                    <p className="text-sm text-muted-foreground">{language === 'de' ? t('languageGerman') : t('languageEnglish')}</p>
+                    <p className="font-medium">Sprache</p>
+                    <p className="text-sm text-muted-foreground">Deutsch</p>
                   </div>
                 </div>
-                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('de')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      language === 'de'
-                        ? 'bg-white text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                    aria-pressed={language === 'de'}
-                  >
-                    {t('languageGerman')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('en')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      language === 'en'
-                        ? 'bg-white text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                    aria-pressed={language === 'en'}
-                  >
-                    {t('languageEnglish')}
-                  </button>
-                </div>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="px-4 py-2 bg-muted rounded-lg border border-border"
+                >
+                  <option value="de">Deutsch</option>
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
+                </select>
               </div>
 
               <div className="p-4 flex items-center justify-between">
@@ -146,11 +128,11 @@ export function Settings({
                     <Maximize2 className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">{isIOS ? t('fullscreenBeta') : t('fullscreen')}</p>
+                    <p className="font-medium">Vollbildmodus{isIOS ? ' (BETA)' : ''}</p>
                     <p className="text-sm text-muted-foreground">
                       {fullscreenAvailable
-                        ? t('fullscreenOn')
-                        : t('fullscreenMobileOnly')}
+                        ? 'Vollbildmodus an/aus'
+                        : 'Nur auf Mobilgeraeten verfuegbar'}
                     </p>
                   </div>
                 </div>
@@ -176,7 +158,7 @@ export function Settings({
           {/* App Info */}
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('appInfo')}
+              App Informationen
             </h3>
             
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
@@ -185,8 +167,8 @@ export function Settings({
                   <HelpCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">{t('helpSupport')}</p>
-                  <p className="text-sm text-muted-foreground">{t('faqsContact')}</p>
+                  <p className="font-medium">Hilfe & Support</p>
+                  <p className="text-sm text-muted-foreground">FAQs und Kontakt</p>
                 </div>
               </button>
 
@@ -195,8 +177,8 @@ export function Settings({
                   <Info className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">{t('aboutApp')}</p>
-                  <p className="text-sm text-muted-foreground">{t('appVersion')}</p>
+                  <p className="font-medium">Über St.GeoARgen</p>
+                  <p className="text-sm text-muted-foreground">Version 1.0.0</p>
                 </div>
               </button>
 
@@ -205,8 +187,8 @@ export function Settings({
                   <Shield className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium">{t('privacy')}</p>
-                  <p className="text-sm text-muted-foreground">{t('privacyPolicy')}</p>
+                  <p className="font-medium">Datenschutz</p>
+                  <p className="text-sm text-muted-foreground">Datenschutzerklärung</p>
                 </div>
               </button>
             </div>
@@ -215,13 +197,13 @@ export function Settings({
           {/* Danger Zone */}
           <div>
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              {t('dangerZone')}
+              Gefahrenzone
             </h3>
             
             <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
               <button
                 onClick={async () => {
-                  if (window.confirm(t('resetProgressConfirm'))) {
+                  if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
                     await onResetProgress();
                   }
                 }}
@@ -233,9 +215,9 @@ export function Settings({
                   <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>{t('resetProgress')}</p>
+                  <p className="font-medium" style={{ color: '#dc2626' }}>Fortschritt zurücksetzen</p>
                   <p className="text-sm text-muted-foreground">
-                    {t('resetProgressDesc')}
+                    Alle Punkte und abgeschlossenen Stationen löschen
                   </p>
                 </div>
               </button>
@@ -245,7 +227,7 @@ export function Settings({
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
-              {t('madeWith')}
+              Made with 💚 in St.Georgen
             </p>
           </div>
         </motion.div>
