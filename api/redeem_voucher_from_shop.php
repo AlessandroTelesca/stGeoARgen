@@ -1,6 +1,6 @@
 <?php
 /**
- * redeem_voucher_from_shop.php â€“ PersÃ¶nlichen Gutschein erzeugen
+ * redeem_voucher_from_shop.php – Persönlichen Gutschein erzeugen
  */
 
 require_once 'config.php';
@@ -21,7 +21,7 @@ $rewardVoucher = $body['reward_voucher'] ?? null;
 
 $db = getDB();
 
-// User-Punkte prÃ¼fen
+// User-Punkte prüfen
 $stmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
@@ -37,7 +37,7 @@ if (is_array($rewardVoucher)) {
     $requiredPoints = (int) ($rewardVoucher['required_points'] ?? 0);
 
     if ($title === '' || $requiredPoints <= 0) {
-        sendResponse(['success' => false, 'message' => 'UngÃ¼ltiger Gutschein aus Belohnungen.'], 400);
+        sendResponse(['success' => false, 'message' => 'Ungültiger Gutschein aus Belohnungen.'], 400);
     }
 
     $partnerLookupStmt = $db->prepare(
@@ -47,11 +47,11 @@ if (is_array($rewardVoucher)) {
     $partner = $partnerLookupStmt->fetch();
 
     if (!$partner) {
-        sendResponse(['success' => false, 'message' => 'Kein passender Partner fÃ¼r diesen Gutschein gefunden.'], 400);
+        sendResponse(['success' => false, 'message' => 'Kein passender Partner für diesen Gutschein gefunden.'], 400);
     }
 
     if ((int) $user['total_points'] < $requiredPoints) {
-        sendResponse(['success' => false, 'message' => 'Nicht genÃ¼gend Punkte.'], 400);
+        sendResponse(['success' => false, 'message' => 'Nicht genügend Punkte.'], 400);
     }
 
     $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ?');
@@ -84,24 +84,24 @@ $stmt->execute([$voucherId]);
 $voucher = $stmt->fetch();
 
 if (!$voucher) {
-    sendResponse(['success' => false, 'message' => 'Gutschein ist nicht mehr im Shop verfÃ¼gbar.'], 404);
+    sendResponse(['success' => false, 'message' => 'Gutschein ist nicht mehr im Shop verfügbar.'], 404);
 }
 
 if (!$user || $user['total_points'] < $voucher['points_value']) {
-    sendResponse(['success' => false, 'message' => 'Nicht genÃ¼gend Punkte.'], 400);
+    sendResponse(['success' => false, 'message' => 'Nicht genügend Punkte.'], 400);
 }
 
 // Punkte abziehen
 $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ?');
 $stmt->execute([$voucher['points_value'], $userId]);
 
-// Gutschein einlÃ¶sen
+// Gutschein einlösen
 $stmt = $db->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_by = ?, redeemed_at = NOW() WHERE id = ?');
 $stmt->execute(["user:$userId", $voucherId]);
 
 sendResponse([
     'success' => true,
-    'message' => 'Gutschein erfolgreich eingelÃ¶st!',
+    'message' => 'Gutschein erfolgreich eingelöst!',
     'code'    => $voucher['code'],
 ]);
 ?>
