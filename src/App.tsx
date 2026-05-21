@@ -1126,6 +1126,7 @@ export default function App() {
       {currentView === 'rewards' && (
         <RewardsView
           totalPoints={totalPoints}
+          userId={user?.id}
           onBack={handleBackToDashboard}
         />
       )}
