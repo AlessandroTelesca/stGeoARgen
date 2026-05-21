@@ -60,6 +60,11 @@ $stmt = $db->prepare(
 );
 $stmt->execute([$userId, $pathId]);
 
+if ($bonus > 0) {
+    $updatePoints = $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?');
+    $updatePoints->execute([$bonus, $userId]);
+}
+
 sendResponse([
     'success'         => true,
     'message'         => "Bonus von {$bonus} Punkten für Pfad '{$pathId}' vergeben.",

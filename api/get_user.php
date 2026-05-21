@@ -23,7 +23,7 @@ if (!$userId || $userId <= 0) {
 
 $db = getDB();
 
-$stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE id = ?');
+$stmt = $db->prepare('SELECT id, username, email, created_at, total_points FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
 

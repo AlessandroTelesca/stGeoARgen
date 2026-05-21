@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
-import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
+import { apiSavePathBonus, apiGetUserPoints } from './services/api';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
@@ -18,27 +18,19 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
+import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
-import { Impressum } from './components/Impressum';
-import { Datenschutz } from './components/Datenschutz';
 import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
 import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
 import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
-import { BahnhofView } from './components/ARComponents/bahnhof/bahnhof.tsx';
-import { SchwarzesTorView } from './components/ARComponents/schwarzesTor/schwarzesTor.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
 import { ARLoginGuard } from './components/ARLoginGuard';
 import { useIsMobile } from './components/ui/use-mobile';
 import { useSiteFullscreen } from './hooks/useSiteFullscreen';
-import { useLanguage } from './contexts/LanguageContext';
-import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
-import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
-import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
-import { getBahnhofTexts } from './i18n/stations/bahnhof';
 
 
 interface Station {
@@ -70,11 +62,6 @@ interface Path {
 }
 
 export default function App() {
-  const { t, language } = useLanguage();
-  const klosterweiherTexts = getKlosterweiherTexts(language);
-  const glockenspielTexts = getGlockenspielTexts(language);
-  const phonomuseumTexts = getPhonomuseumTexts(language);
-  const bahnhofTexts = getBahnhofTexts(language);
   const navigate = useNavigate();
   const location = useLocation();
   const appRootRef = useRef<HTMLDivElement>(null);
@@ -82,7 +69,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'voucher-redeem' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -92,10 +79,10 @@ export default function App() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
-  const [allowGuestStationStart, setAllowGuestStationStart] = useState(false);
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
-  const [treasurePoints, setTreasurePoints] = useState(0);
+  // Gesamtpunkte aus DB (Pfadabschluss + Stationen + eingelöste vouchers + shop-Einlösungen)
+  const [dbTotalPoints, setDbTotalPoints] = useState<number | null>(null);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -110,8 +97,8 @@ export default function App() {
     // lesen wir die Session direkt aus dem Objekt das login() geliefert hat
     setCurrentView('home');
     navigate('/');
-    toast.success(t('loginSuccessTitle'), {
-      description: t('welcomeBack'),
+    toast.success('Erfolgreich angemeldet!', {
+      description: `Willkommen zurück!`,
       duration: 3000,
     });
   };
@@ -121,8 +108,8 @@ export default function App() {
     await register(uname, email, password); // setzt user in useAuth
     setCurrentView('home');
     navigate('/');
-    toast.success(t('accountCreatedTitle'), {
-      description: t('welcomeUser').replace('{username}', uname),
+    toast.success('Konto erstellt!', {
+      description: `Willkommen, ${uname}!`,
       duration: 3000,
     });
   };
@@ -143,30 +130,26 @@ export default function App() {
       }))
     );
     setRewardClaimed(false);
-    setTreasurePoints(0);
-    toast.success(t('logoutSuccessTitle'), {
-      description: t('seeYouSoon'),
+    toast.success('Erfolgreich abgemeldet!', {
+      description: 'Bis bald!',
       duration: 3000,
     });
   };
 
   // Navigate to login
   const handleNavigateToLogin = () => {
-    setAllowGuestStationStart(false);
     setCurrentView('login');
     navigate('/login');
   };
 
   // Navigate to register
   const handleNavigateToRegister = () => {
-    setAllowGuestStationStart(false);
     setCurrentView('register');
     navigate('/register');
   };
 
   // Navigate to forgot password
   const handleNavigateToForgotPassword = () => {
-    setAllowGuestStationStart(false);
     setCurrentView('forgot-password');
     navigate('/forgot-password');
   };
@@ -200,11 +183,7 @@ export default function App() {
 
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
   useEffect(() => {
-    if (!user) {
-      setTreasurePoints(0);
-      return;
-    }
-
+    if (!user) return;
     getUserProgress(user.id)
       .then((progressEntries) => {
         if (progressEntries.length > 0) {
@@ -238,14 +217,32 @@ export default function App() {
       })
       .catch(() => { /* Progress konnte nicht geladen werden */ });
 
-    apiGetTreasureReward(user.id)
-      .then((rewardStatus) => {
-        setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
+    // DB-Punkte aus allen Quellen laden
+    apiGetUserPoints(user.id)
+      .then((data) => {
+        if (data.success) {
+          setDbTotalPoints(data.total_points);
+        }
       })
       .catch(() => {
-        setTreasurePoints(0);
+        /* Punkte konnten nicht geladen werden */
       });
   }, [user?.id]); // nur wenn sich die User-ID ändert
+
+  const refreshUserPoints = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const data = await apiGetUserPoints(user.id);
+      if (data.success) {
+        setDbTotalPoints(data.total_points);
+      }
+    } catch {
+      // beim Aktualisieren der Punktezahlen ggf. Fehler ignorieren
+    }
+  };
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('st-geoargen-onboarding-complete', 'true');
@@ -265,14 +262,10 @@ export default function App() {
 
     if (path === '/klosterweiher') {
       setCurrentView('ar-klosterweiher');
-    } else if (path === '/bahnhof') {
-      setCurrentView('ar-bahnhof');
     } else if (path === '/phonomuseum') {
       setCurrentView('ar-phonomuseum');
     } else if (path === '/glockenspiel') {
       setCurrentView('ar-glockenspiel');
-    } else if (path === '/schwarzes-tor') {
-      setCurrentView('ar-schwarzes-tor');
     } else if (path === '/settings') {
       setCurrentView('settings');
     } else if (path === '/profile') {
@@ -285,6 +278,9 @@ export default function App() {
       setCurrentView('progress');
     } else if (path === '/rewards') {
       setCurrentView('rewards');
+    } else if (path === '/partner') {
+      navigate('/partner');
+      setCurrentView('partner');
     } else if (path === '/paths') {
       setCurrentView('paths');
     } else if (path === '/login') {
@@ -293,25 +289,8 @@ export default function App() {
       setCurrentView('register');
     } else if (path === '/forgot-password') {
       setCurrentView('forgot-password');
-    } else if (path === '/impressum') {
-      setCurrentView('impressum');
-    } else if (path === '/datenschutz') {
-      setCurrentView('datenschutz');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const isArPath =
-      location.pathname === '/klosterweiher' ||
-      location.pathname === '/bahnhof' ||
-      location.pathname === '/phonomuseum' ||
-      location.pathname === '/glockenspiel' ||
-      location.pathname === '/schwarzes-tor';
-
-    if (!isArPath) {
-      setAllowGuestStationStart(false);
     }
   }, [location.pathname]);
 
@@ -397,86 +376,57 @@ export default function App() {
   const [paths, setPaths] = useState<Path[]>([
     {
       id: 'tourist',
-      title: t('touristPathTitle'),
-      description: t('touristPathDescription'),
-      imageUrl: '/images/stgeorgen.jpg',
+      title: 'Touristischer Themenpfad',
+      description: 'Entdecke die Highlights von St.Georgen auf diesem spannenden touristischen Rundgang durch Geschichte, Kultur und Natur.',
+      imageUrl: 'https://images.unsplash.com/photo-1751876150574-a518cdbf84e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMHRvd24lMjBhcmNoaXRlY3R1cmV8ZW58MXx8fHwxNzYyMzU0ODk5fDA&ixlib=rb-4.1.0&q=80&w=1080',
       difficulty: 'Einfach',
       estimatedTime: '2-3 Std',
       stations: [
         {
           id: 1,
-          title: glockenspielTexts.stationName,
-          description: glockenspielTexts.description,
-          longDescription: glockenspielTexts.longDescription,
-          imageUrl: '/images/glockenspiel.jpg',
+          title: 'Glockenspiel',
+          description: 'Erlebe das historische Glockenspiel in AR',
+          longDescription: 'Das Glockenspiel ist ein faszinierendes historisches Instrument. Entdecke in der AR-Experience, wie die Mechanik funktioniert und höre die traditionellen Melodien.',
+          imageUrl: 'https://images.unsplash.com/photo-1637255854315-ef173df43eaa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnZXJtYW4lMjBibGFjayUyMGZvcmVzdCUyMHRvd258ZW58MXx8fHwxNzYyMzUzMDI0fDA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(1)?.lat || 48.1242,
           longitude: getStationCoordinates(1)?.lng || 8.3336,
           quiz: {
-            question: glockenspielTexts.quizQuestion,
-            options: glockenspielTexts.quizOptions,
-            correctAnswer: 1,
-          },
-        },
-        {
-          id: 2,
-          title: bahnhofTexts.stationName,
-          description: bahnhofTexts.description,
-          longDescription: bahnhofTexts.longDescription,
-          imageUrl: '/images/bahnhof.JPG',
-          status: 'available',
-          points: 50,
-          latitude: getStationCoordinates(2)?.lat || 48.1241,
-          longitude: getStationCoordinates(2)?.lng || 8.3341,
-          quiz: {
-            question: bahnhofTexts.quizQuestion,
-            options: bahnhofTexts.quizOptions,
+            question: 'Wie viele Glocken hat das Glockenspiel?',
+            options: ['12 Glocken', '18 Glocken', '24 Glocken', '30 Glocken'],
             correctAnswer: 1,
           },
         },
         {
           id: 3,
-          title: phonomuseumTexts.stationName,
-          description: phonomuseumTexts.description,
-          longDescription: phonomuseumTexts.longDescription,
-          imageUrl: '/images/phonomuseum.jpg',
+          title: 'Phonomuseum',
+          description: 'Entdecke historische Musikinstrumente in AR',
+          longDescription: 'Das Phonomuseum zeigt die faszinierende Geschichte der Tonaufnahme und -wiedergabe. Erlebe in AR, wie historische Phonographen und Grammophone funktionieren.',
+          imageUrl: 'https://images.unsplash.com/photo-1594313146532-47f990c143f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNldW0lMjBidWlsZGluZ3xlbnwxfHx8fDE3NjIzNTMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
           longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
-            question: phonomuseumTexts.quizQuestion,
-            options: phonomuseumTexts.quizOptions,
+            question: 'Wann wurde der Phonograph erfunden?',
+            options: ['1857', '1877', '1897', '1917'],
             correctAnswer: 1,
           },
         },
         {
-          id: 4,
-          title: language === 'de' ? 'Schwarzes Tor' : 'Black Gate',
-          description: language === 'de' ? 'Historisches Stadttor mit besonderem Charakter' : 'Historic city gate with a distinctive character',
-          longDescription: language === 'de'
-            ? 'Das Schwarze Tor zählt zu den markanten historischen Orten in St. Georgen. Als ehemaliger Zugang zur Stadt erinnert es an die früheren Befestigungen und den Wandel des Stadtbildes über die Jahrhunderte. Nimm dir vor Ort Zeit für Details in der Bausubstanz und den Verlauf der umliegenden Gassen.'
-            : 'The Black Gate is one of St. Georgen\'s notable historic landmarks. As a former city entrance, it reflects earlier fortifications and the town\'s development over time. On site, take a moment to observe details in the masonry and the layout of the surrounding streets.',
-          imageUrl: '/images/schwarzesTor.JPG',
-          status: 'available',
-          points: 50,
-          latitude: getStationCoordinates(4)?.lat || 48.126356459351896,
-          longitude: getStationCoordinates(4)?.lng || 8.334404178366523,
-        },
-        {
           id: 5,
-          title: klosterweiherTexts.stationName,
-          description: klosterweiherTexts.description,
-          longDescription: klosterweiherTexts.longDescription,
-          imageUrl: '/images/klosterweiher.jpg',
+          title: 'Klosterweiher',
+          description: 'Erkunde die Natur am historischen Klosterweiher',
+          longDescription: 'Der Klosterweiher ist ein idyllischer Naturort mit reicher Geschichte. Entdecke in der AR-Experience die Tier- und Pflanzenwelt und erfahre mehr über die historische Bedeutung des Weihers.',
+          imageUrl: 'https://images.unsplash.com/photo-1587991993507-ff688501c2b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBwYXJrJTIwcGF0aHxlbnwxfHx8fDE3NjIyNzYzODd8MA&ixlib=rb-4.1.0&q=80&w=1080',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
           longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
-            question: klosterweiherTexts.quizQuestion,
-            options: klosterweiherTexts.quizOptions,
+            question: 'Welche Tierart ist am Klosterweiher besonders häufig zu sehen?',
+            options: ['Frösche', 'Enten', 'Reiher', 'Biber'],
             correctAnswer: 1,
           },
         },
@@ -499,122 +449,23 @@ export default function App() {
     };
   };
 
-  const totalPoints = paths.reduce((sum, path) => {
+  const localPathPoints = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.earnedPoints;
-  }, 0)
-    + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500
-    + treasurePoints;
+  }, 0);
+
+  const localPathBonuses = Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500;
+
+  const totalPoints = user
+    ? dbTotalPoints !== null
+      ? dbTotalPoints
+      : localPathPoints + localPathBonuses
+    : localPathPoints + localPathBonuses;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
     return sum + progress.completedStations;
   }, 0);
-
-  useEffect(() => {
-    setPaths((prev) =>
-      prev.map((path) => ({
-        ...path,
-        stations: path.stations.map((station) => {
-          if (station.id !== 5) return station;
-          return {
-            ...station,
-            title: klosterweiherTexts.stationName,
-            description: klosterweiherTexts.description,
-            longDescription: klosterweiherTexts.longDescription,
-            quiz: station.quiz
-              ? {
-                  ...station.quiz,
-                  question: klosterweiherTexts.quizQuestion,
-                  options: klosterweiherTexts.quizOptions,
-                }
-              : station.quiz,
-          };
-        }),
-      }))
-    );
-  }, [klosterweiherTexts]);
-
-  useEffect(() => {
-    setPaths((prev) =>
-      prev.map((path) => ({
-        ...path,
-        stations: path.stations.map((station) => {
-          if (station.id === 1) {
-            return {
-              ...station,
-              title: glockenspielTexts.stationName,
-              description: glockenspielTexts.description,
-              longDescription: glockenspielTexts.longDescription,
-              quiz: station.quiz
-                ? {
-                    ...station.quiz,
-                    question: glockenspielTexts.quizQuestion,
-                    options: glockenspielTexts.quizOptions,
-                  }
-                : station.quiz,
-            };
-          }
-          if (station.id === 2) {
-            return {
-              ...station,
-              title: bahnhofTexts.stationName,
-              description: bahnhofTexts.description,
-              longDescription: bahnhofTexts.longDescription,
-              quiz: station.quiz
-                ? {
-                    ...station.quiz,
-                    question: bahnhofTexts.quizQuestion,
-                    options: bahnhofTexts.quizOptions,
-                  }
-                : station.quiz,
-            };
-          }
-          if (station.id === 3) {
-            return {
-              ...station,
-              title: phonomuseumTexts.stationName,
-              description: phonomuseumTexts.description,
-              longDescription: phonomuseumTexts.longDescription,
-              quiz: station.quiz
-                ? {
-                    ...station.quiz,
-                    question: phonomuseumTexts.quizQuestion,
-                    options: phonomuseumTexts.quizOptions,
-                  }
-                : station.quiz,
-            };
-          }
-          if (station.id === 4) {
-            return {
-              ...station,
-              title: language === 'de' ? 'Schwarzes Tor' : 'Black Gate',
-              description: language === 'de' ? 'Historisches Stadttor mit besonderem Charakter' : 'Historic city gate with a distinctive character',
-              longDescription: language === 'de'
-                ? 'Das Schwarze Tor zählt zu den markanten historischen Orten in St. Georgen. Als ehemaliger Zugang zur Stadt erinnert es an die früheren Befestigungen und den Wandel des Stadtbildes über die Jahrhunderte. Nimm dir vor Ort Zeit für Details in der Bausubstanz und den Verlauf der umliegenden Gassen.'
-                : 'The Black Gate is one of St. Georgen\'s notable historic landmarks. As a former city entrance, it reflects earlier fortifications and the town\'s development over time. On site, take a moment to observe details in the masonry and the layout of the surrounding streets.',
-            };
-          }
-          return station;
-        }),
-      }))
-    );
-  }, [glockenspielTexts, bahnhofTexts, phonomuseumTexts, language]);
-
-  useEffect(() => {
-    setPaths((prev) =>
-      prev.map((path) => {
-        if (path.id === 'tourist') {
-          return {
-            ...path,
-            title: t('touristPathTitle'),
-            description: t('touristPathDescription'),
-          };
-        }
-        return path;
-      })
-    );
-  }, [language, t]);
 
   const handlePathSelect = (pathId: string) => {
     setSelectedPathId(pathId);
@@ -622,7 +473,6 @@ export default function App() {
   };
 
   const handleStationClick = (stationId: number) => {
-    setAllowGuestStationStart(false);
     setSelectedStationId(stationId);
     setCurrentView('station');
   };
@@ -636,30 +486,11 @@ export default function App() {
   const handleStationComplete = async (stationId: number) => {
     // Bereits abgeschlossene Stationen bleiben wiederholbar, geben aber keine Punkte mehr.
     if (isStationCompleted(stationId)) {
-      toast.info(t('stationAlreadyCompleted'), {
-        description: t('stationRepeatNoPoints'),
+      toast.info('Station bereits abgeschlossen', {
+        description: 'Beim Wiederholen dieser Station erhältst du keine weiteren Punkte.',
         duration: 3500,
       });
       return;
-    }
-
-    // Guest mode: mark as completed but don't award points or bonuses
-    if (allowGuestStationStart) {
-      setPaths((prev) => {
-        const updated = prev.map((path) => {
-          const updatedPath = {
-            ...path,
-            stations: path.stations.map((station) =>
-              station.id === stationId
-                ? { ...station, status: 'completed' as const }
-                : station
-            ),
-          };
-          return updatedPath;
-        });
-        return updated;
-      });
-      return; // Exit without saving to DB or awarding points
     }
 
     // Lokal aktualisieren
@@ -686,6 +517,7 @@ export default function App() {
       if (currentPath) {
         try {
           await saveStationProgress(user.id, currentPath.id, stationId);
+          await refreshUserPoints();
 
           // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
           // Da setState async ist, berechnen wir hier direkt
@@ -699,6 +531,7 @@ export default function App() {
               const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
               if (bonusRes.success && !bonusRes.already_claimed) {
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+                await refreshUserPoints();
                 const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
                 const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
                 setCelebrationData({
@@ -732,37 +565,30 @@ export default function App() {
           // Speichern fehlgeschlagen – Fortschritt ist lokal trotzdem sichtbar
         }
       }
-    }
-  };
-
-  const handleTreasureCollect = async (): Promise<boolean> => {
-    if (!user) {
-      toast.info(language === 'de' ? 'Bitte zuerst einloggen, um die Schatzkisten-Punkte zu erhalten.' : 'Please log in first to claim treasure points.', {
-        duration: 3500,
-      });
-      handleNavigateToLogin();
-      return false;
-    }
-
-    try {
-      const res = await apiSaveTreasureReward(user.id, 'klosterweiher_treasure_chest', 50);
-      setTreasurePoints((prev) => Math.max(prev, res.points_total));
-
-      if (res.already_claimed) {
-        toast.info(language === 'de' ? 'Diese Schatzkiste wurde bereits gutgeschrieben.' : 'This treasure chest reward has already been claimed.', {
-          duration: 3000,
-        });
-      } else {
-        toast.success(language === 'de' ? '50 Punkte gutgeschrieben!' : '50 points added!', {
-          duration: 3000,
-        });
+    } else {
+      // Kein User eingeloggt → Bonus nur lokal vergeben
+      const currentPath = paths.find((p) =>
+        p.stations.some((s) => s.id === stationId)
+      );
+      if (currentPath && !claimedPathBonuses[currentPath.id]) {
+        const updatedStations = currentPath.stations.map((s) =>
+          s.id === stationId ? { ...s, status: 'completed' as const } : s
+        );
+        const pathNowComplete = updatedStations.every((s) => s.status === 'completed');
+        if (pathNowComplete) {
+          setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+          const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
+          const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
+          setCelebrationData({
+            isOpen: true,
+            pathTitle: currentPath.title,
+            pathDescription: currentPath.description || '',
+            stations: completedStationsList,
+            earnedStationPoints: earnedStationPts,
+            bonusPoints: 500,
+          });
+        }
       }
-      return true;
-    } catch {
-      toast.error(language === 'de' ? 'Punkte konnten nicht gespeichert werden. Bitte erneut versuchen.' : 'Could not save points. Please try again.', {
-        duration: 3500,
-      });
-      return false;
     }
   };
 
@@ -771,8 +597,8 @@ export default function App() {
       try {
         await resetUserProgress(user.id);
       } catch (error) {
-        toast.error(t('progressResetFailed'), {
-          description: error instanceof Error ? error.message : t('pleaseTryAgain'),
+        toast.error('Fortschritt konnte nicht zurueckgesetzt werden.', {
+          description: error instanceof Error ? error.message : 'Bitte versuche es erneut.',
           duration: 4000,
         });
         return;
@@ -795,8 +621,8 @@ export default function App() {
     localStorage.removeItem('st-geoargen-onboarding-complete');
     setShowOnboarding(true);
 
-    toast.success(t('progressResetDone'), {
-      description: user ? t('progressResetDoneDb') : t('progressResetDoneLocal'),
+    toast.success('Fortschritt zurueckgesetzt.', {
+      description: user ? 'Dein Fortschritt wurde auch in der Datenbank geloescht.' : 'Lokaler Fortschritt wurde geloescht.',
       duration: 3000,
     });
   };
@@ -804,6 +630,7 @@ export default function App() {
   const handleNavigate = (view: string) => {
     if (view === 'home') {
       navigate('/');
+      setCurrentView('home');
       setSelectedPathId(null);
       setSelectedStationId(null);
     } else if (view === 'paths') {
@@ -825,19 +652,20 @@ export default function App() {
       navigate('/profile');
       setCurrentView('profile');
     } else if (view === 'points') {
+      navigate('/points');
       setCurrentView('points');
     } else if (view === 'stations') {
+      navigate('/stations');
       setCurrentView('stations');
     } else if (view === 'progress') {
+      navigate('/progress');
       setCurrentView('progress');
     } else if (view === 'rewards') {
+      navigate('/rewards');
       setCurrentView('rewards');
-    } else if (view === 'impressum') {
-      navigate('/impressum');
-      setCurrentView('impressum');
-    } else if (view === 'datenschutz') {
-      navigate('/datenschutz');
-      setCurrentView('datenschutz');
+    } else if (view === 'partner') {
+      navigate('/partner');
+      setCurrentView('partner');
     }
   };
 
@@ -850,18 +678,12 @@ export default function App() {
     if (arView === 'glockenspiel') {
       setCurrentView('ar-glockenspiel');
       navigate('/glockenspiel');
-    } else if (arView === 'bahnhof') {
-      setCurrentView('ar-bahnhof');
-      navigate('/bahnhof');
     } else if (arView === 'phonomuseum') {
       setCurrentView('ar-phonomuseum');
       navigate('/phonomuseum');
     } else if (arView === 'klosterweiher') {
       setCurrentView('ar-klosterweiher');
       navigate('/klosterweiher');
-    } else if (arView === 'schwarzes-tor' || arView === 'schwarzestor') {
-      setCurrentView('ar-schwarzes-tor');
-      navigate('/schwarzes-tor');
     } else {
       // For any other QR code, try to open it as URL or show alert
       console.log('Generic QR code content:', arView);
@@ -870,7 +692,7 @@ export default function App() {
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
         window.open(arView, '_blank');
       } else {
-        alert(t('qrCodeScannedContent').replace('{content}', arView));
+        alert(`QR Code gescannt: ${arView}`);
       }
     }
   };
@@ -888,13 +710,11 @@ export default function App() {
   };
 
   const handleBackToPath = () => {
-    setAllowGuestStationStart(false);
     setCurrentView('path');
     setSelectedStationId(null);
   };
 
   const handleBackToDashboard = () => {
-    setAllowGuestStationStart(false);
     setCurrentView('home');
     setSelectedPathId(null);
   };
@@ -913,12 +733,10 @@ export default function App() {
   };
 
   const glockenspielStation = getStationById(1);
-  const bahnhofStation = getStationById(2);
   const phonomuseumStation = getStationById(3);
   const klosterweiherStation = getStationById(5);
 
   const isGlockenspielCompleted = glockenspielStation?.status === 'completed';
-  const isBahnhofCompleted = bahnhofStation?.status === 'completed';
   const isPhonomuseumCompleted = phonomuseumStation?.status === 'completed';
   const isKlosterweiherCompleted = klosterweiherStation?.status === 'completed';
 
@@ -940,55 +758,25 @@ export default function App() {
 
   const getPageTitle = () => {
     if (currentView === 'home') return 'St.GeoARgen';
-    if (currentView === 'paths') return t('paths');
-    if (currentView === 'settings') return t('settings');
-    if (currentView === 'profile') return t('profile');
-    if (currentView === 'points') return t('points');
-    if (currentView === 'stations') return t('stations');
-    if (currentView === 'progress') return t('progress');
-    if (currentView === 'rewards') return t('rewards');
-    if (currentView === 'login') return t('login');
-    if (currentView === 'register') return t('register');
-    if (currentView === 'forgot-password') return t('forgotPassword');
+    if (currentView === 'paths') return 'Themenpfade';
+    if (currentView === 'settings') return 'Einstellungen';
+    if (currentView === 'profile') return 'Profil';
+    if (currentView === 'points') return 'Punkte';
+    if (currentView === 'stations') return 'Stationen';
+    if (currentView === 'progress') return 'Fortschritt';
+    if (currentView === 'rewards') return 'Belohnungen';
+    if (currentView === 'partner') return 'Partner Gutschein Validierung';
+    if (currentView === 'login') return 'Anmeldung';
+    if (currentView === 'register') return 'Registrierung';
+    if (currentView === 'forgot-password') return 'Passwort vergessen';
     if (currentView === 'path' && selectedPath) return selectedPath.title;
     if (currentView === 'station' && selectedStation) return selectedStation.title;
     return 'St.GeoARgen';
   };
 
-  const renderARViewWithGate = (content: ReactNode) => {
-    if (allowGuestStationStart) {
-      return content;
-    }
-
-    if (isInitializing) {
-      return (
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <div className="bg-white rounded-2xl shadow-lg px-6 py-5 text-center max-w-sm w-full">
-            <p className="text-base font-semibold text-gray-900">
-              {language === 'de' ? 'Login wird geprüft...' : 'Checking login...'}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (!username) {
-      return (
-        <ARLoginGuard
-          onLogin={handleNavigateToLogin}
-          onRegister={handleNavigateToRegister}
-          onContinueAsGuest={() => setAllowGuestStationStart(true)}
-          onBack={() => navigate('/')}
-        />
-      );
-    }
-
-    return content;
-  };
-
   return (
     <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
-      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
+      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && currentView !== 'partner' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}
@@ -1010,7 +798,6 @@ export default function App() {
           onOpenQRScanner={handleOpenQRScanner}
           onNavigate={handleNavigate}
           username={username}
-          onNavigateToLogin={handleNavigateToLogin}
         />
       )}
 
@@ -1103,9 +890,7 @@ export default function App() {
       {currentView === 'stations' && (
         <StationsView
           paths={paths}
-          isLoggedIn={!!username}
           onStationClick={(pathId, stationId) => {
-            setAllowGuestStationStart(false);
             setSelectedPathId(pathId);
             setSelectedStationId(stationId);
             setCurrentView('station');
@@ -1126,16 +911,10 @@ export default function App() {
       {currentView === 'rewards' && (
         <RewardsView
           totalPoints={totalPoints}
+          userId={user?.id}
           onBack={handleBackToDashboard}
+          onPointsChange={refreshUserPoints}
         />
-      )}
-
-      {currentView === 'impressum' && (
-        <Impressum onBack={handleBackToDashboard} />
-      )}
-
-      {currentView === 'datenschutz' && (
-        <Datenschutz onBack={handleBackToDashboard} />
       )}
 
       <AnimatePresence>
@@ -1145,9 +924,6 @@ export default function App() {
             onClose={handleBackToPath}
             onComplete={handleStationComplete}
             isLoggedIn={!!username}
-            requireLoginForAR={!allowGuestStationStart}
-            allowGuestARStart={allowGuestStationStart && !username}
-            onEnableGuestStart={() => setAllowGuestStationStart(true)}
             onNavigateToLogin={handleNavigateToLogin}
             onNavigateToRegister={handleNavigateToRegister}
           />
@@ -1190,7 +966,13 @@ export default function App() {
 
       {/* AR Views */}
       {currentView === 'ar-klosterweiher' && (
-        renderARViewWithGate(
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
           <KlosterweiherView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1201,17 +983,20 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
-            currentStationPoints={klosterweiherStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isKlosterweiherCompleted}
-            onTreasureCollect={handleTreasureCollect}
-            isGuestMode={allowGuestStationStart}
           />
         )
       )}
 
       {currentView === 'ar-phonomuseum' && (
-        renderARViewWithGate(
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
           <PhonomuseumView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1222,44 +1007,20 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
-            currentStationPoints={phonomuseumStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isPhonomuseumCompleted}
-            isGuestMode={allowGuestStationStart}
-          />
-        )
-      )}
-
-      {currentView === 'ar-bahnhof' && (
-        renderARViewWithGate(
-          <BahnhofView
-            onNavigateHome={() => navigate('/')}
-            username={username}
-            onLogin={handleNavigateToLogin}
-            onLogout={handleLogout}
-            onNavigateProfile={() => navigate('/profile')}
-            onRegister={handleNavigateToRegister}
-            completedStations={totalCompletedStations}
-            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
-            totalPoints={totalPoints}
-            currentStationPoints={bahnhofStation?.points}
-            onCompleteStation={(stationId) => handleStationComplete(stationId)}
-            isCurrentStationCompleted={isBahnhofCompleted}
-            isGuestMode={allowGuestStationStart}
-          />
-        )
-      )}
-
-      {currentView === 'ar-schwarzes-tor' && (
-        renderARViewWithGate(
-          <SchwarzesTorView
-            onNavigateHome={() => navigate('/')}
           />
         )
       )}
 
       {currentView === 'ar-glockenspiel' && (
-        renderARViewWithGate(
+        !isInitializing && !username ? (
+          <ARLoginGuard
+            onLogin={handleNavigateToLogin}
+            onRegister={handleNavigateToRegister}
+            onBack={() => navigate('/')}
+          />
+        ) : (
           <GlockenspielView
             onNavigateHome={() => navigate('/')}
             username={username}
@@ -1270,10 +1031,8 @@ export default function App() {
             completedStations={totalCompletedStations}
             totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
             totalPoints={totalPoints}
-            currentStationPoints={glockenspielStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isGlockenspielCompleted}
-            isGuestMode={allowGuestStationStart}
           />
         )
       )}
@@ -1297,7 +1056,9 @@ export default function App() {
           setCurrentView('rewards');
         }}
       />
-
+      {currentView === 'partner' && (
+        <PartnerVoucherValidation />
+      )}
     </div>
   );
 }
