@@ -1,6 +1,5 @@
 import { Trophy, Award, Star, Zap, Target, Crown, Medal, Gift, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Georgi } from './Georgi';
 
 interface Achievement {
@@ -27,7 +26,6 @@ interface PointsViewProps {
 }
 
 export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: PointsViewProps) {
-  const { t } = useLanguage();
   // Calculate level based on points
   const level = Math.floor(totalPoints / 100) + 1;
   const pointsForNextLevel = level * 100;
@@ -37,48 +35,48 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
   const achievements: Achievement[] = [
     {
       id: 'first-steps',
-      title: t('achievementFirstStepsTitle'),
-      description: t('achievementFirstStepsDesc'),
+      title: 'Erste Schritte',
+      description: 'Erste Station abgeschlossen',
       points: 10,
       unlocked: totalPoints >= 10,
       icon: <Star className="w-6 h-6" />,
     },
     {
       id: 'explorer',
-      title: t('achievementExplorerTitle'),
-      description: t('achievementExplorerDesc'),
+      title: 'Entdecker',
+      description: '5 Stationen besucht',
       points: 50,
       unlocked: totalPoints >= 50,
       icon: <Target className="w-6 h-6" />,
     },
     {
       id: 'adventurer',
-      title: t('achievementAdventurerTitle'),
-      description: t('achievementAdventurerDesc'),
+      title: 'Abenteurer',
+      description: '100 Punkte erreicht',
       points: 100,
       unlocked: totalPoints >= 100,
       icon: <Medal className="w-6 h-6" />,
     },
     {
       id: 'pathfinder',
-      title: t('achievementPathfinderTitle'),
-      description: t('achievementPathfinderDesc'),
+      title: 'Pfadfinder',
+      description: 'Einen kompletten Pfad abgeschlossen',
       points: 150,
       unlocked: paths.some(p => p.earnedPoints === p.totalPoints && p.totalPoints > 0),
       icon: <Award className="w-6 h-6" />,
     },
     {
       id: 'master',
-      title: t('achievementMasterTitle'),
-      description: t('achievementMasterDesc'),
+      title: 'Meister',
+      description: '200 Punkte erreicht',
       points: 200,
       unlocked: totalPoints >= 200,
       icon: <Crown className="w-6 h-6" />,
     },
     {
       id: 'completionist',
-      title: t('achievementCompletionistTitle'),
-      description: t('achievementCompletionistDesc'),
+      title: 'Vollender',
+      description: 'Alle Pfade abgeschlossen',
       points: 300,
       unlocked: paths.every(p => p.earnedPoints === p.totalPoints && p.totalPoints > 0),
       icon: <Trophy className="w-6 h-6" />,
@@ -98,7 +96,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
+            <span className="font-medium">Zurück</span>
           </button>
         </div>
       </div>
@@ -115,10 +113,10 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
             <div className="flex-1">
               <p className="text-sm">
                 {totalPoints === 0 
-                  ? t('pointsHintStart')
+                  ? "Sammle Punkte, indem du Stationen besuchst und Quizfragen beantwortest!"
                   : totalPoints >= maxPossiblePoints
-                  ? t('pointsHintAllCollected')
-                  : t('pointsHintProgress').replace('{points}', String(totalPoints))}
+                  ? "Fantastisch! Du hast alle Punkte gesammelt!"
+                  : `Toll gemacht! Du hast schon ${totalPoints} Punkte gesammelt!`}
               </p>
             </div>
           </div>
@@ -133,7 +131,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm opacity-90 mb-1">{t('yourLevel')}</p>
+              <p className="text-sm opacity-90 mb-1">Dein Level</p>
               <h2 className="text-4xl">{level}</h2>
             </div>
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -143,8 +141,8 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="opacity-90">{totalPoints} {t('points')}</span>
-              <span className="opacity-90">{pointsForNextLevel} {t('points')}</span>
+              <span className="opacity-90">{totalPoints} Punkte</span>
+              <span className="opacity-90">{pointsForNextLevel} Punkte</span>
             </div>
             <div className="h-3 bg-white/20 rounded-full overflow-hidden">
               <motion.div
@@ -155,7 +153,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
               />
             </div>
             <p className="text-sm opacity-90 text-center">
-              {t('pointsToLevel').replace('{points}', String(100 - (totalPoints % 100))).replace('{level}', String(level + 1))}
+              {100 - (totalPoints % 100)} Punkte bis Level {level + 1}
             </p>
           </div>
         </motion.div>
@@ -174,7 +172,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
               </div>
             </div>
             <p className="text-2xl mb-1">{totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{t('collectedPoints')}</p>
+            <p className="text-sm text-muted-foreground">Gesammelte Punkte</p>
           </motion.div>
 
           <motion.div
@@ -189,7 +187,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
               </div>
             </div>
             <p className="text-2xl mb-1">{maxPossiblePoints - totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{t('stillAvailable')}</p>
+            <p className="text-sm text-muted-foreground">Noch verfügbar</p>
           </motion.div>
         </div>
 
@@ -213,12 +211,12 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
               </div>
               <div className="flex-1 text-left">
                 <h4 className="font-semibold mb-0.5">
-                  {totalPoints >= 50 ? t('redeemPoints') : t('viewRewards')}
+                  {totalPoints >= 50 ? 'Punkte einlösen' : 'Belohnungen ansehen'}
                 </h4>
                 <p className="text-sm text-muted-foreground">
                   {totalPoints >= 50 
-                    ? t('pointsVoucherReady').replace('{points}', String(totalPoints))
-                    : t('collectMorePointsFirstVoucher').replace('{points}', String(50 - totalPoints))}
+                    ? `Du hast ${totalPoints} Punkte - Gutscheine warten auf dich!`
+                    : `Sammle ${50 - totalPoints} weitere Punkte für deinen ersten Gutschein!`}
                 </p>
               </div>
               <svg className="w-6 h-6 text-primary transition-transform group-hover:translate-x-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +233,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="mb-4">{t('pointsByPath')}</h3>
+          <h3 className="mb-4">Punkte nach Pfad</h3>
           <div className="space-y-3">
             {paths.map((path, index) => (
               <motion.div
@@ -271,7 +269,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
           transition={{ delay: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3>{t('achievements')}</h3>
+            <h3>Erfolge</h3>
             <span className="text-sm text-muted-foreground">
               {unlockedCount}/{achievements.length}
             </span>

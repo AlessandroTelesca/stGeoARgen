@@ -1,19 +1,14 @@
 import React from 'react';
 import { AndroidKlosterweiherView } from './Android/AndroidKlosterweiher';
 import { IOSKlosterweiherView } from './IOS/IOSKlosterweiher';
-import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
 
-export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, onTreasureCollect, isGuestMode = false }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; currentStationPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean; onTreasureCollect?: () => Promise<boolean>; isGuestMode?: boolean }) => {
+export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, onCompleteStation, isCurrentStationCompleted = false }: { onNavigateHome?: () => void; username?: string | null; onLogin?: () => void; onLogout?: () => void; onNavigateProfile?: () => void; onRegister?: () => void; completedStations?: number; totalStations?: number; totalPoints?: number; onCompleteStation?: (stationId: number) => void; isCurrentStationCompleted?: boolean }) => {
 
 	// Detect device and open appropriate maps app
 	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 	const isAndroid = /Android/.test(navigator.userAgent);
 	const isNotMobile = !isIOS && !isAndroid;
-
-	if (isNotMobile) {
-		return <MobileOnlyNotice />;
-	}
 
 	if (isIOS) {
 		console.log("Device is iOS, rendering IOSKlosterweiher");
@@ -28,11 +23,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				completedStations={completedStations}
 				totalStations={totalStations}
 				totalPoints={totalPoints}
-				currentStationPoints={currentStationPoints}
 				onCompleteStation={onCompleteStation}
 				isCurrentStationCompleted={isCurrentStationCompleted}
-				onTreasureCollect={onTreasureCollect}
-				isGuestMode={isGuestMode}
 			/>
 		);
 	} else if (isAndroid) {
@@ -47,11 +39,8 @@ export const KlosterweiherView = ({ onNavigateHome, username, onLogin, onLogout,
 				completedStations={completedStations} 
 				totalStations={totalStations} 
 				totalPoints={totalPoints} 
-				currentStationPoints={currentStationPoints}
 				onCompleteStation={onCompleteStation}
-				isCurrentStationCompleted={isCurrentStationCompleted}
-				onTreasureCollect={onTreasureCollect}
-				isGuestMode={isGuestMode} />
+				isCurrentStationCompleted={isCurrentStationCompleted} />
 		);
 	} else if (isNotMobile) {
 		return (

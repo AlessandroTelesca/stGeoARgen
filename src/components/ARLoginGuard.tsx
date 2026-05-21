@@ -1,36 +1,31 @@
 import { motion } from 'motion/react';
-import { Lock, LogIn, ArrowLeft, Trophy, Bookmark, Gift, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { Lock, LogIn, ArrowLeft, Trophy, Bookmark, Gift } from 'lucide-react';
 
 interface ARLoginGuardProps {
   onLogin: () => void;
   onRegister: () => void;
-  onContinueAsGuest: () => void;
   onBack: () => void;
 }
 
-export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }: ARLoginGuardProps) {
-  const { t } = useLanguage();
-  const [showGuestWarning, setShowGuestWarning] = useState(false);
-  const benefits = [
-    { icon: Bookmark, text: t('arBenefitProgress') },
-    { icon: Trophy, text: t('arBenefitPoints') },
-    { icon: Gift, text: t('arBenefitRewards') },
-  ];
+const benefits = [
+  { icon: Bookmark, text: 'Fortschritt wird gespeichert' },
+  { icon: Trophy, text: 'Punkte & Level freischalten' },
+  { icon: Gift, text: 'Belohnungen & Gutscheine sichern' },
+];
 
+export function ARLoginGuard({ onLogin, onRegister, onBack }: ARLoginGuardProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col px-4 sm:px-8 py-6 sm:py-10 pb-[max(1.5rem,env(safe-area-inset-bottom))] overflow-y-auto">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col px-6 sm:px-8 py-10">
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-start justify-center">
         <motion.div
-          className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center my-4"
+          className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 sm:p-10 text-center"
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', damping: 24, stiffness: 280, delay: 0.15 }}
         >
           {/* Back button inside card – left-aligned */}
-          <div className="flex justify-start mb-4 sm:mb-6">
+          <div className="flex justify-start mb-6">
             <motion.button
               onClick={onBack}
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -39,12 +34,12 @@ export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }:
               transition={{ delay: 0.2 }}
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="text-base font-medium">{t('back')}</span>
+              <span className="text-base font-medium">Zurück</span>
             </motion.button>
           </div>
           {/* Lock icon */}
           <motion.div
-            className="w-22 h-22 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-5 sm:mb-6 flex items-center justify-center"
+            className="w-22 h-22 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-6 flex items-center justify-center"
             style={{ width: '88px', height: '88px' }}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -54,25 +49,25 @@ export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }:
           </motion.div>
 
           <motion.h2
-            className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3"
+            className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            {t('loginRequired')}
+            Anmeldung erforderlich
           </motion.h2>
           <motion.p
-            className="text-gray-500 text-base leading-relaxed mb-6 sm:mb-8"
+            className="text-gray-500 text-base leading-relaxed mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            {t('loginToStartAR')}
+            Um das AR-Erlebnis zu starten und deinen Fortschritt zu speichern, musst du angemeldet sein.
           </motion.p>
 
           {/* Benefits */}
           <motion.div
-            className="space-y-3 mb-7 sm:mb-10 text-left"
+            className="space-y-3 mb-10 text-left"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
@@ -95,7 +90,7 @@ export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }:
 
           {/* Buttons */}
           <motion.div
-            className="space-y-3 sm:space-y-4 mt-8 sm:mt-10"
+            className="space-y-4"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
@@ -105,72 +100,17 @@ export function ARLoginGuard({ onLogin, onRegister, onContinueAsGuest, onBack }:
               className="w-full h-14 sm:h-16 text-lg sm:text-xl bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
             >
               <LogIn className="w-5 h-5" />
-              {t('loginNow')}
+              Jetzt anmelden
             </button>
             <button
               onClick={onRegister}
               className="w-full h-14 sm:h-16 text-lg sm:text-xl rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
             >
-              {t('createAccount')}
-            </button>
-            <button
-              onClick={() => setShowGuestWarning(true)}
-              className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-xl font-semibold active:scale-[0.98] transition-all"
-              style={{ backgroundColor: '#dc2626', color: '#ffffff', border: '2px solid #b91c1c' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-            >
-              {t('startStationAsGuest')}
+              Konto erstellen
             </button>
           </motion.div>
         </motion.div>
       </div>
-
-      {showGuestWarning && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close')}
-            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-            onClick={() => setShowGuestWarning(false)}
-          />
-          <motion.div
-            className="relative w-full max-w-md rounded-2xl border-2 border-red-500 bg-white p-6"
-            style={{ boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3), 0 0 30px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.25)' }}
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <h3 className="text-lg font-semibold">{t('guestStartWarningTitle')}</h3>
-            </div>
-            <p className="mb-6 text-sm text-muted-foreground">{t('guestStartWarningText')}</p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => setShowGuestWarning(false)}
-                className="flex-1 rounded-lg border border-border bg-white px-6 py-4 font-semibold text-foreground hover:bg-muted/50 transition-colors text-lg"
-              >
-                {t('guestStartWarningCancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGuestWarning(false);
-                  onContinueAsGuest();
-                }}
-                className="flex-1 rounded-lg bg-primary px-6 py-4 font-semibold text-white hover:opacity-90 transition-opacity text-lg"
-              >
-                {t('guestStartWarningContinue')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

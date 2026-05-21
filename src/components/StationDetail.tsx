@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Navigation, Play, AlertCircle, LogIn, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle2, Navigation, Play, AlertCircle, Lock, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -8,7 +8,6 @@ import { Trophy } from 'lucide-react';
 import { MapPin, Clock, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface QuizQuestion {
   question: string;
@@ -33,9 +32,6 @@ interface StationDetailProps {
   onClose: () => void;
   onComplete: (stationId: number) => void;
   isLoggedIn?: boolean;
-  requireLoginForAR?: boolean;
-  allowGuestARStart?: boolean;
-  onEnableGuestStart?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
 }
@@ -43,23 +39,19 @@ interface StationDetailProps {
 // Station ID to AR Route mapping
 const STATION_AR_ROUTES: Record<number, string> = {
   1: '/glockenspiel',    // Historisches Rathaus
-  2: '/bahnhof',         // Bahnhof
   3: '/phonomuseum',     // Heimatmuseum
-  4: '/schwarzes-tor',   // Schwarzes Tor
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
-  const [showGuestWarning, setShowGuestWarning] = useState(false);
   const navigate = useNavigate();
-  const { t } = useLanguage();
   const isCompleted = station.status === 'completed';
 
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const hasARRoute = !!STATION_AR_ROUTES[station.id];
-  const needsLogin = requireLoginForAR && isLoggedIn === false && hasARRoute;
+  const needsLogin = isLoggedIn === false && hasARRoute;
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,
@@ -87,9 +79,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
     // Navigate to AR view - proximity check happens there
     const arRoute = STATION_AR_ROUTES[station.id];
     if (arRoute) {
-      navigate(arRoute, {
-        state: allowGuestARStart ? { allowGuestStart: true } : undefined,
-      });
+      navigate(arRoute);
     } else {
       // Fallback: Mark as completed if no AR route
       onComplete(station.id);
@@ -151,9 +141,12 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <h3 className="font-semibold mb-2 text-lg text-gray-900">{t('loginRequired')}</h3>
+              <div className="w-20 h-20 bg-primary/10 border-2 border-primary rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2 text-lg text-gray-900">Anmeldung erforderlich</h3>
               <p className="text-sm text-gray-500 mb-6">
-                {t('loginToStartAR')}
+                Melde dich an, um das AR-Erlebnis zu starten und deinen Fortschritt zu speichern.
               </p>
               <div className="space-y-3">
                 <button
@@ -161,25 +154,16 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                   className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <LogIn className="w-5 h-5" />
-                  <span>{t('loginNow')}</span>
+                  <span>Jetzt anmelden</span>
                 </button>
                 {onNavigateToRegister && (
                   <button
                     onClick={onNavigateToRegister}
                     className="w-full bg-white text-primary border-2 border-primary py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
                   >
-                    {t('createAccount')}
+                    Konto erstellen
                   </button>
                 )}
-                <button
-                  onClick={() => setShowGuestWarning(true)}
-                  className="w-full py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
-                  style={{ backgroundColor: '#dc2626', color: '#ffffff', border: '2px solid #b91c1c' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-                >
-                  {t('startStationAsGuest')}
-                </button>
               </div>
             </motion.div>
           )}
@@ -194,7 +178,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
                 <div className="w-full">
-                  <h3 className="font-semibold mb-1 text-warning">{t('locationAccessRequired')}</h3>
+                  <h3 className="font-semibold mb-1 text-warning">Standortzugriff erforderlich</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {locationError}
                   </p>
@@ -203,7 +187,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                     className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                   >
                     <Navigation className="w-5 h-5" />
-                    <span>{t('navigateToStation', { stationName: station.title })}</span>
+                    <span>Zur Station navigieren</span>
                   </button>
                 </div>
               </div>
@@ -221,13 +205,13 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               <div className="w-20 h-20 bg-warning/20 border-2 border-warning rounded-full mx-auto mb-4 flex items-center justify-center">
                 <MapPin className="w-10 h-10 text-warning" />
               </div>
-              <h3 className="font-semibold mb-2">{t('tooFarAway')}</h3>
+              <h3 className="font-semibold mb-2">Zu weit entfernt</h3>
               <div className="inline-block bg-warning/20 text-warning px-4 py-2 rounded-lg mb-4">
                 <p className="text-2xl font-bold">{Math.round(distance)}m</p>
-                <p className="text-xs opacity-75">{t('estimatedDistance')}</p>
+                <p className="text-xs opacity-75">Entfernung zur Station</p>
               </div>
               <p className="text-sm opacity-75 mb-6">
-                {t('getCloserDistance')}
+                Nähere dich auf mindestens 100 Meter, um das AR-Erlebnis freizuschalten.
               </p>
               <div className="space-y-3">
                 <button
@@ -235,7 +219,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                   className="w-full bg-white text-black py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>{t('navigateToStation', { stationName: station.title })}</span>
+                  <span>Zur Station navigieren</span>
                 </button>
               </div>
             </motion.div>
@@ -248,13 +232,16 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
+              <div className="w-20 h-20 bg-white/20 border-2 border-white rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Play className="w-10 h-10 text-white" />
+              </div>
               <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-3">
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
+                <span className="text-sm font-semibold">In Reichweite ({Math.round(distance!)}m)</span>
               </div>
-              <h3 className="font-semibold mb-2">{t('arExperienceAvailable')}</h3>
+              <h3 className="font-semibold mb-2">AR-Erlebnis verfügbar!</h3>
               <p className="text-sm opacity-90 mb-6">
-                {t('closeEnoughDescription')}
+                Du bist nah genug an der Station. Starte jetzt das AR-Erlebnis und entdecke mehr über diesen Ort.
               </p>
               <div className="space-y-3">
                 <button
@@ -262,14 +249,14 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                   className="w-full bg-white text-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
                 >
                   <Play className="w-5 h-5" />
-                  <span>{t('startARExperience')}</span>
+                  <span>AR-Erlebnis starten</span>
                 </button>
                 <button
                   onClick={handleNavigateToStation}
                   className="w-full bg-white/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>{t('navigateToStation', { stationName: station.title })}</span>
+                  <span>Navigation zur Station</span>
                 </button>
               </div>
             </motion.div>
@@ -282,16 +269,16 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <h3 className="font-semibold mb-2">{t('informationStation')}</h3>
+              <h3 className="font-semibold mb-2">Informationsstation</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {t('noARExperience')}
+                Diese Station hat kein AR-Erlebnis. Besuche sie vor Ort für mehr Informationen.
               </p>
               <button
                 onClick={handleNavigateToStation}
                 className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
                 <Navigation className="w-5 h-5" />
-                <span>{t('navigateToStation', { stationName: station.title })}</span>
+                <span>Navigation zur Station</span>
               </button>
             </motion.div>
           )}
@@ -300,35 +287,35 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {isCompleted && (
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 text-center">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">{t('stationCompleted')}</h3>
+              <h3 className="font-semibold mb-2">Station abgeschlossen</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {t('stationCompletedReplay')}
+                Du hast diese Station bereits besucht. Du kannst sie erneut starten, erhältst aber keine weiteren Punkte.
               </p>
               <button
                 onClick={handleStartARExperience}
                 className="w-full bg-white text-primary border border-primary/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
                 <Play className="w-5 h-5" />
-                <span>{t('repeatStation')}</span>
+                <span>Station wiederholen</span>
               </button>
             </div>
           )}
 
           {/* Additional Info */}
           <div className="bg-white border border-border rounded-2xl p-4">
-            <h4 className="font-semibold mb-3">{t('stationFunFacts')}</h4>
+            <h4 className="font-semibold mb-3">Wissenswertes</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>{t('stationLocation')}</span>
+                <span>Im Zentrum von St.Georgen</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>{t('stationEstimatedDuration')}</span>
+                <span>Geschätzte Dauer: 10-15 Minuten</span>
               </div>
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                <span>{t('stationDifficulty')}</span>
+                <span>Schwierigkeit: Einfach</span>
               </div>
             </div>
           </div>
@@ -339,64 +326,17 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
       <Georgi
         message={
           needsLogin
-            ? t('georgiStationNeedsLogin')
+            ? "Melde dich an, um das AR-Erlebnis freizuschalten!"
             : hasARRoute && isWithinRadius && !locationError
-            ? t('georgiStationCanStartAR')
+            ? "Super! Du bist nah genug. Starte das AR-Erlebnis!"
             : hasARRoute && distance !== null
-            ? t('georgiStationDistanceHint', { distance: Math.round(distance) })
-            : t('georgiStationVisitOnSite')
+            ? `Du bist noch ${Math.round(distance)}m entfernt. Nutze die Navigation!`
+            : "Besuche diese Station vor Ort für mehr Informationen!"
         }
         show={showGeorgi && !isCompleted}
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />
-
-      {showGuestWarning && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close')}
-            className="absolute inset-0 bg-black/45 backdrop-blur-sm"
-            onClick={() => setShowGuestWarning(false)}
-          />
-          <motion.div
-            className="relative w-full max-w-md rounded-2xl bg-white p-6"
-            style={{ borderWidth: '2px', borderColor: '#ef4444', boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3), 0 0 30px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.25)' }}
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <h3 className="text-lg font-semibold">{t('guestStartWarningTitle')}</h3>
-            </div>
-            <p className="mb-6 text-sm text-muted-foreground">{t('guestStartWarningText')}</p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => setShowGuestWarning(false)}
-                className="flex-1 rounded-lg border border-border bg-white px-6 py-4 font-semibold text-foreground hover:bg-muted/50 transition-colors text-lg"
-              >
-                {t('guestStartWarningCancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGuestWarning(false);
-                  onEnableGuestStart?.();
-                  handleStartARExperience();
-                }}
-                className="flex-1 rounded-lg bg-primary px-6 py-4 font-semibold text-white hover:opacity-90 transition-opacity text-lg"
-              >
-                {t('guestStartWarningContinue')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </motion.div>
   );
 }

@@ -9,8 +9,6 @@ import {
     apiLogin,
     apiRegister,
     apiGetUser,
-    apiRequestPasswordReset,
-    apiResetPassword,
     apiGetProgress,
     apiSaveProgress,
     apiResetProgress,
@@ -95,25 +93,6 @@ export async function restoreSession(): Promise<UserData | null> {
         clearSession();
         return null;
     }
-}
-
-/**
- * Fordert ein Passwort-Reset an und liefert ggf. das Reset-Token zurueck.
- */
-export async function requestPasswordReset(email: string): Promise<{ message: string; resetToken?: string }> {
-    const res = await apiRequestPasswordReset(email);
-    return {
-        message: res.message,
-        resetToken: res.reset_token,
-    };
-}
-
-/**
- * Setzt das Passwort mit einem gueltigen Reset-Token.
- */
-export async function resetPasswordWithToken(token: string, newPassword: string): Promise<string> {
-    const res = await apiResetPassword(token, newPassword);
-    return res.message;
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────

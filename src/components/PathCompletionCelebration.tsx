@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star, MapPin, Zap, Home, Gift, X } from 'lucide-react';
+import { Star, MapPin, Zap, Home, Gift } from 'lucide-react';
 
 interface StationSummary {
     title: string;
@@ -82,31 +82,6 @@ export function PathCompletionCelebration({
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    {/* Close Button */}
-                    <button
-                        onClick={onClose}
-                        style={{
-                            position: 'fixed',
-                            top: '16px',
-                            right: '16px',
-                            zIndex: 10001,
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '8px',
-                            transition: 'background-color 0.2s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        aria-label="Schließen"
-                    >
-                        <X style={{ width: '24px', height: '24px', color: '#6b7280' }} />
-                    </button>
-
                     {/* Confetti */}
                     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
                         {particles.map((p) => (

@@ -1,7 +1,6 @@
 import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 
@@ -34,12 +33,10 @@ interface StationsViewProps {
     }>;
   }>;
   onStationClick: (pathId: string, stationId: number) => void;
-  isLoggedIn: boolean;
   onBack: () => void;
 }
 
-export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: StationsViewProps) {
-  const { t } = useLanguage();
+export function StationsView({ paths, onStationClick, onBack }: StationsViewProps) {
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -92,20 +89,19 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
   // Station Item Component with distance
   const StationItem = ({ station, index }: { station: Station; index: number }) => {
     const { distance } = useStationProximity(station.latitude, station.longitude, 100);
-    const displayStatus: Station['status'] = isLoggedIn ? station.status : 'locked';
     
     return (
       <motion.button
-        onClick={() => displayStatus !== 'locked' && onStationClick(station.pathId, station.id)}
-        disabled={displayStatus === 'locked'}
-        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(displayStatus)} ${
-          displayStatus !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
+        onClick={() => station.status !== 'locked' && onStationClick(station.pathId, station.id)}
+        disabled={station.status === 'locked'}
+        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(station.status)} ${
+          station.status !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
         }`}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.7 + index * 0.05 }}
-        whileHover={displayStatus !== 'locked' ? { scale: 1.01 } : {}}
-        whileTap={displayStatus !== 'locked' ? { scale: 0.99 } : {}}
+        whileHover={station.status !== 'locked' ? { scale: 1.01 } : {}}
+        whileTap={station.status !== 'locked' ? { scale: 0.99 } : {}}
       >
         <div className="flex gap-4">
           {/* Image */}
@@ -115,7 +111,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
               alt={station.title}
               className="w-full h-full object-cover"
             />
-            {displayStatus === 'completed' && (
+            {station.status === 'completed' && (
               <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
@@ -126,7 +122,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-1">
               <h4 className="truncate font-semibold">{station.title}</h4>
-              {getStatusIcon(displayStatus)}
+              {getStatusIcon(station.status)}
             </div>
             <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
               {station.description}
@@ -136,16 +132,15 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
                 {station.pathTitle}
               </Badge>
               <Badge variant="secondary" className="text-xs">
-                {station.points} {t('points')}
+                {station.points} Punkte
               </Badge>
-              {displayStatus !== 'completed' && distance !== null && (
+              {station.status !== 'completed' && distance !== null && (
                 <Badge variant="outline" className="text-xs flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
                   {Math.round(distance)}m
                 </Badge>
               )}
             </div>
-
           </div>
         </div>
       </motion.button>
@@ -162,7 +157,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
+            <span className="font-medium">Zurück</span>
           </button>
         </div>
       </div>
@@ -181,12 +176,10 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
             <div className="flex-1">
               <p className="text-sm">
                 {completedStations === totalStations
-                  ? t('stationsMentorAllVisited')
+                  ? "Wow! Du hast alle Stationen besucht!"
                   : completedStations === 0
-                  ? t('stationsMentorStart')
-                  : t('stationsMentorProgress')
-                    .replace('{completed}', String(completedStations))
-                    .replace('{total}', String(totalStations))}
+                  ? "Hier findest du alle Stationen in St.Georgen. Wähle eine aus und starte dein Abenteuer!"
+                  : `Du hast bereits ${completedStations} von ${totalStations} Stationen besucht. Weiter so!`}
               </p>
             </div>
           </div>
@@ -206,7 +199,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
               </div>
             </div>
             <p className="text-xl mb-1">{totalStations}</p>
-            <p className="text-xs text-muted-foreground">{t('total')}</p>
+            <p className="text-xs text-muted-foreground">Gesamt</p>
           </motion.div>
 
           <motion.div
@@ -221,7 +214,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
               </div>
             </div>
             <p className="text-xl mb-1">{completedStations}</p>
-            <p className="text-xs text-muted-foreground">{t('completed')}</p>
+            <p className="text-xs text-muted-foreground">Abgeschlossen</p>
           </motion.div>
 
           <motion.div
@@ -236,7 +229,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
               </div>
             </div>
             <p className="text-xl mb-1">{availableStations}</p>
-            <p className="text-xs text-muted-foreground">{t('available')}</p>
+            <p className="text-xs text-muted-foreground">Verfügbar</p>
           </motion.div>
         </div>
 
@@ -251,7 +244,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder={t('searchStationOrPath')}
+              placeholder="Station oder Pfad suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -274,7 +267,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            {t('all')}
+            Alle
           </button>
           <button
             onClick={() => setFilterStatus('available')}
@@ -284,7 +277,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            {t('available')}
+            Verfügbar
           </button>
           <button
             onClick={() => setFilterStatus('completed')}
@@ -294,7 +287,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
                 : 'bg-white border border-border text-foreground hover:border-primary/50'
             }`}
           >
-            {t('completed')}
+            Abgeschlossen
           </button>
         </motion.div>
 
@@ -307,7 +300,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
         >
           {filteredStations.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">{t('noStationsFound')}</p>
+              <p className="text-muted-foreground">Keine Stationen gefunden</p>
             </div>
           ) : (
             filteredStations.map((station, index) => (
@@ -320,7 +313,6 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
           )}
         </motion.div>
       </div>
-
     </div>
   );
 }

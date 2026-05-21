@@ -1,7 +1,6 @@
 import { RefObject } from 'react';
 import { motion } from 'motion/react';
 import { Home, User } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARTopBarProps {
   onNavigateHome: () => void;
@@ -11,7 +10,6 @@ interface ARTopBarProps {
 }
 
 export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen, username }: ARTopBarProps) => {
-  const { t } = useLanguage();
   return (
     <div className="ar-top-bar">
       {/* Home Button */}
@@ -43,8 +41,8 @@ export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen, user
           <User style={{ width: '20px', height: '20px', color: 'white' }} />
         </div>
         <div style={{ textAlign: 'left', flex: 1 }}>
-          <div className="ar-profile-name">{username || t('guest')}</div>
-          <div className="ar-profile-email">{username ? t('loggedIn') : t('notLoggedIn')}</div>
+          <div className="ar-profile-name">{username || 'Gast'}</div>
+          <div className="ar-profile-email">{username ? 'Angemeldet' : 'Nicht angemeldet'}</div>
         </div>
         <motion.div
           animate={{ rotate: profileMenuOpen ? 180 : 0 }}

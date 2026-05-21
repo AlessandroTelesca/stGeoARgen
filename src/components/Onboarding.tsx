@@ -1,42 +1,41 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface OnboardingProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
+const steps = [
+  {
+    id: 1,
+    title: 'Willkommen in St.Georgen!',
+    description: 'Ich bin Georgi, dein Drachen-Guide. Gemeinsam entdecken wir St.Georgen auf spannenden Themenpfaden voller Geschichte, Kultur und Abenteuer!',
+    georgiMessage: 'Hey! Bereit für eine unvergessliche Entdeckungsreise?',
+  },
+  {
+    id: 2,
+    title: 'Wähle deinen Themenpfad',
+    description: 'Such dir einen Themenpfad aus, der dich interessiert. Jeder Pfad führt dich zu besonderen Orten in St.Georgen - ob historische Sehenswürdigkeiten, Naturerlebnisse oder kulturelle Highlights!',
+    georgiMessage: 'Der touristische Themenpfad ist perfekt für den Start!',
+  },
+  {
+    id: 3,
+    title: 'Erlebe AR an den Stationen',
+    description: 'Besuche die Stationen in beliebiger Reihenfolge. An jeder Station erwartet dich ein spannendes AR-Erlebnis - entdecke interaktive Inhalte, löse Quizfragen und sammle Punkte!',
+    georgiMessage: 'Die nähesten Stationen werden dir immer zuerst angezeigt!',
+  },
+  {
+    id: 4,
+    title: 'Hole deine Belohnungen ab',
+    description: 'Mit gesammelten Punkten schaltest du Gutscheine frei, die du in echten Lokalitäten in St.Georgen einlösen kannst - Cafés, Restaurants, Museen und mehr!',
+    georgiMessage: 'Sammle fleissig Punkte und genieße tolle Belohnungen vor Ort!',
+  },
+];
+
 export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
-  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
-  const steps = [
-    {
-      id: 1,
-      title: t('onboardingStep1Title'),
-      description: t('onboardingStep1Description'),
-      georgiMessage: t('georgiOnboardingStep1'),
-    },
-    {
-      id: 2,
-      title: t('onboardingStep2Title'),
-      description: t('onboardingStep2Description'),
-      georgiMessage: t('georgiOnboardingStep2'),
-    },
-    {
-      id: 3,
-      title: t('onboardingStep3Title'),
-      description: t('onboardingStep3Description'),
-      georgiMessage: t('georgiOnboardingStep3'),
-    },
-    {
-      id: 4,
-      title: t('onboardingStep4Title'),
-      description: t('onboardingStep4Description'),
-      georgiMessage: t('georgiOnboardingStep4'),
-    },
-  ];
   const [direction, setDirection] = useState(0);
 
   const handleNext = () => {
@@ -92,7 +91,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
             onClick={onSkip}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-muted"
           >
-            {t('skip')}
+            Überspringen
           </button>
         </div>
 
@@ -184,7 +183,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <ChevronLeft className="w-5 h-5" />
-                    <span>{t('back')}</span>
+                    <span>Zurück</span>
                   </div>
                 </button>
               )}
@@ -195,12 +194,12 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               >
                 {isLastStep ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span>{t('letsGo')}</span>
+                    <span>Los geht's!</span>
                     <Trophy className="w-5 h-5" />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
-                    <span>{t('next')}</span>
+                    <span>Weiter</span>
                     <ChevronRight className="w-5 h-5" />
                   </div>
                 )}

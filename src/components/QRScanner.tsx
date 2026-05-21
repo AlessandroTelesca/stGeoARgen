@@ -2,7 +2,6 @@ import { useRef, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { X, QrCode } from 'lucide-react';
 import jsQR from 'jsqr';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface QRScannerProps {
   onClose: () => void;
@@ -10,10 +9,9 @@ interface QRScannerProps {
 }
 
 // Verfügbare AR-Views basierend auf QR-Code URLs
-const VALID_AR_VIEWS = ['glockenspiel', 'bahnhof', 'phonomuseum', 'klosterweiher'];
+const VALID_AR_VIEWS = ['glockenspiel', 'phonomuseum', 'klosterweiher'];
 
 export function QRScanner({ onClose, onScan }: QRScannerProps) {
-  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -141,8 +139,8 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
               <QrCode className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">{t('qrCodeScanner')}</h2>
-              <p className="text-sm text-white/80">{t('qrCodeScanInstruction')}</p>
+              <h2 className="text-lg font-bold">QR-Code Scanner</h2>
+              <p className="text-sm text-white/80">Scanne einen QR-Code</p>
             </div>
           </div>
         </div>
@@ -231,7 +229,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
       {/* Bottom Info */}
       <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
         <p className="text-white text-center text-sm">
-          {t('qrHoldToCamera')}
+          Halte den QR-Code vor die Kamera
         </p>
       </div>
     </motion.div>

@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Trophy } from 'lucide-react';
 import { useStationProximity } from './ARComponents/ARComponentBase';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface StationCardProps {
   id: number;
@@ -19,7 +18,6 @@ interface StationCardProps {
 }
 
 export function StationCard({ title, description, imageUrl, status, points, onClick, latitude, longitude }: StationCardProps) {
-  const { t } = useLanguage();
   const isLocked = false; // Stations are never locked - user can start anywhere
   const isCompleted = status === 'completed';
   
@@ -52,7 +50,7 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
         {!isCompleted && isInRange && (
           <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 font-semibold text-xs">
             <MapPin className="w-3.5 h-3.5" />
-            {t('inRange')}
+            In Reichweite
           </div>
         )}
         
@@ -80,11 +78,11 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-4 h-4" />
             <span>
-              {isCompleted ? t('stationCompleted') : distance !== null ? t('distanceAway').replace('{distance}', String(Math.round(distance))) : t('determiningLocation')}
+              {isCompleted ? 'Abgeschlossen' : distance !== null ? `${Math.round(distance)}m entfernt` : 'Standort wird ermittelt...'}
             </span>
           </div>
           {!isCompleted && (
-            <span className="text-xs font-medium text-primary">{t('startNow')} →</span>
+            <span className="text-xs font-medium text-primary">Jetzt starten →</span>
           )}
         </div>
       </div>

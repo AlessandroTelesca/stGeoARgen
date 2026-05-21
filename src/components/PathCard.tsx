@@ -1,6 +1,5 @@
 import { ArrowRight, MapPin, Trophy, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface PathCardProps {
@@ -29,7 +28,6 @@ export function PathCard({
   difficulty,
   onClick,
 }: PathCardProps) {
-  const { t } = useLanguage();
   const progress = (completedStations / totalStations) * 100;
   const isStarted = completedStations > 0;
   const isCompleted = completedStations === totalStations;
@@ -56,7 +54,7 @@ export function PathCard({
         
         {isCompleted && (
           <div className="absolute top-3 right-3 bg-primary text-white rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
-            <span className="text-sm font-semibold">✓ {t('completed')}</span>
+            <span className="text-sm font-semibold">✓ Abgeschlossen</span>
           </div>
         )}
         
@@ -82,17 +80,17 @@ export function PathCard({
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center p-2 bg-muted/50 rounded-lg">
             <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('stations')}</p>
+            <p className="text-xs text-muted-foreground">Stationen</p>
             <p className="text-sm font-semibold">{completedStations}/{totalStations}</p>
           </div>
           <div className="text-center p-2 bg-muted/50 rounded-lg">
             <Trophy className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('points')}</p>
+            <p className="text-xs text-muted-foreground">Punkte</p>
             <p className="text-sm font-semibold">{earnedPoints}/{totalPoints}</p>
           </div>
           <div className="text-center p-2 bg-muted/50 rounded-lg">
             <Clock className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('time')}</p>
+            <p className="text-xs text-muted-foreground">Zeit</p>
             <p className="text-sm font-semibold">{estimatedTime}</p>
           </div>
         </div>
@@ -114,7 +112,7 @@ export function PathCard({
         {/* CTA */}
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <span className="text-sm font-medium text-primary">
-            {t('start')}
+            Starten
           </span>
           <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
         </div>

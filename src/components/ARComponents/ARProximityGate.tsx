@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { MapPin, Navigation, AlertCircle, ArrowLeft, Home } from 'lucide-react';
 import { useStationProximity, STATIONS, calculateDistance } from './ARComponentBase';
 import { getStationCoordinates, STATIONS_COORDINATES } from '../../data/stationsConfig';
-import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARProximityGateProps {
   stationId: number;
@@ -18,7 +17,6 @@ interface ARProximityGateProps {
  * Prüft ob Nutzer innerhalb 100m der Station ist, bevor AR-Erlebnis gestartet wird
  */
 export const ARProximityGate = ({ stationId, stationName, children, onNavigateBack, onAccessGranted }: ARProximityGateProps) => {
-  const { t } = useLanguage();
   const [allowAccess, setAllowAccess] = useState(false);
   const [nearestStation, setNearestStation] = useState<{ id: number; name: string; distance: number } | null>(null);
   
@@ -34,14 +32,14 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
 
   // Allow access once user is within radius
   useEffect(() => {
-    if (isWithinRadius && !allowAccess) {
+    if (isWithinRadius) {
       console.log('[ARProximityGate] Access granted - user within radius');
       setAllowAccess(true);
       onAccessGranted?.();
     } else if (distance !== null && !isWithinRadius) {
       console.log(`[ARProximityGate] Access denied - user ${Math.round(distance)}m away (requires ≤100m)`);
     }
-  }, [isWithinRadius, distance, allowAccess, onAccessGranted]);
+  }, [isWithinRadius, distance, onAccessGranted]);
 
   // Find nearest station when too far
   useEffect(() => {
@@ -118,20 +116,20 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold mb-1 text-warning">{t('locationAccessRequired')}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {locationError}
-                  </p>
-                  <button
-                    onClick={handleNavigateToStation}
-                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                  >
-                    <Navigation className="w-5 h-5" />
-                    <span>{t('navigateToStation', { stationName: stationName })}</span>
-                  </button>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold mb-1 text-warning">Standortzugriff erforderlich</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {locationError}
+                </p>
+                <button
+                  onClick={handleNavigateToStation}
+                  className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span>Zur Station navigieren</span>
+                </button>
               </div>
             </div>
           </motion.div>
@@ -155,21 +153,21 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
             {/* Main Message */}
             <div className="bg-white rounded-3xl p-8 shadow-2xl text-center space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('accessDenied')}</h2>
-                <p className="text-gray-600">{t('stationOutOfRange')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Zugriff verweigert</h2>
+                <p className="text-gray-600">Station außerhalb der Reichweite</p>
               </div>
 
               {/* Distance Display */}
               <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
                 <p className="text-5xl font-black text-red-600 mb-1">{Math.round(distance)}m</p>
-                <p className="text-sm font-semibold text-red-700 uppercase tracking-wide">{t('tooFarAway')}</p>
+                <p className="text-sm font-semibold text-red-700 uppercase tracking-wide">Zu weit entfernt</p>
                 <div className="mt-4 pt-4 border-t border-red-200">
-                  <p className="text-xs text-gray-600">{t('requiredDistance')}</p>
+                  <p className="text-xs text-gray-600">Erforderlich: ≤ 100m</p>
                 </div>
               </div>
 
               <p className="text-sm text-gray-500 leading-relaxed">
-                {t('approachStation')}
+                Du musst dich innerhalb von <span className="font-semibold text-gray-900">100 Metern</span> der Station befinden, um das AR-Erlebnis freizuschalten.
               </p>
               {/* Action Buttons */}
               <div className="space-y-4">
@@ -178,7 +176,7 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
                   className="w-full bg-primary text-primary-foreground px-6 py-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg"
                 >
                   <Navigation className="w-6 h-6 flex-shrink-0" />
-                  <span>{t('navigateToStation', { stationName: stationName })}</span>
+                  <span>Zu {stationName} navigieren</span>
                 </button>
                 
                 <button
@@ -186,7 +184,7 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
                   className="w-full bg-muted text-muted-foreground px-6 py-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-muted/70 active:scale-[0.98] transition-all shadow-lg"
                 >
                   <Home className="w-6 h-6 flex-shrink-0" />
-                  <span>{t('backToHome')}</span>
+                  <span>Zurück zur Startseite</span>
                 </button>
               </div>
             </div>
@@ -201,7 +199,7 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
             animate={{ opacity: 1 }}
           >
             <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">{t('determiningLocation')}</p>
+            <p className="text-muted-foreground">Standort wird ermittelt...</p>
           </motion.div>
         )}
       </div>

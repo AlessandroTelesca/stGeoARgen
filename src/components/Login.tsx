@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginProps {
   /** Wird nach erfolgreichem Login aufgerufen. Wirft einen Error bei Fehlschlag. */
@@ -14,7 +13,6 @@ interface LoginProps {
 }
 
 export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigateToForgotPassword }: LoginProps) {
-  const { t } = useLanguage();
   const [email, setEmail] = useState(() =>
     localStorage.getItem('remember-me') === 'true' ? (localStorage.getItem('remember-email') || '') : ''
   );
@@ -29,14 +27,14 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
 
   // Real-time validation
   const validateEmail = (value: string) => {
-    if (!value) return t('emailRequired');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t('invalidEmail');
+    if (!value) return 'E-Mail ist erforderlich';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Ungültige E-Mail-Adresse';
     return '';
   };
 
   const validatePassword = (value: string) => {
-    if (!value) return t('passwordRequired');
-    if (value.length < 6) return t('passwordMinLength');
+    if (!value) return 'Passwort ist erforderlich';
+    if (value.length < 6) return 'Passwort muss mindestens 6 Zeichen lang sein';
     return '';
   };
 
@@ -98,7 +96,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
         localStorage.removeItem('remember-email');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('loginFailed');
+      const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
       setErrors({ general: message });
     } finally {
       setIsLoading(false);
@@ -125,7 +123,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
             transition={{ delay: 0.1 }}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-base font-medium">{t('back')}</span>
+            <span className="text-base font-medium">Zurück</span>
           </motion.button>
         )}
 
@@ -161,7 +159,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              {t('welcomeBack')}
+              Willkommen zurück!
             </motion.h1>
             <motion.p
               className="text-base sm:text-lg text-muted-foreground text-center px-4"
@@ -169,7 +167,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              {t('loginSubtitle')}
+              Melde dich an, um deine Entdeckungsreise fortzusetzen
             </motion.p>
           </div>
 
@@ -182,7 +180,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               transition={{ delay: 0.6 }}
             >
               <label htmlFor="email" className="block text-base sm:text-lg font-medium mb-4">
-                {t('emailAddress')}
+                E-Mail-Adresse
               </label>
               <div className="relative">
                 <Mail className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -192,7 +190,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
                   value={email}
                   onChange={handleEmailChange}
                   onBlur={() => handleBlur('email')}
-                  placeholder={t('emailPlaceholder')}
+                  placeholder="deine@email.de"
                   className={`pr-4 h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.email && errors.email ? 'border-destructive' : ''}`}
                   style={{ paddingLeft: '3.5rem' }}
                   disabled={isLoading}
@@ -222,7 +220,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               transition={{ delay: 0.7 }}
             >
               <label htmlFor="password" className="block text-base sm:text-lg font-medium mb-4">
-                {t('password')}
+                Passwort
               </label>
               <div className="relative">
                 <Lock className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -244,7 +242,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2"
                   tabIndex={-1}
-                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                  aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -279,9 +277,9 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               <button
                 type="button"
                 onClick={() => !isLoading && setRememberMe(v => !v)}
-                className="flex items-center gap-4 group"
+                className="flex items-center gap-2.5 group"
                 disabled={isLoading}
-                aria-label={t('rememberMe')}
+                aria-label="Angemeldet bleiben"
               >
                 <span
                   className={`w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
@@ -295,7 +293,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
                   )}
                 </span>
                 <span className="text-sm sm:text-base text-muted-foreground select-none">
-                  {t('rememberMe')}
+                  Angemeldet bleiben
                 </span>
               </button>
 
@@ -306,7 +304,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
                 className="text-sm sm:text-base text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
                 disabled={isLoading}
               >
-                {t('forgotPassword')}
+                Passwort vergessen?
               </button>
             </motion.div>
 
@@ -319,7 +317,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
             >
               <Button
                 type="submit"
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all"
+                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
                 disabled={isLoading || !isFormValid}
               >
                 {isLoading ? (
@@ -329,10 +327,10 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     />
-                    {t('loggingIn')}
+                    Anmeldung...
                   </span>
                 ) : (
-                  t('login')
+                  'Anmelden'
                 )}
               </Button>
             </motion.div>
@@ -364,7 +362,7 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-sm sm:text-base uppercase">
-              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">{t('or')}</span>
+              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">oder</span>
             </div>
           </motion.div>
 
@@ -376,14 +374,14 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
             transition={{ delay: 1.1 }}
           >
             <p className="text-base sm:text-lg text-foreground">
-              {t('noAccountQuestion')}{' '}
+              Noch kein Konto?{' '}
               <button
                 type="button"
                 onClick={onNavigateToRegister}
                 className="text-primary hover:text-primary/80 hover:underline font-semibold transition-colors"
                 disabled={isLoading}
               >
-                {t('registerNow')}
+                Jetzt registrieren
               </button>
             </p>
           </motion.div>
@@ -396,10 +394,10 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          {t('loginTermsPrefix')}{' '}
-          <button className="text-primary hover:underline">{t('termsOfUse')}</button>
-          {' '}{t('and')}{' '}
-          <button className="text-primary hover:underline">{t('privacyPolicy')}</button>
+          Mit der Anmeldung akzeptierst du unsere{' '}
+          <button className="text-primary hover:underline">Nutzungsbedingungen</button>
+          {' '}und{' '}
+          <button className="text-primary hover:underline">Datenschutzerklärung</button>
         </motion.p>
       </motion.div>
     </div>

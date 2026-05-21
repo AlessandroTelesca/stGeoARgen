@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface RegisterProps {
   /** Wird nach erfolgreicher Registrierung aufgerufen. Wirft einen Error bei Fehlschlag. */
@@ -13,7 +12,6 @@ interface RegisterProps {
 }
 
 export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: RegisterProps) {
-  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,26 +35,26 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
 
   // Validation
   const validateUsername = (value: string) => {
-    if (!value) return t('usernameRequired');
-    if (value.length < 3) return t('usernameMinLength');
+    if (!value) return 'Benutzername ist erforderlich';
+    if (value.length < 3) return 'Benutzername muss mindestens 3 Zeichen lang sein';
     return '';
   };
 
   const validateEmail = (value: string) => {
-    if (!value) return t('emailRequired');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t('invalidEmail');
+    if (!value) return 'E-Mail ist erforderlich';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Ungültige E-Mail-Adresse';
     return '';
   };
 
   const validatePassword = (value: string) => {
-    if (!value) return t('passwordRequired');
-    if (value.length < 6) return t('passwordMinLength');
+    if (!value) return 'Passwort ist erforderlich';
+    if (value.length < 6) return 'Passwort muss mindestens 6 Zeichen lang sein';
     return '';
   };
 
   const validateConfirmPassword = (value: string) => {
-    if (!value) return t('confirmPasswordRequired');
-    if (value !== password) return t('passwordsDoNotMatch');
+    if (!value) return 'Passwort-Bestätigung ist erforderlich';
+    if (value !== password) return 'Passwörter stimmen nicht überein';
     return '';
   };
 
@@ -87,7 +85,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     }
     // Re-validate confirm password if it's already touched
     if (touched.confirmPassword && confirmPassword) {
-      const confirmError = value !== confirmPassword ? t('passwordsDoNotMatch') : '';
+      const confirmError = value !== confirmPassword ? 'Passwörter stimmen nicht überein' : '';
       setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
     }
   };
@@ -147,7 +145,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
     try {
       await onRegister(username, email, password);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('registrationFailed');
+      const message = err instanceof Error ? err.message : 'Registrierung fehlgeschlagen.';
       setErrors({ general: message });
     } finally {
       setIsLoading(false);
@@ -175,7 +173,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
             transition={{ delay: 0.1 }}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-base font-medium">{t('back')}</span>
+            <span className="text-base font-medium">Zurück</span>
           </motion.button>
         )}
 
@@ -211,7 +209,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              {t('createAccount')}
+              Konto erstellen
             </motion.h1>
             <motion.p
               className="text-base sm:text-lg text-muted-foreground text-center px-4"
@@ -219,7 +217,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              {t('registerSubtitle')}
+              Registriere dich und starte deine Entdeckungsreise
             </motion.p>
           </div>
 
@@ -232,7 +230,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               transition={{ delay: 0.6 }}
             >
               <label htmlFor="username" className="block text-base sm:text-lg font-medium mb-4">
-                {t('username')}
+                Benutzername
               </label>
               <div className="relative">
                 <User className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -242,7 +240,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
                   value={username}
                   onChange={handleUsernameChange}
                   onBlur={() => handleBlur('username')}
-                  placeholder={t('usernamePlaceholder')}
+                  placeholder="deinname"
                   className={`pr-4 h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.username && errors.username ? 'border-destructive' : ''}`}
                   style={{ paddingLeft: '3.5rem' }}
                   disabled={isLoading}
@@ -272,7 +270,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               transition={{ delay: 0.7 }}
             >
               <label htmlFor="email" className="block text-base sm:text-lg font-medium mb-4">
-                {t('emailAddress')}
+                E-Mail-Adresse
               </label>
               <div className="relative">
                 <Mail className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -282,7 +280,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
                   value={email}
                   onChange={handleEmailChange}
                   onBlur={() => handleBlur('email')}
-                  placeholder={t('emailPlaceholder')}
+                  placeholder="deine@email.de"
                   className={`pr-4 h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.email && errors.email ? 'border-destructive' : ''}`}
                   style={{ paddingLeft: '3.5rem' }}
                   disabled={isLoading}
@@ -312,7 +310,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               transition={{ delay: 0.8 }}
             >
               <label htmlFor="password" className="block text-base sm:text-lg font-medium mb-4">
-                {t('password')}
+                Passwort
               </label>
               <div className="relative">
                 <Lock className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -334,7 +332,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2"
                   tabIndex={-1}
-                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                  aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -365,7 +363,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               transition={{ delay: 0.9 }}
             >
               <label htmlFor="confirmPassword" className="block text-base sm:text-lg font-medium mb-4">
-                {t('confirmPassword')}
+                Passwort bestätigen
               </label>
               <div className="relative">
                 <Lock className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
@@ -387,7 +385,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2"
                   tabIndex={-1}
-                  aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
+                  aria-label={showConfirmPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -420,7 +418,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
             >
               <Button
                 type="submit"
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all"
+                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
                 disabled={isLoading || !isFormValid}
               >
                 {isLoading ? (
@@ -430,10 +428,10 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     />
-                    {t('registering')}
+                    Registrierung...
                   </span>
                 ) : (
-                  t('register')
+                  'Registrieren'
                 )}
               </Button>
             </motion.div>
@@ -465,7 +463,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
               <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-sm sm:text-base uppercase">
-              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">{t('or')}</span>
+              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">oder</span>
             </div>
           </motion.div>
 
@@ -477,14 +475,14 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
             transition={{ delay: 1.2 }}
           >
             <p className="text-base sm:text-lg text-foreground">
-              {t('alreadyHaveAccount')}{' '}
+              Hast du bereits ein Konto?{' '}
               <button
                 type="button"
                 onClick={onNavigateToLogin}
                 className="text-primary hover:text-primary/80 hover:underline font-semibold transition-colors"
                 disabled={isLoading}
               >
-                {t('loginNow')}
+                Jetzt anmelden
               </button>
             </p>
           </motion.div>
@@ -497,10 +495,10 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
           animate={{ opacity: 1 }}
           transition={{ delay: 1.3 }}
         >
-          {t('registerTermsPrefix')}{' '}
-          <button className="text-primary hover:underline">{t('termsOfUse')}</button>
-          {' '}{t('and')}{' '}
-          <button className="text-primary hover:underline">{t('privacyPolicy')}</button>
+          Mit der Registrierung akzeptierst du unsere{' '}
+          <button className="text-primary hover:underline">Nutzungsbedingungen</button>
+          {' '}und{' '}
+          <button className="text-primary hover:underline">Datenschutzerklärung</button>
         </motion.p>
       </motion.div>
     </div>

@@ -11,24 +11,16 @@ const baseProps = {
 
 describe('Header', () => {
   it('renders title and menu button', () => {
-    render(<Header username={null} onLogin={function (): void {
-      throw new Error('Function not implemented.');
-    } } onLogout={function (): void {
-      throw new Error('Function not implemented.');
-    } } {...baseProps} />);
+    render(<Header {...baseProps} />);
     expect(screen.getByText('Test App')).toBeInTheDocument();
-    expect(screen.getByLabelText('Menü')).toBeInTheDocument();
+    expect(screen.getByLabelText(/menu/i)).toBeInTheDocument();
   });
 
   it('opens menu and navigates', async () => {
     const onNavigate = vi.fn();
-    render(<Header username={null} onLogin={function (): void {
-      throw new Error('Function not implemented.');
-    } } onLogout={function (): void {
-      throw new Error('Function not implemented.');
-    } } {...baseProps} onNavigate={onNavigate} />);
+    render(<Header {...baseProps} onNavigate={onNavigate} />);
 
-    const menuButton = screen.getByLabelText('Menü');
+    const menuButton = screen.getByLabelText(/menu/i);
     await userEvent.click(menuButton);
 
     const startItem = await screen.findByText('Startseite');

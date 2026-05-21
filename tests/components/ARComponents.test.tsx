@@ -20,38 +20,30 @@ describe('AR components', () => {
 
   test('ARProfileMenu triggers actions and closes', async () => {
     const user = userEvent.setup();
-    const onLogin = vi.fn();
-    const onRegister = vi.fn();
-    const onLogout = vi.fn();
+    const onProfileClick = vi.fn();
+    const onSettingsClick = vi.fn();
+    const onLogoutClick = vi.fn();
     const onClose = vi.fn();
 
-    const { rerender } = render(
+    render(
       <ARProfileMenu
         isOpen
         onClose={onClose}
-        username={null}
-        onLogin={onLogin}
-        onLogout={onLogout}
-        onRegister={onRegister}
+        onProfileClick={onProfileClick}
+        onSettingsClick={onSettingsClick}
+        onLogoutClick={onLogoutClick}
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /anmelden/i }));
-    expect(onLogin).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: /profil/i }));
+    expect(onProfileClick).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    rerender(
-      <ARProfileMenu
-        isOpen
-        onClose={onClose}
-        username="Max"
-        onLogin={onLogin}
-        onLogout={onLogout}
-      />
-    );
+    await user.click(screen.getByRole('button', { name: /einstellungen/i }));
+    expect(onSettingsClick).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: /abmelden/i }));
-    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(onLogoutClick).toHaveBeenCalledTimes(1);
   });
 
   test('ARProgressBar shows progress and stations', () => {
@@ -79,7 +71,6 @@ describe('AR components', () => {
         onNavigateHome={onNavigateHome}
         onProfileClick={onProfileClick}
         profileMenuOpen={false}
-        username="Max"
       />
     );
 

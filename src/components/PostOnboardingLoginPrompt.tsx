@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Bookmark, Gift, LogIn, X } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface PostOnboardingLoginPromptProps {
   isOpen: boolean;
@@ -9,19 +8,18 @@ interface PostOnboardingLoginPromptProps {
   onSkip: () => void;
 }
 
+const benefits = [
+  { icon: Bookmark, text: 'Fortschritt speichern & fortsetzen' },
+  { icon: Trophy, text: 'Punkte sammeln & Level aufsteigen' },
+  { icon: Gift, text: 'Belohnungen & Gutscheine freischalten' },
+];
+
 export function PostOnboardingLoginPrompt({
   isOpen,
   onLogin,
   onRegister,
   onSkip,
 }: PostOnboardingLoginPromptProps) {
-  const { t } = useLanguage();
-  const benefits = [
-    { icon: Bookmark, text: t('postOnboardingBenefit1') },
-    { icon: Trophy, text: t('postOnboardingBenefit2') },
-    { icon: Gift, text: t('postOnboardingBenefit3') },
-  ];
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -43,7 +41,7 @@ export function PostOnboardingLoginPrompt({
               <button
                 onClick={onSkip}
                 className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-                aria-label={t('close')}
+                aria-label="Schließen"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -81,7 +79,7 @@ export function PostOnboardingLoginPrompt({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25 }}
                 >
-                  {t('postOnboardingTitle')}
+                  Erlebe mehr mit Konto!
                 </motion.h2>
                 <motion.p
                   className="text-muted-foreground text-base leading-relaxed"
@@ -89,7 +87,7 @@ export function PostOnboardingLoginPrompt({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  {t('postOnboardingDescription')}
+                  Ein kostenloses Konto schaltet das volle Erlebnis frei.
                 </motion.p>
               </div>
 
@@ -128,19 +126,19 @@ export function PostOnboardingLoginPrompt({
                   className="w-full h-13 bg-primary hover:bg-primary/90 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
                 >
                   <LogIn className="w-5 h-5" />
-                  {t('loginNow')}
+                  Jetzt anmelden
                 </button>
                 <button
                   onClick={onRegister}
                   className="w-full py-3.5 rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
                 >
-                  {t('createAccount')}
+                  Konto erstellen
                 </button>
                 <button
                   onClick={onSkip}
                   className="w-full py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {t('loginLater')}
+                  Später anmelden
                 </button>
               </motion.div>
             </div>

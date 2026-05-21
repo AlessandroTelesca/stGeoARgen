@@ -90,22 +90,6 @@ npm run coverage
 
 ## Configuration
 
-### Passwort vergessen (EmailJS)
-
-Die Funktion "Passwort vergessen" ist jetzt mit EmailJS und einem Reset-Token-Flow integriert.
-
-1. Kopiere `.env.example` nach `.env`.
-2. Trage die EmailJS-Werte ein:
-	- `VITE_EMAILJS_SERVICE_ID`
-	- `VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET`
-	- `VITE_EMAILJS_PUBLIC_KEY`
-3. Stelle sicher, dass dein EmailJS-Template die Variablen `reset_link`, `to_email`, `app_name` und optional `support_email` nutzt.
-4. Fuehre die neue SQL-Tabelle aus `api/setup.sql` aus (Abschnitt `password_resets`).
-
-Neue API-Endpunkte:
-- `api/request_password_reset.php`
-- `api/reset_password.php`
-
 ### Adding New Stations
 
 Edit [src/data/stationsConfig.ts](src/data/stationsConfig.ts) to add new stations with:

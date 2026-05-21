@@ -1,6 +1,5 @@
 import { motion } from 'motion/react';
 import { MapPin, Trophy, Clock, TrendingUp, ChevronRight, Star, Award } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Georgi } from './Georgi';
 import { useState, useEffect } from 'react';
@@ -24,7 +23,6 @@ interface PathsOverviewProps {
 }
 
 export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
-  const { t } = useLanguage();
   const [showGeorgi, setShowGeorgi] = useState(false);
 
   useEffect(() => {
@@ -68,9 +66,9 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-2">{t('allPaths')}</h2>
+          <h2 className="text-2xl font-bold mb-2">Alle Pfade</h2>
           <p className="text-muted-foreground">
-            {t('exploreStGeorgen')}
+            Erkunde St.Georgen auf verschiedenen thematischen Routen
           </p>
         </motion.div>
 
@@ -88,7 +86,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{totalStats.totalPaths}</p>
-            <p className="text-sm text-muted-foreground">{t('pathsAvailable')}</p>
+            <p className="text-sm text-muted-foreground">Pfade verfügbar</p>
           </div>
 
           <div className="bg-white rounded-xl p-4 border border-border shadow-sm">
@@ -98,7 +96,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{totalStats.completedPaths}</p>
-            <p className="text-sm text-muted-foreground">{t('completed')}</p>
+            <p className="text-sm text-muted-foreground">Abgeschlossen</p>
           </div>
 
           <div className="bg-white rounded-xl p-4 border border-border shadow-sm">
@@ -108,7 +106,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{totalStats.totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{t('collectedPoints')}</p>
+            <p className="text-sm text-muted-foreground">Gesammelte Punkte</p>
           </div>
 
           <div className="bg-white rounded-xl p-4 border border-border shadow-sm">
@@ -118,7 +116,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
               </div>
             </div>
             <p className="text-2xl font-bold mb-1">{totalStats.totalCompletedStations}</p>
-            <p className="text-sm text-muted-foreground">{t('stationsExplored')}</p>
+            <p className="text-sm text-muted-foreground">Stationen erkundet</p>
           </div>
         </motion.div>
 
@@ -150,13 +148,13 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                     {isCompleted && (
                       <div className="absolute top-4 left-4 bg-primary text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg">
                         <Star className="w-4 h-4 fill-current" />
-                        <span className="text-sm font-semibold">{t('completed')}</span>
+                        <span className="text-sm font-semibold">Abgeschlossen</span>
                       </div>
                     )}
 
                     {!isCompleted && isStarted && (
                       <div className="absolute top-4 left-4 bg-white rounded-full px-4 py-2 shadow-lg">
-                        <span className="text-sm font-semibold">{t('inProgress')}</span>
+                        <span className="text-sm font-semibold">In Arbeit</span>
                       </div>
                     )}
 
@@ -181,7 +179,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                       <div className="bg-muted/50 rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{t('stations')}</span>
+                          <span className="text-xs text-muted-foreground">Stationen</span>
                         </div>
                         <p className="font-bold">
                           {path.completedStations}/{path.totalStations}
@@ -191,7 +189,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                       <div className="bg-muted/50 rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <Trophy className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{t('points')}</span>
+                          <span className="text-xs text-muted-foreground">Punkte</span>
                         </div>
                         <p className="font-bold">
                           {path.earnedPoints}/{path.totalPoints}
@@ -201,7 +199,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                       <div className="bg-muted/50 rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <Clock className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{t('duration')}</span>
+                          <span className="text-xs text-muted-foreground">Dauer</span>
                         </div>
                         <p className="font-bold">{path.estimatedTime}</p>
                       </div>
@@ -210,7 +208,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{t('progress')}</span>
+                        <span className="text-sm font-medium">Fortschritt</span>
                         <span className="text-sm font-bold text-primary">
                           {Math.round(progress)}%
                         </span>
@@ -232,12 +230,10 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                           <Award className="w-5 h-5 text-primary" />
                           <div>
                             <p className="text-sm font-semibold text-primary">
-                              {t('perfectlyCompleted')}
+                              Perfekt abgeschlossen!
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {t('allStationsExploredAndPoints')
-                                .replace('{total}', String(path.totalStations))
-                                .replace('{points}', String(path.totalPoints))}
+                              Alle {path.totalStations} Stationen erkundet und {path.totalPoints} Punkte gesammelt
                             </p>
                           </div>
                         </div>
@@ -250,10 +246,10 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                           <TrendingUp className="w-5 h-5 text-muted-foreground" />
                           <div>
                             <p className="text-sm font-semibold">
-                              {t('remainingStations').replace('{remaining}', String(path.totalStations - path.completedStations))}
+                              Noch {path.totalStations - path.completedStations} Stationen
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {path.totalPoints - path.earnedPoints} {t('pointsToCollect')}
+                              {path.totalPoints - path.earnedPoints} Punkte zu sammeln
                             </p>
                           </div>
                         </div>
@@ -265,9 +261,9 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                         <div className="flex items-center gap-2">
                           <MapPin className="w-5 h-5 text-primary" />
                           <div>
-                            <p className="text-sm font-semibold">{t('readyToStart')}</p>
+                            <p className="text-sm font-semibold">Bereit zum Starten</p>
                             <p className="text-xs text-muted-foreground">
-                              {t('stationsWaiting').replace('{count}', String(path.totalStations))}
+                              {path.totalStations} Stationen warten auf dich
                             </p>
                           </div>
                         </div>
@@ -280,7 +276,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                       className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl px-6 py-3 flex items-center justify-center gap-2 transition-colors"
                     >
                       <span className="font-semibold">
-                        {isCompleted ? t('exploreAgain') : isStarted ? t('continuePath') : t('startNow')}
+                        {isCompleted ? 'Erneut erkunden' : isStarted ? 'Weiter machen' : 'Jetzt starten'}
                       </span>
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -300,9 +296,9 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
             transition={{ delay: 0.3 }}
           >
             <div className="text-6xl mb-4">🗺️</div>
-            <h3 className="font-semibold mb-2">{t('noPathsAvailable')}</h3>
+            <h3 className="font-semibold mb-2">Keine Pfade verfügbar</h3>
             <p className="text-muted-foreground">
-              {t('noPathsCreatedYet')}
+              Es wurden noch keine Pfade erstellt.
             </p>
           </motion.div>
         )}
@@ -310,7 +306,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
 
       {/* Georgi Helper */}
       <Georgi
-        message={t('georgiPathsOverviewMessage')}
+        message="Hier siehst du alle verfügbaren Pfade mit deinem Fortschritt. Wähle einen Pfad aus, um die Stationen zu erkunden!"
         show={showGeorgi}
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"

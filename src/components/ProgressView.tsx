@@ -1,6 +1,5 @@
 import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Calendar, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Georgi } from './Georgi';
 import { Progress } from './ui/progress';
 
@@ -21,7 +20,6 @@ interface ProgressViewProps {
 }
 
 export function ProgressView({ paths, totalPoints, totalCompletedStations, onBack }: ProgressViewProps) {
-  const { t } = useLanguage();
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const maxPossiblePoints = paths.reduce((sum, path) => sum + path.totalPoints, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
@@ -49,7 +47,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
+            <span className="font-medium">Zurück</span>
           </button>
         </div>
       </div>
@@ -66,14 +64,14 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
             <div className="flex-1">
               <p className="text-sm">
                 {completionPercentage === 100
-                  ? t('progressMentorPerfect')
+                  ? "Unglaublich! Du hast alle Pfade gemeistert!"
                   : completionPercentage >= 75
-                  ? t('progressMentorAlmost').replace('{remaining}', String(totalStations - totalCompletedStations))
+                  ? `Fast geschafft! Nur noch ${totalStations - totalCompletedStations} Stationen!`
                   : completionPercentage >= 50
-                  ? t('progressMentorGreat')
+                  ? "Du machst tolle Fortschritte! Weiter so!"
                   : completionPercentage > 0
-                  ? t('progressMentorGoodStart')
-                  : t('progressMentorStartNow')}
+                  ? "Ein guter Start! Entdecke weitere spannende Orte!"
+                  : "Bereit für dein Abenteuer? Starte jetzt!"}
               </p>
             </div>
           </div>
@@ -88,7 +86,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm opacity-90 mb-1">{t('overallProgress')}</p>
+              <p className="text-sm opacity-90 mb-1">Gesamtfortschritt</p>
               <h2 className="text-4xl">{Math.round(completionPercentage)}%</h2>
             </div>
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -106,7 +104,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           </div>
 
           <p className="text-sm opacity-90">
-            {totalCompletedStations} {t('von')} {totalStations} {t('stationsCompleted')}
+            {totalCompletedStations} von {totalStations} Stationen abgeschlossen
           </p>
         </motion.div>
 
@@ -124,7 +122,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
               </div>
             </div>
             <p className="text-2xl mb-1">{completedPaths}</p>
-            <p className="text-sm text-muted-foreground">{t('pathsDone')}</p>
+            <p className="text-sm text-muted-foreground">Pfade fertig</p>
           </motion.div>
 
           <motion.div
@@ -139,7 +137,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
               </div>
             </div>
             <p className="text-2xl mb-1">{inProgressPaths}</p>
-            <p className="text-sm text-muted-foreground">{t('inProgress')}</p>
+            <p className="text-sm text-muted-foreground">In Arbeit</p>
           </motion.div>
 
           <motion.div
@@ -154,7 +152,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
               </div>
             </div>
             <p className="text-2xl mb-1">{totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{t('points')}</p>
+            <p className="text-sm text-muted-foreground">Punkte</p>
           </motion.div>
 
           <motion.div
@@ -169,7 +167,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
               </div>
             </div>
             <p className="text-2xl mb-1">{currentStreak}</p>
-            <p className="text-sm text-muted-foreground">{t('streakDays')}</p>
+            <p className="text-sm text-muted-foreground">Tage Streak</p>
           </motion.div>
         </div>
 
@@ -181,7 +179,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           transition={{ delay: 0.6 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3>{t('pointsProgress')}</h3>
+            <h3>Punkte-Fortschritt</h3>
             <span className="text-primary">
               {totalPoints}/{maxPossiblePoints}
             </span>
@@ -195,7 +193,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
             />
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {t('pointsStillAvailable').replace('{points}', String(maxPossiblePoints - totalPoints))}
+            {maxPossiblePoints - totalPoints} Punkte noch verfügbar
           </p>
         </motion.div>
 
@@ -205,7 +203,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <h3 className="mb-4">{t('progressByPath')}</h3>
+          <h3 className="mb-4">Fortschritt nach Pfad</h3>
           <div className="space-y-4">
             {pathCompletionRates.map((path, index) => (
               <motion.div
@@ -232,7 +230,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
                   <div className="text-right">
                     <p className="text-2xl">{Math.round(path.completionRate)}%</p>
                     {path.completionRate === 100 && (
-                      <span className="text-xs text-success">✓ {t('done')}</span>
+                      <span className="text-xs text-success">✓ Fertig</span>
                     )}
                   </div>
                 </div>
@@ -282,21 +280,21 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
               <Award className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h4 className="text-primary">{t('nextGoal')}</h4>
+              <h4 className="text-primary">Nächstes Ziel</h4>
               <p className="text-sm text-muted-foreground">
                 {completionPercentage === 100
-                  ? t('allGoalsReached')
+                  ? "Alle Ziele erreicht!"
                   : inProgressPaths > 0
-                  ? t('completeAPath')
-                  : t('startNewPath')}
+                  ? "Schließe einen Pfad ab"
+                  : "Starte einen neuen Pfad"}
               </p>
             </div>
           </div>
           {completionPercentage < 100 && (
             <p className="text-sm text-muted-foreground">
               {totalStations - totalCompletedStations === 1
-                ? t('oneStationLeft')
-                : t('stationsRemaining').replace('{remaining}', String(totalStations - totalCompletedStations))}
+                ? "Noch 1 Station bis zum Abschluss!"
+                : `Noch ${totalStations - totalCompletedStations} Stationen zu entdecken`}
             </p>
           )}
         </motion.div>

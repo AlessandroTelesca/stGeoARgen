@@ -1,7 +1,0 @@
-{
-  "stationName": "Glockenspiel",
-  "description": "Erlebe das Glockenspiel in AR",
-  "longDescription": "Das Glockenspiel ist ein faszinierendes historisches Instrument. Entdecke in der AR-Experience, wie die Mechanik funktioniert und höre die traditionellen Melodien.",
-  "quizQuestion": "Wie viele Glocken hat das Glockenspiel?",
-  "quizOptions": ["12 Glocken", "18 Glocken", "24 Glocken", "30 Glocken"]
-}

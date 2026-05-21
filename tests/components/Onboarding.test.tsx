@@ -15,7 +15,7 @@ describe('Onboarding', () => {
     const onSkip = vi.fn();
     render(<Onboarding onComplete={noop} onSkip={onSkip} />);
 
-    expect(screen.getByText('Willkommen in St.Georgen!')).toBeInTheDocument();
+    expect(screen.getByText('Hallo, ich bin Georgi!')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Überspringen'));
     expect(onSkip).toHaveBeenCalled();
@@ -25,7 +25,6 @@ describe('Onboarding', () => {
     const onComplete = vi.fn();
     render(<Onboarding onComplete={onComplete} onSkip={noop} />);
 
-    await userEvent.click(screen.getByText('Weiter'));
     await userEvent.click(screen.getByText('Weiter'));
     await userEvent.click(screen.getByText('Weiter'));
     await userEvent.click(screen.getByText("Los geht's!"));

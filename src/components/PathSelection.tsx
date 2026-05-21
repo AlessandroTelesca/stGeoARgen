@@ -1,6 +1,5 @@
 import { motion } from 'motion/react';
 import { MapPin, Trophy, Clock, ChevronRight, Star, ArrowLeft, ArrowRight } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface PathDetail {
@@ -23,7 +22,6 @@ interface PathSelectionProps {
 }
 
 export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProps) {
-  const { t } = useLanguage();
   const difficultyColors = {
     'Einfach': {
       bg: 'bg-success/10',
@@ -52,7 +50,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
+            <span className="font-medium">Zurück</span>
           </button>
         </div>
       </div>
@@ -64,9 +62,9 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold mb-2">{t('themenPaths')}</h2>
+          <h2 className="text-2xl font-bold mb-2">Themenpfade</h2>
           <p className="text-muted-foreground">
-            {t('choosePathAndExplore')}
+            Wähle einen Pfad und erkunde St.Georgen auf verschiedenen thematischen Routen
           </p>
         </motion.div>
 
@@ -120,7 +118,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                           <div className="absolute top-4 right-4">
                             <div className="bg-success text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 backdrop-blur-sm">
                               <Star className="w-3 h-3" fill="currentColor" />
-                              {t('completed')}
+                              Abgeschlossen
                             </div>
                           </div>
                         )}
@@ -155,7 +153,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <MapPin className="w-4 h-4" />
                             <span className="text-sm">
-                              {path.completedStations}/{path.totalStations} {t('stations')}
+                              {path.completedStations}/{path.totalStations} Stationen
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -174,7 +172,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                         {/* Action */}
                         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
                           <span className="text-sm font-medium text-primary">
-                            {t('startNow')}
+                            Jetzt starten
                           </span>
                           <ArrowRight className="w-5 h-5 text-primary" />
                         </div>
@@ -192,16 +190,16 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="font-semibold mb-3">{t('howItWorks')}</h3>
+          <h3 className="font-semibold mb-3">So funktioniert's</h3>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-primary font-bold">1</span>
               </div>
               <div>
-                <p className="font-medium text-sm">{t('selectPath')}</p>
+                <p className="font-medium text-sm">Pfad auswählen</p>
                 <p className="text-xs text-muted-foreground">
-                  {t('selectPathDesc')}
+                  Wähle einen thematischen Pfad, der dich interessiert
                 </p>
               </div>
             </div>
@@ -210,9 +208,9 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                 <span className="text-primary font-bold">2</span>
               </div>
               <div>
-                <p className="font-medium text-sm">{t('discoverStations')}</p>
+                <p className="font-medium text-sm">Stationen entdecken</p>
                 <p className="text-xs text-muted-foreground">
-                  {t('discoverStationsDesc')}
+                  Besuche die Stationen und erlebe AR-Inhalte
                 </p>
               </div>
             </div>
@@ -221,9 +219,9 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
                 <span className="text-primary font-bold">3</span>
               </div>
               <div>
-                <p className="font-medium text-sm">{t('collectPoints')}</p>
+                <p className="font-medium text-sm">Punkte sammeln</p>
                 <p className="text-xs text-muted-foreground">
-                  {t('collectPointsDesc')}
+                  Sammle Punkte und schalte Gutscheine frei
                 </p>
               </div>
             </div>
