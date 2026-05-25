@@ -20,11 +20,11 @@ describe('RewardDialog', () => {
     const confirmButton = screen.getByRole('button', { name: /gutschein einlösen/i });
     expect(confirmButton).toBeDisabled();
 
-    await user.click(screen.getByText('Lokalität 2'));
+    await user.click(screen.getByText('Mustermann Café'));
     expect(confirmButton).toBeEnabled();
 
     await user.click(confirmButton);
-    expect(onSelectReward).toHaveBeenCalledWith('locality2');
+    expect(onSelectReward).toHaveBeenCalledWith('locality1');
   });
 
   test('closes via later button', async () => {

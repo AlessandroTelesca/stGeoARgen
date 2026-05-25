@@ -35,14 +35,13 @@ describe('Settings', () => {
     await userEvent.click(toggle);
     expect(toggle.className).not.toBe(beforeClass);
 
-    const germanButton = screen.getByRole('button', { name: 'German' });
-    const englishButton = screen.getByRole('button', { name: 'English' });
-
-    expect(englishButton).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(englishButton);
-    await userEvent.click(germanButton);
-    expect(screen.getByRole('button', { name: 'Deutsch' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'false');
+    // Language is now a <select> dropdown
+    const languageSelect = screen.getByRole('combobox');
+    expect(languageSelect).toBeInTheDocument();
+    await userEvent.selectOptions(languageSelect, 'en');
+    expect(languageSelect).toHaveValue('en');
+    await userEvent.selectOptions(languageSelect, 'de');
+    expect(languageSelect).toHaveValue('de');
   });
 
   it('confirms and calls reset handler', async () => {

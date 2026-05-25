@@ -9,7 +9,9 @@
       "Bash(Select-Object -First 30)",
       "Bash(Format-Table Name, PSIsContainer)",
       "PowerShell(Get-ChildItem -Path \"g:\\\\Fertige_Projekte\\\\Projekt\\\\StGeoARgen\\\\stGeoARgen\\\\src\" -Recurse | Where-Object { $_.Name -match \"\\(?i\\)\\(bahnhof|station|zug|train\\)\" } | Select-Object FullName)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(gh run *)",
+      "Bash(npm test *)"
     ]
   }
 }
