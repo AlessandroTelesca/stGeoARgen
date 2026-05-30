@@ -10,6 +10,16 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
 import { MobileOnlyNotice } from '../MobileOnlyNotice';
 
+const PHONOGRAPH_MODEL_URL = new URL('./models/Phono_1_Object.glb', import.meta.url).href;
+const GRAMOPHONE_MODEL_URL = new URL('./models/gramophone.glb', import.meta.url).href;
+const PLATTENSPIELER_MODEL_URL = new URL('./models/Plattenspieler.glb', import.meta.url).href;
+
+const INSTRUMENT_MODEL_URLS: Record<string, string> = {
+  phonograph: PHONOGRAPH_MODEL_URL,
+  gramophone: GRAMOPHONE_MODEL_URL,
+  plattenspieler: PLATTENSPIELER_MODEL_URL,
+};
+
 interface ARViewProps {
   onNavigateHome?: () => void;
   username?: string | null;
@@ -28,6 +38,7 @@ interface ARViewProps {
 
 class PhonomuseumARSession extends GyroARVisualizer {
   private readonly panoramaUrl = '/images/360/phonomuseum.jpg';
+  private readonly instrumentModels = new Map<string, THREE.Object3D>();
 
   private loadPanoramaTexture(url: string): Promise<THREE.Texture> {
     return new Promise((resolve, reject) => {
@@ -66,6 +77,40 @@ class PhonomuseumARSession extends GyroARVisualizer {
 			);
 			debugHelpers.forEach((helper) => this.scene?.remove(helper));
 		}
+  }
+
+  async showInstrumentModel(soundType: string, url: string): Promise<void> {
+    this.hideAllInstrumentModels();
+
+    if (this.instrumentModels.has(soundType)) {
+      const cached = this.instrumentModels.get(soundType)!;
+      if (this.camera && !cached.parent) {
+        this.camera.add(cached);
+      }
+      cached.visible = true;
+      return;
+    }
+
+    try {
+      const model = await this.loadGLTFModel(url, { scale: 0.5 });
+      // Re-parent from world scene to camera so the model is always centred in view
+      if (this.scene && this.camera) {
+        this.scene.remove(model);
+        this.camera.add(model);
+      }
+      // Position in camera-local space: centred, slightly below, in front
+      model.position.set(0, -0.4, -2.0);
+      model.rotation.set(0, Math.PI / 6, 0);
+      this.instrumentModels.set(soundType, model);
+    } catch (err) {
+      console.error('[PhonomuseumARSession] Failed to load instrument model', err);
+    }
+  }
+
+  hideAllInstrumentModels(): void {
+    this.instrumentModels.forEach((model) => {
+      model.visible = false;
+    });
   }
 }
 
@@ -402,23 +447,11 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     mediumLessonCopy.questions.map(() => null)
   );
   const [mediumLessonFinished, setMediumLessonFinished] = React.useState(false);
-  const [revealRotation, setRevealRotation] = React.useState({ x: -16, y: 24 });
-  const [showDragInstruction, setShowDragInstruction] = React.useState(false);
-  const [dragsSinceReveal, setDragsSinceReveal] = React.useState(0);
   const [hideQuizSummary, setHideQuizSummary] = React.useState(false);
   const [yourTurnMelody, setYourTurnMelody] = React.useState<number[]>([]);
   const [hasPlayedYourTurnMelody, setHasPlayedYourTurnMelody] = React.useState(false);
   const [activeSoundButtonId, setActiveSoundButtonId] = React.useState<string | null>(null);
   const soundIndicatorTimeoutRef = useRef<number | null>(null);
-  const dragStateRef = useRef({
-    active: false,
-    startX: 0,
-    startY: 0,
-    startRotX: -16,
-    startRotY: 24,
-    counted: false,
-  });
-
   if (isNotMobile) {
     return <MobileOnlyNotice />;
   }
@@ -653,45 +686,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     setMediumLessonFinished(false);
   };
 
-  const startCubeDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    dragStateRef.current = {
-      active: true,
-      startX: event.clientX,
-      startY: event.clientY,
-      startRotX: revealRotation.x,
-      startRotY: revealRotation.y,
-      counted: false,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const moveCubeDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragStateRef.current.active) return;
-    const deltaX = event.clientX - dragStateRef.current.startX;
-    const deltaY = event.clientY - dragStateRef.current.startY;
-
-    const nextY = dragStateRef.current.startRotY + deltaX * 0.35;
-    const nextXRaw = dragStateRef.current.startRotX + deltaY * 0.28;
-    const nextX = Math.max(-40, Math.min(40, nextXRaw));
-
-    if (!dragStateRef.current.counted && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
-      dragStateRef.current.counted = true;
-      setDragsSinceReveal((prev) => {
-        const next = prev + 1;
-        if (next >= 3) {
-          setShowDragInstruction(false);
-        }
-        return next;
-      });
-    }
-
-    setRevealRotation({ x: nextX, y: nextY });
-  };
-
-  const endCubeDrag = () => {
-    dragStateRef.current.active = false;
-  };
-
   const startARSession = async () => {
     if (!isAuthorized || !containerRef.current || !videoRef.current || isStarting || hasStarted) {
       return;
@@ -725,13 +719,6 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   };
 
   useEffect(() => {
-    if (phase !== 'reveal') return;
-    setRevealRotation({ x: -16, y: 24 });
-    setDragsSinceReveal(0);
-    setShowDragInstruction(true);
-  }, [phase, currentQuestionIndex]);
-
-  useEffect(() => {
     setShuffledQuestionOrder(shuffleArray(questions.map((_, i) => i)));
     setCurrentQuestionIndex(0);
     setSelectedAnswerIndex(null);
@@ -753,6 +740,20 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
       sessionRef.current?.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (!hasStarted || !sessionRef.current) return;
+
+    if (phase === 'reveal') {
+      const questionIndex = shuffledQuestionOrder[currentQuestionIndex] ?? currentQuestionIndex;
+      const soundType = questions[questionIndex]?.soundType as string | undefined;
+      if (soundType && INSTRUMENT_MODEL_URLS[soundType]) {
+        void sessionRef.current.showInstrumentModel(soundType, INSTRUMENT_MODEL_URLS[soundType]);
+      }
+    } else {
+      sessionRef.current.hideAllInstrumentModels();
+    }
+  }, [phase, currentQuestionIndex, shuffledQuestionOrder, hasStarted, questions]);
 
   useEffect(() => {
     return () => {
@@ -1421,55 +1422,43 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
               {phase === 'reveal' && (
                 <>
-                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{currentQuestion.instrumentName}</h3>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px', position: 'relative' }}>
-                    <div
-                      onPointerDown={startCubeDrag}
-                      onPointerMove={moveCubeDrag}
-                      onPointerUp={endCubeDrag}
-                      onPointerCancel={endCubeDrag}
+                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                    {currentQuestion.instrumentName}
+                  </h3>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      marginBottom: '14px',
+                      padding: '20px 16px',
+                      borderRadius: '16px',
+                      background: 'rgba(0, 0, 0, 0.32)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                    }}
+                  >
+                    <Volume2 size={32} color="var(--color-white)" style={{ opacity: 0.85 }} />
+                    <p
                       style={{
-                        width: '192px',
-                        height: '192px',
-                        borderRadius: '24px',
-                        background: 'linear-gradient(145deg, var(--color-green-200), var(--color-primary-lighter))',
-                        boxShadow: 'inset -8px -8px 14px rgba(0,0,0,0.26), inset 8px 8px 14px rgba(255,255,255,0.2), 0 14px 24px rgba(0,0,0,0.33)',
-                        transform: `perspective(760px) rotateX(${revealRotation.x}deg) rotateY(${revealRotation.y}deg)`,
-                        cursor: 'grab',
-                        touchAction: 'none',
+                        margin: 0,
+                        color: 'var(--color-white)',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.85)',
+                        textAlign: 'center',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
                       }}
-                    />
-
-                    {showDragInstruction && dragsSinceReveal < 3 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          pointerEvents: 'none',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '2px',
-                        }}
-                      >
-                        <img
-                          src="/dragAnimation.gif"
-                          alt={phonomuseumTexts.dragInstruction}
-                          style={{ width: '255px', height: '255px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))' }}
-                        />
-                        <p style={{ margin: '-28px 0 0 0', fontSize: '14px', fontWeight: 500, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
-                          {phonomuseumTexts.dragInstruction}
-                        </p>
-                      </div>
-                    )}
+                    >
+                      {language === 'de'
+                        ? 'Das 3D-Modell ist jetzt in der AR-Ansicht sichtbar. Bewege dein Smartphone, um es zu erkunden.'
+                        : 'The 3D model is now visible in the AR view. Move your smartphone to explore it.'}
+                    </p>
                   </div>
                   <button
                     onClick={handleContinueFromReveal}
                     style={{
                       width: '100%',
-                      marginTop: '48px',
                       border: 'none',
                       borderRadius: '12px',
                       padding: '10px 12px',
