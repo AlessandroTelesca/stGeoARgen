@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Check, Music2, Play, Trash2, Undo2, Volume2, X } from 'lucide-react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import * as Tone from 'tone';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
@@ -18,6 +20,155 @@ const INSTRUMENT_MODEL_URLS: Record<string, string> = {
   phonograph: PHONOGRAPH_MODEL_URL,
   gramophone: GRAMOPHONE_MODEL_URL,
   plattenspieler: PLATTENSPIELER_MODEL_URL,
+};
+
+// ─── Inline 3-D model viewer ──────────────────────────────────────────────────
+
+interface ModelViewerProps {
+  url: string;
+  height?: number;
+  autoSpin?: boolean;
+  interactive?: boolean;
+  onDragStart?: () => void;
+}
+
+const ModelViewer: React.FC<ModelViewerProps> = ({
+  url,
+  height = 200,
+  autoSpin = true,
+  interactive = false,
+  onDragStart,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pivotRef = useRef<THREE.Group | null>(null);
+  const stateRef = useRef({
+    rafId: 0,
+    rotY: 0.3,
+    rotX: 0,
+    isSpinning: autoSpin,
+    dragActive: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragBaseRotY: 0.3,
+    dragBaseRotX: 0,
+  });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const state = stateRef.current;
+    state.isSpinning = autoSpin;
+    state.rotY = 0.3;
+    state.rotX = 0;
+
+    const w = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 320;
+    const h = height;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.001, 1000);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+    dir.position.set(2, 4, 3);
+    scene.add(dir);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+    fill.position.set(-2, 1, -3);
+    scene.add(fill);
+
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    pivotRef.current = pivot;
+
+    let disposed = false;
+
+    const loader = new GLTFLoader();
+    const draco = new DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
+    loader.setDRACOLoader(draco);
+
+    loader.load(
+      url,
+      (gltf) => {
+        if (disposed) return;
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fitDist = maxDim / (2 * Math.tan((Math.PI / 180) * 22.5));
+        model.position.sub(center);
+        pivot.add(model);
+        camera.position.set(0, 0, fitDist * 1.6);
+        camera.lookAt(0, 0, 0);
+      },
+      undefined,
+      (err) => console.error('[ModelViewer] Failed to load', err)
+    );
+
+    const animate = () => {
+      if (disposed) return;
+      state.rafId = requestAnimationFrame(animate);
+      if (state.isSpinning) state.rotY += 0.008;
+      pivot.rotation.y = state.rotY;
+      pivot.rotation.x = state.rotX;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(state.rafId);
+      renderer.dispose();
+      pivotRef.current = null;
+    };
+  }, [url, height, autoSpin]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!interactive) return;
+    const state = stateRef.current;
+    state.dragActive = true;
+    state.isSpinning = false;
+    state.dragStartX = e.clientX;
+    state.dragStartY = e.clientY;
+    state.dragBaseRotY = state.rotY;
+    state.dragBaseRotX = state.rotX;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    onDragStart?.();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!interactive || !stateRef.current.dragActive) return;
+    const state = stateRef.current;
+    state.rotY = state.dragBaseRotY + (e.clientX - state.dragStartX) * 0.012;
+    state.rotX = Math.max(-0.65, Math.min(0.65, state.dragBaseRotX + (e.clientY - state.dragStartY) * 0.012));
+  };
+
+  const handlePointerUp = () => {
+    if (interactive) stateRef.current.dragActive = false;
+  };
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: `${height}px`,
+        touchAction: 'none',
+        cursor: interactive ? 'grab' : 'default',
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    />
+  );
 };
 
 interface ARViewProps {
@@ -38,7 +189,6 @@ interface ARViewProps {
 
 class PhonomuseumARSession extends GyroARVisualizer {
   private readonly panoramaUrl = '/images/360/phonomuseum.jpg';
-  private readonly instrumentModels = new Map<string, THREE.Object3D>();
 
   private loadPanoramaTexture(url: string): Promise<THREE.Texture> {
     return new Promise((resolve, reject) => {
@@ -79,39 +229,6 @@ class PhonomuseumARSession extends GyroARVisualizer {
 		}
   }
 
-  async showInstrumentModel(soundType: string, url: string): Promise<void> {
-    this.hideAllInstrumentModels();
-
-    if (this.instrumentModels.has(soundType)) {
-      const cached = this.instrumentModels.get(soundType)!;
-      if (this.camera && !cached.parent) {
-        this.camera.add(cached);
-      }
-      cached.visible = true;
-      return;
-    }
-
-    try {
-      const model = await this.loadGLTFModel(url, { scale: 0.5 });
-      // Re-parent from world scene to camera so the model is always centred in view
-      if (this.scene && this.camera) {
-        this.scene.remove(model);
-        this.camera.add(model);
-      }
-      // Position in camera-local space: centred, slightly below, in front
-      model.position.set(0, -0.4, -2.0);
-      model.rotation.set(0, Math.PI / 6, 0);
-      this.instrumentModels.set(soundType, model);
-    } catch (err) {
-      console.error('[PhonomuseumARSession] Failed to load instrument model', err);
-    }
-  }
-
-  hideAllInstrumentModels(): void {
-    this.instrumentModels.forEach((model) => {
-      model.visible = false;
-    });
-  }
 }
 
 type QuizPhase = 'question' | 'feedback' | 'reveal' | 'yourTurn' | 'summary';
@@ -448,6 +565,8 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   );
   const [mediumLessonFinished, setMediumLessonFinished] = React.useState(false);
   const [hideQuizSummary, setHideQuizSummary] = React.useState(false);
+  const [showDragInstruction, setShowDragInstruction] = React.useState(false);
+  const [dragsSinceReveal, setDragsSinceReveal] = React.useState(0);
   const [yourTurnMelody, setYourTurnMelody] = React.useState<number[]>([]);
   const [hasPlayedYourTurnMelody, setHasPlayedYourTurnMelody] = React.useState(false);
   const [activeSoundButtonId, setActiveSoundButtonId] = React.useState<string | null>(null);
@@ -742,18 +861,10 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
   }, []);
 
   useEffect(() => {
-    if (!hasStarted || !sessionRef.current) return;
-
-    if (phase === 'reveal') {
-      const questionIndex = shuffledQuestionOrder[currentQuestionIndex] ?? currentQuestionIndex;
-      const soundType = questions[questionIndex]?.soundType as string | undefined;
-      if (soundType && INSTRUMENT_MODEL_URLS[soundType]) {
-        void sessionRef.current.showInstrumentModel(soundType, INSTRUMENT_MODEL_URLS[soundType]);
-      }
-    } else {
-      sessionRef.current.hideAllInstrumentModels();
-    }
-  }, [phase, currentQuestionIndex, shuffledQuestionOrder, hasStarted, questions]);
+    if (phase !== 'reveal') return;
+    setDragsSinceReveal(0);
+    setShowDragInstruction(true);
+  }, [phase, currentQuestionIndex]);
 
   useEffect(() => {
     return () => {
@@ -1276,19 +1387,13 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
               {phase === 'question' && (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
-                    <div
-                      style={{
-                        width: '148px',
-                        height: '148px',
-                        borderRadius: '22px',
-                        background: 'linear-gradient(145deg, var(--color-green-300), var(--color-primary))',
-                        boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.28), inset 8px 8px 16px rgba(255,255,255,0.18), 0 12px 28px rgba(0,0,0,0.38)',
-                        transform: 'perspective(420px) rotateX(16deg) rotateY(-18deg)',
-                        display: 'grid',
-                        placeItems: 'center',
-                      }}
-                    >
-                      <span style={{ fontSize: '5rem', fontWeight: 900, lineHeight: 1, color: 'var(--color-white)', textShadow: '0 5px 10px rgba(0,0,0,0.4)' }}>?</span>
+                    <div style={{ width: '225px', height: '225px', overflow: 'hidden' }}>
+                      <ModelViewer
+                        url={INSTRUMENT_MODEL_URLS[currentQuestion.soundType]}
+                        height={225}
+                        autoSpin
+                        interactive={false}
+                      />
                     </div>
                   </div>
 
@@ -1422,39 +1527,61 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
 
               {phase === 'reveal' && (
                 <>
-                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '12px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
+                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '10px', color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>
                     {currentQuestion.instrumentName}
                   </h3>
+
+                  {/* interactive 3-D model viewer */}
                   <div
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px',
-                      marginBottom: '14px',
-                      padding: '20px 16px',
+                      position: 'relative',
                       borderRadius: '16px',
-                      background: 'rgba(0, 0, 0, 0.32)',
-                      border: '1px solid rgba(255,255,255,0.18)',
+                      overflow: 'hidden',
+                      marginBottom: '12px',
+                      background: 'rgba(10,14,22,0.6)',
+                      boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
                     }}
                   >
-                    <Volume2 size={32} color="var(--color-white)" style={{ opacity: 0.85 }} />
-                    <p
-                      style={{
-                        margin: 0,
-                        color: 'var(--color-white)',
-                        textShadow: '0 2px 8px rgba(0,0,0,0.85)',
-                        textAlign: 'center',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.5,
+                    <ModelViewer
+                      url={INSTRUMENT_MODEL_URLS[currentQuestion.soundType]}
+                      height={338}
+                      autoSpin
+                      interactive
+                      onDragStart={() => {
+                        setDragsSinceReveal((prev) => {
+                          const next = prev + 1;
+                          if (next >= 3) setShowDragInstruction(false);
+                          return next;
+                        });
                       }}
-                    >
-                      {language === 'de'
-                        ? 'Das 3D-Modell ist jetzt in der AR-Ansicht sichtbar. Bewege dein Smartphone, um es zu erkunden.'
-                        : 'The 3D model is now visible in the AR view. Move your smartphone to explore it.'}
-                    </p>
+                    />
+
+                    {showDragInstruction && dragsSinceReveal < 3 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '2px',
+                        }}
+                      >
+                        <img
+                          src="/dragAnimation.gif"
+                          alt={phonomuseumTexts.dragInstruction}
+                          style={{ width: '200px', height: '200px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}
+                        />
+                        <p style={{ margin: '-20px 0 0 0', fontSize: '13px', fontWeight: 500, color: 'var(--color-white)', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
+                          {phonomuseumTexts.dragInstruction}
+                        </p>
+                      </div>
+                    )}
                   </div>
+
                   <button
                     onClick={handleContinueFromReveal}
                     style={{

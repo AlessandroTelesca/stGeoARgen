@@ -3,10 +3,7 @@
  * 
  * API-URL kann ueber VITE_API_BASE_URL konfiguriert werden.
  */
-const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const defaultApiBaseUrl = isLocalHost && import.meta.env.DEV ? '/api' : 'https://stgeoargen.iiius.de/api';
-
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl).replace(/\/+$/, '');
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://stgeoargen.iiius.de/api').replace(/\/+$/, '');
 
 export interface ApiResponse<T = unknown> {
     success: boolean;
