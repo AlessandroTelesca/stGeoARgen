@@ -231,15 +231,11 @@ class BahnhofARSession extends GyroARVisualizer {
 		const geometry = new THREE.PlaneGeometry(24, 12);
 
 		const leftPlane = new THREE.Mesh(geometry, leftMaterial);
-		leftPlane.position
-			.set(0, 0, 5)
-			.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+		leftPlane.position.set(0, 0, 5);
 		leftPlane.renderOrder = -10;
 
 		const rightPlane = new THREE.Mesh(geometry, rightMaterial);
-		rightPlane.position
-			.set(0, 0, -5)
-			.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+		rightPlane.position.set(0, 0, -5);
 		rightPlane.renderOrder = -10;
 
 		const onBeforeRender = () => {
