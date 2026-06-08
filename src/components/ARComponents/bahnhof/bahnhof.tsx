@@ -19,21 +19,17 @@ interface InfoMarkerDef {
 	position: [number, number, number];
 }
 
-// Positions match the actual geometry of german_steam_locomotive.glb (def-space = model-local space).
-// Kessel: x [-1.7..18.9] | Haus/Cab: x [-6.5..1.6] | Tender: x [-19.1..-5.3]
-// Step 0 camera: (24, 2, 4)  Step 1 camera: (-24, 2, 4)  Step 2 camera: (-5, 2.5, 0)
+// Positions are tuned to the german_steam_locomotive.glb at origin.
+// Step 0 camera: (7.5, 0.5, 2)  Step 1 camera: (-6.5, 0.5, 2)  Step 2 camera: (-1.5, 1, 0)
 const INFO_MARKER_DEFS: InfoMarkerDef[] = [
-	// Step 0 – Frontansicht: Stirnseite des Kessels
-	{ id: 'frontLamp',     tourStep: 0, position: [18.5,  2.0,  0.0] }, // Stirnlampe: vordere Kesselfläche, Mitte
-	{ id: 'smokestack',    tourStep: 0, position: [16.0,  5.8,  0.0] }, // Schornstein: kurz hinter der Front, ganz oben
-	{ id: 'boiler',        tourStep: 0, position: [ 9.0,  2.3,  2.6] }, // Kessel: Zylindermitte, seitlich sichtbar
-	// Step 1 – Heckansicht: Tenderseite
-	{ id: 'tender',        tourStep: 1, position: [-12.0,  2.0,  0.0] }, // Tender: Körpermitte
-	{ id: 'rearBuffers',   tourStep: 1, position: [-18.5,  0.0,  0.0] }, // Puffer: hinterer Pufferträger
-	// Step 2 – Führerstand: Bedienelemente am Kesselrückwand/Führerstand
-	{ id: 'pressureGauge', tourStep: 2, position: [ 0.5,  3.5, -1.5] }, // Manometer: Kesselrückwand oben links
-	{ id: 'throttle',      tourStep: 2, position: [ 0.5,  2.5,  1.5] }, // Regler: Kesselrückwand Mitte rechts
-	{ id: 'brake',         tourStep: 2, position: [-1.5,  2.5, -1.0] }, // Bremse: Führerstandbereich links
+	{ id: 'frontLamp',     tourStep: 0, position: [3.8,  2.6,  0.0] },
+	{ id: 'smokestack',    tourStep: 0, position: [2.0,  3.5,  0.0] },
+	{ id: 'boiler',        tourStep: 0, position: [0.0,  1.6,  0.9] },
+	{ id: 'tender',        tourStep: 1, position: [-3.5, 1.4,  0.0] },
+	{ id: 'rearBuffers',   tourStep: 1, position: [-5.8, 0.7,  0.6] },
+	{ id: 'pressureGauge', tourStep: 2, position: [-2.2, 1.6, -0.5] },
+	{ id: 'throttle',      tourStep: 2, position: [-2.0, 1.3,  0.5] },
+	{ id: 'brake',         tourStep: 2, position: [-1.1, 1.4, -0.5] },
 ];
 
 // Desired icon diameter in CSS pixels — constant across all markers and distances.
@@ -146,8 +142,8 @@ class BahnhofARSession extends GyroARVisualizer {
 			console.error('[BahnhofARSession] Failed to load panorama texture', err);
 		}
 
-		// Set the default camera position and look at the train model (Frontansicht)
-		this.setCameraPositionAndLookAt(24, 2, 4);
+			// Set the default camera position and look at the train model
+			this.setCameraPositionAndLookAt(7, 0.5, 2.5);
 	}
 
 	getCameraPosition(): { x: number; y: number; z: number } | null {
@@ -174,7 +170,7 @@ class BahnhofARSession extends GyroARVisualizer {
 	}
 
 	setInsideView(): void {
-		this.setCameraPositionAndLookAt(-5, 2.5, 0);
+		this.setCameraPositionAndLookAt(-1.5, 1, 0);
 
 		if (!this.scene) return;
 
@@ -443,8 +439,8 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 				}
 			);
 
-			await session.init();
-			session.setCameraPositionAndLookAt(24, 2, 4);
+				await session.init();
+				session.setCameraPositionAndLookAt(7.5, 0.5, 2);
 			session.addInfoMarkers();
 			session.showInfoMarkersForStep(0);
 			sessionRef.current = session;
@@ -587,7 +583,7 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		if (!session) return;
 
 		if (tourStep === 0) {
-			session.setCameraPositionAndLookAt(-24, 2, 4);
+			session.setCameraPositionAndLookAt(-6.5, 0.5, 2);
 			session.showInfoMarkersForStep(1);
 			setTourStep(1);
 			setActiveInfoPopup(null);
