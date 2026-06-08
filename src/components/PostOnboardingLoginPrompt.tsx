@@ -32,24 +32,24 @@ export function PostOnboardingLoginPrompt({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
+            className="relative bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
             initial={{ y: 80, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 80, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           >
             {/* Close button */}
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-5 right-5 z-10">
               <button
                 onClick={onSkip}
-                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="w-10 h-10 shrink-0 aspect-square rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
                 aria-label={t('close')}
               >
-                <X className="w-4 h-4 text-muted-foreground" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
-            <div className="p-8 pt-10">
+            <div className="px-10 py-10 pt-14">
               {/* Logo + Title */}
               <div className="flex flex-col items-center text-center mb-6">
                 <motion.div
@@ -118,21 +118,21 @@ export function PostOnboardingLoginPrompt({
 
               {/* Buttons */}
               <motion.div
-                className="space-y-3"
+                className="w-full space-y-3"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
                 <button
                   onClick={onLogin}
-                  className="w-full h-13 bg-primary hover:bg-primary/90 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
+                  className="w-full min-h-[52px] px-6 py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
                 >
-                  <LogIn className="w-5 h-5" />
+                  <LogIn className="w-5 h-5 shrink-0" />
                   {t('loginNow')}
                 </button>
                 <button
                   onClick={onRegister}
-                  className="w-full py-3.5 rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
+                  className="w-full min-h-[52px] px-6 py-4 rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all flex items-center justify-center"
                 >
                   {t('createAccount')}
                 </button>

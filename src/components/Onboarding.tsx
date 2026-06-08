@@ -81,16 +81,16 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-white rounded-3xl max-w-md w-full flex flex-col overflow-hidden shadow-2xl max-h-[90vh]"
+        className="relative bg-white rounded-3xl max-w-md w-full flex flex-col overflow-hidden shadow-2xl max-h-[90vh]"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
       >
         {/* Skip Button */}
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-5 right-5 z-10">
           <button
             onClick={onSkip}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-muted"
+            className="text-sm font-medium text-foreground bg-muted border border-border hover:bg-muted/80 transition-colors px-5 py-2 rounded-full shadow-sm"
           >
             {t('skip')}
           </button>
@@ -111,7 +111,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 x: { type: 'spring', stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 },
               }}
-              className="flex-1 flex flex-col items-center justify-start pt-8 px-8 pb-4 text-center"
+              className="flex-1 flex flex-col items-center justify-start pt-14 px-10 pb-6 text-center"
             >
               {/* Logo */}
               <motion.div
@@ -155,7 +155,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
           </AnimatePresence>
 
           {/* Progress Indicators */}
-          <div className="px-8 pb-4">
+          <div className="px-10 pb-8">
             <div className="flex gap-2 justify-center mb-6">
               {steps.map((_, index) => (
                 <motion.div
