@@ -1,5 +1,6 @@
 import { ArrowLeft, ExternalLink, Mail, MapPin, Globe, Phone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import GisslerBranding from './GisslerBranding';
 
 interface ImpressumProps {
   onBack: () => void;
@@ -115,8 +116,16 @@ export function Impressum({ onBack }: ImpressumProps) {
             {isDE ? 'Entwickelt von' : 'Developed by'}
           </h2>
           <div className="space-y-3">
+            {/* Jonas Gissler – with G&A Webdesign branding */}
+            <div className="flex items-center gap-3 py-2 border-b border-border">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Jonas Gissler</p>
+                <p className="text-xs text-muted-foreground mb-1">UX/UI Design &amp; Entwicklung</p>
+                <GisslerBranding href="https://gissler-webdesign.de" />
+              </div>
+            </div>
+
             {[
-              { name: 'Jonas Gissler', role: 'UX/UI Design & Development' },
               { name: 'Alessandro Telesca', role: isDE ? 'Entwicklung' : 'Development' },
               { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling' },
               { name: 'Minh Khanh Nguyen', role: isDE ? 'Entwicklung' : 'Development' },
