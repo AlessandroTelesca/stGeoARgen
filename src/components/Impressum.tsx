@@ -121,7 +121,7 @@ export function Impressum({ onBack }: ImpressumProps) {
               <div>
                 <p className="text-sm font-semibold text-foreground">Jonas Gissler</p>
                 <p className="text-xs text-muted-foreground mb-1">UX/UI Design &amp; Entwicklung</p>
-                <GisslerBranding href="https://gissler-webdesign.de" />
+                <GisslerBranding href="https://ga-webdesign.de" />
               </div>
             </div>
 
