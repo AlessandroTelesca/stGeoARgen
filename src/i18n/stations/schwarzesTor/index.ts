@@ -19,3 +19,4 @@ const textsByLanguage: Record<Language, StationTexts> = {
 export function getSchwarzesTorTexts(language: Language): StationTexts {
   return textsByLanguage[language] ?? de;
 }
+
