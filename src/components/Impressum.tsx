@@ -29,7 +29,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold">{isDE ? 'Impressum' : 'Legal Notice'}</h1>
-        </div>
+        </div >
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -44,27 +44,27 @@ export function Impressum({ onBack }: ImpressumProps) {
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Globe className="w-4 h-4 text-primary" />
-              </div>
-              <div>
+              </div >
+              <div >
                 <p className="text-sm font-semibold text-foreground">IIIUS Institut</p>
                 <p className="text-sm text-muted-foreground">{LEGAL_FORM}</p>
-              </div>
+              </div >
             </div>
 
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <MapPin className="w-4 h-4 text-primary" />
-              </div>
-              <div>
+              </div >
+              <div >
                 <p className="text-sm text-foreground">Goethestraße 14</p>
                 <p className="text-sm text-foreground">78120 Furtwangen im Schwarzwald</p>
-              </div>
+              </div >
             </div>
 
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Mail className="w-4 h-4 text-primary" />
-              </div>
+              </div >
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="text-sm text-primary hover:underline"
@@ -76,7 +76,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Phone className="w-4 h-4 text-primary" />
-              </div>
+              </div >
               <a
                 href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`}
                 className="text-sm text-primary hover:underline"
@@ -88,7 +88,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <ExternalLink className="w-4 h-4 text-primary" />
-              </div>
+              </div >
               <a
                 href="http://www.iiius.de/"
                 target="_blank"
@@ -118,7 +118,7 @@ export function Impressum({ onBack }: ImpressumProps) {
           <div className="space-y-3">
             {/* Jonas Gissler – with G&A Webdesign branding */}
             <div className="flex items-center gap-3 py-2 border-b border-border">
-              <div>
+              <div >
                 <p className="text-sm font-semibold text-foreground">Jonas Gissler</p>
                 <p className="text-xs text-muted-foreground mb-1">UX/UI Design &amp; Entwicklung</p>
                 <GisslerBranding href="https://ga-webdesign.de" />
@@ -126,15 +126,41 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             {[
-              { name: 'Alessandro Telesca', role: isDE ? 'Entwicklung' : 'Development' },
-              { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling' },
-              { name: 'Minh Khanh Nguyen', role: isDE ? 'Entwicklung' : 'Development' },
-              { name: 'Mu-Hong Noah Basset', role: isDE ? 'Entwicklung' : 'Development' },
+              { name: 'Alessandro Telesca', role: isDE ? 'Entwicklung' : 'Development', linkedin: 'https://www.linkedin.com/in/alessandro-telesca-086784256/' },
+              { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling', linkedin: null },
+              { name: 'Minh Khanh Nguyen', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
+              { name: 'Mu-Hong Noah Basset', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
             ].map((person) => (
-              <div key={person.name} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                <div>
+              <div 
+                key={person.name} 
+                className={`flex items-start gap-3 py-2 border-b border-border last:border-0`}
+              >
+                <div className="flex flex-col"> 
                   <p className="text-sm font-semibold text-foreground">{person.name}</p>
-                  <p className="text-xs text-muted-foreground">{person.role}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{person.role}</p>
+
+                  {/* MODIFIED LINKEDIN RENDERING */}
+                  {person.linkedin && (
+                    <div 
+                      className="flex items-center gap-1 pt-1"
+                      // Using a specific class or component for the icon container for better visual grouping
+                    >
+                      {/* Placeholder for LinkedIn Icon. Ideally, use an SVG or dedicated library component */}
+                      <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        {/* This is a common approximation of the LinkedIn logo icon structure (using generic shapes for safety) */}
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.394-2.586 7-2.777 7 2.148v6.778z"/>
+                      </svg> 
+                      <a 
+                        href={person.linkedin} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-xs text-primary hover:underline cursor-pointer"
+                      >
+                        /in/{person.name.toLowerCase().replace(/\s+/g, '-')}-{person.linkedin?.split('/').pop() || ''}
+                        {/* Note: Using a more descriptive link display might be better than just "LinkedIn Profile" */}
+                      </a>
+                    </div >
+                  )}
                 </div>
               </div>
             ))}
@@ -157,7 +183,7 @@ export function Impressum({ onBack }: ImpressumProps) {
                 {tag}
               </span>
             ))}
-          </div>
+          </div >
         </section>
 
         {/* Haftung & Hosting */}
