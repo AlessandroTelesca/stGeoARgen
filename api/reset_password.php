@@ -21,8 +21,8 @@ if (empty($token)) {
     sendResponse(['success' => false, 'message' => 'Reset-Token fehlt.'], 400);
 }
 
-if (empty($newPassword) || strlen($newPassword) < 6) {
-    sendResponse(['success' => false, 'message' => 'Passwort muss mindestens 6 Zeichen lang sein.'], 400);
+if (empty($newPassword) || strlen($newPassword) < 8) {
+    sendResponse(['success' => false, 'message' => 'Passwort muss mindestens 8 Zeichen lang sein.'], 400);
 }
 
 $db = getDB();
@@ -41,18 +41,7 @@ try {
 
     if (!$resetEntry) {
         $db->rollBack();
-        // Check if token exists but is expired or already used (for debugging)
-        $debugStmt = $db->prepare('SELECT id, user_id, used_at, expires_at FROM password_resets WHERE token_hash = ? LIMIT 1');
-        $debugStmt->execute([$tokenHash]);
-        $debugEntry = $debugStmt->fetch();
-        
-        if ($debugEntry && $debugEntry['used_at']) {
-            sendResponse(['success' => false, 'message' => 'Dieser Reset-Link wurde bereits verwendet.'], 400);
-        } elseif ($debugEntry && strtotime($debugEntry['expires_at']) < time()) {
-            sendResponse(['success' => false, 'message' => 'Der Reset-Link ist abgelaufen. Fordere einen neuen Link an.'], 400);
-        } else {
-            sendResponse(['success' => false, 'message' => 'Der Reset-Link ist ungueltig oder abgelaufen.'], 400);
-        }
+        sendResponse(['success' => false, 'message' => 'Der Reset-Link ist ungueltig oder abgelaufen.'], 400);
     }
 
     $newHash = password_hash($newPassword, PASSWORD_BCRYPT);

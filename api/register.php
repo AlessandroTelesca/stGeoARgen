@@ -33,8 +33,8 @@ if (empty($username) || strlen($username) < 3) {
 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     sendResponse(['success' => false, 'message' => 'Ungültige E-Mail-Adresse.'], 400);
 }
-if (empty($password) || strlen($password) < 6) {
-    sendResponse(['success' => false, 'message' => 'Passwort muss mindestens 6 Zeichen lang sein.'], 400);
+if (empty($password) || strlen($password) < 8) {
+    sendResponse(['success' => false, 'message' => 'Passwort muss mindestens 8 Zeichen lang sein.'], 400);
 }
 
 $db = getDB();

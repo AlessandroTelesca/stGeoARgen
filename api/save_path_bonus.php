@@ -5,7 +5,6 @@
  * POST-Parameter (JSON body):
  *   user_id  – ID des Users
  *   path_id  – ID des Pfades (z.B. "tourist")
- *   bonus    – Bonus-Punkte (Standard: 500)
  *
  * Response (JSON):
  *   success: true  → { success, message, already_claimed }
@@ -22,16 +21,13 @@ $body = json_decode(file_get_contents('php://input'), true);
 
 $userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $pathId = trim($body['path_id'] ?? '');
-$bonus  = filter_var($body['bonus'] ?? 500, FILTER_VALIDATE_INT);
+$bonus  = 500; // server-side constant – not accepted from client
 
 if (!$userId || $userId <= 0) {
     sendResponse(['success' => false, 'message' => 'Ungültige user_id.'], 400);
 }
 if (empty($pathId)) {
     sendResponse(['success' => false, 'message' => 'path_id fehlt.'], 400);
-}
-if (!$bonus || $bonus <= 0) {
-    $bonus = 500;
 }
 
 $db = getDB();
@@ -59,6 +55,9 @@ $stmt = $db->prepare(
      VALUES (?, ?, 0, 1, NOW())'
 );
 $stmt->execute([$userId, $pathId]);
+
+$db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
+   ->execute([$bonus, $userId]);
 
 sendResponse([
     'success'         => true,

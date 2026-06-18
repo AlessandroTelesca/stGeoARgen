@@ -5,7 +5,6 @@
  * POST-Parameter (JSON body):
  *   user_id    - ID des Users
  *   reward_key - Eindeutiger Reward-Key (z.B. klosterweiher_treasure_chest)
- *   points     - Punkte (Standard: 50)
  *
  * Response (JSON):
  *   success: true  -> { success, message, already_claimed, points_awarded, points_total }
@@ -22,16 +21,13 @@ $body = json_decode(file_get_contents('php://input'), true);
 
 $userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $rewardKey = trim((string)($body['reward_key'] ?? 'klosterweiher_treasure_chest'));
-$points = filter_var($body['points'] ?? 50, FILTER_VALIDATE_INT);
+$points = 50; // server-side constant – not accepted from client
 
 if (!$userId || $userId <= 0) {
     sendResponse(['success' => false, 'message' => 'Ungueltige user_id.'], 400);
 }
 if ($rewardKey === '') {
     sendResponse(['success' => false, 'message' => 'reward_key fehlt.'], 400);
-}
-if (!$points || $points <= 0) {
-    $points = 50;
 }
 
 $db = getDB();

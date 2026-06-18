@@ -19,7 +19,7 @@ $stmt = $db->prepare(
         'SELECT v.id, v.code, v.description, p.name AS partner_name, p.address, v.points_value, v.expiry_date 
      FROM vouchers v 
      LEFT JOIN partners p ON v.partner_id = p.id 
-         WHERE v.purchased_by_user_id IS NULL
+         WHERE v.redeemed_by IS NULL
              AND v.is_redeemed = 0
              AND (v.expiry_date IS NULL OR v.expiry_date >= CURDATE())
          ORDER BY v.points_value ASC, p.name, v.description'

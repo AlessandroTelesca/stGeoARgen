@@ -38,3 +38,6 @@ coverage/
 .cache/
 .env.development
 .env.production
+
+# Database credentials
+api/credentials.txt
