@@ -11,7 +11,7 @@ import { MobileOnlyNotice } from '../MobileOnlyNotice';
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
 const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
 const BAHNHOF_PARALLAX_URL = '/images/parallax/2203_w026_n002_1520b_p1_1520.jpg';
-const SHOW_DEBUG_CAMERA_UI = false;
+const SHOW_DEBUG_CAMERA_UI = import.meta.env.DEV;
 
 interface InfoMarkerDef {
 	id: string;
@@ -180,6 +180,27 @@ class BahnhofARSession extends GyroARVisualizer {
 		}
 	}
 
+	setDebugLookDirection(direction: 'left' | 'right'): void {
+		if (!this.camera) return;
+
+		const trainPosition = this.trainModel?.position ?? new THREE.Vector3(0, 0, 0);
+		const cameraOffset = this.camera.position.clone().sub(trainPosition);
+		cameraOffset.y = 0;
+
+		if (cameraOffset.lengthSq() === 0) {
+			cameraOffset.set(1, 0, 0);
+		}
+
+		cameraOffset.normalize();
+
+		const lookDistance = Math.max(3, this.camera.position.distanceTo(trainPosition));
+		const targetOffset = cameraOffset.multiplyScalar(direction === 'right' ? lookDistance : -lookDistance);
+		const target = trainPosition.clone().add(targetOffset);
+		target.y = trainPosition.y + 1;
+
+		this.camera.lookAt(target);
+	}
+
 	moveLeft(step = 0.25): void {
 		this.camera?.translateX(-step);
 	}
@@ -231,11 +252,11 @@ class BahnhofARSession extends GyroARVisualizer {
 		const geometry = new THREE.PlaneGeometry(24, 12);
 
 		const leftPlane = new THREE.Mesh(geometry, leftMaterial);
-		leftPlane.position.set(0, 0, 5);
+		leftPlane.position.set(-9, -4.75, 0);
 		leftPlane.renderOrder = -10;
 
 		const rightPlane = new THREE.Mesh(geometry, rightMaterial);
-		rightPlane.position.set(0, 0, -5);
+		rightPlane.position.set(9, -5.5, 0);
 		rightPlane.renderOrder = -10;
 
 		const onBeforeRender = () => {
@@ -256,8 +277,8 @@ class BahnhofARSession extends GyroARVisualizer {
 
 		const elapsedSeconds = (performance.now() - this.parallaxStartMs) / 1000;
 		const offset = (elapsedSeconds * this.parallaxSpeed) % 1;
-		this.parallaxTextures[0].offset.x = -offset;
-		this.parallaxTextures[1].offset.x = offset;
+		this.parallaxTextures[0].offset.x = offset;
+		this.parallaxTextures[1].offset.x = -offset;
 	}
 
 	private updateParallaxLookAt(): void {
@@ -543,6 +564,10 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 		}
 
 		setCameraPosition(session.getCameraPosition());
+	};
+
+	const lookAround = (direction: 'left' | 'right') => {
+		sessionRef.current?.setDebugLookDirection(direction);
 	};
 
 	const startTrain = () => {
@@ -987,6 +1012,34 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 								}}
 							>
 								Backward
+							</button>
+							<button
+								onClick={() => lookAround('left')}
+								style={{
+									border: 'none',
+									borderRadius: '10px',
+									padding: '10px 12px',
+									background: 'rgba(255,255,255,0.16)',
+									color: 'var(--color-white)',
+									fontWeight: 700,
+									cursor: 'pointer',
+								}}
+							>
+								Look Left
+							</button>
+							<button
+								onClick={() => lookAround('right')}
+								style={{
+									border: 'none',
+									borderRadius: '10px',
+									padding: '10px 12px',
+									background: 'rgba(255,255,255,0.16)',
+									color: 'var(--color-white)',
+									fontWeight: 700,
+									cursor: 'pointer',
+								}}
+							>
+								Look Right
 							</button>
 						</div>
 					</div>
