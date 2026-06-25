@@ -1,9 +1,8 @@
-import { Bell, Globe, HelpCircle, Info, Shield, Trash2, ArrowLeft, User, Maximize2 } from 'lucide-react';
+import { Bell, Globe, HelpCircle, Info, Shield, ArrowLeft, User, Maximize2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
 interface SettingsProps {
-  onResetProgress: () => Promise<void> | void;
   fullscreenActive: boolean;
   fullscreenAvailable: boolean;
   isIOS: boolean;
@@ -13,7 +12,6 @@ interface SettingsProps {
 }
 
 export function Settings({
-  onResetProgress,
   fullscreenActive,
   fullscreenAvailable,
   isIOS,
@@ -189,36 +187,6 @@ export function Settings({
                 <div className="flex-1 text-left">
                   <p className="font-medium">Datenschutz</p>
                   <p className="text-sm text-muted-foreground">Datenschutzerklärung</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div>
-            <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              Gefahrenzone
-            </h3>
-            
-            <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
-              <button
-                onClick={async () => {
-                  if (window.confirm('Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?')) {
-                    await onResetProgress();
-                  }
-                }}
-                className="w-full p-4 flex items-center gap-3 transition-colors rounded-xl"
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
-                  <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>Fortschritt zurücksetzen</p>
-                  <p className="text-sm text-muted-foreground">
-                    Alle Punkte und abgeschlossenen Stationen löschen
-                  </p>
                 </div>
               </button>
             </div>

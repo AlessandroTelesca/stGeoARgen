@@ -87,7 +87,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
         exit={{ scale: 0.9, opacity: 0 }}
       >
         {/* Skip Button */}
-        <div className="absolute top-5 right-5 z-10">
+        <div className="flex justify-end px-5 pt-5 pb-1 z-10">
           <button
             onClick={onSkip}
             className="text-sm font-medium text-foreground bg-muted border border-border hover:bg-muted/80 transition-colors px-5 py-2 rounded-full shadow-sm"
@@ -111,7 +111,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 x: { type: 'spring', stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 },
               }}
-              className="flex-1 flex flex-col items-center justify-start pt-14 px-10 pb-6 text-center"
+              className="flex-1 flex flex-col items-center justify-start pt-6 px-6 sm:px-8 pb-8 text-center"
             >
               {/* Logo */}
               <motion.div
@@ -155,7 +155,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
           </AnimatePresence>
 
           {/* Progress Indicators */}
-          <div className="px-10 pb-8">
+          <div className="px-5 pb-8">
             <div className="flex gap-2 justify-center mb-6">
               {steps.map((_, index) => (
                 <motion.div
@@ -180,7 +180,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               {currentStep > 0 && (
                 <button
                   onClick={handlePrevious}
-                  className="flex-1 bg-muted hover:bg-muted/80 px-6 py-3 rounded-xl transition-colors"
+                  className="flex-1 bg-muted hover:bg-muted/80 px-6 py-4 rounded-xl transition-colors"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <ChevronLeft className="w-5 h-5" />
@@ -191,7 +191,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               
               <button
                 onClick={handleNext}
-                className="flex-1 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl transition-colors"
+                className="flex-1 bg-primary hover:bg-primary-dark text-white px-6 py-4 rounded-xl transition-colors"
               >
                 {isLastStep ? (
                   <div className="flex items-center justify-center gap-2">

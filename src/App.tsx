@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
-import { getUserProgress, resetUserProgress, saveStationProgress } from './services/auth';
+import { getUserProgress, saveStationProgress } from './services/auth';
 import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
 import { Header } from './components/Header';
 import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
@@ -795,41 +795,6 @@ export default function App() {
     }
   };
 
-  const handleResetProgress = async () => {
-    if (user) {
-      try {
-        await resetUserProgress(user.id);
-      } catch (error) {
-        toast.error(t('progressResetFailed'), {
-          description: error instanceof Error ? error.message : t('pleaseTryAgain'),
-          duration: 4000,
-        });
-        return;
-      }
-    }
-
-    setPaths((prev) =>
-      prev.map((path) => ({
-        ...path,
-        stations: path.stations.map((station) => ({
-          ...station,
-          status: 'available' as const,
-        })),
-      }))
-    );
-    setRewardClaimed(false);
-    setClaimedPathBonuses({});
-
-    // Also reset onboarding
-    localStorage.removeItem('st-geoargen-onboarding-complete');
-    setShowOnboarding(true);
-
-    toast.success(t('progressResetDone'), {
-      description: user ? t('progressResetDoneDb') : t('progressResetDoneLocal'),
-      duration: 3000,
-    });
-  };
-
   const handleNavigate = (view: string) => {
     if (view === 'home') {
       navigate('/');
@@ -1096,7 +1061,6 @@ export default function App() {
 
       {currentView === 'settings' && (
         <Settings
-          onResetProgress={handleResetProgress}
           fullscreenActive={isFullscreen || fallbackAppModeActive}
           fullscreenAvailable={isMobile}
           isIOS={isIOS}
