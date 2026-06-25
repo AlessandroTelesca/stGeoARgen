@@ -49,9 +49,9 @@ export function PostOnboardingLoginPrompt({
               </button>
             </div>
 
-            <div className="px-10 py-10 pt-14">
+            <div className="py-10 pt-14">
               {/* Logo + Title */}
-              <div className="flex flex-col items-center text-center mb-6">
+              <div className="flex flex-col items-center text-center mb-6 px-6">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -95,7 +95,7 @@ export function PostOnboardingLoginPrompt({
 
               {/* Benefits list */}
               <motion.div
-                className="space-y-3 mb-8"
+                className="space-y-3 mb-8 px-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
@@ -118,7 +118,7 @@ export function PostOnboardingLoginPrompt({
 
               {/* Buttons */}
               <motion.div
-                className="w-full space-y-3"
+                className="w-full space-y-3 px-4"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
