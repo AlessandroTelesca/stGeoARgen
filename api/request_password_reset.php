@@ -6,12 +6,14 @@
  *   email – E-Mail-Adresse
  *
  * Response (JSON):
- *   success: true  -> { success, message, reset_token? }
+ *   success: true  -> { success, message }
  *   success: false -> { success, message }
  *
  * Hinweis:
  * Wir antworten immer erfolgreich mit generischer Nachricht, um
  * E-Mail-Enumeration zu erschweren.
+ * Das Reset-Token wird ausschliesslich per E-Mail versendet und
+ * niemals in der API-Antwort zurueckgegeben.
  */
 
 require_once 'config.php';
@@ -56,8 +58,19 @@ $insertStmt->execute([
     $expiresAt,
 ]);
 
-sendResponse([
-    'success' => true,
-    'message' => $genericMessage,
-    'reset_token' => $resetToken,
-]);
+$frontendUrl = rtrim(getenv('FRONTEND_URL') ?: 'https://stgeoargen.iiius.de', '/');
+$resetLink = $frontendUrl . '/forgot-password?token=' . urlencode($resetToken);
+
+$to      = $user['email'];
+$subject = 'St.GeoARgen – Passwort zuruecksetzen';
+$body    = "Hallo,\n\ndu hast eine Anfrage zum Zuruecksetzen deines Passworts gestellt.\n\n"
+         . "Klicke auf den folgenden Link, um ein neues Passwort festzulegen (gueltig fuer 1 Stunde):\n\n"
+         . $resetLink . "\n\n"
+         . "Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.\n\n"
+         . "Dein St.GeoARgen-Team";
+$headers = 'From: noreply@stgeoargen.iiius.de' . "\r\n" .
+           'X-Mailer: PHP/' . phpversion();
+
+mail($to, $subject, $body, $headers);
+
+sendResponse(['success' => true, 'message' => $genericMessage]);

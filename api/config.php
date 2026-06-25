@@ -47,10 +47,9 @@ define('DB_USER', resolveDbSetting('DB_USER', $fileCredentials, 'dein_db_user'))
 define('DB_PASS', resolveDbSetting('DB_PASS', $fileCredentials, 'dein_db_passwort'));
 define('DB_CHARSET', resolveDbSetting('DB_CHARSET', $fileCredentials, 'utf8mb4'));
 
-// CORS-Header: erlaubt Anfragen vom React-Frontend
-// WICHTIG: Ersetze '*' mit deiner tatsächlichen Frontend-URL in Produktion
-// z.B.: 'https://deine-app.de'
-$allowed_origin = '*';
+// CORS-Header: nur die konfigurierte Frontend-URL erlauben.
+// Setze FRONTEND_URL als Umgebungsvariable, z.B. 'https://stgeoargen.iiius.de'
+$allowed_origin = rtrim(getenv('FRONTEND_URL') ?: 'https://stgeoargen.iiius.de', '/');
 header("Access-Control-Allow-Origin: $allowed_origin");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");

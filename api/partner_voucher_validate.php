@@ -2,57 +2,40 @@
 // partner_voucher_validate.php
 
 require_once 'config.php';
-$pdo = getDB();
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    sendResponse(['success' => false, 'message' => 'Methode nicht erlaubt.'], 405);
+}
+
 $body = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($body['username']) || !isset($body['password']) || !isset($body['code'])) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Benutzername, Passwort und Gutscheincode erforderlich.']);
-    exit;
+    sendResponse(['success' => false, 'message' => 'Benutzername, Passwort und Gutscheincode erforderlich.'], 400);
 }
 
 $username = $body['username'];
 $password = $body['password'];
-$code = $body['code'];
+$code     = $body['code'];
+
+$pdo = getDB();
 
 $stmt = $pdo->prepare('SELECT * FROM partners WHERE username = ?');
 $stmt->execute([$username]);
 $partner = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$partner) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Ungültige Zugangsdaten.']);
-    exit;
+    sendResponse(['success' => false, 'message' => 'Ungültige Zugangsdaten.'], 401);
 }
 
-$validPassword = false;
-$shouldRehash = false;
-$passwordColumn = array_key_exists('password_hash', $partner) ? 'password_hash' : 'password';
-$storedPassword = $partner[$passwordColumn] ?? null;
+$storedHash = $partner['password_hash'] ?? null;
 
-if ($storedPassword !== null && password_verify($password, $storedPassword)) {
-    $validPassword = true;
-    if (password_needs_rehash($storedPassword, PASSWORD_BCRYPT)) {
-        $shouldRehash = true;
-    }
-} elseif ($storedPassword !== null && $storedPassword === $password) {
-    // Fallback für alte, unverschlüsselte Partner-Passwörter
-    $validPassword = true;
-    $shouldRehash = true;
+if ($storedHash === null || !password_verify($password, $storedHash)) {
+    sendResponse(['success' => false, 'message' => 'Ungültige Zugangsdaten.'], 401);
 }
 
-if (!$validPassword) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Ungültige Zugangsdaten.']);
-    exit;
-}
-
-if ($shouldRehash && $storedPassword !== null) {
-    $newHash = password_hash($password, PASSWORD_BCRYPT);
-    $updateStmt = $pdo->prepare("UPDATE partners SET {$passwordColumn} = ? WHERE id = ?");
-    $updateStmt->execute([$newHash, $partner['id']]);
+if (password_needs_rehash($storedHash, PASSWORD_BCRYPT)) {
+    $pdo->prepare('UPDATE partners SET password_hash = ? WHERE id = ?')
+        ->execute([password_hash($password, PASSWORD_BCRYPT), $partner['id']]);
 }
 
 try {
@@ -61,60 +44,45 @@ try {
     $voucher = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$voucher) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Gutscheincode nicht gefunden.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Gutscheincode nicht gefunden.'], 404);
     }
 
     if (strpos((string)$voucher['redeemed_by'], 'user:') !== 0) {
-        http_response_code(409);
-        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein wurde noch nicht von einem Nutzer gekauft.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Dieser Gutschein wurde noch nicht von einem Nutzer gekauft.'], 409);
     }
 
     if ($voucher['partner_id'] === null) {
-        http_response_code(409);
-        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein ist keinem Partner zugeordnet und kann nicht validiert werden.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Dieser Gutschein ist keinem Partner zugeordnet und kann nicht validiert werden.'], 409);
     }
 
     if ((int)$voucher['partner_id'] !== (int)$partner['id']) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Dieser Code gehört nicht zu Ihrem Partnerkonto.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Dieser Code gehört nicht zu Ihrem Partnerkonto.'], 403);
     }
 
     if ($voucher['is_redeemed']) {
-        http_response_code(409);
-        echo json_encode(['success' => false, 'message' => 'Gutschein wurde schon validiert / eingelöst.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Gutschein wurde schon validiert / eingelöst.'], 409);
     }
 
     if (!empty($voucher['expiry_date']) && $voucher['expiry_date'] < date('Y-m-d')) {
-        http_response_code(410);
-        echo json_encode(['success' => false, 'message' => 'Dieser Gutschein ist abgelaufen und nicht mehr gültig.']);
-        exit;
+        sendResponse(['success' => false, 'message' => 'Dieser Gutschein ist abgelaufen und nicht mehr gültig.'], 410);
     }
 
-    $stmt = $pdo->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_at = NOW() WHERE id = ?');
-    $stmt->execute([$voucher['id']]);
+    $pdo->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_at = NOW() WHERE id = ?')
+        ->execute([$voucher['id']]);
 
-    http_response_code(200);
-    echo json_encode([
+    sendResponse([
         'success' => true,
         'message' => 'Gutschein erfolgreich validiert und als eingelöst markiert.',
         'voucher' => [
-            'code' => $voucher['code'],
-            'description' => $voucher['description'],
+            'code'         => $voucher['code'],
+            'description'  => $voucher['description'],
             'points_value' => $voucher['points_value'],
         ],
         'partner' => [
-            'id' => $partner['id'],
+            'id'   => $partner['id'],
             'name' => $partner['name'],
-        ]
+        ],
     ]);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Serverfehler: ' . $e->getMessage()]);
-    exit;
+    sendResponse(['success' => false, 'message' => 'Serverfehler.'], 500);
 }
