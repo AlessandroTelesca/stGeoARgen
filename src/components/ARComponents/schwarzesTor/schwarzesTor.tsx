@@ -53,24 +53,40 @@ export const SchwarzesTorView = ({
   if (isNotMobile) return <MobileOnlyNotice />;
 
   if (selectedRoom) {
-    return (
-      <PanoramaView
-        imageUrl={selectedRoom.image}
-        roomLabel={selectedRoom.label}
-        roomId={selectedRoom.id}
-        onNavigateBack={() => setSelectedRoom(null)}
-      />
-    );
-  }
+  return (
+    <PanoramaView
+      imageUrl={selectedRoom.image}
+      roomLabel={selectedRoom.label}
+      roomId={selectedRoom.id}
+      onNavigateBack={() => setSelectedRoom(null)}
+      username={username}
+      onLogin={onLogin}
+      onLogout={onLogout}
+      onNavigateProfile={onNavigateProfile}
+      onRegister={onRegister}
+      completedStations={completedStations}
+      totalStations={totalStations}
+      totalPoints={totalPoints}
+    />
+  );
+}
 
-  if (showZeitreise) {
-    return (
-      <ZeitreiseView
-        onNavigateBack={() => setShowZeitreise(false)}
-        onSelectRoom={(room) => setSelectedRoom(room)}
-      />
-    );
-  }
+ if (showZeitreise) {
+  return (
+    <ZeitreiseView
+      onNavigateBack={() => setShowZeitreise(false)}
+      onSelectRoom={(room) => setSelectedRoom(room)}
+      username={username}
+      onLogin={onLogin}
+      onLogout={onLogout}
+      onNavigateProfile={onNavigateProfile}
+      onRegister={onRegister}
+      completedStations={completedStations}
+      totalStations={totalStations}
+      totalPoints={totalPoints}
+    />
+  );
+}
 
   return (
     <>
@@ -81,6 +97,7 @@ export const SchwarzesTorView = ({
         background-position: center !important;
         background-repeat: no-repeat !important;
       }
+        
     `}</style>
 
       <ARComponentBase

@@ -1288,13 +1288,25 @@ export default function App() {
         )
       )}
 
-      {currentView === 'ar-schwarzes-tor' && (
-        renderARViewWithGate(
-          <SchwarzesTorView
-            onNavigateHome={() => navigate('/')}
-          />
-        )
-      )}
+     {currentView === 'ar-schwarzes-tor' && (
+  renderARViewWithGate(
+    <SchwarzesTorView
+      onNavigateHome={() => navigate('/')}
+      username={username}
+      onLogin={handleNavigateToLogin}
+      onLogout={handleLogout}
+      onNavigateProfile={() => navigate('/profile')}
+      onRegister={handleNavigateToRegister}
+      completedStations={totalCompletedStations}
+      totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+      totalPoints={totalPoints}
+      currentStationPoints={50}
+      onCompleteStation={(stationId) => handleStationComplete(stationId)}
+      isCurrentStationCompleted={isStationCompleted(4)}
+      isGuestMode={allowGuestStationStart}
+    />
+  )
+)}
 
       {currentView === 'ar-glockenspiel' && (
         renderARViewWithGate(

@@ -32,55 +32,59 @@ type Hotspot = {
   object: InfoPanel;
 };
 
+
+const GARNGASPEL_URL = new URL('./models/workroom/garngaspel.glb', import.meta.url).href;
+const SPINDELPRESSE_URL = new URL('./models/workroom/spindelpresse.glb', import.meta.url).href;
+
 const POT_AND_PAN_URL = new URL('./models/kitchen/pot_and_pan.glb', import.meta.url).href;
 const BUTTER_CHURN_URL = new URL('./models/kitchen/butter_churn_barrel.glb', import.meta.url).href;
+const SCALE_URL = new URL('./models/kitchen/scale.glb', import.meta.url).href;
+const TROMMELWASCHMASCHINE_URL = new URL('./models/kitchen/trommelwaschmaschine.glb', import.meta.url).href;
+
+const FLACHSBECHSE_URL = new URL('./models/barn/flachsbechse.glb', import.meta.url).href;
+const SHARPENING_STONE_URL = new URL('./models/barn/schleifstein.glb', import.meta.url).href;
+
+const DREHBANK_URL = new URL('./models/livingroom/drehbank_uhrmacher.glb', import.meta.url).href;
+const WANDUHR_URL = new URL('./models/livingroom/Wanduhr.glb', import.meta.url).href;
+
+
 
 const roomData: Record<string, { intro: string; story: InfoPanel; objects: (InfoPanel & { hotspotPosition: [number, number, number] })[] }> = {
   arbeitsstube: {
     intro: 'Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.',
     story: { type: 'story', title: 'Geschichte der Arbeitsstube/ Webkammer', content: 'Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.' },
     objects: [
-      { type: 'object', title: 'Webstuhl', content: 'Beschreibung des Webstuhls.', hotspotPosition: [-0.75, 0, -3] },
-      { type: 'object', title: 'Werkzeug', content: 'Beschreibung des Werkzeugs.', hotspotPosition: [0, 0, -3] },
-      { type: 'object', title: 'Korb', content: 'Beschreibung des Korbs.', hotspotPosition: [0.75, 0, -3] },
+      { type: 'object', title: 'Garnspindel', content: 'Beschreibung der Garnspindel.', modelUrl: GARNGASPEL_URL,hotspotPosition: [-0.75, 0, -3] },
+      { type: 'object', title: 'Spindelpresse', content: 'Beschreibung der Spindelpresse.', modelUrl: SPINDELPRESSE_URL, hotspotPosition: [0, 0, -3] },
     ],
   },
   kueche: {
     intro: 'Nach der Feldarbeit muss die Familie versorgt werden. Die Küche ist der rauchige, rußige Kern des Hauses, wo Feuerstelle und einfache Holzherde als Kochstelle dienen. Alles wird per Hand zubereitet.',
     story: { type: 'story', title: 'Geschichte der Küche', content: 'Nach der Feldarbeit muss die Familie versorgt werden. Die Küche ist der rauchige, rußige Kern des Hauses, wo Feuerstelle und einfache Holzherde als Kochstelle dienen. Alles wird per Hand zubereitet.' },
     objects: [
-      { type: 'object', title: 'Herd', content: 'Der gusseiserne Topf und die Pfanne waren unverzichtbare Küchenutensilien.', modelUrl: POT_AND_PAN_URL, hotspotPosition: [0, 1, -3] },
-      { type: 'object', title: 'Geschirr', content: 'Beschreibung des Geschirrs.', hotspotPosition: [0, 0, -3] },
-      { type: 'object', title: 'Vorratskrug', content: 'Das Butterfass war ein zentrales Gerät im bäuerlichen Haushalt.', modelUrl: BUTTER_CHURN_URL, hotspotPosition: [0, -1, -3] },
+      { type: 'object', title: 'Pfanne', content: 'Der gusseiserne Topf und die Pfanne waren unverzichtbare Küchenutensilien.', modelUrl: POT_AND_PAN_URL, hotspotPosition: [0.4, -1.2, -3] },
+      { type: 'object', title: 'Waage', content: 'Beschreibung der Waage.', modelUrl: SCALE_URL, hotspotPosition: [30, -10, -3] },
+      { type: 'object', title: 'Butterfass', content: 'Das Butterfass war ein zentrales Gerät im bäuerlichen Haushalt.', modelUrl: BUTTER_CHURN_URL, hotspotPosition: [0.2, -3, -3] },
+      { type: 'object', title: 'Trommelwaschmaschine', content: 'Die Trommelwaschmaschine war ein modernes Gerät in der modernen Küche.', modelUrl: TROMMELWASCHMASCHINE_URL, hotspotPosition: [0, 0, -3] },
     ],
   },
   scheune: {
     intro: 'Der Tag beginnt früh. Die Ernährung der Familie hängt direkt von der Ernte ab.',
     story: { type: 'story', title: 'Geschichte der Scheune/ des Speichers', content: 'Der Tag beginnt früh. Die Ernährung der Familie hängt direkt von der Ernte ab.' },
     objects: [
-      { type: 'object', title: 'Heugabel', content: 'Beschreibung der Heugabel.', hotspotPosition: [-0.75, 1, -3] },
-      { type: 'object', title: 'Pflug', content: 'Beschreibung des Pflugs.', hotspotPosition: [0, 0, -3] },
-      { type: 'object', title: 'Erntewagen', content: 'Beschreibung des Erntewagens.', hotspotPosition: [0.75, -1, -3] },
+      { type: 'object', title: 'Flachsbechse mit Schneidmessern', content: 'Beschreibung der Flachsbechse.', modelUrl: FLACHSBECHSE_URL, hotspotPosition: [-0.75, 1, -3] },
+      { type: 'object', title: 'Schleifstein', content: 'Beschreibung des Schleifsteins.', modelUrl: SHARPENING_STONE_URL, hotspotPosition: [0, 0, -3] },
     ],
   },
   wohnraum: {
     intro: 'Am Abend, wenn die Arbeit getan ist, kommt die Familie zusammen.',
     story: { type: 'story', title: 'Geschichte des Wohnraums', content: 'Am Abend, wenn die Arbeit getan ist, kommt die Familie zusammen.' },
     objects: [
-      { type: 'object', title: 'Ofen', content: 'Beschreibung des Ofens.', hotspotPosition: [0, 1, -3] },
-      { type: 'object', title: 'Tisch', content: 'Beschreibung des Tisches.', hotspotPosition: [0, 0, -3] },
-      { type: 'object', title: 'Truhe', content: 'Beschreibung der Truhe.', hotspotPosition: [0, -1, -3] },
+      { type: 'object', title: 'Drehbank', content: 'Beschreibung der Drehbank für Uhrmacher.', modelUrl: DREHBANK_URL, hotspotPosition: [0, 1, -3] },
+      { type: 'object', title: 'Wanduhr', content: 'Beschreibung der Wanduhr.', modelUrl: WANDUHR_URL, hotspotPosition: [0, 0, -3] },
     ],
   },
-  schlafzimmer: {
-    intro: 'Hier steht die Geschichte des Schlafzimmers...',
-    story: { type: 'story', title: 'Geschichte des Schlafzimmers', content: 'Hier steht die Geschichte des Schlafzimmers...' },
-    objects: [
-      { type: 'object', title: 'Bett', content: 'Beschreibung des Betts.', hotspotPosition: [-2, 0, -3] },
-      { type: 'object', title: 'Schrank', content: 'Beschreibung des Schranks.', hotspotPosition: [0, 0, -3] },
-      { type: 'object', title: 'Spiegel', content: 'Beschreibung des Spiegels.', hotspotPosition: [2, 0, -3] },
-    ],
-  },
+
 };
 
 export const PanoramaView = ({
@@ -165,58 +169,7 @@ export const PanoramaView = ({
     return () => { sessionRef.current?.stop(); sessionRef.current = null; };
   }, [imageUrl]);
 
-  // Temporär zum Testen – Maus simuliert Gyroscope
-useEffect(() => {
-  if (showIntro) return;
-
-  let cleanup: (() => void) | null = null;
-
-  // Polling bis Session bereit
-  const interval = setInterval(() => {
-    const canvas = sessionRef.current?.['renderer']?.domElement as HTMLCanvasElement | undefined;
-    const camera = sessionRef.current?.['camera'] as THREE.PerspectiveCamera | undefined;
-    if (!canvas || !camera) return;
-
-    clearInterval(interval);
-
-    let isDown = false;
-    let lastX = 0;
-    let lastY = 0;
-    let yaw = 0;
-    let pitch = 0;
-
-    const onDown = (e: MouseEvent) => {
-      isDown = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-    const onUp = () => { isDown = false; };
-    const onMove = (e: MouseEvent) => {
-      if (!isDown) return;
-      yaw -= (e.clientX - lastX) * 0.005;
-      pitch -= (e.clientY - lastY) * 0.005;
-      pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
-      lastX = e.clientX;
-      lastY = e.clientY;
-      camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
-    };
-
-    canvas.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('mousemove', onMove);
-
-    cleanup = () => {
-      canvas.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('mousemove', onMove);
-    };
-  }, 200); // alle 200ms prüfen
-
-  return () => {
-    clearInterval(interval);
-    cleanup?.();
-  };
-}, [showIntro]);
+ 
 
   // Hotspot-Positionen kontinuierlich in 2D projizieren
   useEffect(() => {
@@ -317,7 +270,9 @@ useEffect(() => {
 
   return (
     <>
-      <style>{`.ar-video { display: none !important; }`}</style>
+      <style>{`.ar-video { display: none !important; }`} </style>
+
+      
 
       <ARComponentBase
         onNavigateHome={onNavigateBack}
@@ -371,48 +326,79 @@ useEffect(() => {
         </div>
       )}
 
+
+<style>{`
+    .ar-video { display: none !important; }
+    @keyframes hotspotPulse {
+        0%   { transform: scale(0.92); }
+        50%  { transform: scale(1.08); }
+        100% { transform: scale(0.92); }
+    }
+`}</style>
+
       {/* 3D Hotspot Buttons */}
-      {!activePanel && !showIntro && !isStarting && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none' }}>
-          {data.objects.map((obj, index) => {
+{!activePanel && !showIntro && !isStarting && (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none' }}>
+        {data.objects.map((obj, index) => {
             const pos = hotspotScreenPositions[index];
             if (!pos?.visible) return null;
             return (
-              <button
-                key={index}
-                onClick={() => setActivePanel(obj)}
-                style={{
-                  position: 'absolute',
-                  left: pos.x,
-                  top: pos.y,
-                  transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'auto',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px',
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.6)',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: '#111',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-                  backdropFilter: 'blur(4px)',
-                  whiteSpace: 'nowrap',
-                  minWidth: '60px',
-                }}
-              >
-                <span style={{ fontSize: '1.1rem' }}>{obj.modelUrl ? '🏺' : '🧊'}</span>
-                <span>{obj.title}</span>
-              </button>
-            );
-          })}
+                <button
+    key={index}
+    onClick={() => setActivePanel(obj)}
+    title={obj.title}
+    style={{
+        position: 'absolute',
+        left: pos.x,
+        top: pos.y,
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'auto',
+        width: '52px',
+        height: '52px',
+        borderRadius: '50%',
+        background: 'transparent',
+        backgroundColor: 'transparent',
+        border: 'none',
+        padding: 0,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    }}
+>
+    <div style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(12,105,15,0) 0%, rgba(12,105,15,0.45) 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    }}>
+        <div style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '50%',
+            background: '#11b827',
+            border: '2px solid rgba(255,255,255,0.92)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+            fontFamily: 'Georgia, serif',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            color: 'white',
+            animation: 'hotspotPulse 2.2s ease-in-out infinite',
+        }}>
+            i
         </div>
-      )}
+    </div>
+</button>
+            );
+        })}
+    </div>
+)}
     </>
   );
 };
