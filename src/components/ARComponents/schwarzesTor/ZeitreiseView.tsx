@@ -87,11 +87,10 @@ type ZeitreiseViewProps = {
     totalPoints?: number;
 };
 
-// Buttons Rooms 
 const rooms = [
-    { id: 'kueche', label: 'Küche', image: '/images/360/schwarzesTor/küche.jpg', thumb: '/images/schwarzesTor/image2.png', top: '43%', left: '20%' },
-    { id: 'wohnraum', label: 'Wohnraum', image: '/images/360/schwarzesTor/wohnraum.jpg', thumb: '/images/schwarzesTor/image4.png', top: '43%', left: '80%' },
-    { id: 'scheune', label: 'Scheune', image: '/images/360/schwarzesTor/scheune.jpg', thumb: '/images/schwarzesTor/image1.png', top: '64%', left: '20%' },
+    { id: 'kueche',       label: 'Küche',       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.png', top: '43%', left: '20%' },
+    { id: 'wohnraum',     label: 'Wohnraum',     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.png', top: '43%', left: '80%' },
+    { id: 'scheune',      label: 'Scheune',      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.png', top: '64%', left: '20%' },
     { id: 'arbeitsstube', label: 'Arbeitsstube', image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.png', top: '64%', left: '80%' },
 ];
 
@@ -110,12 +109,16 @@ export const ZeitreiseView = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const sessionRef = useRef<PanoramaPlaneVisualizer | null>(null);
+    const [hasStarted, setHasStarted] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Session startet erst nach explizitem Klick (iOS Gyro-Berechtigung)
     useEffect(() => {
-        if (!containerRef.current || !videoRef.current) return;
+        if (!hasStarted || !containerRef.current || !videoRef.current) return;
         let cancelled = false;
+        setIsStarting(true);
 
         const start = async () => {
             try {
@@ -148,6 +151,8 @@ export const ZeitreiseView = ({
                 setIsReady(true);
             } catch (err: any) {
                 if (!cancelled) setError(err?.message ?? 'Fehler beim Laden');
+            } finally {
+                if (!cancelled) setIsStarting(false);
             }
         };
 
@@ -157,40 +162,57 @@ export const ZeitreiseView = ({
             sessionRef.current?.stop();
             sessionRef.current = null;
         };
-    }, []);
+    }, [hasStarted]);
 
     return (
         <>
             <style>{`
-    .ar-video { display: none !important; }
-    .ar-topbar { display: none !important; }
-    header.sticky { display: none !important; }
-    
-    /* Canvas nach hinten — Overlays können drüber liegen */
-    .ar-container canvas {
-        z-index: 1 !important;
-    }
-    .ar-container {
-        z-index: 1 !important;
-    }
-    
-    .ar-menu-backdrop {
-        z-index: 99998 !important;
-        position: fixed !important;
-        transform: translateZ(0) !important;
-    }
-    .ar-menu-panel {
-        z-index: 99999 !important;
-        position: fixed !important;
-        transform: translateZ(0) !important;
-    }
-    .zt-room-btn {
-        transition: transform 0.12s, box-shadow 0.12s;
-    }
-    .zt-room-btn:active {
-        transform: translate(-50%, -50%) scale(0.94) !important;
-    }
-`}</style>
+                .ar-video { display: none !important; }
+                .ar-topbar { display: none !important; }
+                header.sticky { display: none !important; }
+
+                .ar-container canvas { z-index: 1 !important; }
+                .ar-container { z-index: 1 !important; }
+
+                .ar-menu-backdrop {
+                    z-index: 99998 !important;
+                    position: fixed !important;
+                    transform: translateZ(0) !important;
+                }
+                .ar-menu-panel {
+                    z-index: 99999 !important;
+                    position: fixed !important;
+                    transform: translateZ(0) !important;
+                }
+
+                .zt-room-btn {
+                    transition: transform 0.12s, box-shadow 0.12s;
+                }
+                .zt-room-btn:active {
+                    transform: translate(-50%, -50%) scale(0.94) !important;
+                }
+
+                @media (orientation: landscape) {
+                    .zt-infobox-outer {
+                        padding-top: 55px !important;
+                    }
+                    .zt-infobox-inner {
+                        padding: 8px 14px !important;
+                    }
+                    .zt-infobox-inner h1 {
+                        font-size: 0.95rem !important;
+                        margin-bottom: 2px !important;
+                    }
+                    .zt-infobox-inner p {
+                        font-size: 0.72rem !important;
+                        margin: 0 !important;
+                    }
+                    .zt-room-btn-kueche       { top: 55% !important; }
+                    .zt-room-btn-wohnraum     { top: 55% !important; }
+                    .zt-room-btn-scheune      { top: 78% !important; }
+                    .zt-room-btn-arbeitsstube { top: 78% !important; }
+                }
+            `}</style>
 
             <ARComponentBase
                 onNavigateHome={onNavigateBack}
@@ -209,8 +231,45 @@ export const ZeitreiseView = ({
                 ignoreCompleteTimer={true}
             />
 
+            {/* Start-Screen — iOS braucht User-Geste für Gyro-Berechtigung */}
+            {!hasStarted && !error && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 50,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '24px', background: 'rgba(0,0,0,0.75)',
+                }}>
+                    <div style={{
+                        width: 'min(400px, 100%)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(15,25,10,0.8)',
+                        padding: '24px',
+                        textAlign: 'center',
+                        color: 'white',
+                    }}>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>
+                            Zeitreise starten
+                        </h2>
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', marginBottom: '20px', lineHeight: 1.5 }}>
+                            Bewege dein Handy um das Haus zu erkunden und wähle einen Raum.
+                        </p>
+                        <button
+                            onClick={() => setHasStarted(true)}
+                            style={{
+                                width: '100%', border: 'none', borderRadius: '12px',
+                                padding: '14px', background: 'var(--color-primary)',
+                                color: 'white', fontWeight: 700, cursor: 'pointer',
+                                fontSize: '1rem',
+                            }}
+                        >
+                            Loslegen
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Ladescreen */}
-            {!isReady && !error && (
+            {hasStarted && isStarting && !isReady && !error && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 50,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -253,21 +312,27 @@ export const ZeitreiseView = ({
                         background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 22%, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.45) 100%)',
                     }} />
 
-                    {/* ── Info-Box ── */}
-                    <div style={{
-                        position: 'fixed', top: 80, left: 0, right: 0,
-                        zIndex: 12, pointerEvents: 'none',
-                        padding: '80px 16px 0',
-                    }}>
-                        <div style={{
-                            pointerEvents: 'auto',
-                            borderRadius: '20px',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            background: 'rgba(200,210,200,0.22)',
-                            backdropFilter: 'blur(10px) grayscale(10%)',
-                            WebkitBackdropFilter: 'blur(10px) grayscale(10%)',
-                            padding: '16px 18px',
-                        }}>
+                    {/* Info-Box oben */}
+                    <div
+                        className="zt-infobox-outer"
+                        style={{
+                            position: 'fixed', top: 80, left: 0, right: 0,
+                            zIndex: 12, pointerEvents: 'none',
+                            padding: '80px 16px 0',
+                        }}
+                    >
+                        <div
+                            className="zt-infobox-inner"
+                            style={{
+                                pointerEvents: 'auto',
+                                borderRadius: '20px',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                background: 'rgba(200,210,200,0.22)',
+                                backdropFilter: 'blur(10px) grayscale(10%)',
+                                WebkitBackdropFilter: 'blur(10px) grayscale(10%)',
+                                padding: '16px 18px',
+                            }}
+                        >
                             <h1 style={{
                                 margin: '0 0 8px',
                                 fontSize: '1.4rem',
@@ -289,58 +354,63 @@ export const ZeitreiseView = ({
                         </div>
                     </div>
 
-                    {/* ── Raum-Buttons auf der Hausfassade ── */}
+                    {/* Raum-Buttons auf der Hausfassade */}
                     <div style={{
                         position: 'fixed', inset: 0,
                         zIndex: 12, pointerEvents: 'none',
                     }}>
-            {rooms.map((room) => (
-    <button
-        key={room.id}
-        className="zt-room-btn"
-        onClick={() => onSelectRoom?.(room)}
-        style={{
-            position: 'absolute',
-            top: room.top,
-            left: room.left,
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 18px 12px 12px',
-            borderRadius: '14px',
-            border: '1px solid rgba(255,255,255,0.35)',
-            background: 'rgba(255, 255, 255, 0.14)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-            cursor: 'pointer',
-            maxWidth: '234px',
-        }}
-    >
-        <div style={{
-            width: '100px',
-            height: '70px',
-            borderRadius: '9px',
-            backgroundImage: `url('${room.thumb}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            flexShrink: 0,
-            border: '1px solid rgba(136, 136, 136, 0.42)',
-        }} />
-        <span style={{
-            color: 'white',
-            fontSize: '1.41rem',
-            fontWeight: 700,
-            textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-            textAlign: 'left',
-            lineHeight: 1.2,
-        }}>
-            {room.label}
-        </span>
-    </button>
-))}
+                        {rooms.map((room) => (
+                            <button
+                                key={room.id}
+                                className={`zt-room-btn zt-room-btn-${room.id}`}
+                                onClick={() => onSelectRoom?.(room)}
+                                style={{
+                                    position: 'absolute',
+                                    top: room.top,
+                                    left: room.left,
+                                    transform: 'translate(-50%, -50%)',
+                                    pointerEvents: 'auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'clamp(4px, 1.5vw, 10px)',
+                                    padding: 'clamp(5px, 1.5vw, 10px) clamp(8px, 2vw, 14px) clamp(5px, 1.5vw, 10px) clamp(5px, 1.5vw, 10px)',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255,255,255,0.35)',
+                                    background: 'rgba(15,25,10,0.65)',
+                                    backdropFilter: 'blur(8px)',
+                                    WebkitBackdropFilter: 'blur(8px)',
+                                    boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                                    cursor: 'pointer',
+                                    maxWidth: 'clamp(100px, 28vw, 200px)',
+                                    minWidth: 0,
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                <div style={{
+                                    width: 'clamp(28px, 7vw, 55px)',
+                                    height: 'clamp(28px, 7vw, 55px)',
+                                    borderRadius: '6px',
+                                    backgroundImage: `url('${room.thumb}')`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    flexShrink: 0,
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                }} />
+                                <span style={{
+                                    color: 'white',
+                                    fontSize: 'clamp(0.65rem, 2.5vw, 1rem)',
+                                    fontWeight: 700,
+                                    textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                                    textAlign: 'left',
+                                    lineHeight: 1.2,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>
+                                    {room.label}
+                                </span>
+                            </button>
+                        ))}
                     </div>
                 </>
             )}

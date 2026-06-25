@@ -54,7 +54,7 @@ const roomData: Record<string, { intro: string; story: InfoPanel; objects: (Info
     intro: 'Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.',
     story: { type: 'story', title: 'Geschichte der Arbeitsstube/ Webkammer', content: 'Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.' },
     objects: [
-      { type: 'object', title: 'Garnspindel', content: 'Beschreibung der Garnspindel.', modelUrl: GARNGASPEL_URL,hotspotPosition: [-0.75, 0, -3] },
+      { type: 'object', title: 'Garnspindel', content: 'Beschreibung der Garnspindel.', modelUrl: GARNGASPEL_URL, hotspotPosition: [-0.75, 0, -3] },
       { type: 'object', title: 'Spindelpresse', content: 'Beschreibung der Spindelpresse.', modelUrl: SPINDELPRESSE_URL, hotspotPosition: [0, 0, -3] },
     ],
   },
@@ -169,7 +169,7 @@ export const PanoramaView = ({
     return () => { sessionRef.current?.stop(); sessionRef.current = null; };
   }, [imageUrl]);
 
- 
+
 
   // Hotspot-Positionen kontinuierlich in 2D projizieren
   useEffect(() => {
@@ -212,7 +212,14 @@ export const PanoramaView = ({
   // Modell laden + Drag-Rotation
   useEffect(() => {
     if (modelRotationAnimRef.current !== null) { cancelAnimationFrame(modelRotationAnimRef.current); modelRotationAnimRef.current = null; }
-    if (activePanelModelRef.current && sessionRef.current?.['scene']) { sessionRef.current['scene'].remove(activePanelModelRef.current); activePanelModelRef.current = null; }
+    if (activePanelModelRef.current && sessionRef.current?.['scene']) {
+      const cam = sessionRef.current?.['camera'] as THREE.Camera | undefined;
+      if (cam && activePanelModelRef.current) {
+        cam.remove(activePanelModelRef.current);
+      } else if (sessionRef.current?.['scene'] && activePanelModelRef.current) {
+        sessionRef.current['scene'].remove(activePanelModelRef.current);
+      } activePanelModelRef.current = null;
+    }
     if (!activePanel?.modelUrl || !sessionRef.current?.['scene']) return;
 
     const loader = new GLTFLoader();
@@ -240,8 +247,10 @@ export const PanoramaView = ({
       const scale = 1.2 / maxDim;
       model.scale.setScalar(scale);
       model.position.sub(center.multiplyScalar(scale));
-      model.position.set(0, -0.3, -2);
-      sessionRef.current['scene'].add(model);
+      model.position.set(0, -0.2, -2);
+      const camera = sessionRef.current['camera'] as THREE.PerspectiveCamera;
+      camera.add(model);
+      activePanelModelRef.current = model;
       activePanelModelRef.current = model;
       userRotationYRef.current = 0;
       isDraggingRef.current = false;
@@ -254,7 +263,14 @@ export const PanoramaView = ({
 
     return () => {
       if (modelRotationAnimRef.current !== null) { cancelAnimationFrame(modelRotationAnimRef.current); modelRotationAnimRef.current = null; }
-      if (activePanelModelRef.current && sessionRef.current?.['scene']) { sessionRef.current['scene'].remove(activePanelModelRef.current); activePanelModelRef.current = null; }
+      if (activePanelModelRef.current && sessionRef.current?.['scene']) {
+        const cam = sessionRef.current?.['camera'] as THREE.Camera | undefined;
+        if (cam && activePanelModelRef.current) {
+          cam.remove(activePanelModelRef.current);
+        } else if (sessionRef.current?.['scene'] && activePanelModelRef.current) {
+          sessionRef.current['scene'].remove(activePanelModelRef.current);
+        } activePanelModelRef.current = null;
+      }
       canvas?.removeEventListener('pointerdown', onPointerDown);
       canvas?.removeEventListener('pointermove', onPointerMove);
       canvas?.removeEventListener('pointerup', onPointerUp);
@@ -264,7 +280,14 @@ export const PanoramaView = ({
 
   const handleClosePanel = () => {
     if (modelRotationAnimRef.current !== null) { cancelAnimationFrame(modelRotationAnimRef.current); modelRotationAnimRef.current = null; }
-    if (activePanelModelRef.current && sessionRef.current?.['scene']) { sessionRef.current['scene'].remove(activePanelModelRef.current); activePanelModelRef.current = null; }
+    if (activePanelModelRef.current && sessionRef.current?.['scene']) {
+      const cam = sessionRef.current?.['camera'] as THREE.Camera | undefined;
+      if (cam && activePanelModelRef.current) {
+        cam.remove(activePanelModelRef.current);
+      } else if (sessionRef.current?.['scene'] && activePanelModelRef.current) {
+        sessionRef.current['scene'].remove(activePanelModelRef.current);
+      } activePanelModelRef.current = null;
+    }
     setActivePanel(null);
   };
 
@@ -272,7 +295,7 @@ export const PanoramaView = ({
     <>
       <style>{`.ar-video { display: none !important; }`} </style>
 
-      
+
 
       <ARComponentBase
         onNavigateHome={onNavigateBack}
@@ -327,7 +350,7 @@ export const PanoramaView = ({
       )}
 
 
-<style>{`
+      <style>{`
     .ar-video { display: none !important; }
     @keyframes hotspotPulse {
         0%   { transform: scale(0.92); }
@@ -337,68 +360,68 @@ export const PanoramaView = ({
 `}</style>
 
       {/* 3D Hotspot Buttons */}
-{!activePanel && !showIntro && !isStarting && (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none' }}>
-        {data.objects.map((obj, index) => {
+      {!activePanel && !showIntro && !isStarting && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none' }}>
+          {data.objects.map((obj, index) => {
             const pos = hotspotScreenPositions[index];
             if (!pos?.visible) return null;
             return (
-                <button
-    key={index}
-    onClick={() => setActivePanel(obj)}
-    title={obj.title}
-    style={{
-        position: 'absolute',
-        left: pos.x,
-        top: pos.y,
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'auto',
-        width: '52px',
-        height: '52px',
-        borderRadius: '50%',
-        background: 'transparent',
-        backgroundColor: 'transparent',
-        border: 'none',
-        padding: 0,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    }}
->
-    <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(12,105,15,0) 0%, rgba(12,105,15,0.45) 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    }}>
-        <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '50%',
-            background: '#11b827',
-            border: '2px solid rgba(255,255,255,0.92)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-            fontFamily: 'Georgia, serif',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            color: 'white',
-            animation: 'hotspotPulse 2.2s ease-in-out infinite',
-        }}>
-            i
-        </div>
-    </div>
-</button>
+              <button
+                key={index}
+                onClick={() => setActivePanel(obj)}
+                title={obj.title}
+                style={{
+                  position: 'absolute',
+                  left: pos.x,
+                  top: pos.y,
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'auto',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(12,105,15,0) 0%, rgba(12,105,15,0.45) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <div style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    background: '#11b827',
+                    border: '2px solid rgba(255,255,255,0.92)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    animation: 'hotspotPulse 2.2s ease-in-out infinite',
+                  }}>
+                    i
+                  </div>
+                </div>
+              </button>
             );
-        })}
-    </div>
-)}
+          })}
+        </div>
+      )}
     </>
   );
 };
