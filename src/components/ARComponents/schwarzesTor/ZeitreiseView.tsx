@@ -1,12 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ARComponentBase } from '../ARComponentBase';
 import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
 import * as THREE from 'three';
 
 class PanoramaPlaneVisualizer extends GyroARVisualizer {
     private xMin = 0;
     private xMax = 0;
     private readonly planeZ = -5;
+    private manualX: number | null = null;
 
     constructor(
         container: HTMLDivElement,
@@ -22,52 +25,74 @@ class PanoramaPlaneVisualizer extends GyroARVisualizer {
 
     setupPanoramaPlane(texture: THREE.Texture): void {
         if (!this.scene || !this.camera) return;
-
         this.setPanoramaBackground(null);
         this.scene.background = new THREE.Color(0x000000);
-
         const img = texture.image as { width?: number; height?: number } | null;
-        const imageAspect = img?.width && img?.height
-            ? img.width / img.height
-            : 16 / 9;
-
+        const imageAspect = img?.width && img?.height ? img.width / img.height : 16 / 9;
         const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
         const dist = Math.abs(this.planeZ);
         const planeHeight = 2 * dist * Math.tan(fovRad / 2);
         const planeWidth = planeHeight * imageAspect;
-
         const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
         const material = new THREE.MeshBasicMaterial({ map: texture, depthWrite: false });
         const plane = new THREE.Mesh(geometry, material);
         plane.position.set(0, 0, this.planeZ);
         this.scene.add(plane);
-
         this.camera.position.set(0, 0, 0);
         this.camera.rotation.set(0, 0, 0);
         this.camera.quaternion.identity();
-
         const screenHalfWidth = dist * Math.tan(Math.atan(this.camera.aspect * Math.tan(fovRad / 2)));
         const halfPlane = planeWidth / 2;
         this.xMin = -(halfPlane - screenHalfWidth);
         this.xMax = (halfPlane - screenHalfWidth);
     }
 
+    setCameraX(x: number): void {
+        this.manualX = THREE.MathUtils.clamp(x, this.xMin, this.xMax);
+        if (this.camera) this.camera.position.x = this.manualX;
+    }
+
+    clearManualX(): void { this.manualX = null; }
+    getCameraX(): number { return this.camera?.position.x ?? 0; }
+    getXBounds(): { xMin: number; xMax: number } { return { xMin: this.xMin, xMax: this.xMax }; }
+
+    projectToScreen(position3D: THREE.Vector3): { x: number; y: number } {
+        if (!this.camera || !this.renderer) return { x: 0, y: 0 };
+        const canvas = this.renderer.domElement;
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        const projected = position3D.clone().project(this.camera);
+        return {
+            x: (projected.x * 0.5 + 0.5) * w,
+            y: (-projected.y * 0.5 + 0.5) * h,
+        };
+    }
+
     protected animate = (): void => {
         this.animationId = requestAnimationFrame(this.animate);
-
-        if (this.camera) {
-            const euler = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
-            const yaw = euler.y;
-            const sensitivity = Math.abs(this.planeZ) * 0.8;
-            const targetX = THREE.MathUtils.clamp(-yaw * sensitivity, this.xMin, this.xMax);
-
-            this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetX, 0.12);
-            this.camera.position.y = 0;
-            this.camera.position.z = 0;
-            this.camera.rotation.set(0, 0, 0);
-            this.camera.quaternion.identity();
+        if (this.manualX !== null) {
+            if (this.camera) {
+                this.camera.position.x = this.manualX;
+                this.camera.position.y = 0;
+                this.camera.position.z = 0;
+                this.camera.rotation.set(0, 0, 0);
+                this.camera.quaternion.identity();
+            }
+        } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any).updateCameraFromGyro();
+            if (this.camera) {
+                const euler = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
+                const yaw = euler.y;
+                const sensitivity = Math.abs(this.planeZ) * 0.8;
+                const targetX = THREE.MathUtils.clamp(-yaw * sensitivity, this.xMin, this.xMax);
+                this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetX, 0.12);
+                this.camera.position.y = 0;
+                this.camera.position.z = 0;
+                this.camera.rotation.set(0, 0, 0);
+                this.camera.quaternion.identity();
+            }
         }
-
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
@@ -85,14 +110,19 @@ type ZeitreiseViewProps = {
     completedStations?: number;
     totalStations?: number;
     totalPoints?: number;
+    visitedRooms?: Set<string>;
+    currentStationId?: number;
+    currentStationTitle?: string;
+    currentStationPoints?: number;
+    onCompleteStation?: (stationId: number) => void;
+    isCurrentStationCompleted?: boolean;
+    isGuestMode?: boolean;
+    showCompleteButton?: boolean;
+    ignoreCompleteTimer?: boolean;
 };
 
-const rooms = [
-    { id: 'kueche',       label: 'Küche',       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.png', top: '43%', left: '20%' },
-    { id: 'wohnraum',     label: 'Wohnraum',     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.png', top: '43%', left: '80%' },
-    { id: 'scheune',      label: 'Scheune',      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.png', top: '64%', left: '20%' },
-    { id: 'arbeitsstube', label: 'Arbeitsstube', image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.png', top: '64%', left: '80%' },
-];
+const TOTAL_ROOMS = 4;
+const IS_DEV = import.meta.env.DEV;
 
 export const ZeitreiseView = ({
     onNavigateBack,
@@ -105,46 +135,138 @@ export const ZeitreiseView = ({
     completedStations,
     totalStations,
     totalPoints,
+    visitedRooms = new Set(),
+    currentStationId,
+    currentStationTitle,
+    currentStationPoints,
+    onCompleteStation,
+    isCurrentStationCompleted = false,
+    isGuestMode = false,
+    showCompleteButton = false,
+    ignoreCompleteTimer = true,
 }: ZeitreiseViewProps) => {
+    const { language } = useLanguage();
+    const texts = getSchwarzesTorTexts(language);
+
+    const rooms = [
+        { id: 'kueche',       label: texts.roomKueche,       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.png', position3D: new THREE.Vector3(-1.75,  0.75, -5) },
+        { id: 'wohnraum',     label: texts.roomWohnraum,     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.png', position3D: new THREE.Vector3( 1.75,  0.75, -5) },
+        { id: 'scheune',      label: texts.roomScheune,      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.png', position3D: new THREE.Vector3(-1.75, -1.25, -5) },
+        { id: 'arbeitsstube', label: texts.roomArbeitsstube, image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.png', position3D: new THREE.Vector3( 1.75, -1.25, -5) },
+    ];
+
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const sessionRef = useRef<PanoramaPlaneVisualizer | null>(null);
+    const roomPosAnimRef = useRef<number | null>(null);
+
     const [hasStarted, setHasStarted] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isCompact, setIsCompact] = useState(false);
+    const [hideContent, setHideContent] = useState(false);
+    const [roomScreenPositions, setRoomScreenPositions] = useState<{ x: number; y: number }[]>([]);
 
-    // Session startet erst nach explizitem Klick (iOS Gyro-Berechtigung)
+    const [btnSize, setBtnSize] = useState(100);
+    useEffect(() => {
+        const updateSize = () => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const smaller = Math.min(vw, vh);
+            setBtnSize(Math.min(180, Math.max(70, smaller * 1.25)));
+        };
+        updateSize();
+        window.addEventListener('resize', updateSize);
+        window.addEventListener('orientationchange', updateSize);
+        return () => {
+            window.removeEventListener('resize', updateSize);
+            window.removeEventListener('orientationchange', updateSize);
+        };
+    }, []);
+
+    const [debugX, setDebugX] = useState(0);
+    const [debugBounds, setDebugBounds] = useState({ xMin: -5, xMax: 5 });
+    const [showDebug, setShowDebug] = useState(false);
+    const [gyroActive, setGyroActive] = useState(true);
+
+    useEffect(() => {
+        let observer: MutationObserver | null = null;
+        const timeout = window.setTimeout(() => {
+            const progressContainer = document.querySelector('.ar-progress-container');
+            if (!progressContainer) return;
+            observer = new MutationObserver(() => {
+                setIsCompact(progressContainer.classList.contains('ar-progress-container-compact'));
+            });
+            observer.observe(progressContainer, { attributes: true, attributeFilter: ['class'] });
+            setIsCompact(progressContainer.classList.contains('ar-progress-container-compact'));
+        }, 300);
+        return () => { window.clearTimeout(timeout); observer?.disconnect(); };
+    }, []);
+
+    useEffect(() => {
+        if (!isReady || !sessionRef.current) return;
+        const bounds = sessionRef.current.getXBounds();
+        setDebugBounds(bounds);
+        setDebugX(0);
+    }, [isReady]);
+
+    useEffect(() => {
+        if (!isReady) return;
+        const update = () => {
+            if (!sessionRef.current) return;
+            const positions = rooms.map((room) =>
+                sessionRef.current!.projectToScreen(room.position3D)
+            );
+            setRoomScreenPositions(positions);
+            roomPosAnimRef.current = requestAnimationFrame(update);
+        };
+        roomPosAnimRef.current = requestAnimationFrame(update);
+        return () => { if (roomPosAnimRef.current) cancelAnimationFrame(roomPosAnimRef.current); };
+    }, [isReady]);
+
+    const handleExpand = () => {
+        setIsCompact(false);
+        const progressContainer = document.querySelector('.ar-progress-container') as HTMLElement | null;
+        progressContainer?.click();
+    };
+
+    const handleDebugSlider = (value: number) => {
+        setDebugX(value);
+        sessionRef.current?.setCameraX(value);
+    };
+
+    const toggleGyro = () => {
+        if (gyroActive) { sessionRef.current?.setCameraX(debugX); setGyroActive(false); }
+        else { sessionRef.current?.clearManualX(); setGyroActive(true); }
+    };
+
+    const bottomExpanded = 'calc(112px + max(24px, env(safe-area-inset-bottom)))';
+    const bottomCompact  = 'calc(62px + max(24px, env(safe-area-inset-bottom)))';
+    const bottomPos = isCompact ? bottomCompact : bottomExpanded;
+
     useEffect(() => {
         if (!hasStarted || !containerRef.current || !videoRef.current) return;
         let cancelled = false;
         setIsStarting(true);
-
         const start = async () => {
             try {
-                const session = new PanoramaPlaneVisualizer(
-                    containerRef.current!,
-                    videoRef.current!,
-                    { onError: (e) => console.error('[ZeitreiseView]', e) }
-                );
+                const session = new PanoramaPlaneVisualizer(containerRef.current!, videoRef.current!, { onError: (e) => console.error('[ZeitreiseView]', e) });
                 await session.init();
                 if (cancelled) { session.stop(); return; }
-
+                if (session['scene']) {
+                    const helpers = (session['scene'] as THREE.Scene).children.filter((c) => c.type === 'GridHelper' || c.type === 'AxesHelper');
+                    helpers.forEach((h) => (session['scene'] as THREE.Scene).remove(h));
+                }
                 const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-                    new THREE.TextureLoader().load(
-                        '/images/schwarzesTor/schwarzesTor2.JPG',
-                        (tex) => {
-                            tex.colorSpace = THREE.SRGBColorSpace;
-                            tex.minFilter = THREE.LinearFilter;
-                            tex.magFilter = THREE.LinearFilter;
-                            tex.generateMipmaps = false;
-                            resolve(tex);
-                        },
-                        undefined,
-                        reject
-                    );
+                    new THREE.TextureLoader().load('/images/schwarzesTor/schwarzesTor2.JPG', (tex) => {
+                        tex.colorSpace = THREE.SRGBColorSpace;
+                        tex.minFilter = THREE.LinearFilter;
+                        tex.magFilter = THREE.LinearFilter;
+                        tex.generateMipmaps = false;
+                        resolve(tex);
+                    }, undefined, reject);
                 });
-
                 if (cancelled) { session.stop(); return; }
                 session.setupPanoramaPlane(texture);
                 sessionRef.current = session;
@@ -155,14 +277,31 @@ export const ZeitreiseView = ({
                 if (!cancelled) setIsStarting(false);
             }
         };
-
         void start();
-        return () => {
-            cancelled = true;
-            sessionRef.current?.stop();
-            sessionRef.current = null;
-        };
+        return () => { cancelled = true; sessionRef.current?.stop(); sessionRef.current = null; };
     }, [hasStarted]);
+
+    const btnStyle: React.CSSProperties = {
+        pointerEvents: 'auto',
+        border: '1px solid rgba(255,255,255,0.35)',
+        borderRadius: '12px',
+        padding: '10px 14px',
+        background: 'rgba(15,25,10,0.65)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        color: 'white',
+        fontWeight: 700,
+        fontSize: '0.85rem',
+        cursor: 'pointer',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+        whiteSpace: 'nowrap' as const,
+    };
+
+    const labelFontSize = `${Math.max(9, btnSize * 0.11)}px`;
+    const thumbSize = `${Math.round(btnSize * 0.65)}px`;
+
+    // ob Dialog aktiv: ar-ui-overlay normalen z-index lassen
+    const uiOverlayZIndex = hideContent ? 'auto' : '20000';
 
     return (
         <>
@@ -170,47 +309,38 @@ export const ZeitreiseView = ({
                 .ar-video { display: none !important; }
                 .ar-topbar { display: none !important; }
                 header.sticky { display: none !important; }
-
                 .ar-container canvas { z-index: 1 !important; }
                 .ar-container { z-index: 1 !important; }
 
-                .ar-menu-backdrop {
-                    z-index: 99998 !important;
-                    position: fixed !important;
-                    transform: translateZ(0) !important;
-                }
-                .ar-menu-panel {
-                    z-index: 99999 !important;
-                    position: fixed !important;
-                    transform: translateZ(0) !important;
-                }
+                /* Topbar + Progressbar + Menü IMMER über Zeitreise-Inhalten */
+                .ar-ui-overlay    { z-index: ${uiOverlayZIndex} !important; }
+                .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; transform: translateZ(0) !important; }
+                .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; transform: translateZ(0) !important; }
 
-                .zt-room-btn {
-                    transition: transform 0.12s, box-shadow 0.12s;
-                }
-                .zt-room-btn:active {
-                    transform: translate(-50%, -50%) scale(0.94) !important;
-                }
+                .zt-room-btn { transition: transform 0.12s, box-shadow 0.12s; }
+                .zt-room-btn:active { transform: translate(-50%, -50%) scale(0.94) !important; }
 
+                /* Info-Box — kein backdropFilter damit kein neuer Stacking Context entsteht */
+                .zt-infobox-outer { padding: 150px 12px 0; }
+                .zt-infobox-inner {
+                    padding: 12px 14px;
+                    /* isolation: isolate verhindert z-index Konflikte mit ar-ui-overlay */
+                    isolation: auto;
+                }
+                .zt-infobox-inner h1 { font-size: clamp(1rem, 4vw, 1.4rem); margin-bottom: 4px; }
+                .zt-infobox-inner p  { font-size: clamp(0.75rem, 2.5vw, 0.92rem); margin: 0; }
+
+                @media (max-height: 600px) {
+                    .zt-infobox-outer { padding-top: 60px !important; }
+                    .zt-infobox-inner { padding: 6px 12px !important; }
+                    .zt-infobox-inner h1 { font-size: 0.9rem !important; margin-bottom: 2px !important; }
+                    .zt-infobox-inner p  { font-size: 0.7rem !important; }
+                }
                 @media (orientation: landscape) {
-                    .zt-infobox-outer {
-                        padding-top: 55px !important;
-                    }
-                    .zt-infobox-inner {
-                        padding: 8px 14px !important;
-                    }
-                    .zt-infobox-inner h1 {
-                        font-size: 0.95rem !important;
-                        margin-bottom: 2px !important;
-                    }
-                    .zt-infobox-inner p {
-                        font-size: 0.72rem !important;
-                        margin: 0 !important;
-                    }
-                    .zt-room-btn-kueche       { top: 55% !important; }
-                    .zt-room-btn-wohnraum     { top: 55% !important; }
-                    .zt-room-btn-scheune      { top: 78% !important; }
-                    .zt-room-btn-arbeitsstube { top: 78% !important; }
+                    .zt-infobox-outer { padding-top: 70px !important; }
+                    .zt-infobox-inner { padding: 6px 12px !important; }
+                    .zt-infobox-inner h1 { font-size: 0.9rem !important; margin-bottom: 2px !important; }
+                    .zt-infobox-inner p  { font-size: 0.7rem !important; margin: 0 !important; }
                 }
             `}</style>
 
@@ -227,190 +357,170 @@ export const ZeitreiseView = ({
                 completedStations={completedStations}
                 totalStations={totalStations}
                 totalPoints={totalPoints}
-                showCompleteButton={false}
-                ignoreCompleteTimer={true}
+                currentStationId={currentStationId}
+                currentStationTitle={currentStationTitle}
+                currentStationPoints={currentStationPoints}
+                onCompleteStation={onCompleteStation}
+                isCurrentStationCompleted={isCurrentStationCompleted}
+                isGuestMode={isGuestMode}
+                showCompleteButton={showCompleteButton}
+                ignoreCompleteTimer={ignoreCompleteTimer}
+                onCompleteInitiated={() => setHideContent(true)}
             />
 
-            {/* Start-Screen — iOS braucht User-Geste für Gyro-Berechtigung */}
             {!hasStarted && !error && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 50,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '24px', background: 'rgba(0,0,0,0.75)',
-                }}>
-                    <div style={{
-                        width: 'min(400px, 100%)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        background: 'rgba(15,25,10,0.8)',
-                        padding: '24px',
-                        textAlign: 'center',
-                        color: 'white',
-                    }}>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>
-                            Zeitreise starten
-                        </h2>
-                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', marginBottom: '20px', lineHeight: 1.5 }}>
-                            Bewege dein Handy um das Haus zu erkunden und wähle einen Raum.
-                        </p>
-                        <button
-                            onClick={() => setHasStarted(true)}
-                            style={{
-                                width: '100%', border: 'none', borderRadius: '12px',
-                                padding: '14px', background: 'var(--color-primary)',
-                                color: 'white', fontWeight: 700, cursor: 'pointer',
-                                fontSize: '1rem',
-                            }}
-                        >
-                            Loslegen
+                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.75)' }}>
+                    <div style={{ width: 'min(400px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15,25,10,0.8)', padding: '24px', textAlign: 'center', color: 'white' }}>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>{texts.zeitreiseStartTitle}</h2>
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', marginBottom: '20px', lineHeight: 1.5 }}>{texts.zeitreiseStartDescription}</p>
+                        <button onClick={() => setHasStarted(true)} style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem' }}>
+                            {texts.zeitreiseStartButtonLabel}
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* Ladescreen */}
             {hasStarted && isStarting && !isReady && !error && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 50,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.85)',
-                }}>
-                    <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: 600, textAlign: 'center' }}>
-                        <div style={{ marginBottom: '8px', fontSize: '1.5rem' }}>🕰️</div>
-                        Zeitreise wird geladen…
-                    </div>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }}>
+                    <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: 600, textAlign: 'center' }}>{texts.zeitreiseLoading}</div>
                 </div>
             )}
 
-            {/* Fehlerscreen */}
             {error && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 50,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '24px', background: 'rgba(0,0,0,0.85)',
-                }}>
-                    <div style={{
-                        background: 'rgba(20,10,10,0.9)', border: '1px solid rgba(255,100,100,0.3)',
-                        borderRadius: '14px', padding: '20px', color: 'white',
-                        textAlign: 'center', maxWidth: '320px',
-                    }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.85)' }}>
+                    <div style={{ background: 'rgba(20,10,10,0.9)', border: '1px solid rgba(255,100,100,0.3)', borderRadius: '14px', padding: '20px', color: 'white', textAlign: 'center', maxWidth: '320px' }}>
                         <p style={{ marginBottom: '14px', fontSize: '0.9rem' }}>{error}</p>
-                        <button onClick={onNavigateBack} style={{
-                            border: 'none', borderRadius: '10px', padding: '10px 20px',
-                            background: 'var(--color-primary)', color: 'white',
-                            fontWeight: 700, cursor: 'pointer',
-                        }}>Zurück</button>
+                        <button onClick={onNavigateBack} style={{ border: 'none', borderRadius: '10px', padding: '10px 20px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer' }}>
+                            {texts.backButtonLabel}
+                        </button>
                     </div>
                 </div>
             )}
 
-            {isReady && (
+            {isReady && !hideContent && (
                 <>
-                    {/* Gradient oben + unten */}
-                    <div style={{
-                        position: 'fixed', inset: 0, zIndex: 11, pointerEvents: 'none',
-                        background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 22%, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.45) 100%)',
-                    }} />
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 11, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 22%, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.45) 100%)' }} />
 
-                    {/* Info-Box oben */}
-                    <div
-                        className="zt-infobox-outer"
-                        style={{
-                            position: 'fixed', top: 80, left: 0, right: 0,
-                            zIndex: 12, pointerEvents: 'none',
-                            padding: '80px 16px 0',
-                        }}
-                    >
-                        <div
-                            className="zt-infobox-inner"
-                            style={{
-                                pointerEvents: 'auto',
-                                borderRadius: '20px',
-                                border: '1px solid rgba(255,255,255,0.3)',
-                                background: 'rgba(200,210,200,0.22)',
-                                backdropFilter: 'blur(10px) grayscale(10%)',
-                                WebkitBackdropFilter: 'blur(10px) grayscale(10%)',
-                                padding: '16px 18px',
-                            }}
-                        >
-                            <h1 style={{
-                                margin: '0 0 8px',
-                                fontSize: '1.4rem',
-                                fontWeight: 800,
-                                color: 'white',
-                                textShadow: '0 2px 10px rgba(0,0,0,0.9)',
-                            }}>
-                                Zeitreise
-                            </h1>
-                            <p style={{
-                                margin: 0,
-                                fontSize: '0.92rem',
-                                lineHeight: 1.5,
-                                color: 'white',
-                                textShadow: '0 1px 6px rgba(0,0,0,0.8)',
-                            }}>
-                                Bewege dein Handy und wähle einen Raum.
-                            </p>
+                    {/* Info-Box — kein backdropFilter → kein Stacking Context Konflikt */}
+                    <div className="zt-infobox-outer" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 12, pointerEvents: 'none' }}>
+                        <div className="zt-infobox-inner" style={{
+                            pointerEvents: 'auto',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            background: 'rgba(15,25,15,0.60)',  // ← solider Hintergrund statt backdropFilter
+                        }}>
+                            <h1 style={{ margin: '0 0 4px', color: 'white', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>{texts.zeitreiseTitle}</h1>
+                            <p style={{ margin: 0, color: 'white', textShadow: '0 1px 6px rgba(0,0,0,0.8)', lineHeight: 1.4 }}>{texts.zeitreiseSubtitle}</p>
                         </div>
                     </div>
 
-                    {/* Raum-Buttons auf der Hausfassade */}
-                    <div style={{
-                        position: 'fixed', inset: 0,
-                        zIndex: 12, pointerEvents: 'none',
-                    }}>
-                        {rooms.map((room) => (
-                            <button
-                                key={room.id}
-                                className={`zt-room-btn zt-room-btn-${room.id}`}
-                                onClick={() => onSelectRoom?.(room)}
-                                style={{
-                                    position: 'absolute',
-                                    top: room.top,
-                                    left: room.left,
-                                    transform: 'translate(-50%, -50%)',
-                                    pointerEvents: 'auto',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'clamp(4px, 1.5vw, 10px)',
-                                    padding: 'clamp(5px, 1.5vw, 10px) clamp(8px, 2vw, 14px) clamp(5px, 1.5vw, 10px) clamp(5px, 1.5vw, 10px)',
-                                    borderRadius: '10px',
-                                    border: '1px solid rgba(255,255,255,0.35)',
-                                    background: 'rgba(15,25,10,0.65)',
-                                    backdropFilter: 'blur(8px)',
-                                    WebkitBackdropFilter: 'blur(8px)',
-                                    boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-                                    cursor: 'pointer',
-                                    maxWidth: 'clamp(100px, 28vw, 200px)',
-                                    minWidth: 0,
-                                    boxSizing: 'border-box',
-                                }}
-                            >
-                                <div style={{
-                                    width: 'clamp(28px, 7vw, 55px)',
-                                    height: 'clamp(28px, 7vw, 55px)',
-                                    borderRadius: '6px',
-                                    backgroundImage: `url('${room.thumb}')`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    flexShrink: 0,
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                }} />
-                                <span style={{
-                                    color: 'white',
-                                    fontSize: 'clamp(0.65rem, 2.5vw, 1rem)',
-                                    fontWeight: 700,
-                                    textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-                                    textAlign: 'left',
-                                    lineHeight: 1.2,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                }}>
-                                    {room.label}
-                                </span>
+                    {/* Raum-Counter */}
+                    <div style={{ position: 'fixed', bottom: bottomPos, left: 0, right: 0, zIndex: 13, pointerEvents: 'none', display: 'flex', justifyContent: 'flex-start', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
+                        <button onClick={handleExpand} style={btnStyle}>
+                            {visitedRooms.size}/{TOTAL_ROOMS}
+                        </button>
+                    </div>
+
+                    {isCurrentStationCompleted && (
+                        <div style={{ position: 'fixed', bottom: bottomPos, right: '16px', zIndex: 13 }}>
+                            <button onClick={onNavigateBack} style={{ border: 'none', borderRadius: '32px', padding: '12px 20px', background: 'var(--color-primary)', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.3)' }}>
+                                ✓ {language === 'de' ? 'Station abgeschlossen — Zur Startseite' : 'Station completed — Go Home'}
                             </button>
-                        ))}
+                        </div>
+                    )}
+
+                    {IS_DEV && (
+                        <div style={{ position: 'fixed', top: '50%', right: '8px', transform: 'translateY(-50%)', zIndex: 19999, pointerEvents: 'auto' }}>
+                            <button onClick={() => setShowDebug(v => !v)} style={{ background: 'rgba(255,200,0,0.9)', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', marginBottom: showDebug ? '6px' : 0, display: 'block', width: '100%' }}>🎛 Debug</button>
+                            {showDebug && (
+                                <div style={{ background: 'rgba(0,0,0,0.9)', borderRadius: '12px', padding: '12px', color: 'white', width: '170px', fontSize: '0.75rem' }}>
+                                    <p style={{ margin: '0 0 4px', fontWeight: 700 }}>Kamera X</p>
+                                    <input type="range" min={debugBounds.xMin} max={debugBounds.xMax} step={0.001} value={debugX} onChange={(e) => handleDebugSlider(Number(e.target.value))} style={{ width: '100%', marginBottom: '6px', cursor: 'pointer' }} />
+                                    <p style={{ margin: '0 0 8px', opacity: 0.75, lineHeight: 1.6 }}>x = <strong>{debugX.toFixed(3)}</strong><br/>min = {debugBounds.xMin.toFixed(3)}<br/>max = {debugBounds.xMax.toFixed(3)}</p>
+                                    <div style={{ display: 'grid', gap: '4px' }}>
+                                        <button onClick={() => handleDebugSlider(0)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>← Mitte →</button>
+                                        <button onClick={() => handleDebugSlider(debugBounds.xMin)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>← Links (min)</button>
+                                        <button onClick={() => handleDebugSlider(debugBounds.xMax)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>Rechts (max) →</button>
+                                        <button onClick={toggleGyro} style={{ border: 'none', borderRadius: '6px', padding: '5px', background: gyroActive ? 'rgba(12,105,15,0.8)' : 'rgba(180,50,50,0.8)', color: 'white', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, marginTop: '4px' }}>
+                                            Gyro: {gyroActive ? '✓ AN' : '✗ AUS'}
+                                        </button>
+                                    </div>
+                                    <p style={{ margin: '8px 0 4px', fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '8px' }}>Button-Pos</p>
+                                    {roomScreenPositions.map((pos, i) => (
+                                        <p key={i} style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.7rem' }}>
+                                            {rooms[i]?.id}: {Math.round(pos.x)}, {Math.round(pos.y)}
+                                        </p>
+                                    ))}
+                                    <p style={{ margin: '6px 0 2px', opacity: 0.7, fontSize: '0.7rem' }}>btnSize: {Math.round(btnSize)}px</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Raum-Buttons */}
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 12, pointerEvents: 'none' }}>
+                        {rooms.map((room, index) => {
+                            const pos = roomScreenPositions[index];
+                            if (!pos) return null;
+                            return (
+                                <button
+                                    key={room.id}
+                                    className={`zt-room-btn zt-room-btn-${room.id}`}
+                                    onClick={() => onSelectRoom?.(room)}
+                                    style={{
+                                        position: 'absolute',
+                                        left: pos.x,
+                                        top: pos.y,
+                                        transform: 'translate(-50%, -50%)',
+                                        pointerEvents: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: `${Math.max(4, btnSize * 0.05)}px`,
+                                        padding: `${Math.max(6, btnSize * 0.08)}px`,
+                                        width: `${btnSize}px`,
+                                        borderRadius: '20px',
+                                        border: visitedRooms.has(room.id)
+                                            ? '2px solid rgba(12,105,15,0.9)'
+                                            : '1px solid rgba(255,255,255,0.35)',
+                                        background: visitedRooms.has(room.id)
+                                            ? 'rgba(12,105,15,0.7)'
+                                            : 'rgba(15,25,10,0.65)',
+                                        // Kein backdropFilter auf Buttons → kein Stacking Context
+                                        boxShadow: visitedRooms.has(room.id)
+                                            ? '0 4px 14px rgba(12,105,15,0.5)'
+                                            : '0 4px 14px rgba(0,0,0,0.4)',
+                                        cursor: 'pointer',
+                                        boxSizing: 'border-box',
+                                    }}
+                                >
+                                    <div style={{
+                                        width: thumbSize,
+                                        height: thumbSize,
+                                        borderRadius: '10px',
+                                        backgroundImage: `url('${room.thumb}')`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        flexShrink: 0,
+                                    }} />
+                                    <span style={{
+                                        color: 'white',
+                                        fontSize: labelFontSize,
+                                        fontWeight: 700,
+                                        textAlign: 'center',
+                                        lineHeight: 1.2,
+                                        width: '100%',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}>
+                                        {room.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </>
             )}

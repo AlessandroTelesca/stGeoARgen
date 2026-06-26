@@ -40,6 +40,8 @@ import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
 import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 import { getBahnhofTexts } from './i18n/stations/bahnhof';
+import { getSchwarzesTorTexts } from './i18n/stations/schwarzesTor';
+
 
 
 interface Station {
@@ -76,6 +78,7 @@ export default function App() {
   const glockenspielTexts = getGlockenspielTexts(language);
   const phonomuseumTexts = getPhonomuseumTexts(language);
   const bahnhofTexts = getBahnhofTexts(language);
+  const schwarzesTorTexts = getSchwarzesTorTexts(language);
   const navigate = useNavigate();
   const location = useLocation();
   const appRootRef = useRef<HTMLDivElement>(null);
@@ -482,16 +485,14 @@ export default function App() {
         },
         {
           id: 4,
-          title: language === 'de' ? 'Schwarzes Tor' : 'Black Gate',
-          description: language === 'de' ? 'Historisches Stadttor mit besonderem Charakter' : 'Historic city gate with a distinctive character',
-          longDescription: language === 'de'
-            ? 'Das Schwarze Tor zählt zu den markanten historischen Orten in St. Georgen. Als ehemaliger Zugang zur Stadt erinnert es an die früheren Befestigungen und den Wandel des Stadtbildes über die Jahrhunderte. Nimm dir vor Ort Zeit für Details in der Bausubstanz und den Verlauf der umliegenden Gassen.'
-            : 'The Black Gate is one of St. Georgen\'s notable historic landmarks. As a former city entrance, it reflects earlier fortifications and the town\'s development over time. On site, take a moment to observe details in the masonry and the layout of the surrounding streets.',
+          title: schwarzesTorTexts.stationName,
+          description: schwarzesTorTexts.description,
+          longDescription: schwarzesTorTexts.longDescription,
           imageUrl: '/images/schwarzesTor.JPG',
           status: 'available',
           points: 50,
-          latitude: getStationCoordinates(4)?.lat || 48.126356459351896,
-          longitude: getStationCoordinates(4)?.lng || 8.334404178366523,
+          latitude: getStationCoordinates(4)?.lat || 48.1263,
+          longitude: getStationCoordinates(4)?.lng || 8.3344,
         },
         {
           id: 5,
@@ -553,10 +554,10 @@ export default function App() {
             longDescription: klosterweiherTexts.longDescription,
             quiz: station.quiz
               ? {
-                  ...station.quiz,
-                  question: klosterweiherTexts.quizQuestion,
-                  options: klosterweiherTexts.quizOptions,
-                }
+                ...station.quiz,
+                question: klosterweiherTexts.quizQuestion,
+                options: klosterweiherTexts.quizOptions,
+              }
               : station.quiz,
           };
         }),
@@ -577,10 +578,10 @@ export default function App() {
               longDescription: glockenspielTexts.longDescription,
               quiz: station.quiz
                 ? {
-                    ...station.quiz,
-                    question: glockenspielTexts.quizQuestion,
-                    options: glockenspielTexts.quizOptions,
-                  }
+                  ...station.quiz,
+                  question: glockenspielTexts.quizQuestion,
+                  options: glockenspielTexts.quizOptions,
+                }
                 : station.quiz,
             };
           }
@@ -592,10 +593,10 @@ export default function App() {
               longDescription: bahnhofTexts.longDescription,
               quiz: station.quiz
                 ? {
-                    ...station.quiz,
-                    question: bahnhofTexts.quizQuestion,
-                    options: bahnhofTexts.quizOptions,
-                  }
+                  ...station.quiz,
+                  question: bahnhofTexts.quizQuestion,
+                  options: bahnhofTexts.quizOptions,
+                }
                 : station.quiz,
             };
           }
@@ -607,10 +608,10 @@ export default function App() {
               longDescription: phonomuseumTexts.longDescription,
               quiz: station.quiz
                 ? {
-                    ...station.quiz,
-                    question: phonomuseumTexts.quizQuestion,
-                    options: phonomuseumTexts.quizOptions,
-                  }
+                  ...station.quiz,
+                  question: phonomuseumTexts.quizQuestion,
+                  options: phonomuseumTexts.quizOptions,
+                }
                 : station.quiz,
             };
           }
@@ -912,11 +913,13 @@ export default function App() {
   const glockenspielStation = getStationById(1);
   const bahnhofStation = getStationById(2);
   const phonomuseumStation = getStationById(3);
+  const schwarzesTorStation = getStationById(4);
   const klosterweiherStation = getStationById(5);
 
   const isGlockenspielCompleted = glockenspielStation?.status === 'completed';
   const isBahnhofCompleted = bahnhofStation?.status === 'completed';
   const isPhonomuseumCompleted = phonomuseumStation?.status === 'completed';
+  const isSchwarzesTorCompleted = schwarzesTorStation?.status === 'completed';
   const isKlosterweiherCompleted = klosterweiherStation?.status === 'completed';
 
   const pathsWithProgress = paths.map(path => {
@@ -1252,25 +1255,25 @@ export default function App() {
         )
       )}
 
-     {currentView === 'ar-schwarzes-tor' && (
-  renderARViewWithGate(
-    <SchwarzesTorView
-      onNavigateHome={() => navigate('/')}
-      username={username}
-      onLogin={handleNavigateToLogin}
-      onLogout={handleLogout}
-      onNavigateProfile={() => navigate('/profile')}
-      onRegister={handleNavigateToRegister}
-      completedStations={totalCompletedStations}
-      totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
-      totalPoints={totalPoints}
-      currentStationPoints={50}
-      onCompleteStation={(stationId) => handleStationComplete(stationId)}
-      isCurrentStationCompleted={isStationCompleted(4)}
-      isGuestMode={allowGuestStationStart}
-    />
-  )
-)}
+      {currentView === 'ar-schwarzes-tor' && (
+        renderARViewWithGate(
+          <SchwarzesTorView
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            currentStationPoints={schwarzesTorStation?.points}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={isSchwarzesTorCompleted}
+            isGuestMode={allowGuestStationStart}
+          />
+        )
+      )}
 
       {currentView === 'ar-glockenspiel' && (
         renderARViewWithGate(

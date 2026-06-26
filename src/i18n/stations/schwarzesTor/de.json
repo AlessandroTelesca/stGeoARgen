@@ -1,5 +1,44 @@
 {
   "stationName": "Schwarzes Tor",
+  "description": "Historisches Stadttor mit besonderem Charakter",
   "longDescription": "Das Schwarze Tor war ein wichtiger Zugang zur historischen Stadt. Der Ort steht für den Übergang zwischen alter Stadtstruktur und heutiger Nutzung. Achte vor Ort auf Mauerwerk, Proportionen und die Wegeführung rund um das Tor - hier lassen sich viele Spuren der Stadtgeschichte entdecken.",
-  "backButtonLabel": "Zurück zur Übersicht"
+  "backButtonLabel": "Zurück zur Übersicht",
+
+  "zeitreiseStartButton": "Zeitreise starten!",
+  "rewardHint": "Betritt alle 4 Räume für deine Belohnung!",
+
+  "zeitreiseTitle": "Zeitreise",
+  "zeitreiseSubtitle": "Bewege dein Handy und wähle einen Raum.",
+  "zeitreiseStartTitle": "Zeitreise starten",
+  "zeitreiseStartDescription": "Bewege dein Handy um das Haus zu erkunden und wähle einen Raum.",
+  "zeitreiseStartButtonLabel": "Loslegen",
+  "zeitreiseLoading": "Zeitreise wird geladen…",
+  "zeitreiseRoomSelect": "Raum wählen",
+
+  "roomKueche": "Küche",
+  "roomWohnraum": "Wohnraum",
+  "roomScheune": "Scheune",
+  "roomArbeitsstube": "Arbeitsstube",
+
+  "panoramaLoading": "Panorama wird geladen…",
+  "panoramaBack": "Zurück zur Raumauswahl",
+  "panoramaBackHome": "Zur Startseite",
+  "panoramaClose": "Schließen",
+  "panoramaDragHint": "Ziehen zum Drehen",
+  "panoramaWeiter": "Weiter",
+
+  "introKueche": "Nach der Feldarbeit muss die Familie versorgt werden. Die Küche ist der rauchige, rußige Kern des Hauses, wo Feuerstelle und einfache Holzherde als Kochstelle dienen. Alles wird per Hand zubereitet.",
+  "introWohnraum": "Am Abend, wenn die Arbeit getan ist, kommt die Familie zusammen.",
+  "introScheune": "Der Tag beginnt früh. Die Ernährung der Familie hängt direkt von der Ernte ab.",
+  "introArbeitsstube": "Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.",
+
+  "introTitleKueche": "Geschichte der Küche",
+  "introTitleWohnraum": "Geschichte des Wohnraums",
+  "introTitleScheune": "Geschichte der Scheune / des Speichers",
+  "introTitleArbeitsstube": "Geschichte der Arbeitsstube / Webkammer",
+
+  "completionTitle": "Station abgeschlossen!",
+"completionDescription": "Du hast alle 4 Räume erkundet und 10 Punkte gesammelt!",
+"completionHomeButton": "Zum Hauptmenü",
+"completionContinueButton": "Weiter erkunden"
 }
