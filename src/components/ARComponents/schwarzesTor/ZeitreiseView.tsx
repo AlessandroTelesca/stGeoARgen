@@ -462,6 +462,16 @@ export const ZeitreiseView = ({
                         {rooms.map((room, index) => {
                             const pos = roomScreenPositions[index];
                             if (!pos) return null;
+                            // Kachel-Mittelpunkt so klemmen, dass die komplette Kachel im sichtbaren
+                            // Bereich bleibt (nicht am Rand abgeschnitten / nicht unter Topbar bzw. Counter).
+                            const halfW = btnSize / 2 + 6;
+                            const halfH = btnSize * 0.62 + 6;
+                            const vw = window.innerWidth;
+                            const vh = window.innerHeight;
+                            const topSafe = Math.max(halfH, 124);
+                            const botSafe = Math.max(halfH, 150);
+                            const cx = Math.max(halfW, Math.min(vw - halfW, pos.x));
+                            const cy = Math.max(topSafe, Math.min(vh - botSafe, pos.y));
                             return (
                                 <button
                                     key={room.id}
@@ -469,52 +479,79 @@ export const ZeitreiseView = ({
                                     onClick={() => onSelectRoom?.(room)}
                                     style={{
                                         position: 'absolute',
-                                        left: pos.x,
-                                        top: pos.y,
+                                        left: cx,
+                                        top: cy,
                                         transform: 'translate(-50%, -50%)',
                                         pointerEvents: 'auto',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: `${Math.max(4, btnSize * 0.05)}px`,
-                                        padding: `${Math.max(6, btnSize * 0.08)}px`,
+                                        gap: `${Math.max(6, btnSize * 0.06)}px`,
+                                        padding: `${Math.max(8, btnSize * 0.09)}px`,
                                         width: `${btnSize}px`,
-                                        borderRadius: '20px',
+                                        borderRadius: '18px',
                                         border: visitedRooms.has(room.id)
-                                            ? '2px solid rgba(12,105,15,0.9)'
-                                            : '1px solid rgba(255,255,255,0.35)',
+                                            ? '2px solid var(--color-primary)'
+                                            : '1px solid rgba(255,255,255,0.45)',
                                         background: visitedRooms.has(room.id)
-                                            ? 'rgba(12,105,15,0.7)'
-                                            : 'rgba(15,25,10,0.65)',
+                                            ? 'rgba(12,105,15,0.82)'
+                                            : 'rgba(15,25,15,0.72)',
                                         // Kein backdropFilter auf Buttons → kein Stacking Context
                                         boxShadow: visitedRooms.has(room.id)
-                                            ? '0 4px 14px rgba(12,105,15,0.5)'
-                                            : '0 4px 14px rgba(0,0,0,0.4)',
+                                            ? '0 6px 18px rgba(12,105,15,0.45)'
+                                            : '0 6px 18px rgba(0,0,0,0.45)',
                                         cursor: 'pointer',
                                         boxSizing: 'border-box',
                                     }}
                                 >
                                     <div style={{
+                                        position: 'relative',
                                         width: thumbSize,
                                         height: thumbSize,
-                                        borderRadius: '10px',
-                                        backgroundImage: `url('${room.thumb}')`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        border: '1px solid rgba(255,255,255,0.2)',
                                         flexShrink: 0,
-                                    }} />
+                                    }}>
+                                        <div style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            borderRadius: '12px',
+                                            backgroundImage: `url('${room.thumb}')`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: 'center',
+                                            border: '1px solid rgba(255,255,255,0.25)',
+                                        }} />
+                                        {visitedRooms.has(room.id) && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '-6px',
+                                                right: '-6px',
+                                                width: `${Math.max(16, btnSize * 0.18)}px`,
+                                                height: `${Math.max(16, btnSize * 0.18)}px`,
+                                                borderRadius: '50%',
+                                                background: 'var(--color-primary)',
+                                                border: '2px solid white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                fontSize: `${Math.max(10, btnSize * 0.1)}px`,
+                                                fontWeight: 800,
+                                                boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                                            }}>
+                                                ✓
+                                            </div>
+                                        )}
+                                    </div>
                                     <span style={{
                                         color: 'white',
                                         fontSize: labelFontSize,
                                         fontWeight: 700,
                                         textAlign: 'center',
-                                        lineHeight: 1.2,
+                                        lineHeight: 1.15,
                                         width: '100%',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
+                                        textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                                        wordBreak: 'break-word',
+                                        hyphens: 'auto',
                                     }}>
                                         {room.label}
                                     </span>

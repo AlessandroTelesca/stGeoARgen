@@ -126,6 +126,8 @@ export const PanoramaView = ({
   const [startError, setStartError] = useState<string | null>(null);
   const [isCompact, setIsCompact] = useState(false);
   const [hotspotScreenPositions, setHotspotScreenPositions] = useState<{ x: number; y: number; visible: boolean }[]>([]);
+  // Eigene Overlays ausblenden sobald der Abschluss-Dialog erscheint (sonst clippen Hotspots/Buttons durch das Popup)
+  const [hideContent, setHideContent] = useState(false);
 
   const data = roomData[roomId] ?? roomData['arbeitsstube'];
   const visitedCount = visitedRooms.size;
@@ -133,6 +135,9 @@ export const PanoramaView = ({
   const bottomExpanded = 'calc(112px + max(24px, env(safe-area-inset-bottom)))';
   const bottomCompact  = 'calc(62px + max(24px, env(safe-area-inset-bottom)))';
   const bottomPos = isCompact ? bottomCompact : bottomExpanded;
+  // Wenn der "Station abschließen"-Button (bottom-right, z22) erscheint, eigene Steuerleiste darüber heben,
+  // damit Counter/Zurück-Button nicht mit ihm clippen.
+  const controlsBottom = showCompleteButton ? `calc(${bottomPos} + 66px)` : bottomPos;
 
   useEffect(() => {
     let observer: MutationObserver | null = null;
@@ -339,6 +344,7 @@ export const PanoramaView = ({
         isGuestMode={isGuestMode}
         showCompleteButton={showCompleteButton}
         ignoreCompleteTimer={ignoreCompleteTimer}
+        onCompleteInitiated={() => setHideContent(true)}
       />
 
       {/* INTRO */}
@@ -376,21 +382,21 @@ export const PanoramaView = ({
         </div>
       )}
 
-      {/* Raum-Counter + Zurück/Home Button */}
-      {!showIntro && !isStarting && (
-        <div style={{ position: 'fixed', bottom: bottomPos, left: 0, right: 0, zIndex: 10006, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
+      {/* Raum-Counter + Zurück zur Raumauswahl */}
+      {!showIntro && !isStarting && !hideContent && (
+        <div style={{ position: 'fixed', bottom: controlsBottom, left: 0, right: 0, zIndex: 10006, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
           <button onClick={handleExpand} style={btnStyle}>
-            {displayCount}/{TOTAL_ROOMS} 
+            {displayCount}/{TOTAL_ROOMS}
           </button>
-          <button onClick={displayCount >= TOTAL_ROOMS ? onNavigateHome : onNavigateBack} style={btnStyle}>
-            {displayCount >= TOTAL_ROOMS ? texts.panoramaBackHome : texts.panoramaBack}
+          <button onClick={onNavigateBack} style={btnStyle}>
+            {texts.panoramaBack}
           </button>
         </div>
       )}
 
       {/* Info Panel */}
-      {activePanel && !showIntro && (
-        <div style={{ position: 'fixed', bottom: bottomPos, left: '12px', right: '12px', zIndex: 10004, transition: 'bottom 0.35s ease' }}>
+      {activePanel && !showIntro && !hideContent && (
+        <div style={{ position: 'fixed', bottom: controlsBottom, left: '12px', right: '12px', zIndex: 10004, transition: 'bottom 0.35s ease' }}>
           <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '14px', color: 'white' }}>
             {activePanel.modelUrl && <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textAlign: 'center' }}>{texts.panoramaDragHint}</p>}
             <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{activePanel.title}</h2>
@@ -403,7 +409,7 @@ export const PanoramaView = ({
       )}
 
       {/* 3D Hotspot Buttons */}
-      {!activePanel && !showIntro && !isStarting && (
+      {!activePanel && !showIntro && !isStarting && !hideContent && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none' }}>
           {data.objects.map((obj, index) => {
             const pos = hotspotScreenPositions[index];
