@@ -366,10 +366,11 @@ export const ZeitreiseView = ({
                 showCompleteButton={showCompleteButton}
                 ignoreCompleteTimer={ignoreCompleteTimer}
                 onCompleteInitiated={() => setHideContent(true)}
+                elevateOverlay
             />
 
             {!hasStarted && !error && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.75)' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.75)' }}>
                     <div style={{ width: 'min(400px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15,25,10,0.8)', padding: '24px', textAlign: 'center', color: 'white' }}>
                         <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>{texts.zeitreiseStartTitle}</h2>
                         <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', marginBottom: '20px', lineHeight: 1.5 }}>{texts.zeitreiseStartDescription}</p>
@@ -381,13 +382,13 @@ export const ZeitreiseView = ({
             )}
 
             {hasStarted && isStarting && !isReady && !error && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }}>
                     <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: 600, textAlign: 'center' }}>{texts.zeitreiseLoading}</div>
                 </div>
             )}
 
             {error && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.85)' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.85)' }}>
                     <div style={{ background: 'rgba(20,10,10,0.9)', border: '1px solid rgba(255,100,100,0.3)', borderRadius: '14px', padding: '20px', color: 'white', textAlign: 'center', maxWidth: '320px' }}>
                         <p style={{ marginBottom: '14px', fontSize: '0.9rem' }}>{error}</p>
                         <button onClick={onNavigateBack} style={{ border: 'none', borderRadius: '10px', padding: '10px 20px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer' }}>

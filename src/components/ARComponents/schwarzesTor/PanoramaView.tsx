@@ -316,8 +316,9 @@ export const PanoramaView = ({
       <style>{`
         .ar-video { display: none !important; }
 
-        /* Topbar + Progressbar + Menü immer über allem */
-        .ar-ui-overlay    { z-index: 20000 !important; }
+        /* Topbar + Progressbar + Menü immer über allem.
+           Bei Abschluss (hideContent) z-index: auto, damit der Completion-Dialog darüber liegt. */
+        .ar-ui-overlay    { z-index: ${hideContent ? 'auto' : '20000'} !important; }
         .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
         .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
 
@@ -345,11 +346,12 @@ export const PanoramaView = ({
         showCompleteButton={showCompleteButton}
         ignoreCompleteTimer={ignoreCompleteTimer}
         onCompleteInitiated={() => setHideContent(true)}
+        elevateOverlay
       />
 
       {/* INTRO */}
       {showIntro && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10005, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'rgba(0,0,0,0.5)' }}>
           <div style={{ width: 'min(520px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '20px', color: 'white' }}>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{roomLabel}</h1>
             <p style={{ fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '20px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{data.intro}</p>
@@ -365,14 +367,14 @@ export const PanoramaView = ({
 
       {/* Ladestate */}
       {isStarting && !showIntro && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10005, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
           <p style={{ color: 'white', fontWeight: 700, fontSize: '1rem' }}>{texts.panoramaLoading}</p>
         </div>
       )}
 
       {/* Fehlerstate */}
       {startError && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10005, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'rgba(0,0,0,0.7)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'rgba(0,0,0,0.7)' }}>
           <div style={{ borderRadius: '16px', background: 'rgba(228,232,236,0.24)', border: '1px solid rgba(255,255,255,0.35)', padding: '20px', color: 'white', textAlign: 'center', maxWidth: '400px' }}>
             <p style={{ marginBottom: '16px', fontWeight: 700 }}>{startError}</p>
             <button onClick={onNavigateBack} style={{ border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', width: '100%' }}>

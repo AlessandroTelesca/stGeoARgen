@@ -925,6 +925,12 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
     >
       <>
         <style>{`
+          /* Topbar + Progressbar + Menü (Account-Widget) immer über den Inhalts-Containern.
+             Bei Abschluss (hideQuizSummary) z-index: auto, damit der Completion-Dialog darüber liegt. */
+          .ar-ui-overlay    { z-index: ${hideQuizSummary ? 'auto' : '20000'} !important; }
+          .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
+          .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
+
           @keyframes phonoSoundBars {
             0%, 100% { transform: scaleY(0.45); opacity: 0.65; }
             50% { transform: scaleY(1); opacity: 1; }
@@ -953,6 +959,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
           onCompleteInitiated={() => setHideQuizSummary(true)}
           showCompleteButton={showStationCompleteButton}
           isGuestMode={isGuestMode}
+          elevateOverlay
         />
 
         {isAuthorized && !hasStarted && (
@@ -960,7 +967,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 10005,
+              zIndex: 30000,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
