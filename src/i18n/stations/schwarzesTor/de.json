@@ -27,10 +27,6 @@
   "panoramaDragHint": "Ziehen zum Drehen",
   "panoramaWeiter": "Weiter",
 
-  "introKueche": "Nach der Feldarbeit muss die Familie versorgt werden. Die Küche ist der rauchige, rußige Kern des Hauses, wo Feuerstelle und einfache Holzherde als Kochstelle dienen. Alles wird per Hand zubereitet.",
-  "introWohnraum": "Am Abend, wenn die Arbeit getan ist, kommt die Familie zusammen.",
-  "introScheune": "Der Tag beginnt früh. Die Ernährung der Familie hängt direkt von der Ernte ab.",
-  "introArbeitsstube": "Kleidung und Textilien werden nicht gekauft, sondern mühsam selbst hergestellt. Flachs und Wolle müssen verarbeitet werden. Diese Arbeit ist sehr zeitaufwändig und wird oft in den Wintermonaten erledigt.",
 
   "introTitleKueche": "Geschichte der Küche",
   "introTitleWohnraum": "Geschichte des Wohnraums",
@@ -40,5 +36,23 @@
   "completionTitle": "Station abgeschlossen!",
 "completionDescription": "Du hast alle 4 Räume erkundet und 10 Punkte gesammelt!",
 "completionHomeButton": "Zum Hauptmenü",
-"completionContinueButton": "Weiter erkunden"
+"completionContinueButton": "Weiter erkunden",
+
+"introKueche": "Der Morgen beginnt in der Küche. Noch bevor die Sonne über den Schwarzwald steigt, entfacht die Bäuerin das Feuer im Herd. Töpfe und Pfannen klappern, Wasser dampft — hier wird nicht nur gekocht, sondern Butter gemacht, gewaschen und die Familie versorgt. Die Küche ist das Herz des Hofes.",
+"introScheune": "Während in der Küche noch der Frühstücksduft hängt, zieht der Bauer bereits in die Scheune. Flachs wird gebrochen, Werkzeug geschärft, Vorräte gelagert. Die Scheune ist kein stiller Ort — sie ist der Motor des Hofes, wo mit einfachen Mitteln harte Arbeit getan wird.",
+"introArbeitsstube": "Wenn die schwere Feldarbeit ruht, zieht sich die Familie in die Arbeitsstube zurück. Garn wird aufgewickelt, Stoffe gepresst, feine Arbeiten erledigt. Hier verbinden sich Geschick und Geduld — das Handwerk dieser Stube ernährte und kleidete die ganze Familie.",
+"introWohnraum": "Am Abend, wenn die Arbeit getan ist, kommt die Familie zusammen. Der Regulateur an der Wand tickt ruhig, das Feuer knistert. Im Wohnraum wird erzählt, geruht und die Zeit genossen — ein kurzer Moment der Stille nach einem langen Tag auf dem Hof.",
+
+
+"objectGarngaspelContent": "Dieses drehbare Holzwerkzeug diente dazu, frisch gesponnenes Garn ordentlich zu Strängen aufzuwickeln. Sie gehörte früher zur unverzichtbaren Grundausstattung der traditionellen Textilverarbeitung in ländlichen Haushalten.",
+"objectSpindelPresseContent": "Diese historische Holzpresse erzeugte über eine Gewindespindel massiven Druck. Sie wurde im Schwarzwald vielseitig als Saftpresse im Haushalt oder in Werkstätten wie der Schuhmacherei und Buchbinderei eingesetzt.",
+"objectButterfassContent": "Ein handbetriebenes Holzfass mit integriertem Rührwerk, mit dem Rahm so lange geschlagen wurde, bis sich Butter bildete. Im 19. und frühen 20. Jahrhundert gehörte es zum Standard auf Schwarzwälder Bauernhöfen für die Eigenversorgung.",
+"objectWaagenContent": "Diese gusseiserne Küchenwaage funktioniert nach dem klassischen Zwei-Schalen-Prinzip unter Verwendung von Gegengewichten. Sie ist ein typisches Haushaltsgerät aus der Zeit des späten 19. und frühen 20. Jahrhunderts.",
+"objectTrommelwaschmaschineContent": "Eine horizontale, fassähnliche Holztrommel, die mittels einer Handkurbel unter reiner Muskelkraft gedreht wurde. Sie bedeutete eine enorme Erleichterung für den damals extrem harten Waschtag auf den Höfen.",
+"objectFlachsbrecheContent": "Zweiteiliges Holz- und Eisenwerkzeug, das zur Gewinnung von sauberen Bastfasern genutzt wurde. Die Breche zerbrach den holzigen Kern der Stängel, während das Schwingmesser lose Splitter aus den Fasern herausschlug.",
+"objectSchleifsteinContent": "Ein rotierender Sandstein, der über ein Fußpedal oder eine Handkurbel durch ein kühlendes Wasserbad bewegt wurde. Das Wasser verhinderte eine Überhitzung der Klingen beim Schleifen und spülte den Abrieb zuverlässig fort.", 
+"objectDrehbankContent": "Eine hochpräzise, feingliedrige Drehmaschine zur Herstellung und Bearbeitung kleinster Uhrenbauteile. Sie steht sinnbildlich für das hochentwickelte, traditionelle Uhrmacherhandwerk im Schwarzwald.",
+"objectWanduhrContent": "Eine präzise, meist in einem kunstvollen Holzgehäuse gefasste Wanduhr mit charakteristischem Pendel. Sie diente im Wohnbereich nicht nur als zuverlässiger Zeitmesser, sondern auch als repräsentatives Statussymbol.",
+"objectPfanneContent": "Gusseiserne Töpfe und Pfannen waren im bäuerlichen Haushalt des Schwarzwalds unverzichtbar. Dank ihrer hervorragenden Wärmespeicherung eigneten sie sich ideal für das Kochen über offenem Feuer oder auf dem Herd — robust, langlebig und von Generation zu Generation weitergegeben."
+
 }

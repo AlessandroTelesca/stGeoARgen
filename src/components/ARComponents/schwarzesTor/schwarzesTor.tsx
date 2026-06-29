@@ -55,14 +55,19 @@ export const SchwarzesTorView = ({
 
   const allRoomsVisited = visitedRooms.size >= TOTAL_ROOMS;
 
+  // Raum öffnen — noch NICHT als besucht markieren
   const handleSelectRoom = (room: Room) => {
+    setSelectedRoom(room);
+  };
+
+  // Raum als besucht markieren — erst wenn User das Intro weggeklickt hat
+  const handleRoomVisited = (roomId: string) => {
     setVisitedRooms((prev) => {
-      if (prev.has(room.id)) return prev;
+      if (prev.has(roomId)) return prev;
       const next = new Set(prev);
-      next.add(room.id);
+      next.add(roomId);
       return next;
     });
-    setSelectedRoom(room);
   };
 
   if (selectedRoom) {
@@ -73,6 +78,7 @@ export const SchwarzesTorView = ({
         roomId={selectedRoom.id}
         onNavigateBack={() => setSelectedRoom(null)}
         onNavigateHome={onNavigateHome}
+        onRoomVisited={() => handleRoomVisited(selectedRoom.id)}
         username={username}
         onLogin={onLogin}
         onLogout={onLogout}

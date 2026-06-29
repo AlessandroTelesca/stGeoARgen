@@ -22,10 +22,6 @@
   "panoramaClose": "Close",
   "panoramaDragHint": "Drag to rotate",
   "panoramaWeiter": "Continue",
-  "introKueche": "After working in the fields, the family needs to be fed. The kitchen is the smoky, sooty heart of the house, where an open hearth and simple wood stoves serve as cooking places. Everything is prepared by hand.",
-  "introWohnraum": "In the evening, when the work is done, the family gathers together.",
-  "introScheune": "The day starts early. The family's nutrition depends directly on the harvest.",
-  "introArbeitsstube": "Clothing and textiles are not bought but laboriously made by hand. Flax and wool must be processed. This work is very time-consuming and is often done during the winter months.",
   "introTitleKueche": "History of the Kitchen",
   "introTitleWohnraum": "History of the Living Room",
   "introTitleScheune": "History of the Barn / Storage",
@@ -33,5 +29,21 @@
   "completionTitle": "Station completed!",
   "completionDescription": "You have explored all 4 rooms and earned 10 points!",
   "completionHomeButton": "Go to Home",
-  "completionContinueButton": "Keep exploring"
+  "completionContinueButton": "Keep exploring",
+
+  "introKueche": "The day begins in the kitchen. Before the sun rises over the Black Forest, the farmer's wife lights the fire in the stove. Pots and pans clatter, water steams—this is where not only cooking takes place, but butter is made, laundry is done, and the family is cared for. The kitchen is the heart of the farm.",
+"introScheune": "While the scent of breakfast still lingers in the kitchen, the farmer is already heading to the barn. Flax is being broken, tools are being sharpened, and supplies are being stored. The barn is not a quiet place—it is the heart of the farm, where hard work is done with simple tools.",
+"introArbeitsstube": "When the hard work in the fields is over, the family retreats to the workroom. Yarn is wound, fabrics are pressed, and delicate tasks are completed. This is where skill and patience come together—the crafts produced in this room provided food and clothing for the entire family.",
+"introWohnraum": "In the evening, when the work is done, the family gathers together. The clock on the wall ticks softly, and the fire crackles. In the living room, stories are told, everyone relaxes, and time slips by—a brief moment of quiet after a long day on the farm.",
+
+"objectGarngaspelContent": "This rotating wooden tool was used to wind freshly spun yarn neatly into skeins. It was once an essential part of traditional textile processing in rural households.",
+"objectSpindelPresseContent": "This historic wooden press generated massive pressure through a threaded spindle. In the Black Forest it was used as a juice press in households and in workshops such as shoemaking and bookbinding.",
+"objectButterfassContent": "A hand-operated wooden barrel with an integrated agitator, used to churn cream until butter formed. In the 19th and early 20th century it was standard equipment on Black Forest farms for self-sufficiency.",
+"objectWaagenContent": "This cast-iron kitchen scale works on the classic two-pan principle using counterweights. It is a typical household item from the late 19th and early 20th century.",
+"objectTrommelwaschmaschineContent": "A horizontal, barrel-shaped wooden drum turned by a hand crank using pure muscle power. It was an enormous relief for what was then an extremely hard wash day on the farms.",
+  "objectFlachsbrecheContent": "A two-part wood and iron tool used to extract clean bast fibres. The breaker crushed the woody core of the stalks while the swing blade knocked loose splinters out of the fibres.",
+"objectSchleifsteinContent": "A rotating sandstone moved through a cooling water bath via a foot pedal or hand crank. The water prevented the blades from overheating during grinding and reliably washed away the abrasion.",
+  "objectDrehbankContent": "A high-precision, delicate lathe for manufacturing and machining the smallest watch components. It is emblematic of the highly developed traditional watchmaking craft of the Black Forest.",
+"objectWanduhrContent": "A precise wall clock, usually housed in an ornate wooden case with a characteristic pendulum. In the living area it served not only as a reliable timepiece but also as a prestigious status symbol.",
+"objectPfanneContent": "Cast-iron pots and pans were indispensable in the farmhouse kitchens of the Black Forest. Thanks to their excellent heat retention they were ideal for cooking over open fire or on the stove — robust, long-lasting and passed down from generation to generation."
 }

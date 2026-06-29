@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -13,6 +13,7 @@ type PanoramaViewProps = {
   roomId: string;
   onNavigateBack?: () => void;
   onNavigateHome?: () => void;
+  onRoomVisited?: () => void;  // ← neu: wird aufgerufen wenn User Intro weggeklickt hat
   username?: string | null;
   onLogin?: () => void;
   onLogout?: () => void;
@@ -53,9 +54,12 @@ const DREHBANK_URL = new URL('./models/livingroom/drehbank_uhrmacher.glb', impor
 const WANDUHR_URL = new URL('./models/livingroom/Wanduhr.glb', import.meta.url).href;
 
 const TOTAL_ROOMS = 4;
+const IS_DEV = import.meta.env.DEV;
+const CONTROLS_BAR_HEIGHT = 60;
 
 export const PanoramaView = ({
   imageUrl, roomLabel, roomId, onNavigateBack, onNavigateHome,
+  onRoomVisited,
   username, onLogin, onLogout, onNavigateProfile, onRegister,
   completedStations, totalStations, totalPoints,
   visitedRooms = new Set(),
@@ -78,34 +82,34 @@ export const PanoramaView = ({
       intro: texts.introArbeitsstube,
       story: { type: 'story', title: texts.introTitleArbeitsstube, content: texts.introArbeitsstube },
       objects: [
-        { type: 'object', title: 'Garnspindel', content: 'Beschreibung der Garnspindel.', modelUrl: GARNGASPEL_URL, hotspotPosition: [-0.75, 0, -3] },
-        { type: 'object', title: 'Spindelpresse', content: 'Beschreibung der Spindelpresse.', modelUrl: SPINDELPRESSE_URL, hotspotPosition: [0, 0, -3] },
+        { type: 'object', title: 'Garnspindel', content: texts.objectGarngaspelContent, modelUrl: GARNGASPEL_URL, hotspotPosition: [1.1, -1.6, -3] },
+        { type: 'object', title: 'Spindelpresse', content: texts.objectSpindelPresseContent, modelUrl: SPINDELPRESSE_URL, hotspotPosition: [0.25, -0.8, 3] },
       ],
     },
     kueche: {
       intro: texts.introKueche,
       story: { type: 'story', title: texts.introTitleKueche, content: texts.introKueche },
       objects: [
-        { type: 'object', title: 'Pfanne', content: 'Der gusseiserne Topf und die Pfanne waren unverzichtbare Küchenutensilien.', modelUrl: POT_AND_PAN_URL, hotspotPosition: [0.4, -1.2, -3] },
-        { type: 'object', title: 'Waage', content: 'Beschreibung der Waage.', modelUrl: SCALE_URL, hotspotPosition: [30, -10, -3] },
-        { type: 'object', title: 'Butterfass', content: 'Das Butterfass war ein zentrales Gerät im bäuerlichen Haushalt.', modelUrl: BUTTER_CHURN_URL, hotspotPosition: [0.2, -3, -3] },
-        { type: 'object', title: 'Trommelwaschmaschine', content: 'Die Trommelwaschmaschine war ein modernes Gerät in der modernen Küche.', modelUrl: TROMMELWASCHMASCHINE_URL, hotspotPosition: [0, 0, -3] },
+        { type: 'object', title: 'Pfanne', content: texts.objectPfanneContent, modelUrl: POT_AND_PAN_URL, hotspotPosition: [0.4, -1.2, -3] },
+        { type: 'object', title: 'Waage', content: texts.objectWaagenContent, modelUrl: SCALE_URL, hotspotPosition: [3,-1.5,0.5] },
+        { type: 'object', title: 'Butterfass', content: texts.objectButterfassContent, modelUrl: BUTTER_CHURN_URL, hotspotPosition: [-0.7, -1, 1.5] },
+        { type: 'object', title: 'Trommelwaschmaschine', content: texts.objectTrommelwaschmaschineContent, modelUrl: TROMMELWASCHMASCHINE_URL, hotspotPosition: [-3,-1.2,0.5] },
       ],
     },
     scheune: {
       intro: texts.introScheune,
       story: { type: 'story', title: texts.introTitleScheune, content: texts.introScheune },
       objects: [
-        { type: 'object', title: 'Flachsbechse mit Schneidmessern', content: 'Beschreibung der Flachsbechse.', modelUrl: FLACHSBECHSE_URL, hotspotPosition: [-0.75, 1, -3] },
-        { type: 'object', title: 'Schleifstein', content: 'Beschreibung des Schleifsteins.', modelUrl: SHARPENING_STONE_URL, hotspotPosition: [0, 0, -3] },
+        { type: 'object', title: 'Flachsbechse mit Schneidmessern', content: texts.objectFlachsbrecheContent, modelUrl: FLACHSBECHSE_URL, hotspotPosition: [-3, -2.5, -2] },
+        { type: 'object', title: 'Schleifstein', content: texts.objectSchleifsteinContent, modelUrl: SHARPENING_STONE_URL, hotspotPosition: [3, -1.7, 3] },
       ],
     },
     wohnraum: {
       intro: texts.introWohnraum,
       story: { type: 'story', title: texts.introTitleWohnraum, content: texts.introWohnraum },
       objects: [
-        { type: 'object', title: 'Drehbank', content: 'Beschreibung der Drehbank für Uhrmacher.', modelUrl: DREHBANK_URL, hotspotPosition: [0, 1, -3] },
-        { type: 'object', title: 'Wanduhr', content: 'Beschreibung der Wanduhr.', modelUrl: WANDUHR_URL, hotspotPosition: [0, 0, -3] },
+        { type: 'object', title: 'Drehbank', content: texts.objectDrehbankContent, modelUrl: DREHBANK_URL, hotspotPosition: [-3, -2, 0.2] },
+        { type: 'object', title: 'Wanduhr', content: texts.objectWanduhrContent, modelUrl: WANDUHR_URL, hotspotPosition: [-3, 0.2, -0.2] },
       ],
     },
   };
@@ -119,6 +123,7 @@ export const PanoramaView = ({
   const isDraggingRef = useRef(false);
   const lastXRef = useRef(0);
   const userRotationYRef = useRef(0);
+  const infoPanelRef = useRef<HTMLDivElement>(null);
 
   const [showIntro, setShowIntro] = useState(true);
   const [activePanel, setActivePanel] = useState<InfoPanel | null>(null);
@@ -126,8 +131,13 @@ export const PanoramaView = ({
   const [startError, setStartError] = useState<string | null>(null);
   const [isCompact, setIsCompact] = useState(false);
   const [hotspotScreenPositions, setHotspotScreenPositions] = useState<{ x: number; y: number; visible: boolean }[]>([]);
-  // Eigene Overlays ausblenden sobald der Abschluss-Dialog erscheint (sonst clippen Hotspots/Buttons durch das Popup)
   const [hideContent, setHideContent] = useState(false);
+
+  const [debugYaw, setDebugYaw] = useState(0);
+  const [debugPitch, setDebugPitch] = useState(0);
+  const [suggestedHotspot, setSuggestedHotspot] = useState<string>('');
+  const [showDebug, setShowDebug] = useState(false);
+  const [gyroActive, setGyroActive] = useState(true);
 
   const data = roomData[roomId] ?? roomData['arbeitsstube'];
   const visitedCount = visitedRooms.size;
@@ -135,9 +145,29 @@ export const PanoramaView = ({
   const bottomExpanded = 'calc(112px + max(24px, env(safe-area-inset-bottom)))';
   const bottomCompact  = 'calc(62px + max(24px, env(safe-area-inset-bottom)))';
   const bottomPos = isCompact ? bottomCompact : bottomExpanded;
-  // Wenn der "Station abschließen"-Button (bottom-right, z22) erscheint, eigene Steuerleiste darüber heben,
-  // damit Counter/Zurück-Button nicht mit ihm clippen.
   const controlsBottom = showCompleteButton ? `calc(${bottomPos} + 66px)` : bottomPos;
+  const infoPanelBottom = `calc(${controlsBottom} + ${CONTROLS_BAR_HEIGHT}px)`;
+
+  const updateModelPosition = useCallback(() => {
+    if (!activePanelModelRef.current || !activePanel?.modelUrl) return;
+    const panel = infoPanelRef.current;
+    if (!panel) return;
+    const panelHeight = panel.getBoundingClientRect().height;
+    const screenHeight = window.innerHeight;
+    const panelFraction = panelHeight / screenHeight;
+    const modelY = panelFraction * 0.2;
+    activePanelModelRef.current.position.y = modelY;
+  }, [activePanel?.modelUrl]);
+
+  useEffect(() => {
+    if (!activePanel?.modelUrl) return;
+    const panel = infoPanelRef.current;
+    if (!panel) return;
+    const observer = new ResizeObserver(() => updateModelPosition());
+    observer.observe(panel);
+    updateModelPosition();
+    return () => observer.disconnect();
+  }, [activePanel?.modelUrl, updateModelPosition]);
 
   useEffect(() => {
     let observer: MutationObserver | null = null;
@@ -176,15 +206,12 @@ export const PanoramaView = ({
           onError: (e) => console.error('[PanoramaView] AR error', e),
         });
         await session.init();
-
-        // Grid + Axes Helper entfernen
         if (session['scene']) {
           const helpers = (session['scene'] as THREE.Scene).children.filter(
             (c) => c.type === 'GridHelper' || c.type === 'AxesHelper'
           );
           helpers.forEach((h) => (session['scene'] as THREE.Scene).remove(h));
         }
-
         const texture = await new Promise<THREE.Texture>((resolve, reject) => {
           new THREE.TextureLoader().load(imageUrl, (tex) => {
             tex.colorSpace = THREE.SRGBColorSpace;
@@ -209,6 +236,45 @@ export const PanoramaView = ({
     void startSession();
     return () => { sessionRef.current?.stop(); sessionRef.current = null; };
   }, [imageUrl]);
+
+  const handleDebugCamera = (yaw: number, pitch: number) => {
+    setDebugYaw(yaw);
+    setDebugPitch(pitch);
+    const camera = sessionRef.current?.['camera'] as THREE.PerspectiveCamera | undefined;
+    if (!camera) return;
+    const euler = new THREE.Euler(
+      THREE.MathUtils.degToRad(pitch),
+      THREE.MathUtils.degToRad(yaw),
+      0, 'YXZ'
+    );
+    camera.quaternion.setFromEuler(euler);
+    const yawRad = THREE.MathUtils.degToRad(yaw);
+    const pitchRad = THREE.MathUtils.degToRad(pitch);
+    const z = -3;
+    const x = -Math.sin(yawRad) * Math.abs(z);
+    const y = Math.tan(pitchRad) * Math.abs(z);
+    setSuggestedHotspot(`[${x.toFixed(2)}, ${y.toFixed(2)}, ${z}]`);
+  };
+
+  const toggleGyro = () => {
+    if (gyroActive) {
+      const camera = sessionRef.current?.['camera'] as THREE.PerspectiveCamera | undefined;
+      if (camera) {
+        const euler = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+        setDebugYaw(THREE.MathUtils.radToDeg(euler.y));
+        setDebugPitch(THREE.MathUtils.radToDeg(euler.x));
+      }
+      setGyroActive(false);
+      if (sessionRef.current) {
+        (sessionRef.current as any).alphaDelta = 0;
+        (sessionRef.current as any).betaDelta = 0;
+        (sessionRef.current as any).hasGyroData = false;
+      }
+    } else {
+      setGyroActive(true);
+      if (sessionRef.current) (sessionRef.current as any).hasGyroData = false;
+    }
+  };
 
   useEffect(() => {
     if (showIntro || activePanel) {
@@ -272,12 +338,13 @@ export const PanoramaView = ({
       const scale = (activePanel?.title === 'Spindelpresse' ? 0.5 : 1.2) / maxDim;
       model.scale.setScalar(scale);
       model.position.sub(center.multiplyScalar(scale));
-      model.position.set(0, -0.2, -2);
+      model.position.set(0, 0, -2);
       const camera = sessionRef.current['camera'] as THREE.PerspectiveCamera;
       camera.add(model);
       activePanelModelRef.current = model;
       userRotationYRef.current = 0;
       isDraggingRef.current = false;
+      updateModelPosition();
       const rotate = () => {
         modelRotationAnimRef.current = requestAnimationFrame(rotate);
         if (!isDraggingRef.current && activePanelModelRef.current) { userRotationYRef.current += 0.008; activePanelModelRef.current.rotation.y = userRotationYRef.current; }
@@ -315,12 +382,9 @@ export const PanoramaView = ({
     <>
       <style>{`
         .ar-video { display: none !important; }
-
-        /* Topbar + Progressbar + Menü immer über allem */
         .ar-ui-overlay    { z-index: 20000 !important; }
         .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
         .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
-
         @keyframes hotspotPulse {
           0%   { transform: scale(0.92); }
           50%  { transform: scale(1.08); }
@@ -353,10 +417,23 @@ export const PanoramaView = ({
           <div style={{ width: 'min(520px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '20px', color: 'white' }}>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{roomLabel}</h1>
             <p style={{ fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '20px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{data.intro}</p>
-            <button onClick={() => setShowIntro(false)} style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem', marginBottom: '10px' }}>
+
+            {/* Weiter — markiert Raum als besucht */}
+            <button
+              onClick={() => {
+                setShowIntro(false);
+                onRoomVisited?.(); // ← Raum erst jetzt als besucht markieren
+              }}
+              style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem', marginBottom: '10px' }}
+            >
               {texts.panoramaWeiter}
             </button>
-            <button onClick={onNavigateBack} style={{ width: '100%', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}>
+
+            {/* Zurück — markiert Raum NICHT als besucht */}
+            <button
+              onClick={onNavigateBack}
+              style={{ width: '100%', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+            >
               {texts.panoramaBack}
             </button>
           </div>
@@ -382,26 +459,75 @@ export const PanoramaView = ({
         </div>
       )}
 
-      {/* Raum-Counter + Zurück zur Raumauswahl */}
+      {/* DEV: Debug-Panel */}
+      {IS_DEV && !showIntro && !isStarting && (
+        <div style={{ position: 'fixed', top: '50%', right: '8px', transform: 'translateY(-50%)', zIndex: 19999, pointerEvents: 'auto' }}>
+          <button onClick={() => setShowDebug(v => !v)} style={{ background: 'rgba(255,200,0,0.9)', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', marginBottom: showDebug ? '6px' : 0, display: 'block', width: '100%' }}>🎛 Debug</button>
+          {showDebug && (
+            <div style={{ background: 'rgba(0,0,0,0.9)', borderRadius: '12px', padding: '12px', color: 'white', width: '180px', fontSize: '0.75rem' }}>
+              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>Kamera Yaw (horizontal)</p>
+              <input type="range" min={-180} max={180} step={0.5} value={debugYaw} onChange={(e) => handleDebugCamera(Number(e.target.value), debugPitch)} style={{ width: '100%', marginBottom: '4px', cursor: 'pointer' }} />
+              <p style={{ margin: '0 0 8px', opacity: 0.75 }}>yaw = <strong>{debugYaw.toFixed(1)}°</strong></p>
+              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>Kamera Pitch (vertikal)</p>
+              <input type="range" min={-60} max={60} step={0.5} value={debugPitch} onChange={(e) => handleDebugCamera(debugYaw, Number(e.target.value))} style={{ width: '100%', marginBottom: '4px', cursor: 'pointer' }} />
+              <p style={{ margin: '0 0 8px', opacity: 0.75 }}>pitch = <strong>{debugPitch.toFixed(1)}°</strong></p>
+              <div style={{ display: 'grid', gap: '4px', marginBottom: '8px' }}>
+                <button onClick={() => handleDebugCamera(0, 0)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>← Mitte →</button>
+                <button onClick={() => handleDebugCamera(-90, debugPitch)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>← Links</button>
+                <button onClick={() => handleDebugCamera(90, debugPitch)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>Rechts →</button>
+                <button onClick={() => handleDebugCamera(debugYaw, -30)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>↑ Oben</button>
+                <button onClick={() => handleDebugCamera(debugYaw, 30)} style={{ border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}>↓ Unten</button>
+                <button onClick={toggleGyro} style={{ border: 'none', borderRadius: '6px', padding: '5px', background: gyroActive ? 'rgba(12,105,15,0.8)' : 'rgba(180,50,50,0.8)', color: 'white', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, marginTop: '2px' }}>
+                  Gyro: {gyroActive ? '✓ AN' : '✗ AUS'}
+                </button>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '8px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700 }}>hotspotPosition</p>
+                <div onClick={() => navigator.clipboard?.writeText(suggestedHotspot)} style={{ background: 'rgba(12,105,15,0.3)', border: '1px solid rgba(12,105,15,0.6)', borderRadius: '6px', padding: '6px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.7rem', wordBreak: 'break-all', lineHeight: 1.4 }}>
+                  {suggestedHotspot || '— bewege Slider —'}
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '0.65rem', opacity: 0.5 }}>Klick zum Kopieren</p>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '8px', marginTop: '8px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700 }}>Hotspot-Pos</p>
+                {hotspotScreenPositions.map((pos, i) => (
+                  <p key={i} style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.7rem' }}>
+                    {data.objects[i]?.title}: {pos.visible ? `${Math.round(pos.x)}, ${Math.round(pos.y)}` : 'unsichtbar'}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Raum-Counter + Zurück */}
       {!showIntro && !isStarting && !hideContent && (
-        <div style={{ position: 'fixed', bottom: controlsBottom, left: 0, right: 0, zIndex: 10006, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
-          <button onClick={handleExpand} style={btnStyle}>
-            {displayCount}/{TOTAL_ROOMS}
-          </button>
-          <button onClick={onNavigateBack} style={btnStyle}>
-            {texts.panoramaBack}
-          </button>
+        <div style={{ position: 'fixed', bottom: controlsBottom, left: 0, right: 0, zIndex: 10004, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
+          <button onClick={handleExpand} style={btnStyle}>{displayCount}/{TOTAL_ROOMS}</button>
+          <button onClick={onNavigateBack} style={btnStyle}>{texts.panoramaBack}</button>
         </div>
       )}
 
       {/* Info Panel */}
       {activePanel && !showIntro && !hideContent && (
-        <div style={{ position: 'fixed', bottom: controlsBottom, left: '12px', right: '12px', zIndex: 10004, transition: 'bottom 0.35s ease' }}>
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '14px', color: 'white' }}>
-            {activePanel.modelUrl && <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textAlign: 'center' }}>{texts.panoramaDragHint}</p>}
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{activePanel.title}</h2>
-            <p style={{ fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 12px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{activePanel.content}</p>
-            <button onClick={handleClosePanel} style={{ border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', width: '100%' }}>
+        <div style={{ position: 'fixed', bottom: infoPanelBottom, left: '12px', right: '12px', zIndex: 10005, transition: 'bottom 0.35s ease' }}>
+          <div ref={infoPanelRef} style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '10px', color: 'white' }}>
+            {activePanel.modelUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '4px' }}>
+                <img
+                  src="/dragAnimation.gif"
+                  alt={texts.panoramaDragHint}
+                  style={{ width: '60px', height: '60px', margin: '-12px auto -8px', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }}
+                />
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', margin: '0', textAlign: 'center' }}>
+                  {texts.panoramaDragHint}
+                </p>
+              </div>
+            )}
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '4px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{activePanel.title}</h2>
+            <p style={{ fontSize: '0.88rem', lineHeight: 1.45, margin: '0 0 8px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{activePanel.content}</p>
+            <button onClick={handleClosePanel} style={{ border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '10px 14px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', width: '100%', fontSize: '0.9rem' }}>
               {texts.panoramaClose}
             </button>
           </div>

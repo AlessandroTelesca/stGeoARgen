@@ -53,6 +53,17 @@ export interface StationTexts {
   completionDescription: string;
   completionHomeButton: string;
   completionContinueButton: string;
+
+  objectGarngaspelContent: string;
+objectSpindelPresseContent: string;
+objectButterfassContent: string;
+objectWaagenContent: string;
+objectTrommelwaschmaschineContent: string;
+objectFlachsbrecheContent: string;
+objectSchleifsteinContent: string;
+objectDrehbankContent: string;
+objectWanduhrContent: string;
+objectPfanneContent: string;
 }
 
 const de: StationTexts = deJson;
