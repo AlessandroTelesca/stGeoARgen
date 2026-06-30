@@ -7,13 +7,176 @@ import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
 
+// ─── Inline 3D Model Viewer (aus Phonomuseum übernommen) ──────────────────────
+interface ModelViewerProps {
+  url: string;
+  height?: number;
+}
+
+const ModelViewer: React.FC<ModelViewerProps> = ({ url, height = 200 }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stateRef = useRef({
+    rafId: 0,
+    rotY: 0.3,
+    rotX: 0,
+    dragActive: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragBaseRotY: 0.3,
+    dragBaseRotX: 0,
+  });
+  const pivotRef = useRef<THREE.Group | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const state = stateRef.current;
+    state.rotY = 0.3;
+    state.rotX = 0;
+
+    const w = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 320;
+    const h = height;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.001, 1000);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+    dir.position.set(2, 4, 3);
+    scene.add(dir);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+    fill.position.set(-2, 1, -3);
+    scene.add(fill);
+
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    pivotRef.current = pivot;
+
+    let disposed = false;
+
+    const loader = new GLTFLoader();
+    const draco = new DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
+    loader.setDRACOLoader(draco);
+
+    loader.load(url, (gltf) => {
+      if (disposed) return;
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fitDist = maxDim / (2 * Math.tan((Math.PI / 180) * 22.5));
+      model.position.sub(center);
+      pivot.add(model);
+      camera.position.set(0, 0, fitDist * 1.6);
+      camera.lookAt(0, 0, 0);
+    }, undefined, (err) => console.error('[ModelViewer] load error', err));
+
+    const animate = () => {
+      if (disposed) return;
+      state.rafId = requestAnimationFrame(animate);
+      if (!state.dragActive) state.rotY += 0.008;
+      pivot.rotation.y = state.rotY;
+      pivot.rotation.x = state.rotX;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(state.rafId);
+      renderer.dispose();
+      pivotRef.current = null;
+    };
+  }, [url, height]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const state = stateRef.current;
+    state.dragActive = true;
+    state.dragStartX = e.clientX;
+    state.dragStartY = e.clientY;
+    state.dragBaseRotY = state.rotY;
+    state.dragBaseRotX = state.rotX;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!stateRef.current.dragActive) return;
+    const state = stateRef.current;
+    state.rotY = state.dragBaseRotY + (e.clientX - state.dragStartX) * 0.012;
+    state.rotX = Math.max(-0.65, Math.min(0.65, state.dragBaseRotX + (e.clientY - state.dragStartY) * 0.012));
+  };
+
+  const handlePointerUp = () => { stateRef.current.dragActive = false; };
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ display: 'block', width: '100%', height: `${height}px`, touchAction: 'none', cursor: 'grab', borderRadius: '12px' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    />
+  );
+};
+
+// ─── ActiveModelViewer — ModelViewer + GIF Overlay für 5 Sekunden ────────────
+interface ActiveModelViewerProps {
+  url: string;
+  dragHint: string;
+}
+
+const ActiveModelViewer: React.FC<ActiveModelViewerProps> = ({ url, dragHint }) => {
+  const [showGif, setShowGif] = useState(true);
+
+  useEffect(() => {
+    setShowGif(true);
+    const timer = setTimeout(() => setShowGif(false), 5000);
+    return () => clearTimeout(timer);
+  }, [url]);
+
+  return (
+    <div style={{ position: 'relative', marginBottom: '8px', borderRadius: '12px', overflow: 'hidden', background: 'rgba(10,14,22,0.5)' }}>
+      <ModelViewer url={url} height={300} />
+      {showGif && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+          background: 'rgba(255, 255, 255, 0)',
+          transition: 'opacity 0.4s ease',
+        }}>
+          <img
+            src="/dragAnimation.gif"
+            alt={dragHint}
+            style={{ width: '100px', height: '90px', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))' }}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'white', margin: '0', textShadow: '0 2px 6px rgba(0,0,0,0.9)', fontWeight: 600 }}>
+            {dragHint}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── PanoramaView ─────────────────────────────────────────────────────────────
 type PanoramaViewProps = {
   imageUrl: string;
   roomLabel: string;
   roomId: string;
   onNavigateBack?: () => void;
   onNavigateHome?: () => void;
-  onRoomVisited?: () => void;  // ← neu: wird aufgerufen wenn User Intro weggeklickt hat
+  onRoomVisited?: () => void;
   username?: string | null;
   onLogin?: () => void;
   onLogout?: () => void;
@@ -117,12 +280,7 @@ export const PanoramaView = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<GyroARVisualizer | null>(null);
-  const activePanelModelRef = useRef<THREE.Object3D | null>(null);
-  const modelRotationAnimRef = useRef<number | null>(null);
   const hotspotAnimRef = useRef<number | null>(null);
-  const isDraggingRef = useRef(false);
-  const lastXRef = useRef(0);
-  const userRotationYRef = useRef(0);
   const infoPanelRef = useRef<HTMLDivElement>(null);
 
   const [showIntro, setShowIntro] = useState(true);
@@ -147,27 +305,6 @@ export const PanoramaView = ({
   const bottomPos = isCompact ? bottomCompact : bottomExpanded;
   const controlsBottom = showCompleteButton ? `calc(${bottomPos} + 66px)` : bottomPos;
   const infoPanelBottom = `calc(${controlsBottom} + ${CONTROLS_BAR_HEIGHT}px)`;
-
-  const updateModelPosition = useCallback(() => {
-    if (!activePanelModelRef.current || !activePanel?.modelUrl) return;
-    const panel = infoPanelRef.current;
-    if (!panel) return;
-    const panelHeight = panel.getBoundingClientRect().height;
-    const screenHeight = window.innerHeight;
-    const panelFraction = panelHeight / screenHeight;
-    const modelY = panelFraction * 0.2;
-    activePanelModelRef.current.position.y = modelY;
-  }, [activePanel?.modelUrl]);
-
-  useEffect(() => {
-    if (!activePanel?.modelUrl) return;
-    const panel = infoPanelRef.current;
-    if (!panel) return;
-    const observer = new ResizeObserver(() => updateModelPosition());
-    observer.observe(panel);
-    updateModelPosition();
-    return () => observer.disconnect();
-  }, [activePanel?.modelUrl, updateModelPosition]);
 
   useEffect(() => {
     let observer: MutationObserver | null = null;
@@ -242,11 +379,7 @@ export const PanoramaView = ({
     setDebugPitch(pitch);
     const camera = sessionRef.current?.['camera'] as THREE.PerspectiveCamera | undefined;
     if (!camera) return;
-    const euler = new THREE.Euler(
-      THREE.MathUtils.degToRad(pitch),
-      THREE.MathUtils.degToRad(yaw),
-      0, 'YXZ'
-    );
+    const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
     const yawRad = THREE.MathUtils.degToRad(yaw);
     const pitchRad = THREE.MathUtils.degToRad(pitch);
@@ -303,64 +436,7 @@ export const PanoramaView = ({
     return () => { if (hotspotAnimRef.current) cancelAnimationFrame(hotspotAnimRef.current); };
   }, [showIntro, activePanel, data.objects]);
 
-  const removeActiveModel = () => {
-    if (modelRotationAnimRef.current !== null) { cancelAnimationFrame(modelRotationAnimRef.current); modelRotationAnimRef.current = null; }
-    if (activePanelModelRef.current) {
-      const cam = sessionRef.current?.['camera'] as THREE.Camera | undefined;
-      if (cam) { cam.remove(activePanelModelRef.current); }
-      else if (sessionRef.current?.['scene']) { sessionRef.current['scene'].remove(activePanelModelRef.current); }
-      activePanelModelRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    removeActiveModel();
-    if (!activePanel?.modelUrl || !sessionRef.current?.['scene']) return;
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
-    loader.setDRACOLoader(dracoLoader);
-    const onPointerDown = (e: PointerEvent) => { isDraggingRef.current = true; lastXRef.current = e.clientX; (e.target as HTMLElement)?.setPointerCapture?.(e.pointerId); };
-    const onPointerMove = (e: PointerEvent) => { if (!isDraggingRef.current || !activePanelModelRef.current) return; const delta = e.clientX - lastXRef.current; userRotationYRef.current += delta * 0.015; activePanelModelRef.current.rotation.y = userRotationYRef.current; lastXRef.current = e.clientX; };
-    const onPointerUp = () => { isDraggingRef.current = false; };
-    const canvas = sessionRef.current?.['renderer']?.domElement as HTMLCanvasElement | undefined;
-    canvas?.addEventListener('pointerdown', onPointerDown);
-    canvas?.addEventListener('pointermove', onPointerMove);
-    canvas?.addEventListener('pointerup', onPointerUp);
-    canvas?.addEventListener('pointercancel', onPointerUp);
-    loader.load(activePanel.modelUrl, (gltf) => {
-      if (!sessionRef.current?.['scene']) return;
-      const model = gltf.scene;
-      const box = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = (activePanel?.title === 'Spindelpresse' ? 0.5 : 1.2) / maxDim;
-      model.scale.setScalar(scale);
-      model.position.sub(center.multiplyScalar(scale));
-      model.position.set(0, 0, -2);
-      const camera = sessionRef.current['camera'] as THREE.PerspectiveCamera;
-      camera.add(model);
-      activePanelModelRef.current = model;
-      userRotationYRef.current = 0;
-      isDraggingRef.current = false;
-      updateModelPosition();
-      const rotate = () => {
-        modelRotationAnimRef.current = requestAnimationFrame(rotate);
-        if (!isDraggingRef.current && activePanelModelRef.current) { userRotationYRef.current += 0.008; activePanelModelRef.current.rotation.y = userRotationYRef.current; }
-      };
-      rotate();
-    }, undefined, (err) => console.error('[PanoramaView] Model load error:', err));
-    return () => {
-      removeActiveModel();
-      canvas?.removeEventListener('pointerdown', onPointerDown);
-      canvas?.removeEventListener('pointermove', onPointerMove);
-      canvas?.removeEventListener('pointerup', onPointerUp);
-      canvas?.removeEventListener('pointercancel', onPointerUp);
-    };
-  }, [activePanel?.modelUrl]);
-
-  const handleClosePanel = () => { removeActiveModel(); setActivePanel(null); };
+  const handleClosePanel = () => setActivePanel(null);
 
   const btnStyle: React.CSSProperties = {
     pointerEvents: 'auto',
@@ -382,8 +458,6 @@ export const PanoramaView = ({
     <>
       <style>{`
         .ar-video { display: none !important; }
-
-        /* Topbar + Progressbar + Menü immer über allem */
         .ar-ui-overlay    { z-index: 20000 !important; }
         .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
         .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
@@ -411,7 +485,6 @@ export const PanoramaView = ({
         showCompleteButton={showCompleteButton}
         ignoreCompleteTimer={ignoreCompleteTimer}
         onCompleteInitiated={() => setHideContent(true)}
-        elevateOverlay
       />
 
       {/* INTRO */}
@@ -420,23 +493,12 @@ export const PanoramaView = ({
           <div style={{ width: 'min(520px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '20px', color: 'white' }}>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{roomLabel}</h1>
             <p style={{ fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '20px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{data.intro}</p>
-
-            {/* Weiter — markiert Raum als besucht */}
-            <button
-              onClick={() => {
-                setShowIntro(false);
-                onRoomVisited?.(); // ← Raum erst jetzt als besucht markieren
-              }}
-              style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem', marginBottom: '10px' }}
-            >
+            <button onClick={() => { setShowIntro(false); onRoomVisited?.(); }}
+              style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem', marginBottom: '10px' }}>
               {texts.panoramaWeiter}
             </button>
-
-            {/* Zurück — markiert Raum NICHT als besucht */}
-            <button
-              onClick={onNavigateBack}
-              style={{ width: '100%', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
-            >
+            <button onClick={onNavigateBack}
+              style={{ width: '100%', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '12px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}>
               {texts.panoramaBack}
             </button>
           </div>
@@ -512,22 +574,19 @@ export const PanoramaView = ({
         </div>
       )}
 
-      {/* Info Panel */}
+      {/* Info Panel — mit eigenem ModelViewer Canvas, kein camera.add() */}
       {activePanel && !showIntro && !hideContent && (
         <div style={{ position: 'fixed', bottom: infoPanelBottom, left: '12px', right: '12px', zIndex: 10005, transition: 'bottom 0.35s ease' }}>
           <div ref={infoPanelRef} style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(228,232,236,0.24)', backdropFilter: 'blur(6px) grayscale(16%)', WebkitBackdropFilter: 'blur(6px) grayscale(16%)', padding: '10px', color: 'white' }}>
+
+            {/* 3D Modell im eigenen Canvas — bewegt sich NICHT mit der AR-Kamera */}
             {activePanel.modelUrl && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '4px' }}>
-                <img
-                  src="/dragAnimation.gif"
-                  alt={texts.panoramaDragHint}
-                  style={{ width: '60px', height: '60px', margin: '-12px auto -8px', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }}
-                />
-                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', margin: '0', textAlign: 'center' }}>
-                  {texts.panoramaDragHint}
-                </p>
-              </div>
+              <ActiveModelViewer
+                url={activePanel.modelUrl}
+                dragHint={texts.panoramaDragHint}
+              />
             )}
+
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '4px', textShadow: '0 2px 8px rgba(0,0,0,0.85)' }}>{activePanel.title}</h2>
             <p style={{ fontSize: '0.88rem', lineHeight: 1.45, margin: '0 0 8px', textShadow: '0 2px 8px rgba(0,0,0,0.75)' }}>{activePanel.content}</p>
             <button onClick={handleClosePanel} style={{ border: '1px solid rgba(255,255,255,0.5)', borderRadius: '12px', padding: '10px 14px', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, cursor: 'pointer', width: '100%', fontSize: '0.9rem' }}>
@@ -545,8 +604,7 @@ export const PanoramaView = ({
             if (!pos?.visible) return null;
             return (
               <button key={index} onClick={() => setActivePanel(obj)} title={obj.title}
-                style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)', pointerEvents: 'auto', width: '52px', height: '52px', borderRadius: '50%', background: 'transparent', backgroundColor: 'transparent', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
+                style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)', pointerEvents: 'auto', width: '52px', height: '52px', borderRadius: '50%', background: 'transparent', backgroundColor: 'transparent', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(12,105,15,0) 0%, rgba(12,105,15,0.45) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#0C690F', border: '2px solid rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.4)', fontFamily: 'Georgia, serif', fontSize: '1.1rem', fontWeight: 'bold', color: 'white', animation: 'hotspotPulse 2.2s ease-in-out infinite' }}>
                     i

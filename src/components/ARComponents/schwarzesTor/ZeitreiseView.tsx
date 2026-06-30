@@ -56,16 +56,31 @@ class PanoramaPlaneVisualizer extends GyroARVisualizer {
     getCameraX(): number { return this.camera?.position.x ?? 0; }
     getXBounds(): { xMin: number; xMax: number } { return { xMin: this.xMin, xMax: this.xMax }; }
 
-    projectToScreen(position3D: THREE.Vector3): { x: number; y: number } {
-        if (!this.camera || !this.renderer) return { x: 0, y: 0 };
+    projectToScreen(position3D: THREE.Vector3): { x: number; y: number; visible: boolean } {
+        if (!this.camera || !this.renderer) return { x: 0, y: 0, visible: false };
         const canvas = this.renderer.domElement;
         const w = canvas.clientWidth;
         const h = canvas.clientHeight;
+
+        // Kamera verschiebt sich horizontal → position3D relativ zur Kamera-X korrigieren
+        const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
+        const screenWidthAtZ = 2 * Math.abs(this.planeZ) * Math.tan(fovRad / 2) * this.camera.aspect;
+        const pixelsPerUnit = w / screenWidthAtZ;
+        const cameraOffsetPx = this.camera.position.x * pixelsPerUnit;
+
         const projected = position3D.clone().project(this.camera);
-        return {
-            x: (projected.x * 0.5 + 0.5) * w,
-            y: (-projected.y * 0.5 + 0.5) * h,
-        };
+        const rawX = (projected.x * 0.5 + 0.5) * w;
+        const rawY = (-projected.y * 0.5 + 0.5) * h;
+
+        // Korrektur: Kamera-Verschiebung rausrechnen, dann Bild-Offset addieren
+        const x = rawX - cameraOffsetPx;
+        const y = rawY;
+
+        // Sichtbar nur wenn auf dem Bildschirm (mit Puffer)
+        const padding = 80;
+        const visible = x > -padding && x < w + padding && y > -padding && y < h + padding;
+
+        return { x, y, visible };
     }
 
     protected animate = (): void => {
@@ -166,7 +181,7 @@ export const ZeitreiseView = ({
     const [error, setError] = useState<string | null>(null);
     const [isCompact, setIsCompact] = useState(false);
     const [hideContent, setHideContent] = useState(false);
-    const [roomScreenPositions, setRoomScreenPositions] = useState<{ x: number; y: number }[]>([]);
+    const [roomScreenPositions, setRoomScreenPositions] = useState<{ x: number; y: number; visible: boolean }[]>([]);
 
     const [btnSize, setBtnSize] = useState(100);
     useEffect(() => {
@@ -174,7 +189,7 @@ export const ZeitreiseView = ({
             const vw = window.innerWidth;
             const vh = window.innerHeight;
             const smaller = Math.min(vw, vh);
-            setBtnSize(Math.min(180, Math.max(70, smaller * 1.25)));
+            setBtnSize(Math.min(140, Math.max(80, smaller * 1.15))); 
         };
         updateSize();
         window.addEventListener('resize', updateSize);
@@ -298,9 +313,13 @@ export const ZeitreiseView = ({
     };
 
     const labelFontSize = `${Math.max(9, btnSize * 0.11)}px`;
-    const thumbSize = `${Math.round(btnSize * 0.65)}px`;
 
-    // ob Dialog aktiv: ar-ui-overlay normalen z-index lassen
+    // Button-Breite und -Höhe: rechteckig im 16:9 Format
+    const btnW = btnSize;
+const btnH = Math.round(btnSize * 0.85);        // ← statt 0.75, etwas höher
+const thumbW = Math.round(btnW * 0.92);         // ← statt 0.88, breiter
+const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
+
     const uiOverlayZIndex = hideContent ? 'auto' : '20000';
 
     return (
@@ -311,25 +330,15 @@ export const ZeitreiseView = ({
                 header.sticky { display: none !important; }
                 .ar-container canvas { z-index: 1 !important; }
                 .ar-container { z-index: 1 !important; }
-
-                /* Topbar + Progressbar + Menü IMMER über Zeitreise-Inhalten */
                 .ar-ui-overlay    { z-index: ${uiOverlayZIndex} !important; }
                 .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; transform: translateZ(0) !important; }
                 .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; transform: translateZ(0) !important; }
-
                 .zt-room-btn { transition: transform 0.12s, box-shadow 0.12s; }
                 .zt-room-btn:active { transform: translate(-50%, -50%) scale(0.94) !important; }
-
-                /* Info-Box — kein backdropFilter damit kein neuer Stacking Context entsteht */
                 .zt-infobox-outer { padding: 150px 12px 0; }
-                .zt-infobox-inner {
-                    padding: 12px 14px;
-                    /* isolation: isolate verhindert z-index Konflikte mit ar-ui-overlay */
-                    isolation: auto;
-                }
+                .zt-infobox-inner { padding: 12px 14px; isolation: auto; }
                 .zt-infobox-inner h1 { font-size: clamp(1rem, 4vw, 1.4rem); margin-bottom: 4px; }
                 .zt-infobox-inner p  { font-size: clamp(0.75rem, 2.5vw, 0.92rem); margin: 0; }
-
                 @media (max-height: 600px) {
                     .zt-infobox-outer { padding-top: 60px !important; }
                     .zt-infobox-inner { padding: 6px 12px !important; }
@@ -402,20 +411,13 @@ export const ZeitreiseView = ({
                 <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 11, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 22%, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.45) 100%)' }} />
 
-                    {/* Info-Box — kein backdropFilter → kein Stacking Context Konflikt */}
                     <div className="zt-infobox-outer" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 12, pointerEvents: 'none' }}>
-                        <div className="zt-infobox-inner" style={{
-                            pointerEvents: 'auto',
-                            borderRadius: '16px',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            background: 'rgba(15,25,15,0.60)',  // ← solider Hintergrund statt backdropFilter
-                        }}>
+                        <div className="zt-infobox-inner" style={{ pointerEvents: 'auto', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(15,25,15,0.60)' }}>
                             <h1 style={{ margin: '0 0 4px', color: 'white', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>{texts.zeitreiseTitle}</h1>
                             <p style={{ margin: 0, color: 'white', textShadow: '0 1px 6px rgba(0,0,0,0.8)', lineHeight: 1.4 }}>{texts.zeitreiseSubtitle}</p>
                         </div>
                     </div>
 
-                    {/* Raum-Counter */}
                     <div style={{ position: 'fixed', bottom: bottomPos, left: 0, right: 0, zIndex: 13, pointerEvents: 'none', display: 'flex', justifyContent: 'flex-start', padding: '0 16px', transition: 'bottom 0.35s ease' }}>
                         <button onClick={handleExpand} style={btnStyle}>
                             {visitedRooms.size}/{TOTAL_ROOMS}
@@ -449,7 +451,7 @@ export const ZeitreiseView = ({
                                     <p style={{ margin: '8px 0 4px', fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '8px' }}>Button-Pos</p>
                                     {roomScreenPositions.map((pos, i) => (
                                         <p key={i} style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.7rem' }}>
-                                            {rooms[i]?.id}: {Math.round(pos.x)}, {Math.round(pos.y)}
+                                            {rooms[i]?.id}: {pos.visible ? `${Math.round(pos.x)}, ${Math.round(pos.y)}` : 'aus'}
                                         </p>
                                     ))}
                                     <p style={{ margin: '6px 0 2px', opacity: 0.7, fontSize: '0.7rem' }}>btnSize: {Math.round(btnSize)}px</p>
@@ -458,21 +460,21 @@ export const ZeitreiseView = ({
                         </div>
                     )}
 
-                    {/* Raum-Buttons */}
+                    {/* Raum-Buttons — rechteckig, fixed an 3D-Position */}
                     <div style={{ position: 'fixed', inset: 0, zIndex: 12, pointerEvents: 'none' }}>
                         {rooms.map((room, index) => {
                             const pos = roomScreenPositions[index];
-                            if (!pos) return null;
-                            // Kachel-Mittelpunkt so klemmen, dass die komplette Kachel im sichtbaren
-                            // Bereich bleibt (nicht am Rand abgeschnitten / nicht unter Topbar bzw. Counter).
-                            const halfW = btnSize / 2 + 6;
-                            const halfH = btnSize * 0.62 + 6;
+                            if (!pos?.visible) return null;
+
                             const vw = window.innerWidth;
                             const vh = window.innerHeight;
+                            const halfW = btnW / 2 + 6;
+                            const halfH = btnH / 2 + 6;
                             const topSafe = Math.max(halfH, 124);
                             const botSafe = Math.max(halfH, 150);
                             const cx = Math.max(halfW, Math.min(vw - halfW, pos.x));
                             const cy = Math.max(topSafe, Math.min(vh - botSafe, pos.y));
+
                             return (
                                 <button
                                     key={room.id}
@@ -487,47 +489,44 @@ export const ZeitreiseView = ({
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: `${Math.max(6, btnSize * 0.06)}px`,
-                                        padding: `${Math.max(8, btnSize * 0.09)}px`,
-                                        width: `${btnSize}px`,
-                                        borderRadius: '18px',
+                                        justifyContent: 'flex-start',
+                                        gap: `${Math.max(5, btnSize * 0.1)}px`,
+                                        padding: `${Math.max(8, btnSize * 0.03)}px ${Math.max(10, btnSize * 0.2)}px`,
+                                        width: `${btnW}px`,
+                                        height: `${btnH}px`,
+                                        borderRadius: '14px',
                                         border: visitedRooms.has(room.id)
                                             ? '2px solid var(--color-primary)'
                                             : '1px solid rgba(255,255,255,0.45)',
                                         background: visitedRooms.has(room.id)
                                             ? 'rgba(12,105,15,0.82)'
                                             : 'rgba(15,25,15,0.72)',
-                                        // Kein backdropFilter auf Buttons → kein Stacking Context
                                         boxShadow: visitedRooms.has(room.id)
                                             ? '0 6px 18px rgba(12,105,15,0.45)'
                                             : '0 6px 18px rgba(0,0,0,0.45)',
                                         cursor: 'pointer',
                                         boxSizing: 'border-box',
+                                        overflow: 'hidden',
                                     }}
                                 >
-                                    <div style={{
-                                        position: 'relative',
-                                        width: thumbSize,
-                                        height: thumbSize,
-                                        flexShrink: 0,
-                                    }}>
+                                    {/* Thumbnail — 16:9 */}
+                                    <div style={{ position: 'relative', width: `${thumbW}px`, height: `${thumbH}px`, flexShrink: 0 }}>
                                         <div style={{
                                             width: '100%',
                                             height: '100%',
-                                            borderRadius: '12px',
+                                            borderRadius: '8px',
                                             backgroundImage: `url('${room.thumb}')`,
                                             backgroundSize: 'cover',
                                             backgroundPosition: 'center',
-                                            border: '1px solid rgba(255,255,255,0.25)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
                                         }} />
                                         {visitedRooms.has(room.id) && (
                                             <div style={{
                                                 position: 'absolute',
-                                                top: '-6px',
-                                                right: '-6px',
-                                                width: `${Math.max(16, btnSize * 0.18)}px`,
-                                                height: `${Math.max(16, btnSize * 0.18)}px`,
+                                                top: '-5px',
+                                                right: '-5px',
+                                                width: `${Math.max(14, btnSize * 0.16)}px`,
+                                                height: `${Math.max(14, btnSize * 0.16)}px`,
                                                 borderRadius: '50%',
                                                 background: 'var(--color-primary)',
                                                 border: '2px solid white',
@@ -535,14 +534,13 @@ export const ZeitreiseView = ({
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 color: 'white',
-                                                fontSize: `${Math.max(10, btnSize * 0.1)}px`,
+                                                fontSize: `${Math.max(8, btnSize * 0.09)}px`,
                                                 fontWeight: 800,
                                                 boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                                            }}>
-                                                ✓
-                                            </div>
+                                            }}>✓</div>
                                         )}
                                     </div>
+                                    {/* Label */}
                                     <span style={{
                                         color: 'white',
                                         fontSize: labelFontSize,
