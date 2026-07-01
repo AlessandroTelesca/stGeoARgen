@@ -48,7 +48,7 @@ export function Info({ onBack }: InfoProps) {
   const processSteps = [t('infoProcess1'), t('infoProcess2'), t('infoProcess3'), t('infoProcess4')];
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <div className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-3">
           <button
@@ -150,14 +150,19 @@ export function Info({ onBack }: InfoProps) {
 
         <p className="text-center text-xs text-muted-foreground">{t('infoFooterNote')}</p>
 
-        <div className="flex items-center justify-center gap-4 text-sm">
-          <Link to="/impressum" className="text-primary hover:underline">
-            {language === 'de' ? 'Impressum' : 'Legal Notice'}
-          </Link>
-          <span className="text-muted-foreground">•</span>
-          <Link to="/datenschutz" className="text-primary hover:underline">
-            {t('privacyPolicy')}
-          </Link>
+        <div className="border-t border-border pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {language === 'de' ? 'Rechtliches' : 'Legal'}
+          </p>
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
+            <Link to="/impressum" className="text-sm font-medium text-foreground hover:text-primary hover:underline">
+              {language === 'de' ? 'Impressum' : 'Legal Notice'}
+            </Link>
+            <span className="hidden text-muted-foreground sm:inline">•</span>
+            <Link to="/datenschutz" className="text-sm font-medium text-foreground hover:text-primary hover:underline">
+              {t('privacyPolicy')}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
