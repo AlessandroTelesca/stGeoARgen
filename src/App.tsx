@@ -19,6 +19,7 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
+import { Info } from './components/Info';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
@@ -86,7 +87,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'partner'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'info' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -223,6 +224,7 @@ export default function App() {
     else if (path === '/forgot-password') setCurrentView('forgot-password');
     else if (path === '/impressum') setCurrentView('impressum');
     else if (path === '/datenschutz') setCurrentView('datenschutz');
+    else if (path === '/info') setCurrentView('info');
     else if (path === '/partner') setCurrentView('partner');
     else if (path === '/' || path === '/home') setCurrentView('home');
   }, [location.pathname]);
@@ -338,6 +340,8 @@ export default function App() {
       setCurrentView('impressum');
     } else if (path === '/datenschutz') {
       setCurrentView('datenschutz');
+    } else if (path === '/info') {
+      setCurrentView('info');
     } else if (path === '/' || path === '/home') {
       setCurrentView('home');
     }
@@ -846,6 +850,9 @@ export default function App() {
     } else if (view === 'datenschutz') {
       navigate('/datenschutz');
       setCurrentView('datenschutz');
+    } else if (view === 'info') {
+      navigate('/info');
+      setCurrentView('info');
     }
   };
 
@@ -1085,6 +1092,10 @@ export default function App() {
             setCurrentView('profile');
             navigate('/profile');
           }}
+          onNavigateToInfo={() => {
+            setCurrentView('info');
+            navigate('/info');
+          }}
         />
       )}
 
@@ -1153,6 +1164,10 @@ export default function App() {
 
       {currentView === 'datenschutz' && (
         <Datenschutz onBack={handleBackToDashboard} />
+      )}
+
+      {currentView === 'info' && (
+        <Info onBack={handleBackToDashboard} />
       )}
 
       <AnimatePresence>
