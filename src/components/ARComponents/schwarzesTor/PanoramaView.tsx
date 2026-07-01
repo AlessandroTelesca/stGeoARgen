@@ -458,9 +458,6 @@ export const PanoramaView = ({
     <>
       <style>{`
         .ar-video { display: none !important; }
-        .ar-ui-overlay    { z-index: 20000 !important; }
-        .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
-        .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
         @keyframes hotspotPulse {
           0%   { transform: scale(0.92); }
           50%  { transform: scale(1.08); }
