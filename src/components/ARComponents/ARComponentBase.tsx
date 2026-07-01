@@ -47,6 +47,8 @@ interface ARComponentBaseProps {
   onCompleteInitiated?: () => void;
   /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
   onCompleteBlocked?: () => void;
+  /** Callback wenn der Abschluß-Dialog geöffnet/geschlossen wird */
+  onCompletionDialogChange?: (isOpen: boolean) => void;
   /** Guest mode - no points awarded */
   isGuestMode?: boolean;
   /**
@@ -157,6 +159,7 @@ export const ARComponentBase = ({
   ignoreCompleteTimer = false,
   onCompleteInitiated,
   onCompleteBlocked,
+  onCompletionDialogChange,
   isGuestMode = false,
   elevateOverlay = false,
 }: ARComponentBaseProps) => {
@@ -276,6 +279,10 @@ export const ARComponentBase = ({
   useEffect(() => {
     setHasClickedComplete(false);
   }, [currentStationId]);
+
+  useEffect(() => {
+    onCompletionDialogChange?.(showCompletionDialog);
+  }, [showCompletionDialog, onCompletionDialogChange]);
 
   const canCompleteStation = ignoreCompleteTimer || elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
