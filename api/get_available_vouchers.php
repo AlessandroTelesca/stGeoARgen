@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $db = getDB();
 
 $stmt = $db->prepare(
-        'SELECT v.id, v.code, v.description, p.name AS partner_name, p.address, v.points_value, v.expiry_date, v.quantity, v.max_uses
+        'SELECT v.id, v.code, v.description, p.name AS partner_name, p.address, v.points_value, v.expiry_date, v.quantity
      FROM vouchers v 
      LEFT JOIN partners p ON v.partner_id = p.id 
      WHERE v.active = 1

@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 /**
- * redeem_voucher_from_shop.php – Persönlichen Gutschein erzeugen
+ * redeem_voucher_from_shop.php – Persönlichen Gutschein erzeugen oder Shop-Gutschein kaufen
  */
 
 require_once 'config.php';
@@ -66,10 +66,10 @@ if ($voucherId > 0) {
         $stmt->execute([(int) $voucher['points_value'], $userId]);
 
         $code = strtoupper(substr(md5(uniqid((string) $userId, true)), 0, 10));
-        $maxUses = 1;
+        $remainingUses = 1;
         $insertStmt = $db->prepare(
-            'INSERT INTO user_vouchers (user_id, voucher_id, code, description, partner_id, points_value, expiry_date, max_uses, remaining_uses)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)' 
+            'INSERT INTO user_vouchers (user_id, voucher_id, code, description, partner_id, points_value, expiry_date, remaining_uses)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)' 
         );
         $insertStmt->execute([
             $userId,
@@ -79,8 +79,7 @@ if ($voucherId > 0) {
             $voucher['partner_id'],
             $voucher['points_value'],
             $voucher['expiry_date'],
-            $maxUses,
-            $maxUses,
+            $remainingUses,
         ]);
 
         if ((int)$voucher['quantity'] !== -1) {
@@ -152,8 +151,8 @@ try {
     $stmt->execute([$requiredPoints, $userId]);
 
     $insertUserVoucher = $db->prepare(
-        'INSERT INTO user_vouchers (user_id, code, description, partner_id, points_value, expiry_date, max_uses, remaining_uses)
-         VALUES (?, ?, ?, ?, ?, DATE_ADD(CURDATE(), INTERVAL 30 DAY), ?, ?)' 
+        'INSERT INTO user_vouchers (user_id, code, description, partner_id, points_value, expiry_date, remaining_uses)
+         VALUES (?, ?, ?, ?, ?, DATE_ADD(CURDATE(), INTERVAL 30 DAY), ?)' 
     );
     $insertUserVoucher->execute([
         $userId,
@@ -161,7 +160,6 @@ try {
         $fullDescription,
         $partner['id'],
         $requiredPoints,
-        1,
         1,
     ]);
 

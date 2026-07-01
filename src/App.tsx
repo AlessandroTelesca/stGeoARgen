@@ -98,7 +98,7 @@ export default function App() {
   const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [allowGuestStationStart, setAllowGuestStationStart] = useState(false);
-  // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
+  // Verfolgt welche Pfade bereits als abgeschlossen / Bonus-Status markiert wurden
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
   const [treasurePoints, setTreasurePoints] = useState(0);
   const [serverPoints, setServerPoints] = useState<number | null>(null);
@@ -185,7 +185,7 @@ export default function App() {
     stations: { title: string; points: number }[];
     earnedStationPoints: number;
     bonusPoints: number;
-  }>({ isOpen: false, pathTitle: '', pathDescription: '', stations: [], earnedStationPoints: 0, bonusPoints: 500 });
+  }>({ isOpen: false, pathTitle: '', pathDescription: '', stations: [], earnedStationPoints: 0, bonusPoints: 0 });
 
   // Check if user has seen onboarding
   useEffect(() => {
@@ -749,7 +749,7 @@ export default function App() {
                   pathDescription: currentPath.description || '',
                   stations: completedStationsList,
                   earnedStationPoints: earnedStationPts,
-                  bonusPoints: 500,
+                  bonusPoints: bonusRes.bonus ?? 0,
                 });
               } else if (bonusRes.already_claimed) {
                 // Bonus wurde bereits im Backend vergeben → trotzdem lokal markieren
@@ -766,7 +766,7 @@ export default function App() {
                 pathDescription: currentPath.description || '',
                 stations: completedStationsList,
                 earnedStationPoints: earnedStationPts,
-                bonusPoints: 500,
+                bonusPoints: 0,
               });
             }
           }

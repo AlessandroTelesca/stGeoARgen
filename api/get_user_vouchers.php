@@ -28,7 +28,7 @@ if (!$userId || $userId <= 0) {
 $db = getDB();
 
 $redeemableStmt = $db->prepare(
-    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.max_uses, uv.remaining_uses, uv.purchased_at, uv.expiry_date
+    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.remaining_uses, uv.purchased_at, uv.expiry_date
      FROM user_vouchers uv
      LEFT JOIN partners p ON uv.partner_id = p.id
      WHERE uv.user_id = ?
@@ -40,7 +40,7 @@ $redeemableStmt->execute([$userId]);
 $redeemableVouchers = $redeemableStmt->fetchAll();
 
 $redeemedStmt = $db->prepare(
-    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.max_uses, uv.remaining_uses, uv.purchased_at, uv.redeemed_at, uv.expiry_date
+    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.remaining_uses, uv.purchased_at, uv.redeemed_at, uv.expiry_date
      FROM user_vouchers uv
      LEFT JOIN partners p ON uv.partner_id = p.id
      WHERE uv.user_id = ?

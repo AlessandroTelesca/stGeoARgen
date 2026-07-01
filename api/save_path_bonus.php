@@ -1,13 +1,13 @@
 <?php
 /**
- * save_path_bonus.php – Speichert den 500-Punkte-Bonus beim Pfad-Abschluss
+ * save_path_bonus.php – Speichert den Pfad‑Abschluss (kein Punkte-Bonus mehr)
  *
  * POST-Parameter (JSON body):
  *   user_id  – ID des Users
  *   path_id  – ID des Pfades (z.B. "tourist")
  *
  * Response (JSON):
- *   success: true  → { success, message, already_claimed }
+ *   success: true  → { success, message, already_claimed, bonus }
  *   success: false → { success, message }
  */
 
@@ -56,12 +56,13 @@ $stmt = $db->prepare(
 );
 $stmt->execute([$userId, $pathId]);
 
-$db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
-   ->execute([$bonus, $userId]);
+// Pfadabschluss wird jetzt nur noch als Fortschritt gespeichert.
+// Es werden keine Punkte mehr serverseitig addiert.
+$bonus = 0;
 
 sendResponse([
     'success'         => true,
-    'message'         => "Bonus von {$bonus} Punkten für Pfad '{$pathId}' vergeben.",
+    'message'         => "Pfadabschluss für '{$pathId}' gespeichert. Kein Punkte-Bonus mehr.",
     'already_claimed' => false,
     'bonus'           => $bonus,
 ]);
