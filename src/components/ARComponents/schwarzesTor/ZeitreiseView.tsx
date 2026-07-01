@@ -320,8 +320,6 @@ const btnH = Math.round(btnSize * 0.85);        // ← statt 0.75, etwas höher
 const thumbW = Math.round(btnW * 0.92);         // ← statt 0.88, breiter
 const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
 
-    const uiOverlayZIndex = hideContent ? 'auto' : '20000';
-
     return (
         <>
             <style>{`
@@ -330,9 +328,9 @@ const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
                 header.sticky { display: none !important; }
                 .ar-container canvas { z-index: 1 !important; }
                 .ar-container { z-index: 1 !important; }
-                .ar-ui-overlay    { z-index: ${uiOverlayZIndex} !important; }
-                .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; transform: translateZ(0) !important; }
-                .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; transform: translateZ(0) !important; }
+                .ar-ui-overlay    { z-index: 20000 !important; }
+                .ar-menu-backdrop { z-index: 20001 !important; position: fixed !important; }
+                .ar-menu-panel    { z-index: 20002 !important; position: fixed !important; }
                 .zt-room-btn { transition: transform 0.12s, box-shadow 0.12s; }
                 .zt-room-btn:active { transform: translate(-50%, -50%) scale(0.94) !important; }
                 .zt-infobox-outer { padding: 150px 12px 0; }
@@ -375,7 +373,6 @@ const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
                 showCompleteButton={showCompleteButton}
                 ignoreCompleteTimer={ignoreCompleteTimer}
                 onCompleteInitiated={() => setHideContent(true)}
-                elevateOverlay
             />
 
             {!hasStarted && !error && (
