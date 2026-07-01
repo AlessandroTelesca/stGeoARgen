@@ -21,7 +21,7 @@ $body = json_decode(file_get_contents('php://input'), true);
 
 $userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $pathId = trim($body['path_id'] ?? '');
-$bonus  = 500; // server-side constant – not accepted from client
+#$bonus  = 500; // server-side constant – not accepted from client
 
 if (!$userId || $userId <= 0) {
     sendResponse(['success' => false, 'message' => 'Ungültige user_id.'], 400);
