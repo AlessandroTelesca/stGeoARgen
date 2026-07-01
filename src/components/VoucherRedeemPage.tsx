@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { motion, AnimatePresence } from 'motion/react';
 import { Copy, Check, Gift, MapPin, X } from 'lucide-react';
+import { apiGetUserVouchers } from '../services/api';
 
 interface VoucherListItem {
   id: number;
-  code: string;
+  code: string | null;
   description: string;
   partner_name?: string;
   address?: string;
@@ -19,7 +20,6 @@ interface UserVouchersResponse {
   success: boolean;
   redeemable_vouchers: VoucherListItem[];
   redeemed_vouchers: VoucherListItem[];
-  vouchers?: VoucherListItem[];
 }
 
 export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded = false }: { userId: number; userPoints: number; onPointsChange?: () => void; embedded?: boolean }) {
@@ -49,21 +49,11 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     setLoading(true);
     try {
       console.log('Fetching vouchers from API...');
-      const response = await fetch(`/api/get_user_vouchers.php?user_id=${userId}`);
-      console.log('API response:', response);
-      const data = await response.json() as UserVouchersResponse;
+      const data = await apiGetUserVouchers(userId);
       console.log('API data:', data);
       if (data.success) {
-        const redeemable = Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : [];
-        const redeemed = Array.isArray(data.redeemed_vouchers)
-          ? data.redeemed_vouchers
-          : Array.isArray(data.vouchers)
-            ? data.vouchers
-            : [];
-
-        console.log('Setting vouchers:', { redeemable, redeemed });
-        setRedeemableVouchers(redeemable);
-        setRedeemedVouchers(redeemed);
+        setRedeemableVouchers(Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : []);
+        setRedeemedVouchers(Array.isArray(data.redeemed_vouchers) ? data.redeemed_vouchers : []);
       } else {
         console.log('API returned success: false');
         setRedeemableVouchers([]);
@@ -77,7 +67,8 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     setLoading(false);
   };
 
-  const openCodePopup = (code: string, description: string) => {
+  const openCodePopup = (code: string | null, description: string) => {
+    if (!code) return;
     setPopupCode(code);
     setPopupDescription(description);
     setShowCodePopup(true);
@@ -174,15 +165,19 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                           </div>
                         )}
                       </div>
-                      <Button
-                        onClick={() => openCodePopup(voucher.code, voucher.description)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Code anzeigen
-                      </Button>
+                      {voucher.code ? (
+                        <Button
+                          onClick={() => openCodePopup(voucher.code, voucher.description)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Code anzeigen
+                        </Button>
+                      ) : (
+                        <div className="rounded-full border border-border px-4 py-2 text-sm text-muted-foreground">Kein Code verfügbar</div>
+                      )}
                     </div>
                   </motion.div>
                 ))}

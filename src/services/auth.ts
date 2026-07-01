@@ -134,8 +134,8 @@ export async function saveStationProgress(
     userId: number,
     pathId: string,
     stationId: number
-): Promise<void> {
-    await apiSaveProgress(userId, pathId, stationId);
+): Promise<{ success: boolean; message: string; points_awarded?: number; total_points?: number }> {
+    return apiSaveProgress(userId, pathId, stationId);
 }
 
 /**

@@ -66,6 +66,44 @@ export interface AuthResponse {
     user: UserData;
 }
 
+export interface AvailableVoucher {
+    id: number;
+    code: string | null;
+    description: string;
+    partner_name?: string;
+    address?: string;
+    points_value: number;
+    expiry_date?: string;
+    quantity?: number;
+}
+
+export interface AvailableVouchersResponse {
+    success: boolean;
+    vouchers: AvailableVoucher[];
+}
+
+export interface RedeemVoucherResponse {
+    success: boolean;
+    message: string;
+    code?: string;
+}
+
+export interface UserPointsResponse {
+    success: boolean;
+    total_points: number;
+}
+
+export interface UserVouchersResponse {
+    success: boolean;
+    redeemable_vouchers: AvailableVoucher[];
+    redeemed_vouchers: AvailableVoucher[];
+}
+
+export interface PartnerVoucherValidateResponse {
+    success: boolean;
+    message: string;
+}
+
 export interface PasswordResetRequestResponse {
     success: boolean;
     message: string;
@@ -100,6 +138,35 @@ export async function apiLogin(
 
 export async function apiGetUser(userId: number): Promise<AuthResponse> {
     return apiFetch<AuthResponse>(`get_user.php?user_id=${userId}`);
+}
+
+export async function apiGetAvailableVouchers(): Promise<AvailableVouchersResponse> {
+    return apiFetch<AvailableVouchersResponse>('get_available_vouchers.php');
+}
+
+export async function apiRedeemVoucherFromShop(
+    userId: number,
+    voucherId: number
+): Promise<RedeemVoucherResponse> {
+    return apiFetch<RedeemVoucherResponse>('redeem_voucher_from_shop.php', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, voucher_id: voucherId }),
+    });
+}
+
+export async function apiGetUserVouchers(userId: number): Promise<UserVouchersResponse> {
+    return apiFetch<UserVouchersResponse>(`get_user_vouchers.php?user_id=${userId}`);
+}
+
+export async function apiValidatePartnerVoucher(
+    username: string,
+    password: string,
+    code: string
+): Promise<PartnerVoucherValidateResponse> {
+    return apiFetch<PartnerVoucherValidateResponse>('partner_voucher_validate.php', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, code }),
+    });
 }
 
 export async function apiRequestPasswordReset(
@@ -213,4 +280,8 @@ export async function apiGetTreasureReward(
     return apiFetch<TreasureRewardStatusResponse>(
         `get_treasure_reward.php?user_id=${userId}&reward_key=${encodeURIComponent(rewardKey)}`,
     );
+}
+
+export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
+    return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
 }

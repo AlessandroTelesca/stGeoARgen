@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { motion } from 'motion/react';
+import { apiValidatePartnerVoucher } from '../services/api';
 
 export function PartnerVoucherValidation() {
   const [username, setUsername] = useState('');
@@ -13,17 +14,8 @@ export function PartnerVoucherValidation() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/partner_voucher_validate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, code: code.toUpperCase() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-      } else {
-        setMessage(`🔴 ${data.message}`);
-      }
+      const data = await apiValidatePartnerVoucher(username, password, code.toUpperCase());
+      setMessage(data.success ? `✅ ${data.message}` : `🔴 ${data.message}`);
     } catch (error) {
       setMessage('🔴 Serverfehler beim Validieren.');
     }

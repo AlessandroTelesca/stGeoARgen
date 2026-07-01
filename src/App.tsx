@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, saveStationProgress } from './services/auth';
-import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
+import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints } from './services/api';
 import { Header } from './components/Header';
 import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
@@ -100,6 +100,7 @@ export default function App() {
   // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
   const [treasurePoints, setTreasurePoints] = useState(0);
+  const [serverPoints, setServerPoints] = useState<number | null>(null);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -271,6 +272,14 @@ export default function App() {
       setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
     } catch {
       setTreasurePoints(0);
+    }
+
+    // Load server-side total points for the user
+    try {
+      const pts = await apiGetUserPoints(user.id);
+      setServerPoints(pts.total_points ?? 0);
+    } catch {
+      setServerPoints(0);
     }
   }, [user]);
 
@@ -529,12 +538,9 @@ export default function App() {
     };
   };
 
-  const totalPoints = paths.reduce((sum, path) => {
-    const progress = getPathProgress(path);
-    return sum + progress.earnedPoints;
-  }, 0)
-    + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500
-    + treasurePoints;
+  const totalPoints = user
+    ? (serverPoints !== null ? serverPoints : 0)
+    : 0;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -716,6 +722,7 @@ export default function App() {
       if (currentPath) {
         try {
           await saveStationProgress(user.id, currentPath.id, stationId);
+          await refreshUserProgress();
 
           // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
           // Da setState async ist, berechnen wir hier direkt
@@ -728,6 +735,7 @@ export default function App() {
             try {
               const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
               if (bonusRes.success && !bonusRes.already_claimed) {
+                await refreshUserProgress();
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
                 const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
                 const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
@@ -777,6 +785,7 @@ export default function App() {
     try {
       const res = await apiSaveTreasureReward(user.id, 'klosterweiher_treasure_chest', 50);
       setTreasurePoints((prev) => Math.max(prev, res.points_total));
+      await refreshUserProgress();
 
       if (res.already_claimed) {
         toast.info(language === 'de' ? 'Diese Schatzkiste wurde bereits gutgeschrieben.' : 'This treasure chest reward has already been claimed.', {
@@ -830,6 +839,7 @@ export default function App() {
       setCurrentView('progress');
     } else if (view === 'rewards') {
       setCurrentView('rewards');
+      navigate('/rewards');
     } else if (view === 'impressum') {
       navigate('/impressum');
       setCurrentView('impressum');
@@ -955,6 +965,8 @@ export default function App() {
     return 'St.GeoARgen';
   };
 
+  const isArStationView = currentView.startsWith('ar-');
+
   const renderARViewWithGate = (content: ReactNode) => {
     if (allowGuestStationStart) {
       return content;
@@ -988,7 +1000,7 @@ export default function App() {
 
   return (
     <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
-      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
+       {!isArStationView && currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && currentView !== 'partner' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}

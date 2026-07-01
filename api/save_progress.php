@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * save_progress.php – Stations-Abschluss eines Users speichern
  *
@@ -43,15 +43,37 @@ if (!$stmt->fetch()) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
-// INSERT OR UPDATE (ON DUPLICATE KEY) – idempotent
+// Bereits gespeichert? Dann nur idempotent antworten, keine Punkte erneut vergeben.
 $stmt = $db->prepare(
-    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
-     VALUES (?, ?, ?, 1, NOW())
-     ON DUPLICATE KEY UPDATE completed = 1, completed_at = NOW()'
+    'SELECT id FROM user_progress WHERE user_id = ? AND path_id = ? AND station_id = ? LIMIT 1'
 );
 $stmt->execute([$userId, $pathId, $stationId]);
+$existing = $stmt->fetch();
+
+if ($existing) {
+    sendResponse([
+        'success' => true,
+        'message' => 'Fortschritt bereits gespeichert.',
+        'points_awarded' => 0,
+    ]);
+}
+
+$stmt = $db->prepare(
+    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
+     VALUES (?, ?, ?, 1, NOW())'
+);
+$stmt->execute([$userId, $pathId, $stationId]);
+
+$db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
+   ->execute([50, $userId]);
+
+$userPointsStmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');
+$userPointsStmt->execute([$userId]);
+$userPoints = $userPointsStmt->fetch();
 
 sendResponse([
     'success' => true,
     'message' => 'Fortschritt gespeichert.',
+    'points_awarded' => 50,
+    'total_points' => (int)($userPoints['total_points'] ?? 0),
 ]);

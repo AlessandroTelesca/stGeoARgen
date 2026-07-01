@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * get_user_vouchers.php – Gekaufte und bereits eingelöste Gutscheine abrufen
  *
@@ -9,7 +9,7 @@
  *   success: true  → {
  *     success,
  *     redeemable_vouchers: [{ id, code, description, partner_name, address, points_value, purchased_at }, ...],
- *     redeemed_vouchers: [{ id, code, description, partner_name, address, points_value, purchased_at, redeemed_at }, ...]
+ *     redeemed_vouchers: [{ id, code, description, partner_name, address, points_value, redeemed_at }, ...]
  *   }
  *   success: false → { success, message }
  */
@@ -28,25 +28,26 @@ if (!$userId || $userId <= 0) {
 $db = getDB();
 
 $redeemableStmt = $db->prepare(
-    'SELECT v.id, v.code, v.description, p.name AS partner_name, p.address, v.points_value, v.redeemed_at AS purchased_at, v.expiry_date
-     FROM vouchers v
-     LEFT JOIN partners p ON v.partner_id = p.id
-    WHERE v.redeemed_by = ?
-      AND v.is_redeemed = 0
-      AND (v.expiry_date IS NULL OR v.expiry_date >= CURDATE())
-     ORDER BY v.redeemed_at DESC, v.id DESC'
+    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.max_uses, uv.remaining_uses, uv.purchased_at, uv.expiry_date
+     FROM user_vouchers uv
+     LEFT JOIN partners p ON uv.partner_id = p.id
+     WHERE uv.user_id = ?
+       AND uv.is_redeemed = 0
+       AND (uv.expiry_date IS NULL OR uv.expiry_date >= CURDATE())
+     ORDER BY uv.purchased_at DESC, uv.id DESC'
 );
-$redeemableStmt->execute(["user:$userId"]);
+$redeemableStmt->execute([$userId]);
 $redeemableVouchers = $redeemableStmt->fetchAll();
 
 $redeemedStmt = $db->prepare(
-    'SELECT v.id, v.code, v.description, p.name AS partner_name, p.address, v.points_value, v.redeemed_at, v.expiry_date
-     FROM vouchers v
-     LEFT JOIN partners p ON v.partner_id = p.id
-     WHERE v.redeemed_by = ? AND v.is_redeemed = 1
-     ORDER BY v.redeemed_at DESC, v.id DESC'
+    'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.max_uses, uv.remaining_uses, uv.purchased_at, uv.redeemed_at, uv.expiry_date
+     FROM user_vouchers uv
+     LEFT JOIN partners p ON uv.partner_id = p.id
+     WHERE uv.user_id = ?
+       AND uv.is_redeemed = 1
+     ORDER BY uv.redeemed_at DESC, uv.id DESC'
 );
-$redeemedStmt->execute(["user:$userId"]);
+$redeemedStmt->execute([$userId]);
 $redeemedVouchers = $redeemedStmt->fetchAll();
 
 sendResponse([
@@ -54,4 +55,3 @@ sendResponse([
     'redeemable_vouchers' => $redeemableVouchers,
     'redeemed_vouchers'   => $redeemedVouchers,
 ]);
-?>

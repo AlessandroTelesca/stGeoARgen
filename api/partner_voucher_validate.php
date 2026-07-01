@@ -39,16 +39,12 @@ if (password_needs_rehash($storedHash, PASSWORD_BCRYPT)) {
 }
 
 try {
-    $stmt = $pdo->prepare('SELECT * FROM vouchers WHERE code = ?');
+    $stmt = $pdo->prepare('SELECT * FROM user_vouchers WHERE code = ?');
     $stmt->execute([$code]);
     $voucher = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$voucher) {
         sendResponse(['success' => false, 'message' => 'Gutscheincode nicht gefunden.'], 404);
-    }
-
-    if (strpos((string)$voucher['redeemed_by'], 'user:') !== 0) {
-        sendResponse(['success' => false, 'message' => 'Dieser Gutschein wurde noch nicht von einem Nutzer gekauft.'], 409);
     }
 
     if ($voucher['partner_id'] === null) {
@@ -67,7 +63,12 @@ try {
         sendResponse(['success' => false, 'message' => 'Dieser Gutschein ist abgelaufen und nicht mehr gültig.'], 410);
     }
 
-    $pdo->prepare('UPDATE vouchers SET is_redeemed = 1, redeemed_at = NOW() WHERE id = ?')
+    $remainingUses = isset($voucher['remaining_uses']) ? (int) $voucher['remaining_uses'] : 1;
+    if ($remainingUses <= 0) {
+        sendResponse(['success' => false, 'message' => 'Dieser Gutschein kann nicht mehr eingelöst werden.'], 409);
+    }
+
+    $pdo->prepare('UPDATE user_vouchers SET is_redeemed = 1, redeemed_at = NOW(), remaining_uses = 0 WHERE id = ?')
         ->execute([$voucher['id']]);
 
     sendResponse([
