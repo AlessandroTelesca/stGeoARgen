@@ -15,7 +15,7 @@
   "feedbackCorrectBody": "Nice one - that was the correct medium.",
   "feedbackWrongBody": "Good try. Now you can see the correct medium.",
   "revealInstrument": "Reveal medium",
-  "dragInstruction": "Drag across the cube to rotate",
+  "dragInstruction": "Drag across the model to rotate",
   "continueButton": "Continue",
   "finishTitle": "Quiz complete",
   "finishSuccess": "Great! You completed the quiz.",
