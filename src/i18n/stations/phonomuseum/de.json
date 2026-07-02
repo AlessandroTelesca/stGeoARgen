@@ -45,19 +45,19 @@
     },
     "questions": [
       {
-        "prompt": "Welches Medium klingt am warmsten, etwas dumpf und leicht verzerrt?",
+        "prompt": "Welches Medium klingt am dumpfsten und hat ein hörbares Kratzen im Hintergrund?",
         "correct": "phonograph",
-        "explanation": "Der Phonograph nutzt frühe Walzenaufnahmen. Dadurch klingt er oft weicher und rauer."
+        "explanation": "Der Phonograph spielt frühe Walzenaufnahmen ab. Deshalb klingt er dumpf und warm, mit einem leichten Kratzen und Rauschen im Hintergrund."
       },
       {
-        "prompt": "Welches Medium klingt mittig-präsent mit hornartiger Projektion?",
+        "prompt": "Welches Medium klingt kräftig und etwas blechern, wie aus einem Trichter?",
         "correct": "gramophone",
-        "explanation": "Das Grammophon betont Mitten stark. Das gibt den typischen hornartigen Klangcharakter."
+        "explanation": "Das Grammophon gibt den Ton über einen großen Trichter aus. Dadurch klingt er kräftig und ein bisschen blechern."
       },
       {
-        "prompt": "Welches Medium klingt am ausgewogensten und moderner?",
+        "prompt": "Welches Medium klingt am klarsten und modernsten?",
         "correct": "plattenspieler",
-        "explanation": "Der Plattenspieler liefert ein breiteres, saubereres Klangbild als die historischen Vorgänger."
+        "explanation": "Der Plattenspieler klingt klarer und voller als die älteren Geräte."
       }
     ]
   },
@@ -82,7 +82,7 @@
       "correctIndex": 1,
       "instrumentName": "Phonograph",
       "soundType": "phonograph",
-      "soundExplanation": "Der Phonograph klingt etwas dumpfer und rauer, weil die Walze nur einen engeren Frequenzbereich abbildet und die Nadel viele feine Höhen nicht sauber überträgt."
+      "soundExplanation": "Der Phonograph klingt dumpf und kratzig, weil die Walze nur einen kleineren Tonbereich aufnimmt und die feinen, hohen Töne dabei verloren gehen."
     },
     {
       "prompt": "Welches Medium ist beim zweiten Klang zu hören?",
@@ -90,7 +90,7 @@
       "correctIndex": 2,
       "instrumentName": "Plattenspieler",
       "soundType": "plattenspieler",
-      "soundExplanation": "Der Plattenspieler klingt sauberer und breiter, weil die Schallplatte mehr Details im Signal speichern kann und der Tonabnehmer feine Dynamik besser wiedergibt."
+      "soundExplanation": "Der Plattenspieler klingt klarer und voller, weil die Schallplatte mehr Details speichern kann und leise wie laute Töne besser wiedergibt."
     },
     {
       "prompt": "Welches Medium erklingt im dritten Ausschnitt?",
@@ -98,7 +98,7 @@
       "correctIndex": 0,
       "instrumentName": "Grammophon",
       "soundType": "gramophone",
-      "soundExplanation": "Das Grammophon betont die Mitten stark und wirkt trichterartig, weil der Schall mechanisch über den Horntrichter verstärkt wird und dadurch ein nasaler Charakter entsteht."
+      "soundExplanation": "Das Grammophon klingt kräftig und etwas blechern, weil der Ton mechanisch über einen großen Trichter verstärkt wird."
     }
   ]
 }

@@ -45,19 +45,19 @@
     },
     "questions": [
       {
-        "prompt": "Which medium sounds the warmest, most muffled, and slightly gritty?",
+        "prompt": "Which medium sounds the most muffled, with an audible crackle in the background?",
         "correct": "phonograph",
-        "explanation": "Phonograph recordings on early cylinders often feel softer, darker, and rougher in timbre."
+        "explanation": "The phonograph plays early wax cylinders. That is why it sounds dull and warm, with a faint crackle and hiss in the background."
       },
       {
-        "prompt": "Which medium sounds most mid-focused with a horn-like projection?",
+        "prompt": "Which medium sounds strong and a bit tinny, as if coming from a horn?",
         "correct": "gramophone",
-        "explanation": "Gramophones emphasize midrange frequencies, creating that classic horn-forward character."
+        "explanation": "The gramophone plays the sound through a large horn. That makes it sound strong and a little tinny."
       },
       {
-        "prompt": "Which medium sounds the most balanced and modern overall?",
+        "prompt": "Which medium sounds the clearest and most modern?",
         "correct": "plattenspieler",
-        "explanation": "The turntable has a cleaner and fuller response than earlier mechanical playback systems."
+        "explanation": "The turntable sounds clearer and fuller than the older devices."
       }
     ]
   },
@@ -82,7 +82,7 @@
       "correctIndex": 1,
       "instrumentName": "Phonograph",
       "soundType": "phonograph",
-      "soundExplanation": "The phonograph sounds darker and rougher because the wax cylinder captures a narrower frequency range and the stylus loses some fine high-end detail."
+      "soundExplanation": "The phonograph sounds dull and scratchy because the wax cylinder only captures a smaller range of tones and the fine, high notes get lost."
     },
     {
       "prompt": "Which medium can be heard in the second clip?",
@@ -90,7 +90,7 @@
       "correctIndex": 2,
       "instrumentName": "Record player",
       "soundType": "plattenspieler",
-      "soundExplanation": "The record player sounds cleaner and wider because vinyl playback preserves more detail and dynamic range than the early purely mechanical systems."
+      "soundExplanation": "The record player sounds clearer and fuller because vinyl can store more detail and reproduces both quiet and loud notes better."
     },
     {
       "prompt": "Which medium is playing in the third clip?",
@@ -98,7 +98,7 @@
       "correctIndex": 0,
       "instrumentName": "Gramophone",
       "soundType": "gramophone",
-      "soundExplanation": "The gramophone has a stronger midrange and a horn-like projection because the horn mechanically amplifies the sound, giving it that nasal vintage color."
+      "soundExplanation": "The gramophone sounds strong and a bit tinny because the sound is mechanically amplified through a large horn."
     }
   ]
 }
