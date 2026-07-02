@@ -34,9 +34,9 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
     return '';
   };
 
+  // Beim Login keine Mindestlänge prüfen – ob das Passwort stimmt, entscheidet der Server
   const validatePassword = (value: string) => {
     if (!value) return t('passwordRequired');
-    if (value.length < 6) return t('passwordMinLength');
     return '';
   };
 

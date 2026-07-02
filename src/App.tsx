@@ -211,7 +211,7 @@ export default function App() {
     else if (path === '/phonomuseum') setCurrentView('ar-phonomuseum');
     else if (path === '/glockenspiel') setCurrentView('ar-glockenspiel');
     else if (path === '/bahnhof') setCurrentView('ar-bahnhof');
-    else if (path === '/schwarzes-tor' || path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
+    else if (path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
     else if (path === '/settings') setCurrentView('settings');
     else if (path === '/profile') setCurrentView('profile');
     else if (path === '/points') setCurrentView('points');
@@ -301,51 +301,6 @@ export default function App() {
     setShowOnboarding(false);
     if (!user) setShowPostOnboardingLoginPrompt(true);
   };
-
-  // Sync state with URL
-  useEffect(() => {
-    const path = location.pathname;
-
-    if (path === '/klosterweiher') {
-      setCurrentView('ar-klosterweiher');
-    } else if (path === '/bahnhof') {
-      setCurrentView('ar-bahnhof');
-    } else if (path === '/phonomuseum') {
-      setCurrentView('ar-phonomuseum');
-    } else if (path === '/glockenspiel') {
-      setCurrentView('ar-glockenspiel');
-    } else if (path === '/schwarzes-tor') {
-      setCurrentView('ar-schwarzes-tor');
-    } else if (path === '/settings') {
-      setCurrentView('settings');
-    } else if (path === '/profile') {
-      setCurrentView('profile');
-    } else if (path === '/points') {
-      setCurrentView('points');
-    } else if (path === '/stations') {
-      setCurrentView('stations');
-    } else if (path === '/progress') {
-      setCurrentView('progress');
-    } else if (path === '/rewards') {
-      setCurrentView('rewards');
-    } else if (path === '/paths') {
-      setCurrentView('paths');
-    } else if (path === '/login') {
-      setCurrentView('login');
-    } else if (path === '/register') {
-      setCurrentView('register');
-    } else if (path === '/forgot-password') {
-      setCurrentView('forgot-password');
-    } else if (path === '/impressum') {
-      setCurrentView('impressum');
-    } else if (path === '/datenschutz') {
-      setCurrentView('datenschutz');
-    } else if (path === '/info') {
-      setCurrentView('info');
-    } else if (path === '/' || path === '/home') {
-      setCurrentView('home');
-    }
-  }, [location.pathname]);
 
   useEffect(() => {
     const isArPath =
@@ -883,7 +838,7 @@ export default function App() {
 
       // Check if it's a URL
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
-        window.open(arView, '_blank');
+        window.open(arView, '_blank', 'noopener,noreferrer');
       } else {
         alert(t('qrCodeScannedContent').replace('{content}', arView));
       }

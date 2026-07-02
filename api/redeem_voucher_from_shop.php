@@ -65,7 +65,7 @@ if ($voucherId > 0) {
         $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ?');
         $stmt->execute([(int) $voucher['points_value'], $userId]);
 
-        $code = strtoupper(substr(md5(uniqid((string) $userId, true)), 0, 10));
+        $code = generateVoucherCode();
         $remainingUses = 1;
         $insertStmt = $db->prepare(
             'INSERT INTO user_vouchers (user_id, voucher_id, code, description, partner_id, points_value, expiry_date, remaining_uses)
@@ -101,7 +101,7 @@ if ($voucherId > 0) {
     } catch (Exception $e) {
         $db->rollBack();
         error_log('redeem_voucher_from_shop shop purchase error: ' . $e->getMessage());
-        sendResponse(['success' => false, 'message' => 'Serverfehler beim Einlösen des Gutscheins. ' . $e->getMessage()], 500);
+        sendResponse(['success' => false, 'message' => 'Serverfehler beim Einlösen des Gutscheins.'], 500);
     }
 }
 
@@ -141,7 +141,7 @@ if ((int) $user['total_points'] < $requiredPoints) {
     sendResponse(['success' => false, 'message' => 'Nicht genügend Punkte.'], 400);
 }
 
-$code = strtoupper(substr(md5(uniqid((string) $userId, true)), 0, 10));
+$code = generateVoucherCode();
 $fullDescription = $description !== '' ? $title . ' - ' . $description : $title;
 
 try {
@@ -167,7 +167,7 @@ try {
 } catch (Exception $e) {
     $db->rollBack();
     error_log('redeem_voucher_from_shop reward voucher creation error: ' . $e->getMessage());
-    sendResponse(['success' => false, 'message' => 'Serverfehler beim Erstellen des Gutscheins. ' . $e->getMessage()], 500);
+    sendResponse(['success' => false, 'message' => 'Serverfehler beim Erstellen des Gutscheins.'], 500);
 }
 
 sendResponse([

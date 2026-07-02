@@ -10,7 +10,8 @@ interface QRScannerProps {
 }
 
 // Verfügbare AR-Views basierend auf QR-Code URLs
-const VALID_AR_VIEWS = ['glockenspiel', 'bahnhof', 'phonomuseum', 'klosterweiher'];
+// 'schwarzes-tor' vor 'schwarzestor' prüfen, damit beide URL-Varianten erkannt werden
+const VALID_AR_VIEWS = ['glockenspiel', 'bahnhof', 'phonomuseum', 'klosterweiher', 'schwarzes-tor', 'schwarzestor'];
 
 export function QRScanner({ onClose, onScan }: QRScannerProps) {
   const { t } = useLanguage();
@@ -19,6 +20,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [isScanning, setIsScanning] = useState(true);
+  const [cameraError, setCameraError] = useState(false);
 
   // Starte Kamera und QR-Code Scanning
   useEffect(() => {
@@ -43,6 +45,7 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
         }
       } catch (err) {
         console.error('Kamera konnte nicht gestartet werden:', err);
+        setCameraError(true);
       }
     };
 
@@ -164,6 +167,16 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
           className="hidden"
         />
         
+        {/* Kamera-Fehler */}
+        {cameraError && (
+          <div className="absolute inset-0 flex items-center justify-center px-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center max-w-sm">
+              <p className="text-white font-semibold mb-2">{t('qrCameraError')}</p>
+              <p className="text-white/80 text-sm">{t('qrCameraErrorHint')}</p>
+            </div>
+          </div>
+        )}
+
         {/* Scanning Overlay */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="relative w-64 h-64">

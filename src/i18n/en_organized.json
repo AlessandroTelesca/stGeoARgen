@@ -44,7 +44,7 @@
   "emailRequired": "Email is required",
   "invalidEmail": "Invalid email address",
   "passwordRequired": "Password is required",
-  "passwordMinLength": "Password must be at least 6 characters long",
+  "passwordMinLength": "Password must be at least 8 characters long",
   "emailAddress": "Email address",
   "emailPlaceholder": "your@email.com",
   "password": "Password",
@@ -351,6 +351,8 @@
   "qrCodeScan": "Scan QR code",
   "qrCodeScanDesc": "Scan a QR code at a station to start directly",
   "qrCodeScannedContent": "QR code scanned: {content}",
+  "qrCameraError": "Camera could not be started",
+  "qrCameraErrorHint": "Please allow camera access in your browser settings and try again.",
 
   "_REWARDS": "REWARDS & VOUCHERS",
   "rewardsTitle": "Rewards",
