@@ -2,6 +2,7 @@ export interface StoredMelodyEntry {
   id?: number;
   melody: string;
   name?: string | null;
+  user_name?: string | null;
 }
 
 export interface MelodyNote {
@@ -63,7 +64,8 @@ export const getPlaybackDelayMs = (noteCount: number, maxDurationMs = 15000): nu
 };
 
 export const getLatestOtherUserMelody = (
-  melodies: Array<StoredMelodyEntry & { created_at?: string | null }>
+  melodies: Array<StoredMelodyEntry & { created_at?: string | null }>,
+  currentUserName?: string | null
 ): StoredMelodyEntry | null => {
   return melodies
     .slice()
@@ -72,7 +74,7 @@ export const getLatestOtherUserMelody = (
       const dateB = b.created_at ? Date.parse(b.created_at) : 0;
       return dateB - dateA;
     })
-    .find((entry) => !!entry.melody) ?? null;
+    .find((entry) => !!entry.melody && (!currentUserName || entry.user_name !== currentUserName)) ?? null;
 };
 
 export const getRecentOtherUserMelodies = (

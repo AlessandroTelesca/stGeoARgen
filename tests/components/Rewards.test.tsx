@@ -45,13 +45,19 @@ describe('RewardsView', () => {
   test('shows unlocked count and enables only unlocked vouchers', () => {
     render(<RewardsView {...defaultProps} />);
 
-    expect(screen.getByText(/2 von 6 Gutscheinen freigeschaltet/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 von 1 Gutscheinen freigeschaltet/i)).toBeInTheDocument();
 
     const unlockedButtons = screen.getAllByRole('button', { name: /gutschein einlösen/i });
-    expect(unlockedButtons).toHaveLength(2);
+    expect(unlockedButtons).toHaveLength(1);
     unlockedButtons.forEach((btn) => expect(btn).toBeEnabled());
+  });
 
-    const lockedButton = screen.getByRole('button', { name: /150 Punkte nötig/i });
+  test('locks vouchers when points are insufficient', () => {
+    render(<RewardsView {...defaultProps} totalPoints={10} />);
+
+    expect(screen.getByText(/0 von 1 Gutscheinen freigeschaltet/i)).toBeInTheDocument();
+
+    const lockedButton = screen.getByRole('button', { name: /20 Punkte nötig/i });
     expect(lockedButton).toBeDisabled();
   });
 
