@@ -26,7 +26,7 @@ const vouchers: Voucher[] = [
     description: 'Freier Eintritt ins Hallenbad St.Georgen für eine Person',
     partner_name: 'Hallenbad St.Georgen',
     address: 'Im Hochwald 6, 78112 St. Georgen',
-    points_value: 0,
+    points_value: 20,
     quantity: 40,
     imageUrl:
       'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=Mnw3NzgwNjR8MHwxfHNlYXJjaHwxfHxiaXNvb3N8ZW58MHx8fHwxNjAwNjQ2Njk1&ixlib=rb-1.2.1&q=80&w=400',
