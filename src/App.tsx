@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, saveStationProgress } from './services/auth';
-import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward } from './services/api';
+import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints } from './services/api';
 import { Header } from './components/Header';
 import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
@@ -19,6 +19,7 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
+import { Info } from './components/Info';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
@@ -86,7 +87,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'partner'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'info' | 'partner'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -97,9 +98,10 @@ export default function App() {
   const [fallbackAppModeActive, setFallbackAppModeActive] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [allowGuestStationStart, setAllowGuestStationStart] = useState(false);
-  // Verfolgt welche Pfade ihren 500-Punkte-Bonus bereits erhalten haben
+  // Verfolgt welche Pfade bereits als abgeschlossen / Bonus-Status markiert wurden
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
   const [treasurePoints, setTreasurePoints] = useState(0);
+  const [serverPoints, setServerPoints] = useState<number | null>(null);
 
   // Bequeme Aliases aus dem User-Objekt
   const username = user?.username ?? null;
@@ -183,7 +185,7 @@ export default function App() {
     stations: { title: string; points: number }[];
     earnedStationPoints: number;
     bonusPoints: number;
-  }>({ isOpen: false, pathTitle: '', pathDescription: '', stations: [], earnedStationPoints: 0, bonusPoints: 500 });
+  }>({ isOpen: false, pathTitle: '', pathDescription: '', stations: [], earnedStationPoints: 0, bonusPoints: 0 });
 
   // Check if user has seen onboarding
   useEffect(() => {
@@ -209,7 +211,7 @@ export default function App() {
     else if (path === '/phonomuseum') setCurrentView('ar-phonomuseum');
     else if (path === '/glockenspiel') setCurrentView('ar-glockenspiel');
     else if (path === '/bahnhof') setCurrentView('ar-bahnhof');
-    else if (path === '/schwarzes-tor' || path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
+    else if (path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
     else if (path === '/settings') setCurrentView('settings');
     else if (path === '/profile') setCurrentView('profile');
     else if (path === '/points') setCurrentView('points');
@@ -222,6 +224,7 @@ export default function App() {
     else if (path === '/forgot-password') setCurrentView('forgot-password');
     else if (path === '/impressum') setCurrentView('impressum');
     else if (path === '/datenschutz') setCurrentView('datenschutz');
+    else if (path === '/info') setCurrentView('info');
     else if (path === '/partner') setCurrentView('partner');
     else if (path === '/' || path === '/home') setCurrentView('home');
   }, [location.pathname]);
@@ -272,6 +275,14 @@ export default function App() {
     } catch {
       setTreasurePoints(0);
     }
+
+    // Load server-side total points for the user
+    try {
+      const pts = await apiGetUserPoints(user.id);
+      setServerPoints(pts.total_points ?? 0);
+    } catch {
+      setServerPoints(0);
+    }
   }, [user]);
 
   // Fortschritt aus DB laden wenn User sich einloggt oder Session wiederhergestellt wird
@@ -290,49 +301,6 @@ export default function App() {
     setShowOnboarding(false);
     if (!user) setShowPostOnboardingLoginPrompt(true);
   };
-
-  // Sync state with URL
-  useEffect(() => {
-    const path = location.pathname;
-
-    if (path === '/klosterweiher') {
-      setCurrentView('ar-klosterweiher');
-    } else if (path === '/bahnhof') {
-      setCurrentView('ar-bahnhof');
-    } else if (path === '/phonomuseum') {
-      setCurrentView('ar-phonomuseum');
-    } else if (path === '/glockenspiel') {
-      setCurrentView('ar-glockenspiel');
-    } else if (path === '/schwarzes-tor') {
-      setCurrentView('ar-schwarzes-tor');
-    } else if (path === '/settings') {
-      setCurrentView('settings');
-    } else if (path === '/profile') {
-      setCurrentView('profile');
-    } else if (path === '/points') {
-      setCurrentView('points');
-    } else if (path === '/stations') {
-      setCurrentView('stations');
-    } else if (path === '/progress') {
-      setCurrentView('progress');
-    } else if (path === '/rewards') {
-      setCurrentView('rewards');
-    } else if (path === '/paths') {
-      setCurrentView('paths');
-    } else if (path === '/login') {
-      setCurrentView('login');
-    } else if (path === '/register') {
-      setCurrentView('register');
-    } else if (path === '/forgot-password') {
-      setCurrentView('forgot-password');
-    } else if (path === '/impressum') {
-      setCurrentView('impressum');
-    } else if (path === '/datenschutz') {
-      setCurrentView('datenschutz');
-    } else if (path === '/' || path === '/home') {
-      setCurrentView('home');
-    }
-  }, [location.pathname]);
 
   useEffect(() => {
     const isArPath =
@@ -529,12 +497,9 @@ export default function App() {
     };
   };
 
-  const totalPoints = paths.reduce((sum, path) => {
-    const progress = getPathProgress(path);
-    return sum + progress.earnedPoints;
-  }, 0)
-    + Object.keys(claimedPathBonuses).filter((pathId) => claimedPathBonuses[pathId]).length * 500
-    + treasurePoints;
+  const totalPoints = user
+    ? (serverPoints !== null ? serverPoints : 0)
+    : 0;
 
   const totalCompletedStations = paths.reduce((sum, path) => {
     const progress = getPathProgress(path);
@@ -716,6 +681,7 @@ export default function App() {
       if (currentPath) {
         try {
           await saveStationProgress(user.id, currentPath.id, stationId);
+          await refreshUserProgress();
 
           // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
           // Da setState async ist, berechnen wir hier direkt
@@ -728,6 +694,7 @@ export default function App() {
             try {
               const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
               if (bonusRes.success && !bonusRes.already_claimed) {
+                await refreshUserProgress();
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
                 const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
                 const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
@@ -737,7 +704,7 @@ export default function App() {
                   pathDescription: currentPath.description || '',
                   stations: completedStationsList,
                   earnedStationPoints: earnedStationPts,
-                  bonusPoints: 500,
+                  bonusPoints: bonusRes.bonus ?? 0,
                 });
               } else if (bonusRes.already_claimed) {
                 // Bonus wurde bereits im Backend vergeben → trotzdem lokal markieren
@@ -754,7 +721,7 @@ export default function App() {
                 pathDescription: currentPath.description || '',
                 stations: completedStationsList,
                 earnedStationPoints: earnedStationPts,
-                bonusPoints: 500,
+                bonusPoints: 0,
               });
             }
           }
@@ -777,6 +744,7 @@ export default function App() {
     try {
       const res = await apiSaveTreasureReward(user.id, 'klosterweiher_treasure_chest', 50);
       setTreasurePoints((prev) => Math.max(prev, res.points_total));
+      await refreshUserProgress();
 
       if (res.already_claimed) {
         toast.info(language === 'de' ? 'Diese Schatzkiste wurde bereits gutgeschrieben.' : 'This treasure chest reward has already been claimed.', {
@@ -830,12 +798,16 @@ export default function App() {
       setCurrentView('progress');
     } else if (view === 'rewards') {
       setCurrentView('rewards');
+      navigate('/rewards');
     } else if (view === 'impressum') {
       navigate('/impressum');
       setCurrentView('impressum');
     } else if (view === 'datenschutz') {
       navigate('/datenschutz');
       setCurrentView('datenschutz');
+    } else if (view === 'info') {
+      navigate('/info');
+      setCurrentView('info');
     }
   };
 
@@ -866,7 +838,7 @@ export default function App() {
 
       // Check if it's a URL
       if (arView.startsWith('http://') || arView.startsWith('https://')) {
-        window.open(arView, '_blank');
+        window.open(arView, '_blank', 'noopener,noreferrer');
       } else {
         alert(t('qrCodeScannedContent').replace('{content}', arView));
       }
@@ -955,6 +927,8 @@ export default function App() {
     return 'St.GeoARgen';
   };
 
+  const isArStationView = currentView.startsWith('ar-');
+
   const renderARViewWithGate = (content: ReactNode) => {
     if (allowGuestStationStart) {
       return content;
@@ -988,7 +962,7 @@ export default function App() {
 
   return (
     <div ref={appRootRef} className="site-fullscreen-shell min-h-screen bg-background">
-      {currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && (
+       {!isArStationView && currentView !== 'station' && currentView !== 'login' && currentView !== 'register' && currentView !== 'forgot-password' && currentView !== 'partner' && (
         <Header
           title={getPageTitle()}
           onNavigate={handleNavigate}
@@ -1073,6 +1047,10 @@ export default function App() {
             setCurrentView('profile');
             navigate('/profile');
           }}
+          onNavigateToInfo={() => {
+            setCurrentView('info');
+            navigate('/info');
+          }}
         />
       )}
 
@@ -1141,6 +1119,10 @@ export default function App() {
 
       {currentView === 'datenschutz' && (
         <Datenschutz onBack={handleBackToDashboard} />
+      )}
+
+      {currentView === 'info' && (
+        <Info onBack={handleBackToDashboard} />
       )}
 
       <AnimatePresence>

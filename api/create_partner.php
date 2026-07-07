@@ -1,6 +1,13 @@
 <?php
 // create_partner.php
 // Skript zum Erstellen eines neuen Partners mit gehashtem Passwort
+// Nur über die Kommandozeile ausführbar (php create_partner.php) –
+// darf niemals über den Webserver erreichbar sein.
+
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Dieses Skript kann nur über die Kommandozeile ausgeführt werden.');
+}
 
 require_once 'config.php';
 $pdo = getDB();

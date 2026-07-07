@@ -9,6 +9,7 @@ interface SettingsProps {
   onToggleFullscreen: (enabled: boolean) => void;
   onBack?: () => void;
   onNavigateToProfile?: () => void;
+  onNavigateToInfo?: () => void;
 }
 
 export function Settings({
@@ -18,6 +19,7 @@ export function Settings({
   onToggleFullscreen,
   onBack,
   onNavigateToProfile,
+  onNavigateToInfo,
 }: SettingsProps) {
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('de');
@@ -170,7 +172,10 @@ export function Settings({
                 </div>
               </button>
 
-              <button className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors">
+              <button
+                onClick={onNavigateToInfo}
+                className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+              >
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Info className="w-5 h-5 text-primary" />
                 </div>

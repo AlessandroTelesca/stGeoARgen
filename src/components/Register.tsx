@@ -50,7 +50,7 @@ export function Register({ onRegister, onNavigateBack, onNavigateToLogin }: Regi
 
   const validatePassword = (value: string) => {
     if (!value) return t('passwordRequired');
-    if (value.length < 6) return t('passwordMinLength');
+    if (value.length < 8) return t('passwordMinLength');
     return '';
   };
 

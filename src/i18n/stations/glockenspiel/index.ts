@@ -6,6 +6,13 @@ export interface StationTexts {
   stationName: string;
   description: string;
   longDescription: string;
+  arStartTitle: string;
+  arPermissionDescription: string;
+  arPermissionButton: string;
+  arStartDescription: string;
+  arStartButton: string;
+  arStartingButton: string;
+  arStartErrorFallback: string;
   quizQuestion: string;
   quizOptions: string[];
 }

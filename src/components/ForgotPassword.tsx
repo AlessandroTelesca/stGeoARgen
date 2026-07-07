@@ -48,7 +48,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
 
   const validatePassword = (value: string) => {
     if (!value) return 'Neues Passwort ist erforderlich';
-    if (value.length < 6) return 'Passwort muss mindestens 6 Zeichen lang sein';
+    if (value.length < 8) return 'Passwort muss mindestens 8 Zeichen lang sein';
     return '';
   };
 
@@ -146,7 +146,8 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
     try {
       await resetPasswordWithToken(resetToken, password);
       setIsPasswordResetSuccess(true);
-      window.history.replaceState({}, document.title, '/forgot-password');
+      // Nur den Token-Query-Parameter entfernen, Pfad (inkl. Base-Path) beibehalten
+      window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Passwort konnte nicht zurückgesetzt werden.';
       setErrors({ general: message });

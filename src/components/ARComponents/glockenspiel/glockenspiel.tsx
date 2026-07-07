@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
@@ -7,10 +8,33 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getGlockenspielTexts } from '../../../i18n/stations/glockenspiel';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
+import { findNearestVisibleBellHit, getBellColliderRadius } from './hitDetection';
+import { createScrollLockController } from './scrollLock';
+import { clampMelodyLength, getRecentOtherUserMelodies, getLatestOtherUserMelody, getPlaybackDelayMs, parseMelody, serializeMelody, StoredMelodyEntry, type MelodyNote } from './melody';
+import { withTimeout } from './loading';
 
 // TODO: Replace with your own glockenturm.glb model
 // Place the GLB file in: src/components/ARComponents/glockenspiel/models/glockenturm.glb
 const GLOCKENTURM_MODEL_URL = new URL('./models/glockenturm.glb', import.meta.url).href;
+const GLOCKENSPIEL_PANORAMA_URL = '/images/360/glockenspiel.jpg';
+const GLOCKENSPIEL_PANORAMA_FALLBACK_URL = '/images/360/bahnhof.jpg';
+
+function loadPanoramaTexture(url: string): Promise<THREE.Texture> {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(
+      url,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+        resolve(texture);
+      },
+      undefined,
+      (error) => reject(error)
+    );
+  });
+}
 
 interface ARViewProps {
   onNavigateHome?: () => void;
@@ -45,7 +69,10 @@ class GlockenspielARSession extends GyroARVisualizer {
   private basePosition = new THREE.Vector3(0, 0, -10);
   private placementCameraPose: { position: THREE.Vector3; quaternion: THREE.Quaternion } | null = null;
   private hasPlacedTower = false;
+  private modelLoadPromise: Promise<void> | null = null;
+  private modelLoaded = false;
   private sceneUpdateAnimationId: number | null = null;
+  private modelReadyPromise: Promise<void> | null = null;
   // Touch/Zoom/Rotate properties
   private touchStartDistance = 0;
   private lastTouchX = 0;
@@ -55,6 +82,101 @@ class GlockenspielARSession extends GyroARVisualizer {
   private readonly zoomOutLimit = 8.5;
   // Zoom state to temporarily disable rotation while pinching
   private isZooming = false;
+  private isRecordingMelody = false;
+  private isPlaybackActive = false;
+  private interactionEnabled = true;
+  private recordedMelody: MelodyNote[] = [];
+  private lastRecordedNoteTime = 0;
+  private readonly maxRecordedMelodyLength = 96;
+  private activeBellHighlight: { bell: THREE.Object3D; expiresAt: number } | null = null;
+  private readonly scrollLock = createScrollLockController(document);
+  private readonly keyboardState = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+  };
+  private lastKeyboardUpdateTime = performance.now();
+  private readonly handleTouchStart = (event: TouchEvent): void => {
+    if (!this.interactionEnabled) return;
+    void this.onTouchStart(event);
+  };
+  private readonly handleTouchMove = (event: TouchEvent): void => {
+    if (!this.interactionEnabled) return;
+    this.onTouchMove(event);
+  };
+  private readonly handleTouchEnd = (event: TouchEvent): void => {
+    if (!this.interactionEnabled) return;
+    this.onTouchEnd(event);
+  };
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (!this.interactionEnabled) return;
+    const key = event.key.toLowerCase();
+    switch (key) {
+      case 'w':
+      case 'arrowup':
+        this.keyboardState.forward = true;
+        event.preventDefault();
+        break;
+      case 's':
+      case 'arrowdown':
+        this.keyboardState.backward = true;
+        event.preventDefault();
+        break;
+      case 'a':
+      case 'arrowleft':
+        this.keyboardState.left = true;
+        event.preventDefault();
+        break;
+      case 'd':
+      case 'arrowright':
+        this.keyboardState.right = true;
+        event.preventDefault();
+        break;
+      case 'q':
+        this.keyboardState.down = true;
+        event.preventDefault();
+        break;
+      case 'e':
+        this.keyboardState.up = true;
+        event.preventDefault();
+        break;
+      default:
+        break;
+    }
+  };
+  private readonly handleKeyUp = (event: KeyboardEvent): void => {
+    if (!this.interactionEnabled) return;
+    const key = event.key.toLowerCase();
+    switch (key) {
+      case 'w':
+      case 'arrowup':
+        this.keyboardState.forward = false;
+        break;
+      case 's':
+      case 'arrowdown':
+        this.keyboardState.backward = false;
+        break;
+      case 'a':
+      case 'arrowleft':
+        this.keyboardState.left = false;
+        break;
+      case 'd':
+      case 'arrowright':
+        this.keyboardState.right = false;
+        break;
+      case 'q':
+        this.keyboardState.down = false;
+        break;
+      case 'e':
+        this.keyboardState.up = false;
+        break;
+      default:
+        break;
+    }
+  };
 
   constructor(container: HTMLDivElement, videoElement: HTMLVideoElement, onError?: (err: unknown) => void) {
     super(container, videoElement, { onError });
@@ -62,9 +184,42 @@ class GlockenspielARSession extends GyroARVisualizer {
     this.initialCameraDistance = 4.0;
   }
 
+  public setInteractionEnabled(enabled: boolean): void {
+    this.interactionEnabled = Boolean(enabled);
+    if (!this.interactionEnabled) {
+      // reset transient interaction state
+      this.isZooming = false;
+      this.keyboardState.forward = false;
+      this.keyboardState.backward = false;
+      this.keyboardState.left = false;
+      this.keyboardState.right = false;
+      this.keyboardState.up = false;
+      this.keyboardState.down = false;
+    }
+  }
+
   async init(): Promise<void> {
     // Call parent init (starts GyroARVisualizer's animate loop with gyro updates)
     await super.init();
+
+    // Remove debug helpers (GridHelper / AxesHelper) so the scene is clean
+    if (this.scene) {
+      const debugHelpers = this.scene.children.filter(
+        (child) => child.type === 'GridHelper' || child.type === 'AxesHelper'
+      );
+      debugHelpers.forEach((helper) => this.scene?.remove(helper));
+    }
+
+    try {
+      this.setPanoramaBackground(await loadPanoramaTexture(GLOCKENSPIEL_PANORAMA_URL));
+    } catch (err) {
+      try {
+        this.setPanoramaBackground(await loadPanoramaTexture(GLOCKENSPIEL_PANORAMA_FALLBACK_URL));
+      } catch (fallbackErr) {
+        console.error('[GlockenspielARSession] Failed to load panorama texture', fallbackErr);
+      }
+    }
+
     // Start separate loop for updateScene (raycasting, wave rings, etc.)
     this.startSceneUpdateLoop();
   }
@@ -122,36 +277,81 @@ class GlockenspielARSession extends GyroARVisualizer {
     }
   }
 
-  public async playSequence(sequence: number[]): Promise<void> {
-    for (const index of sequence) {
-      this.playBellSound(index);
-      // wait between notes
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  public async playSequence(sequence: MelodyNote[]): Promise<void> {
+    this.isPlaybackActive = true;
+    try {
+      for (let i = 0; i < sequence.length; i += 1) {
+        const entry = sequence[i];
+        await this.playBellSound(entry.index);
+        if (i < sequence.length - 1) {
+          const gapMs = entry.gapMsToNext > 0 ? entry.gapMsToNext : getPlaybackDelayMs(sequence.length);
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, gapMs));
+        }
+      }
+    } finally {
+      this.isPlaybackActive = false;
     }
   }
 
-  private playBellSound(index: number) {
+  private async ensureAudioReady(): Promise<boolean> {
     if (!this.audioContext) {
-      console.warn('[Glockenspiel] No audioContext available');
-      return;
+      try {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch (err) {
+        console.warn('[Glockenspiel] AudioContext creation failed', err);
+        return false;
+      }
     }
+
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch (err) {
+        console.warn('[Glockenspiel] audioContext.resume() failed', err);
+        return false;
+      }
+    }
+
     if (this.bellSounds.length === 0) {
-      console.warn('[Glockenspiel] No bell sounds generated yet');
-      return;
+      try {
+        await this.createBellSounds();
+      } catch (err) {
+        console.warn('[Glockenspiel] bell sound generation failed', err);
+        return false;
+      }
     }
+
+    this.audioUnlocked = true;
+    return true;
+  }
+
+  private async playBellSound(index: number): Promise<void> {
     if (index < 0 || index >= this.bellSounds.length) {
       console.warn('[Glockenspiel] Requested bell index out of range', index);
       return;
     }
     if (this.lastPlayedBell === index && this.playCooldown > 0) return;
-    try {
-      // Some browsers start the AudioContext in 'suspended' state until a user gesture.
-      if (this.audioContext.state === 'suspended') {
-        // attempt resume; ignore rejection but log it
-        this.audioContext.resume().catch((e) => console.warn('[Glockenspiel] audioContext.resume() failed', e));
+
+    if (this.isRecordingMelody) {
+      const now = Date.now();
+      if (this.recordedMelody.length > 0 && this.lastRecordedNoteTime > 0) {
+        const previousNote = this.recordedMelody[this.recordedMelody.length - 1];
+        previousNote.gapMsToNext = Math.max(0, now - this.lastRecordedNoteTime);
       }
 
+      this.recordedMelody.push({ index, gapMsToNext: 0 });
+      this.recordedMelody = clampMelodyLength(this.recordedMelody, this.maxRecordedMelodyLength);
+      this.lastRecordedNoteTime = now;
+    }
+
+    const audioReady = await this.ensureAudioReady();
+    if (!audioReady || !this.audioContext || this.bellSounds.length === 0) {
+      console.warn('[Glockenspiel] No audioContext available');
+      return;
+    }
+
+    try {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.bellSounds[index];
       source.connect(this.audioContext.destination);
@@ -159,7 +359,10 @@ class GlockenspielARSession extends GyroARVisualizer {
       if (navigator.vibrate) navigator.vibrate(30);
 
       const bell = this.bellTargets.find((target) => (target.userData as any).bellIndex === index);
-      if (bell) this.createBellWave(bell);
+      if (bell) {
+        this.createBellWave(bell);
+        this.flashBellMesh(bell);
+      }
       this.lastPlayedBell = index;
       this.playCooldown = 30;
     } catch (err) {
@@ -169,18 +372,154 @@ class GlockenspielARSession extends GyroARVisualizer {
 
   private createBellWave(bell: THREE.Object3D) {
     if (!this.scene) return;
-    // Larger, more visible wave rings
-    const ringGeometry = new THREE.RingGeometry(0.12, 0.18, 32);
-    const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xfff5ba, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });
+    const ringGeometry = new THREE.RingGeometry(0.08, 0.16, 64);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffe08a,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: false,
+    });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = -Math.PI / 2;
     const bellWorldPosition = new THREE.Vector3();
     bell.getWorldPosition(bellWorldPosition);
     ring.position.copy(bellWorldPosition);
-    ring.position.y += 0.05; // above the bell
-    ring.renderOrder = 999;
+    ring.position.y += 0.08;
+    ring.renderOrder = 9999;
     this.scene.add(ring);
     this.waveRings.push({ mesh: ring, life: 1 });
+  }
+
+  private flashBellMesh(bell: THREE.Object3D): void {
+    this.clearBellHighlight();
+    const highlightDurationMs = 220;
+    const meshes = this.getBellHighlightMeshes(bell);
+
+    meshes.forEach((mesh) => {
+      const material = mesh.material;
+      if (Array.isArray(material)) {
+        material.forEach((entry) => this.applyBellHighlight(entry, true));
+      } else if (material) {
+        this.applyBellHighlight(material, true);
+      }
+    });
+
+    this.activeBellHighlight = {
+      bell,
+      expiresAt: performance.now() + highlightDurationMs,
+    };
+  }
+
+  private getBellHighlightMeshes(bell: THREE.Object3D): THREE.Mesh[] {
+    const isHighlightableMesh = (mesh: THREE.Mesh) => {
+      if ((mesh.userData as any)?.isBellCollider) return false;
+      if (this.isLikelyBellMesh(mesh)) return true;
+      const lowercaseName = (mesh.name || '').toLowerCase();
+      return /\b(?:bell|glocke|gong|tone)\b/.test(lowercaseName);
+    };
+
+    if (bell instanceof THREE.Mesh && isHighlightableMesh(bell)) {
+      return [bell];
+    }
+
+    const meshes: THREE.Mesh[] = [];
+    bell.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && isHighlightableMesh(child)) {
+        meshes.push(child);
+      }
+    });
+
+    if (meshes.length === 0) {
+      bell.traverse((object) => {
+        if (object !== bell && object instanceof THREE.Mesh && isHighlightableMesh(object)) {
+          const parent = object.parent;
+          if (parent && (parent === bell || parent.parent === bell || parent.parent?.parent === bell)) {
+            meshes.push(object);
+          }
+        }
+      });
+    }
+
+    return meshes;
+  }
+
+  private applyBellHighlight(material: THREE.Material, highlighted: boolean): void {
+    if (!material) return;
+
+    const state = (material.userData as { glockenspielHighlightState?: { color?: THREE.Color; emissive?: THREE.Color; emissiveIntensity?: number } }).glockenspielHighlightState;
+    if (highlighted) {
+      if (!state) {
+        const nextState = {
+          color: material instanceof THREE.MeshBasicMaterial || material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial
+            ? material.color.clone()
+            : undefined,
+          emissive: material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial
+            ? material.emissive.clone()
+            : undefined,
+          emissiveIntensity: material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial
+            ? material.emissiveIntensity
+            : undefined,
+        };
+        (material.userData as { glockenspielHighlightState?: typeof nextState }).glockenspielHighlightState = nextState;
+      }
+
+      if (material instanceof THREE.MeshBasicMaterial) {
+        material.color.set(0xfff2a8);
+      } else if (material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial) {
+        material.color.set(0xfff2a8);
+        material.emissive.set(0xfff2a8);
+        material.emissiveIntensity = 1.35;
+      }
+    } else if (state) {
+      if (state.color && (material instanceof THREE.MeshBasicMaterial || material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial)) {
+        material.color.copy(state.color);
+      }
+      if (material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial) {
+        if (state.emissive) material.emissive.copy(state.emissive);
+        material.emissiveIntensity = state.emissiveIntensity ?? 0;
+      }
+    }
+  }
+
+  private clearBellHighlight(): void {
+    if (!this.activeBellHighlight) return;
+
+    const bell = this.activeBellHighlight.bell;
+    this.getBellHighlightMeshes(bell).forEach((mesh) => {
+      const material = mesh.material;
+      if (Array.isArray(material)) {
+        material.forEach((entry) => this.applyBellHighlight(entry, false));
+      } else if (material) {
+        this.applyBellHighlight(material, false);
+      }
+    });
+    this.activeBellHighlight = null;
+  }
+
+  public startMelodyRecording(): void {
+    this.isRecordingMelody = true;
+    this.recordedMelody = [];
+    this.lastRecordedNoteTime = 0;
+  }
+
+  public stopMelodyRecording(): MelodyNote[] {
+    const melody = [...this.recordedMelody];
+    this.isRecordingMelody = false;
+    this.recordedMelody = [];
+    this.lastRecordedNoteTime = 0;
+    return melody;
+  }
+
+  public get isModelLoaded(): boolean {
+    return this.modelLoaded;
+  }
+
+  public async waitForModelReady(): Promise<void> {
+    if (this.modelLoaded) return;
+    if (!this.modelLoadPromise) return;
+    await this.modelLoadPromise;
   }
 
   public setCameraPositionAndLookAt(x: number, y: number, z: number): void {
@@ -219,24 +558,25 @@ class GlockenspielARSession extends GyroARVisualizer {
 
     this.glockenspielGroup = new THREE.Group();
     this.scene.add(this.glockenspielGroup);
-    // Shift wrapper slightly right and down so the tower appears more centered on screen.
     this.glockenspielGroup.position.set(0, -3, 0);
-    
-    // Load model (with fallback to procedural bells)
-    this.loadGlockenspielModel();
-    
-    // Setup touch/zoom/rotate controls
-    this.setupTouchControls();
-  }
 
-  private setupTouchControls(): void {
-    // Use window/document for touch events (public access)
-    window.addEventListener('touchstart', (e) => this.onTouchStart(e), false);
-    window.addEventListener('touchmove', (e) => this.onTouchMove(e), false);
-    window.addEventListener('touchend', (e) => this.onTouchEnd(e), false);
-    // Disable window scrolling
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    this.modelLoadPromise = this.loadGlockenspielModel()
+      .then(() => {
+        this.modelLoaded = true;
+      })
+      .catch((err) => {
+        this.modelLoaded = false;
+        console.warn('[Glockenspiel] model load failed', err);
+      });
+
+    window.addEventListener('touchstart', this.handleTouchStart, false);
+    window.addEventListener('touchmove', this.handleTouchMove, false);
+    window.addEventListener('touchend', this.handleTouchEnd, false);
+    window.addEventListener('keydown', this.handleKeyDown, false);
+    window.addEventListener('keyup', this.handleKeyUp, false);
+    document.addEventListener('keydown', this.handleKeyDown, false);
+    document.addEventListener('keyup', this.handleKeyUp, false);
+    this.scrollLock.lock();
   }
 
   private async onTouchStart(event: TouchEvent): Promise<void> {
@@ -258,10 +598,9 @@ class GlockenspielARSession extends GyroARVisualizer {
       console.warn('[Glockenspiel] audio init/resume failed on touch', e);
     }
 
-    // Enable debug visuals on first touch for troubleshooting
-    if (!this.debugVisualsEnabled) {
-      console.log('[Glockenspiel] enabling debug visuals');
-      this.enableDebugVisuals(true);
+    // Keep debug visuals disabled for the normal experience.
+    if (this.debugVisualsEnabled) {
+      this.enableDebugVisuals(false);
     }
     if (event.touches.length === 2) {
       // Two-finger pinch for zoom
@@ -287,14 +626,14 @@ class GlockenspielARSession extends GyroARVisualizer {
       const dy = touch2.clientY - touch1.clientY;
       const currentDistance = Math.sqrt(dx * dx + dy * dy);
       const delta = currentDistance - this.touchStartDistance;
-      
+
       if (this.camera && Math.abs(delta) > 5) {
         const zoomSpeed = 0.015;
         const target = new THREE.Vector3(0, 0.25, 0);
         const direction = this.camera.position.clone().sub(target).normalize();
         const distanceToTarget = this.camera.position.distanceTo(target);
         const nextDistance = THREE.MathUtils.clamp(
-          distanceToTarget + delta * zoomSpeed,
+          distanceToTarget - delta * zoomSpeed,
           this.zoomInLimit,
           this.zoomOutLimit
         );
@@ -320,23 +659,52 @@ class GlockenspielARSession extends GyroARVisualizer {
     }
   }
 
+  private updateKeyboardCameraPosition(deltaSeconds: number): void {
+    if (!this.camera) return;
+    if (!this.interactionEnabled) return;
+    const { forward, backward, left, right, up, down } = this.keyboardState;
+    if (!forward && !backward && !left && !right && !up && !down) return;
+
+    const moveSpeed = 3.5; // units per second
+    const moveAmount = moveSpeed * deltaSeconds;
+
+    if (forward) {
+      this.camera.translateZ(-moveAmount);
+    }
+    if (backward) {
+      this.camera.translateZ(moveAmount);
+    }
+    if (left) {
+      this.camera.translateX(-moveAmount);
+    }
+    if (right) {
+      this.camera.translateX(moveAmount);
+    }
+    if (up) {
+      this.camera.position.y += moveAmount;
+    }
+    if (down) {
+      this.camera.position.y -= moveAmount;
+    }
+  }
+
   private async loadGlockenspielModel(): Promise<void> {
     try {
-      // Try fast load without DRACO first (if GLB is not DRACO-compressed)
-      const model = await this.loadGlockenspielModelFast(GLOCKENTURM_MODEL_URL);
+      const model = await withTimeout(this.loadGlockenspielModelFast(GLOCKENTURM_MODEL_URL), 8000, 'Glockenspiel model load timed out');
       if (this.glockenspielGroup) {
         this.centerLoadedModel(model);
         this.glockenspielGroup.add(model);
       }
-      // Auto-register bell meshes from the model (search for meshes named "bell_0", "bell_1", etc.)
       this.registerBellsFromModel();
-      // If registration didn't find any bell targets, create a fallback procedural set
       if (this.bellTargets.length === 0) {
         console.log('[Glockenspiel] No bell targets found — creating fallback bells');
         this.createFallbackBells();
       }
     } catch (err) {
-      console.warn('[Glockenspiel] Failed to load model', err);
+      console.warn('[Glockenspiel] Failed to load model, using fallback scene', err);
+      if (this.glockenspielGroup) {
+        this.createFallbackBells();
+      }
     }
   }
 
@@ -372,6 +740,28 @@ class GlockenspielARSession extends GyroARVisualizer {
     model.position.y += size.y * 0.5;
   }
 
+  private isLikelyBellMesh(mesh: THREE.Mesh): boolean {
+    const lowercaseName = (mesh.name || '').toLowerCase();
+    if (/\b(?:bell|glocke|gong|tone)\b/.test(lowercaseName) && !/\b(?:pillar|column|support|base|frame|tower|wall|step|rope|beam|stand|clamp)\b/.test(lowercaseName)) {
+      return true;
+    }
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const size = bbox.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const minDim = Math.min(size.x, size.y, size.z);
+    const center = bbox.getCenter(new THREE.Vector3());
+
+    if (maxDim < 0.03 || maxDim > 1.6) return false;
+    if (minDim <= 0.001) return false;
+
+    const aspectRatio = maxDim / minDim;
+    const isCompact = aspectRatio < 4.5;
+    const isAboveBase = center.y > -0.4;
+
+    return isCompact && isAboveBase;
+  }
+
   private registerBellsFromModel(): void {
     if (!this.glockenspielGroup) return;
     this.bellTargets = [];
@@ -379,13 +769,17 @@ class GlockenspielARSession extends GyroARVisualizer {
 
     const candidateObjects: Array<{ object: THREE.Object3D; index: number }> = [];
     const fallbackObjects: THREE.Object3D[] = [];
-    const allMeshes: THREE.Mesh[] = [];
+    const bellLikeMeshes: THREE.Mesh[] = [];
+
     this.glockenspielGroup.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        allMeshes.push(child);
+      if (!(child instanceof THREE.Mesh)) return;
+
+      if (this.isLikelyBellMesh(child)) {
+        bellLikeMeshes.push(child);
       }
+
       const lowercaseName = (child.name || '').toLowerCase();
-      if (!/\b(?:bell|glocke)\b/.test(lowercaseName)) return;
+      if (!/\b(?:bell|glocke|gong|tone)\b/.test(lowercaseName)) return;
 
       const bellMatch = lowercaseName.match(/(\d{1,2})/);
       if (bellMatch) {
@@ -398,69 +792,66 @@ class GlockenspielARSession extends GyroARVisualizer {
       }
     });
 
-    // If no explicit named bell objects found, try a position-based heuristic
-    if (candidateObjects.length === 0) {
-      // Heuristic: pick up to 16 meshes that look like bells (smallish meshes above base)
-      const candidates = allMeshes
-        .map((m) => {
-          const bbox = new THREE.Box3().setFromObject(m);
-          const size = bbox.getSize(new THREE.Vector3());
-          return { mesh: m, bbox, size };
-        })
-        .filter((item) => {
-          // filter out very large parts (base) and extremely small floating bits
-          const maxDim = Math.max(item.size.x, item.size.y, item.size.z);
-          return maxDim > 0.02 && maxDim < 1.2;
-        });
-
-      if (candidates.length > 0) {
-        // sort by Y (vertical) descending so top rows first, then by X
-        candidates.sort((a, b) => {
-          const ay = a.bbox.getCenter(new THREE.Vector3()).y;
-          const by = b.bbox.getCenter(new THREE.Vector3()).y;
-          if (Math.abs(ay - by) > 0.01) return by - ay; // higher first
-          const ax = a.bbox.getCenter(new THREE.Vector3()).x;
-          const bx = b.bbox.getCenter(new THREE.Vector3()).x;
-          return ax - bx;
-        });
-        const take = Math.min(16, candidates.length);
-        for (let i = 0; i < take; i++) {
-          const obj = candidates[i].mesh;
-          const bellIndex = i;
-          obj.userData = { ...(obj.userData as object), bellIndex };
-          this.bellTargets.push(obj);
-          const collider = this.createBellCollider(obj, bellIndex);
-          this.bellColliders.push(collider);
-          console.log('[Glockenspiel] heuristic matched bell target', bellIndex, obj.name || obj.type, obj);
-        }
-      }
-    }
+    const bellObjectsToRegister: Array<{ object: THREE.Object3D; index: number | null }> = [];
 
     if (candidateObjects.length > 0) {
       candidateObjects.sort((a, b) => a.index - b.index);
       candidateObjects.forEach((candidate) => {
-        const bellObject = candidate.object;
-        const bellIndex = candidate.index;
-        if (bellIndex < 0 || bellIndex >= 16) return;
-
-        bellObject.userData = { ...(bellObject.userData as object), bellIndex };
-        this.bellTargets.push(bellObject);
-        const collider = this.createBellCollider(bellObject, bellIndex);
-        this.bellColliders.push(collider);
-        console.log('[Glockenspiel] bell target', bellIndex, bellObject.name || bellObject.type, bellObject);
-      });
-    } else if (fallbackObjects.length > 0) {
-      fallbackObjects.forEach((obj, candidateIndex) => {
-        const bellIndex = candidateIndex;
-        if (bellIndex >= 16) return;
-
-        obj.userData = { ...(obj.userData as object), bellIndex };
-        this.bellTargets.push(obj);
-        const collider = this.createBellCollider(obj, bellIndex);
-        this.bellColliders.push(collider);
-        console.log('[Glockenspiel] fallback bell target', bellIndex, obj.name || obj.type, obj);
+        bellObjectsToRegister.push({ object: candidate.object, index: candidate.index });
       });
     }
+
+    const alreadyRegistered = new Set<THREE.Object3D>();
+    bellObjectsToRegister.forEach(({ object }) => alreadyRegistered.add(object));
+
+    const orderedBellLikeMeshes = [...bellLikeMeshes]
+      .filter((mesh) => !alreadyRegistered.has(mesh))
+      .sort((a, b) => {
+        const bboxA = new THREE.Box3().setFromObject(a);
+        const bboxB = new THREE.Box3().setFromObject(b);
+        const centerA = bboxA.getCenter(new THREE.Vector3());
+        const centerB = bboxB.getCenter(new THREE.Vector3());
+        if (Math.abs(centerA.y - centerB.y) > 0.01) return centerB.y - centerA.y;
+        return centerA.x - centerB.x;
+      });
+
+    orderedBellLikeMeshes.forEach((mesh) => {
+      bellObjectsToRegister.push({ object: mesh, index: null });
+    });
+
+    if (bellObjectsToRegister.length === 0 && fallbackObjects.length > 0) {
+      fallbackObjects.forEach((obj) => {
+        bellObjectsToRegister.push({ object: obj, index: null });
+      });
+    }
+
+    const assignedIndices = new Set<number>();
+    let nextFallbackIndex = 0;
+
+    bellObjectsToRegister.forEach(({ object, index }) => {
+      let resolvedIndex: number | null = null;
+      if (typeof index === 'number' && Number.isInteger(index) && index >= 0 && index < 16) {
+        resolvedIndex = index;
+      }
+
+      if (resolvedIndex === null || assignedIndices.has(resolvedIndex)) {
+        while (nextFallbackIndex < 16 && assignedIndices.has(nextFallbackIndex)) {
+          nextFallbackIndex += 1;
+        }
+        if (nextFallbackIndex >= 16) return;
+        resolvedIndex = nextFallbackIndex;
+        nextFallbackIndex += 1;
+      }
+
+      if (resolvedIndex === null || resolvedIndex < 0 || resolvedIndex >= 16) return;
+
+      assignedIndices.add(resolvedIndex);
+      object.userData = { ...(object.userData as object), bellIndex: resolvedIndex };
+      this.bellTargets.push(object);
+      const collider = this.createBellCollider(object, resolvedIndex);
+      this.bellColliders.push(collider);
+      console.log('[Glockenspiel] bell target', resolvedIndex, object.name || object.type, object);
+    });
 
     if (this.bellTargets.length === 0) {
       console.warn('[Glockenspiel] No bell targets found in model');
@@ -543,7 +934,14 @@ class GlockenspielARSession extends GyroARVisualizer {
     this.lastUpdateTime = now;
     const time = now * 0.001;
 
+    // Apply keyboard-based debug movement for desktop.
+    this.updateKeyboardCameraPosition(deltaSeconds);
+
     // No automatic rotation — user-controlled rotation should persist.
+
+    if (this.activeBellHighlight && now >= this.activeBellHighlight.expiresAt) {
+      this.clearBellHighlight();
+    }
 
     if (this.waveRings.length > 0) {
       this.waveRings = this.waveRings.filter((wave) => {
@@ -565,31 +963,24 @@ class GlockenspielARSession extends GyroARVisualizer {
     const scene = this.scene;
     if (!scene) return;
 
+    if (this.isPlaybackActive) {
+      this.setBellHighlight(null, 0x000000);
+      if (this.playCooldown > 0) this.playCooldown--;
+      return;
+    }
+
     // Interaction via center-of-screen raycast
     this.interactionRaycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-    let bellIntersects = this.interactionRaycaster.intersectObjects(this.bellColliders, true);
-    if (bellIntersects.length === 0 && this.bellTargets.length > 0) {
-      bellIntersects = this.interactionRaycaster.intersectObjects(this.bellTargets, true);
-    }
-    const bellIntersect = bellIntersects.length > 0 ? bellIntersects[0] : null;
-    const isBlocked = bellIntersect
-      ? this.interactionRaycaster
-          .intersectObjects(scene.children, true)
-          .filter((hit) => {
-            const userData = hit.object.userData as any;
-            const isBellObject = typeof userData?.bellIndex === 'number' || this.isBellCollider(hit.object);
-            return !isBellObject;
-          })
-          .some((hit) => hit.distance < bellIntersect.distance - 1e-4)
-      : false;
+    const sceneIntersections = this.scene
+      ? this.interactionRaycaster.intersectObjects(this.scene.children, true)
+      : [];
+    const bellHit = findNearestVisibleBellHit(sceneIntersections, (object) => this.getBellIndexFromObject(object));
 
-    if (bellIntersect && !isBlocked) {
-      const bellIndex = this.getBellIndexFromObject(bellIntersect.object);
-      if (bellIndex !== null) {
-        this.setBellHighlight(bellIndex, 0x444400);
-        if (this.lastPlayedBell !== bellIndex || this.playCooldown === 0) {
-          this.playBellSound(bellIndex);
-        }
+    if (bellHit) {
+      const bellIndex = bellHit.bellIndex;
+      this.setBellHighlight(bellIndex, 0x444400);
+      if (this.lastPlayedBell !== bellIndex || this.playCooldown === 0) {
+        void this.playBellSound(bellIndex);
       }
     } else {
       this.setBellHighlight(null, 0x000000);
@@ -599,11 +990,19 @@ class GlockenspielARSession extends GyroARVisualizer {
   }
 
   private createBellCollider(bell: THREE.Object3D, index: number): THREE.Mesh {
+    bell.updateMatrixWorld(true);
     const bbox = new THREE.Box3().setFromObject(bell);
     const size = bbox.getSize(new THREE.Vector3());
-    const radius = Math.max(size.x, size.y, size.z) * 0.45 + 0.01;
-    const colliderGeometry = new THREE.SphereGeometry(radius, 12, 10);
-    const colliderMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.35, depthWrite: false });
+    const radius = getBellColliderRadius(size);
+    const isBellEight = index === 8;
+    const colliderGeometry = isBellEight
+      ? new THREE.BoxGeometry(
+          Math.max(0.03, size.x * 0.3),
+          Math.max(0.03, size.y * 0.4),
+          Math.max(0.03, size.z * 0.3),
+        )
+      : new THREE.SphereGeometry(Math.max(0.03, radius * 0.8), 16, 12);
+    const colliderMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.0, depthWrite: false, depthTest: false });
     const collider = new THREE.Mesh(colliderGeometry, colliderMaterial);
     collider.renderOrder = 9999;
     collider.frustumCulled = false;
@@ -611,83 +1010,64 @@ class GlockenspielARSession extends GyroARVisualizer {
     collider.userData = { bellIndex: index, isBellCollider: true };
     collider.position.set(0, 0, 0);
     bell.add(collider);
-    this.createBellDebugLabel(bell, index);
     return collider;
   }
 
-  private createBellDebugLabel(bell: THREE.Object3D, index: number): void {
-    const labelText = bell.name ? `${bell.name}` : `bell_${index}`;
-    const canvas = document.createElement('canvas');
-    const size = 128;
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#ff6666';
-    ctx.font = 'bold 26px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(labelText, size / 2, size / 2);
+  private createBellDebugLabel(_bell: THREE.Object3D, _index: number): void {
+    // Debug labels are intentionally disabled in the normal experience.
+  }
 
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    texture.needsUpdate = true;
+  private enableDebugVisuals(_enabled: boolean): void {
+    // Debug visuals are intentionally disabled in the normal experience.
+    this.debugVisualsEnabled = false;
+    this.bellColliders.forEach((collider) => {
+      const mat = collider.material as THREE.Material & { opacity?: number; transparent?: boolean; needsUpdate?: boolean };
+      mat.opacity = 0.0;
+      mat.transparent = true;
+      if (mat.needsUpdate !== undefined) mat.needsUpdate = true;
+    });
+  }
 
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.scale.set(0.5, 0.25, 1);
-    sprite.position.set(0, 0.2, 0);
-    sprite.renderOrder = 9999;
-    sprite.frustumCulled = false;
-    (sprite.material as THREE.SpriteMaterial).depthTest = false;
-    bell.add(sprite);
-    // store reference so we can toggle visibility later
-    try {
-      (bell.userData as any).debugLabel = sprite;
-    } catch (e) {
-      // ignore
+  private ensureMeshHasUniqueMaterial(mesh: THREE.Mesh): void {
+    const material = mesh.material;
+    if (Array.isArray(material)) {
+      mesh.material = material.map((entry) => {
+        if (entry && !(entry.userData as any)?.glockenspielHighlightState) {
+          const cloned = entry.clone();
+          cloned.userData = { ...cloned.userData };
+          return cloned;
+        }
+        return entry;
+      });
+      return;
+    }
+
+    if (material && !(material.userData as any)?.glockenspielHighlightState) {
+      const cloned = material.clone();
+      cloned.userData = { ...cloned.userData };
+      mesh.material = cloned;
     }
   }
 
-  private enableDebugVisuals(enabled: boolean): void {
-    this.debugVisualsEnabled = enabled;
-    // Toggle collider visibility and label visibility
-    this.bellColliders.forEach((collider) => {
-      const mat = collider.material as THREE.Material & { opacity?: number };
-      if (enabled) {
-        (mat as any).opacity = 0.45;
-        (mat as any).transparent = true;
-      } else {
-        (mat as any).opacity = 0.0;
-        (mat as any).transparent = true;
-      }
-      if ((mat as any).needsUpdate !== undefined) (mat as any).needsUpdate = true;
-      collider.visible = enabled;
-    });
+  private setBellHighlight(activeIndex: number | null, _color: number): void {
     this.bellTargets.forEach((target) => {
-      const label = (target.userData as any).debugLabel as THREE.Sprite | undefined;
-      if (label) {
-        label.visible = enabled;
-        label.frustumCulled = false;
-      }
+      const isActive = activeIndex !== null && (target.userData as any)?.bellIndex === activeIndex;
+      this.getBellHighlightMeshes(target).forEach((mesh) => {
+        this.ensureMeshHasUniqueMaterial(mesh);
+        const material = mesh.material;
+        if (Array.isArray(material)) {
+          material.forEach((entry) => this.applyBellHighlight(entry, isActive));
+        } else if (material) {
+          this.applyBellHighlight(material, isActive);
+        }
+      });
     });
-  }
 
-  private setBellHighlight(activeIndex: number | null, color: number): void {
     this.bellColliders.forEach((collider) => {
-      const index = (collider.userData as any).bellIndex;
       const material = collider.material as THREE.MeshBasicMaterial;
       if (!material) return;
-      if (activeIndex !== null && index === activeIndex) {
-        material.color.setHex(color);
-        material.opacity = 0.55;
-      } else {
-        material.color.setHex(0xff0000);
-        material.opacity = 0.25;
-      }
+      material.opacity = 0.0;
+      material.transparent = true;
       material.needsUpdate = true;
     });
   }
@@ -712,21 +1092,58 @@ class GlockenspielARSession extends GyroARVisualizer {
     if (this.sceneUpdateAnimationId !== null) {
       cancelAnimationFrame(this.sceneUpdateAnimationId);
     }
-    // Remove touch event listeners
-    window.removeEventListener('touchstart', (e) => this.onTouchStart(e));
-    window.removeEventListener('touchmove', (e) => this.onTouchMove(e));
-    window.removeEventListener('touchend', (e) => this.onTouchEnd(e));
-    document.removeEventListener('touchmove', (e) => e.preventDefault());
+    // Remove touch and keyboard event listeners
+    window.removeEventListener('touchstart', this.handleTouchStart);
+    window.removeEventListener('touchmove', this.handleTouchMove);
+    window.removeEventListener('touchend', this.handleTouchEnd);
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
+    document.removeEventListener('keydown', this.handleKeyDown);
+    document.removeEventListener('keyup', this.handleKeyUp);
+    this.scrollLock.unlock();
     if (this.audioContext) {
       this.audioContext.close();
     }
-    document.body.style.overflow = 'auto'; // restore scrolling
     super.stop();
   }
 }
 
 export const GlockenspielView: React.FC<ARViewProps> = (props) => {
   const { onNavigateHome, username, onLogin, onLogout, onNavigateProfile, onRegister, completedStations, totalStations, totalPoints, currentStationPoints = 0, onCompleteStation, isCurrentStationCompleted = false, isGuestMode = false } = props;
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const completionDialogTimerRef = useRef<number | null>(null);
+
+  const handleCompletionDialogChange = (isOpen: boolean) => {
+    // If dialog opens, hide immediately and clear any pending timers
+    if (isOpen) {
+      if (completionDialogTimerRef.current) {
+        window.clearTimeout(completionDialogTimerRef.current);
+        completionDialogTimerRef.current = null;
+      }
+      setIsCompletionDialogOpen(true);
+      return;
+    }
+
+      // If dialog closes, delay re-showing the crosshair by 2s
+    if (completionDialogTimerRef.current) {
+      window.clearTimeout(completionDialogTimerRef.current);
+      completionDialogTimerRef.current = null;
+    }
+    completionDialogTimerRef.current = window.setTimeout(() => {
+      setIsCompletionDialogOpen(false);
+      setShowCrosshair(true);
+      completionDialogTimerRef.current = null;
+    }, 2000) as unknown as number;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (completionDialogTimerRef.current) {
+        window.clearTimeout(completionDialogTimerRef.current);
+        completionDialogTimerRef.current = null;
+      }
+    };
+  }, []);
   const { language } = useLanguage();
   const glockenspielTexts = getGlockenspielTexts(language);
 
@@ -738,45 +1155,459 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
   const [hasStarted, setHasStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [showStartGuide, setShowStartGuide] = useState(false);
+  const [isPreparingExperience, setIsPreparingExperience] = useState(false);
+  const startConfirmedRef = useRef(false);
+  const [showInteractionHints, setShowInteractionHints] = useState(false);
+  const [showMelodyHint, setShowMelodyHint] = useState(false);
+  const [showCrosshair, setShowCrosshair] = useState(false);
+  const [crosshairLockedHidden, setCrosshairLockedHidden] = useState(false);
+  const [showMelodyStartPopup, setShowMelodyStartPopup] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  const melodyStartPopupHandledRef = useRef(false);
+  const [isMelodyRecording, setIsMelodyRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [showRecordingOptions, setShowRecordingOptions] = useState(false);
+  const [recordingActionError, setRecordingActionError] = useState<string | null>(null);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+  const nameListA = [
+    'Schwarzwald',
+    'Tannen',
+    'Berg',
+    'Turm',
+    'Glocken',
+    'Kirchen',
+    'Marktplatz',
+    'Morgen',
+    'Abend',
+    'Nebel',
+    'Sonne',
+    'Mond',
+    'Sterne',
+    'Wind',
+    'Wald',
+    'Zeit',
+    'Geschichte',
+    'Heimat',
+    'Reisende',
+    'Entdecker',
+    'Klänge',
+    'Echos',
+  ];
+  const nameListB = [
+    'Harmonie',
+    'Symphonie',
+    'Melodie',
+    'Klang',
+    'Lied',
+    'Echo',
+    'Ruf',
+    'Resonanz',
+    'Tanz',
+    'Legende',
+    'Geheimnis',
+    'Erinnerung',
+    'Zauber',
+    'Schatz',
+    'Traum',
+    'Funke',
+    'Rhythmus',
+    'Ouvertüre',
+  ];
+  const [chosenPrefix, setChosenPrefix] = useState(nameListA[0]);
+  const [chosenSuffix, setChosenSuffix] = useState(nameListB[0]);
+  const [pendingRecordedMelody, setPendingRecordedMelody] = useState<MelodyNote[]>([]);
+  const [savedMelodies, setSavedMelodies] = useState<Array<{ id: number; name: string; melody: string; created_at?: string | null }>>([]);
+  const [showOtherUserMelodyList, setShowOtherUserMelodyList] = useState(false);
+  const [hasSavedOnce, setHasSavedOnce] = useState(false);
+  const latestSavedMelody = savedMelodies[0];
+  const [isRecordingMenuClosed, setIsRecordingMenuClosed] = useState(false);
+  const [isSavingMelody, setIsSavingMelody] = useState(false);
+  const [isPlayingSavedMelody, setIsPlayingSavedMelody] = useState(false);
+  const [isPreviewingRecording, setIsPreviewingRecording] = useState(false);
+  const [isPlayingOtherUserMelody, setIsPlayingOtherUserMelody] = useState(false);
+
+  const otherUserMelodies = useMemo<Array<StoredMelodyEntry & { created_at?: string | null }>>(
+    () => getRecentOtherUserMelodies(savedMelodies, 10),
+    [savedMelodies]
+  );
 
   useEffect(() => {
-    if (!isAuthorized || !containerRef.current || !videoRef.current) return;
+    if (!isAuthorized || !hasSeen || !containerRef.current || !videoRef.current) return;
+
     setIsLoading(true);
-    const session = new GlockenspielARSession(containerRef.current, videoRef.current, (e) => console.error('AR init error', e));
-    sessionRef.current = session;
-    session.init().catch((err) => {
-      console.error('[GlockenspielView] AR init error:', err);
-      setInitError(err instanceof Error ? err.message : String(err));
-    }).finally(() => {
-      setIsLoading(false);
+    setStartError(null);
+
+    const session = new GlockenspielARSession(containerRef.current, videoRef.current, (e) => {
+      console.error('AR init error', e);
+      setInitError(e instanceof Error ? e.message : String(e));
     });
+
+    const initializeSession = async () => {
+      try {
+        sessionRef.current = session;
+        await session.init();
+        await session.waitForModelReady();
+      } catch (err) {
+        console.error('[GlockenspielView] AR init error:', err);
+        setInitError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void initializeSession();
+
     return () => {
       sessionRef.current?.dispose();
       sessionRef.current = null;
     };
-  }, [isAuthorized]);
+  }, [isAuthorized, hasSeen]);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      setShowInteractionHints(false);
+      setShowMelodyHint(false);
+      return;
+    }
+
+    setShowInteractionHints(true);
+    const interactionTimer = window.setTimeout(() => {
+      setShowInteractionHints(false);
+    }, 4000);
+
+    const melodyHintTimer = window.setTimeout(() => {
+      setShowMelodyHint(true);
+    }, 4000);
+
+    const melodyHintHideTimer = window.setTimeout(() => {
+      setShowMelodyHint(false);
+    }, 8000);
+
+    return () => {
+      window.clearTimeout(interactionTimer);
+      window.clearTimeout(melodyHintTimer);
+      window.clearTimeout(melodyHintHideTimer);
+    };
+  }, [hasStarted]);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      setShowMelodyStartPopup(false);
+      return;
+    }
+
+    if (isMelodyRecording || isPreviewingRecording || isPlayingOtherUserMelody || showRecordingOptions || melodyStartPopupHandledRef.current) {
+      setShowMelodyStartPopup(false);
+      return;
+    }
+
+    const popupTimer = window.setTimeout(() => {
+      setShowMelodyStartPopup(true);
+      melodyStartPopupHandledRef.current = true;
+    }, 5000);
+
+    return () => window.clearTimeout(popupTimer);
+  }, [hasStarted, isMelodyRecording, isPreviewingRecording, isPlayingOtherUserMelody, showRecordingOptions]);
+
+  useEffect(() => {
+    // Keep interaction enabled even if the station is already completed.
+    // Station completion still prevents awarding additional points (saving is still disabled),
+    // but users can re-open, record and preview for review.
+    try {
+      sessionRef.current?.setInteractionEnabled(true);
+    } catch (e) {}
+  }, [isCurrentStationCompleted]);
+
+  useEffect(() => {
+    if (!isMelodyRecording) return;
+    setRecordingSeconds(0);
+    const interval = window.setInterval(() => {
+      setRecordingSeconds((seconds) => Math.min(15, seconds + 1));
+    }, 1000);
+
+    const timer = window.setTimeout(() => {
+      const melody = sessionRef.current?.stopMelodyRecording() ?? [];
+      setIsMelodyRecording(false);
+      setPendingRecordedMelody(melody);
+      setShowRecordingOptions(true);
+      setCrosshairLockedHidden(true);
+      setShowCrosshair(false);
+    }, 15000);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timer);
+    };
+  }, [isMelodyRecording]);
+
+  useEffect(() => {
+    void loadSavedMelodies();
+  }, []);
+
+  const loadSavedMelodies = async () => {
+    try {
+      const response = await fetch(`/api/get_glockenspiel_melodies.php?station_id=${AR_VIEW_STATION_MAP['glockenspiel']}`);
+      if (!response.ok) throw new Error('Failed to fetch melodies');
+      const payload = await response.json();
+      if (payload?.success && Array.isArray(payload.melodies)) {
+        setSavedMelodies(payload.melodies.map((item: { id: number; name: string; melody: string; created_at?: string | null }) => ({
+          id: item.id,
+          name: item.name,
+          melody: item.melody,
+          created_at: item.created_at ?? null,
+        })));
+      }
+    } catch (err) {
+      console.warn('[Glockenspiel] failed to load melodies', err);
+    }
+  };
+
+  const saveRecordedMelody = async (melody: MelodyNote[], chosenMelodyName?: string | null): Promise<boolean> => {
+    if (!melody.length) return false;
+    setIsSavingMelody(true);
+    const serialized = serializeMelody(melody);
+    const payload = {
+      station_id: AR_VIEW_STATION_MAP['glockenspiel'],
+      melody: serialized,
+      name: chosenMelodyName?.trim() || 'Glockenspiel-Melodie',
+    };
+
+    try {
+      const response = await fetch('/api/save_glockenspiel_melody.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        const message = result?.message ?? 'Speichern fehlgeschlagen.';
+        console.warn('[Glockenspiel] failed to save melody', message);
+        setRecordingActionError(`Speichern fehlgeschlagen: ${message}`);
+        return false;
+      }
+
+      setSavedMelodies((current) => [
+        { id: result.id ?? Date.now(), name: payload.name, melody: serialized, created_at: new Date().toISOString() },
+        ...current,
+      ].slice(0, 6));
+      setHasSavedOnce(true);
+      setIsRecordingMenuClosed(true);
+      return true;
+    } catch (err) {
+      console.warn('[Glockenspiel] failed to save melody', err);
+      setRecordingActionError('Speichern fehlgeschlagen. Bitte versuche es erneut.');
+      return false;
+    } finally {
+      setIsSavingMelody(false);
+    }
+  };
 
   const handleConfirmSight = () => {
     setHasSeen(true);
   };
 
-  const handleBeginExperience = async () => {
-    if (!sessionRef.current) return;
-    // Set camera to fixed viewing position: higher and further away
-    sessionRef.current.setCameraPositionAndLookAt(0, 2.0, 4.0);
-    // Place tower at origin
-    try {
-      await sessionRef.current.stabilizeAndPlace(600);
-    } catch (err) {
-      sessionRef.current.setTowerPosition();
-    }
+  const handleStartGuideConfirm = () => {
+    startConfirmedRef.current = true;
+    setShowStartGuide(false);
     setHasStarted(true);
+    void handleBeginExperience();
+  };
+
+  const handlePrepareExperience = async () => {
+    if (!sessionRef.current) {
+      setStartError(glockenspielTexts.arStartErrorFallback ?? 'Failed to start the AR view.');
+      return;
+    }
+
+    setIsPreparingExperience(true);
+    setStartError(null);
+    setShowStartGuide(false);
+
+    try {
+      sessionRef.current.setCameraPositionAndLookAt(0, 2.0, 4.0);
+      try {
+        await sessionRef.current.stabilizeAndPlace(600);
+      } catch (err) {
+        sessionRef.current.setTowerPosition();
+      }
+      await sessionRef.current.waitForModelReady();
+      if (!startConfirmedRef.current) {
+        setShowStartGuide(true);
+      }
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsPreparingExperience(false);
+    }
+  };
+
+  const handleProfileButtonClick = () => {
+    if (username) {
+      onNavigateProfile?.();
+      return;
+    }
+
+    if (onLogin) {
+      onLogin();
+      return;
+    }
+
+    onRegister?.();
+  };
+
+  const handleStartMelodyRecording = () => {
+    if (!sessionRef.current) return;
+    sessionRef.current.startMelodyRecording();
+    setPendingRecordedMelody([]);
+    setShowRecordingOptions(false);
+    setIsRecordingMenuClosed(false);
+    setRecordingActionError(null);
+    setShowMelodyStartPopup(false);
+    melodyStartPopupHandledRef.current = true;
+    setCrosshairLockedHidden(false);
+    setShowCrosshair(true);
+    setRecordingSeconds(0);
+    setIsMelodyRecording(true);
+  };
+
+  const playMelodySequence = async (sequence: MelodyNote[]) => {
+    if (!sessionRef.current || !sequence.length) return;
+    try {
+      await sessionRef.current.playSequence(sequence);
+    } catch (err) {
+      console.warn('[Glockenspiel] playback failed', err);
+    }
+  };
+
+  const handlePlaySavedMelody = async (melody: string) => {
+    if (!sessionRef.current) return;
+    setIsPlayingSavedMelody(true);
+    try {
+      await playMelodySequence(parseMelody(melody));
+    } finally {
+      setIsPlayingSavedMelody(false);
+    }
+  };
+
+  const handlePlayLastSavedMelody = async () => {
+    const lastSaved = savedMelodies[0];
+    if (!lastSaved?.melody) {
+      setRecordingActionError('Keine gespeicherte Melodie vorhanden.');
+      return;
+    }
+
+    setRecordingActionError(null);
+    setShowRecordingOptions(false);
+    setIsPlayingSavedMelody(true);
+    try {
+      await playMelodySequence(parseMelody(lastSaved.melody));
+    } finally {
+      setIsPlayingSavedMelody(false);
+      setShowRecordingOptions(true);
+    }
+  };
+
+  const handlePreviewPendingMelody = async () => {
+    if (!pendingRecordedMelody.length) {
+      if (!hasSavedOnce) {
+        setRecordingActionError('Keine Aufnahme zum Anhören vorhanden.');
+        return;
+      }
+
+      await handlePlayLastSavedMelody();
+      return;
+    }
+
+    setRecordingActionError(null);
+    setShowRecordingOptions(false);
+    setIsPreviewingRecording(true);
+    try {
+      await playMelodySequence(pendingRecordedMelody);
+    } finally {
+      setIsPreviewingRecording(false);
+      setShowRecordingOptions(true);
+    }
+  };
+
+  const handleCloseOtherUserMelodyList = () => {
+    setShowOtherUserMelodyList(false);
+    setShowRecordingOptions(true);
+    setRecordingActionError(null);
+  };
+
+  const handlePlayOtherUserMelody = async (melody?: string) => {
+    const otherUserMelody = melody
+      ? { melody }
+      : getLatestOtherUserMelody(savedMelodies);
+
+    if (!otherUserMelody?.melody) {
+      setRecordingActionError('Keine Melodie eines anderen Nutzers verfügbar.');
+      return;
+    }
+
+    setRecordingActionError(null);
+    setShowRecordingOptions(false);
+    setShowOtherUserMelodyList(false);
+    setIsPlayingOtherUserMelody(true);
+    try {
+      await playMelodySequence(parseMelody(otherUserMelody.melody));
+    } finally {
+      setIsPlayingOtherUserMelody(false);
+      setShowRecordingOptions(true);
+    }
+  };
+
+
+  const handleSavePendingMelody = async () => {
+    if (!pendingRecordedMelody.length) {
+      setRecordingActionError('Keine Aufnahme zum Speichern vorhanden.');
+      return;
+    }
+
+    setRecordingActionError(null);
+    setShowRecordingOptions(false);
+    // Prepare random initial name and open name selection dialog
+    setChosenPrefix(nameListA[Math.floor(Math.random() * nameListA.length)]);
+    setChosenSuffix(nameListB[Math.floor(Math.random() * nameListB.length)]);
+    setShowNameDialog(true);
+  };
+
+  const handleRedoRecording = () => {
+    setShowRecordingOptions(false);
+    setPendingRecordedMelody([]);
+    setHasSavedOnce(false);
+    setRecordingActionError(null);
+    setShowCrosshair(true);
+    handleStartMelodyRecording();
+  };
+
+  const handleBeginExperience = async () => {
+    if (!sessionRef.current) {
+      setStartError(glockenspielTexts.arStartErrorFallback ?? 'Failed to start the AR view.');
+      return;
+    }
+
+    setIsStarting(true);
+    setStartError(null);
+
+    try {
+      setHasStarted(true);
+      setShowCrosshair(true);
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   return (
     <ARProximityGate stationId={AR_VIEW_STATION_MAP['glockenspiel']} stationName={glockenspielTexts.stationName} onNavigateBack={onNavigateHome} onAccessGranted={() => setIsAuthorized(true)}>
-      <div className="relative w-full h-full glockenspiel-ar">
-        <style>{`.glockenspiel-ar .ar-container { background-color: transparent !important; }`}</style>
+      <div className="relative w-full h-full glockenspiel-ar" style={{ backgroundColor: '#050a10' }}>
+        <style>{`.glockenspiel-ar .ar-container { background-color: #050a10 !important; z-index: 1 !important; } .glockenspiel-ar { isolation: isolate; background-color: #050a10; } .glockenspiel-ar .ar-ui-overlay { pointer-events: auto !important; } .glockenspiel-ar .ar-ui-overlay * { pointer-events: auto !important; } .glockenspiel-ar .glockenspiel-local-overlay { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 1000 !important; pointer-events: none; } .glockenspiel-ar .glockenspiel-local-overlay .glockenspiel-action-stack { bottom: calc(6.6rem + max(12px, env(safe-area-inset-bottom))) !important; } @media (max-width: 480px) { .glockenspiel-ar .glockenspiel-local-overlay .glockenspiel-action-stack { bottom: calc(5.7rem + max(10px, env(safe-area-inset-bottom))) !important; } }`}</style>
         <ARComponentBase
           onNavigateHome={onNavigateHome}
           closeARViewKey="closeGlockenspielView"
@@ -795,7 +1626,9 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           currentStationPoints={currentStationPoints}
           onCompleteStation={onCompleteStation}
           isCurrentStationCompleted={isCurrentStationCompleted}
+          onCompletionDialogChange={handleCompletionDialogChange}
           isGuestMode={isGuestMode}
+          elevateOverlay
         />
 
         {isLoading && (
@@ -807,7 +1640,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
-        {!initError && !isLoading && (
+        {!initError && !isLoading && showCrosshair && !crosshairLockedHidden && !(isCompletionDialogOpen || showStartGuide || showMelodyStartPopup || showOtherUserMelodyList) && (
           <div className="pointer-events-none fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2" style={{ zIndex: 9999 }}>
             <div className="relative z-50 w-12 h-12">
               <div className="absolute inset-0 rounded-full border border-yellow-400/80 blur-sm opacity-80" />
@@ -820,38 +1653,502 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
+        {isRecordingMenuClosed && !showRecordingOptions && !showNameDialog && !showOtherUserMelodyList && hasStarted &&
+          createPortal(
+            <div
+              className="flex flex-col items-start gap-2"
+              style={{
+                position: 'fixed',
+                left: '12px',
+                bottom: 'calc(6.2rem + env(safe-area-inset-bottom))',
+                zIndex: 30001,
+                pointerEvents: 'auto',
+              }}
+            >
+              <button
+                type="button"
+                className="rounded-2xl border border-border bg-primary px-4 py-3 text-sm font-semibold text-white shadow-2xl"
+                style={{ minWidth: '160px', zIndex: 30002 }}
+                onClick={() => {
+                  setShowRecordingOptions(true);
+                  setIsRecordingMenuClosed(false);
+                  setShowCrosshair(false);
+                  setCrosshairLockedHidden(true);
+                  setShowOtherUserMelodyList(false);
+                  setShowNameDialog(false);
+                }}
+              >
+                Menü öffnen
+              </button>
+            </div>,
+            document.body
+          )}
+
         {/* Intro overlays */}
         {!hasSeen && !initError && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="pointer-events-auto bg-black/50 p-6 rounded-lg text-white text-center">
-              <h2 className="text-lg font-bold mb-2">Ich sehe das Glockenspiel</h2>
-              <p className="text-sm mb-4">Bitte richte die Kamera so aus, dass du das Glockenspiel im Raum siehst.</p>
-              <div className="flex gap-2 justify-center">
-                <button className="bg-white text-black px-4 py-2 rounded" onClick={handleConfirmSight}>Ich sehe das Glockenspiel</button>
-              </div>
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10005,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              pointerEvents: 'auto',
+              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(460px, !isLoading && 100%)',
+                borderRadius: '16px',
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '20px',
+                textAlign: 'center',
+              }}
+            >
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)' }}>
+                {glockenspielTexts.arStartTitle}
+              </h2>
+              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
+                {glockenspielTexts.arPermissionDescription}
+              </p>
+              <button
+                onClick={handleConfirmSight}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--color-primary)',
+                  color: 'var(--color-white)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {glockenspielTexts.arPermissionButton}
+              </button>
             </div>
           </div>
         )}
 
-        {hasSeen && !hasStarted && (
-          <div className="absolute inset-0 flex items-end justify-center p-6 pointer-events-none">
-            <div className="pointer-events-auto bg-white/90 p-4 rounded-lg text-center">
-              <p className="mb-3">Bereit? Platziere das Glockenspiel 3 Meter vor dir.</p>
-              <div className="flex gap-2 justify-center">
-                <button className="bg-primary text-white px-4 py-2 rounded" onClick={handleBeginExperience}>Mit dem Erlebnis beginnen</button>
-              </div>
+        {hasSeen && !hasStarted && !showStartGuide && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 14050,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              pointerEvents: 'auto',
+              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(460px, 100%)',
+                borderRadius: '16px',
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '20px',
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
+                {glockenspielTexts.arStartDescription}
+              </p>
+              {startError && (
+                <p style={{ marginBottom: '12px', color: '#ffd3d3', fontWeight: 700 }}>
+                  {startError}
+                </p>
+              )}
+              <button
+                onClick={() => void handlePrepareExperience()}
+                disabled={isPreparingExperience || isStarting}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--color-primary)',
+                  color: 'var(--color-white)',
+                  fontWeight: 700,
+                  cursor: isPreparingExperience || isStarting ? 'default' : 'pointer',
+                  opacity: isPreparingExperience || isStarting ? 0.75 : 1,
+                }}
+              >
+                {isPreparingExperience ? 'Wird geladen…' : (isStarting ? glockenspielTexts.arStartingButton : glockenspielTexts.arStartButton)}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showStartGuide && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 14050,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              pointerEvents: 'auto',
+              background: 'rgba(5, 10, 16, 0.72)',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(460px, 100%)',
+                borderRadius: '16px',
+                background: 'rgba(0,0,0,0.72)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '20px',
+                textAlign: 'center',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
+                Glockenspiel AR
+              </h3>
+              <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.95)', lineHeight: 1.5 }}>
+                Richte das Fadenkreuz auf eine Glocke, um Klänge zu erzeugen.
+              </p>
+              <button
+                onClick={handleStartGuideConfirm}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--color-primary)',
+                  color: 'var(--color-white)',
+                  fontWeight: 700,
+                  cursor: isCurrentStationCompleted ? 'default' : 'pointer',
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isPreparingExperience && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-none">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-white mb-4 mx-auto" />
+              <p className="text-white text-sm">Lädt Glockenspiel-Mesh…</p>
             </div>
           </div>
         )}
 
         {hasStarted && (
-          <>
-            <div className="pointer-events-none absolute bottom-6 left-0 right-0 text-center px-4">
-              <p className="text-sm text-white/95 drop-shadow-lg font-semibold">
-                Richte das Fadenkreuz auf eine Glocke, um sie zum Klingen zu bringen.
-              </p>
+          <div className="glockenspiel-local-overlay absolute inset-0">
+            <div className="pointer-events-auto absolute inset-0 z-[90]">
+              {showInteractionHints && (
+                <div className="pointer-events-none absolute left-1/2 top-[6rem] z-[90] flex w-[min(92vw,460px)] -translate-x-1/2 justify-center px-3 sm:px-4" style={{ top: 'calc(6rem + env(safe-area-inset-top))' }}>
+                  <div className="w-full rounded-2xl border border-border bg-white px-4 py-3 shadow-sm text-foreground">
+                    <div className="flex items-stretch justify-between gap-3 text-sm">
+                      <div className="flex flex-1 items-center justify-center gap-2">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">
+                          <img src="/zoomAnimation.gif" alt="Zoom" className="h-8 w-8 object-contain" />
+                        </div>
+                        <div className="flex min-h-[2.25rem] flex-col justify-center text-center sm:text-left">
+                          <div className="font-semibold text-foreground">Zoomen</div>
+                        
+                        </div>
+                      </div>
+                      <div className="flex flex-1 items-center justify-center gap-2">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/10">
+                          <img src="/dragAnimation.gif" alt="Drehen" className="h-14 w-14 object-contain" />
+                        </div>
+                        <div className="flex min-h-[2.25rem] flex-col justify-center text-center sm:text-left">
+                          <div className="font-semibold text-foreground">Drehen</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showMelodyStartPopup && !isMelodyRecording && !showRecordingOptions && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 14000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                    pointerEvents: 'auto',
+                    background: 'rgba(5, 10, 16, 0.72)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 'min(460px, 100%)',
+                      borderRadius: '16px',
+                      background: 'rgba(0,0,0,0.72)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      padding: '20px',
+                      textAlign: 'center',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
+                      Melodie aufnehmen
+                    </h3>
+                    <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.95)', lineHeight: 1.5 }}>
+                      Tippe auf Aufnahme starten, um die 15s lange Aufnahme zu beginnen.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleStartMelodyRecording}
+                      className="w-full rounded-2xl border border-border bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm"
+                    >
+                      Aufnahme starten
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showRecordingOptions && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 14000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                    pointerEvents: 'auto',
+                    background: 'rgba(5, 10, 16, 0.72)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 'min(460px, 100%)',
+                      borderRadius: '16px',
+                      background: 'rgba(0,0,0,0.72)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      padding: '20px',
+                      textAlign: 'center',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-white">Aufnahme beendet</div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRecordingOptions(false);
+                          setIsRecordingMenuClosed(true);
+                          setCrosshairLockedHidden(false);
+                          setShowCrosshair(true);
+                        }}
+                        className="rounded-full border border-border bg-white/10 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        X
+                      </button>
+                    </div>
+                    {recordingActionError && (
+                      <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-white">
+                        {recordingActionError}
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-col gap-2">
+                      {pendingRecordedMelody.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => void handleSavePendingMelody()}
+                          disabled={isSavingMelody}
+                          className="rounded-xl border border-border bg-primary px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {isSavingMelody ? 'Wird gespeichert…' : 'Speichern'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void handlePlayLastSavedMelody()}
+                        disabled={isPlayingOtherUserMelody || isPreviewingRecording || isPlayingSavedMelody || !savedMelodies.length}
+                        className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {isPlayingSavedMelody
+                          ? 'Wird abgespielt…'
+                          : latestSavedMelody?.name
+                            ? `Letzten Song "${latestSavedMelody.name}" anhören`
+                            : 'Letzten Song anhören'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRedoRecording}
+                        className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground"
+                      >
+                        Noch einmal aufnehmen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handlePreviewPendingMelody()}
+                        disabled={isPreviewingRecording}
+                        className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {isPreviewingRecording ? 'Wird abgespielt…' : 'Anhören'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showNameDialog && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 15000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                    pointerEvents: 'auto',
+                    background: 'rgba(5, 10, 16, 0.85)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 'min(520px, 100%)',
+                      borderRadius: '12px',
+                      background: 'rgba(0,0,0,0.9)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      padding: '18px',
+                      textAlign: 'center',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    <div className="text-sm font-semibold text-white mb-2">Name für Melodie wählen</div>
+                    <div className="text-xs text-slate-300 text-white mb-4">Wähle einen Namen für deine Melodie aus.</div>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 12, flexWrap: 'wrap', overflowX: 'auto' }}>
+                      <select value={chosenPrefix} onChange={(e) => setChosenPrefix(e.target.value)} className="rounded-md p-2 bg-black text-white border-none min-w-0 flex-1 max-w-[220px]">
+                        {nameListA.map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                      <select value={chosenSuffix} onChange={(e) => setChosenSuffix(e.target.value)} className="rounded-md p-2 bg-black text-white border-none min-w-0 flex-1 max-w-[220px]">
+                        {nameListB.map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="text-lg font-bold text-white mb-4">{`${chosenPrefix} ${chosenSuffix}`}</div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                      <button type="button" onClick={() => {
+                        setChosenPrefix(nameListA[Math.floor(Math.random() * nameListA.length)]);
+                        setChosenSuffix(nameListB[Math.floor(Math.random() * nameListB.length)]);
+                      }} className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground">Zufall</button>
+                      <button type="button" onClick={async () => {
+                        const name = `${chosenPrefix} ${chosenSuffix}`;
+                        setShowNameDialog(false);
+                        setIsSavingMelody(true);
+                        const ok = await saveRecordedMelody(pendingRecordedMelody, name);
+                        setIsSavingMelody(false);
+                        if (ok) {
+                          setPendingRecordedMelody([]);
+                          setHasSavedOnce(true);
+                          setCrosshairLockedHidden(false);
+                          setShowCrosshair(true);
+                        } else {
+                          setShowRecordingOptions(true);
+                        }
+                      }} disabled={isSavingMelody} className="rounded-xl border border-border bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-70">{isSavingMelody ? 'Wird gespeichert…' : 'OK'}</button>
+                      <button type="button" onClick={() => { setShowNameDialog(false); setShowRecordingOptions(true); }} className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground">Abbrechen</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showOtherUserMelodyList && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 14000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                    pointerEvents: 'auto',
+                    background: 'rgba(5, 10, 16, 0.85)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 'min(520px, 100%)',
+                      maxHeight: 'min(80vh, 660px)',
+                      borderRadius: '16px',
+                      background: 'rgba(0,0,0,0.88)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      padding: '20px',
+                      textAlign: 'left',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-white">Letzte Melodien anderer Nutzer</div>
+                        <div className="text-xs text-slate-300 text-white">Wähle eine Melodie zum Abspielen aus.</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseOtherUserMelodyList}
+                        className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-foreground"
+                      >
+                        Schließen
+                      </button>
+                    </div>
+                    {otherUserMelodies.length === 0 ? (
+                      <div className="rounded-2xl border border-border bg-slate-900 px-4 py-6 text-sm text-slate-300 text-white">
+                        Keine Melodien verfügbar.
+                      </div>
+                    ) : (
+                      <div className="space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+                        {otherUserMelodies.map((entry) => (
+                          <div
+                            key={entry.id ?? `${entry.created_at}-${entry.name}`}
+                            className="rounded-2xl border border-border bg-slate-950 p-3"
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-semibold text-white">{entry.created_at ? new Date(entry.created_at).toLocaleString('de-DE') : 'Kein Datum'}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => void handlePlayOtherUserMelody(entry.melody)}
+                                disabled={isPlayingOtherUserMelody || isPreviewingRecording || isPlayingSavedMelody}
+                                className="rounded-xl border border-border bg-primary px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                                {isPlayingOtherUserMelody ? 'Wird abgespielt…' : 'Abspielen'}
+                              </button>
+                            </div>
+                            <div className="text-xs text-slate-300">{entry.name ?? 'Glockenspiel-Melodie'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {isMelodyRecording && (
+                <div className="glockenspiel-action-stack pointer-events-auto absolute bottom-[6.2rem] left-3 z-[95] flex flex-col items-start gap-2" style={{ bottom: 'calc(6.2rem + env(safe-area-inset-bottom))' }}>
+                  <div className="rounded-2xl border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground shadow-sm">
+                    Aufnahme läuft… {recordingSeconds}s
+                  </div>
+                </div>
+              )}
             </div>
-          </>
+          </div>
         )}
 
         {initError && (

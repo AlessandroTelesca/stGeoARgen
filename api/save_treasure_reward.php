@@ -33,9 +33,10 @@ if ($rewardKey === '') {
 $db = getDB();
 
 // User muss existieren
-$stmt = $db->prepare('SELECT id FROM users WHERE id = ?');
+$stmt = $db->prepare('SELECT id, total_points FROM users WHERE id = ?');
 $stmt->execute([$userId]);
-if (!$stmt->fetch()) {
+$user = $stmt->fetch();
+if (!$user) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
@@ -51,6 +52,7 @@ if ($existing) {
         'already_claimed' => true,
         'points_awarded' => 0,
         'points_total' => (int)$existing['points'],
+        'total_points' => (int)$user['total_points'],
     ]);
 }
 
@@ -60,10 +62,18 @@ $stmt = $db->prepare(
 );
 $stmt->execute([$userId, $rewardKey, $points]);
 
+$db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
+   ->execute([$points, $userId]);
+
+$userPointsStmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');
+$userPointsStmt->execute([$userId]);
+$userPoints = $userPointsStmt->fetch();
+
 sendResponse([
     'success' => true,
     'message' => 'Schatzkisten-Belohnung gespeichert.',
     'already_claimed' => false,
     'points_awarded' => $points,
     'points_total' => $points,
+    'total_points' => (int)($userPoints['total_points'] ?? 0),
 ]);

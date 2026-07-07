@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect, RefObject } from 'react';
-import { createPortal } from 'react-dom';
 import { ARTopBar } from './ARTopBar';
 import { ARProgressBar } from './ARProgressBar';
 import { ARProfileMenu } from './ARProfileMenu';
@@ -47,16 +46,10 @@ interface ARComponentBaseProps {
   onCompleteInitiated?: () => void;
   /** Callback wenn Abschluss versucht wird, aber noch blockiert ist */
   onCompleteBlocked?: () => void;
+  /** Callback wenn der Abschluß-Dialog geöffnet/geschlossen wird */
+  onCompletionDialogChange?: (isOpen: boolean) => void;
   /** Guest mode - no points awarded */
   isGuestMode?: boolean;
-  /**
-   * Hebt das UI-Overlay (Topbar/Account-Widget/Menü) per Portal aus dem
-   * `.ar-container` heraus nach `document.body`. Nötig in Views, deren
-   * Inhalts-Container als fixed Geschwister von `.ar-container` gerendert
-   * werden – sonst bleibt das Overlay im Stacking-Context des Containers
-   * gefangen und liegt trotz höherem z-index unter den Containern.
-   */
-  elevateOverlay?: boolean;
 }
 
 // Export Stations aus zentraler Config
@@ -157,8 +150,8 @@ export const ARComponentBase = ({
   ignoreCompleteTimer = false,
   onCompleteInitiated,
   onCompleteBlocked,
+  onCompletionDialogChange,
   isGuestMode = false,
-  elevateOverlay = false,
 }: ARComponentBaseProps) => {
   const { t } = useLanguage();
   const isLoggedIn = Boolean(username);
@@ -277,6 +270,10 @@ export const ARComponentBase = ({
     setHasClickedComplete(false);
   }, [currentStationId]);
 
+  useEffect(() => {
+    onCompletionDialogChange?.(showCompletionDialog);
+  }, [showCompletionDialog, onCompletionDialogChange]);
+
   const canCompleteStation = ignoreCompleteTimer || elapsedSeconds >= MIN_SECONDS_BEFORE_COMPLETE;
 
   // "Station abschließen" clicked → Progress speichern + Dialog zeigen
@@ -326,11 +323,31 @@ export const ARComponentBase = ({
 
   const remainingStations = Math.max(0, (totalStations || 1) - (completedStations + 1));
 
-  // UI-Overlay (Topbar/Account-Widget/Progress/Menü). Wird bei elevateOverlay
-  // per Portal nach document.body gehoben, damit es nicht im Stacking-Context
-  // von .ar-container gefangen bleibt (siehe elevateOverlay-Doc oben).
-  const uiOverlay = (
-    <div className="ar-ui-overlay">
+  return (
+    <div className="ar-container" ref={overlayRootRef}>
+      {/* Video-Hintergrund für Kamera-Stream */}
+      <video
+        ref={videoRef}
+        className="ar-video"
+        playsInline
+        muted
+      />
+
+      {/* AR Container für Three.js */}
+      <div
+        ref={containerRef}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          zIndex: 5,
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* UI Overlay */}
+      <div className="ar-ui-overlay">
         <ARTopBar
           onNavigateHome={handleNavigateHome}
           onProfileClick={() => setProfileMenuOpen(!profileMenuOpen)}
@@ -385,33 +402,6 @@ export const ARComponentBase = ({
           }}
         />
       </div>
-  );
-
-  return (
-    <div className="ar-container" ref={overlayRootRef}>
-      {/* Video-Hintergrund für Kamera-Stream */}
-      <video
-        ref={videoRef}
-        className="ar-video"
-        playsInline
-        muted
-      />
-
-      {/* AR Container für Three.js */}
-      <div
-        ref={containerRef}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-          zIndex: 5,
-          pointerEvents: 'none'
-        }}
-      />
-
-      {/* UI Overlay – optional per Portal aus dem Container herausgehoben */}
-      {elevateOverlay ? createPortal(uiOverlay, document.body) : uiOverlay}
 
       {/* Completion Dialog */}
       <ARStationCompletionDialog
