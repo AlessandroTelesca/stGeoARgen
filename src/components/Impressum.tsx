@@ -144,7 +144,7 @@ export function Impressum({ onBack }: ImpressumProps) {
 
             {[
               { name: 'Alessandro Telesca', role: isDE ? 'Entwicklung' : 'Development', linkedin: 'https://www.linkedin.com/in/alessandro-telesca-086784256/' },
-              { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling', linkedin: null },
+              { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling', linkedin: 'https://www.linkedin.com/in/tobias-both-5b7838255/' },
               { name: 'Minh Khanh Nguyen', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
               { name: 'Mu-Hong Noah Basset', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
             ].map((person) => (
