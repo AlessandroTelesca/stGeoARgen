@@ -488,7 +488,7 @@ const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
                                         alignItems: 'center',
                                         justifyContent: 'flex-start',
                                         gap: `${Math.max(5, btnSize * 0.1)}px`,
-                                        padding: `${Math.max(8, btnSize * 0.03)}px ${Math.max(10, btnSize * 0.2)}px`,
+                                        padding: `${Math.max(8, btnSize * 0.01)}px ${Math.max(10, btnSize * 0.01)}px`,
                                         width: `${btnW}px`,
                                         height: `${btnH}px`,
                                         borderRadius: '14px',
