@@ -54,16 +54,31 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <button
+          <motion.button
             onClick={() => onNavigate('home')}
             className="flex items-center gap-3 min-w-0 rounded-full -ml-1 pr-2 pl-1 py-1 pressable"
             aria-label={t('home')}
+            initial="rest"
+            animate="rest"
+            whileHover="hover"
+            whileTap="tap"
           >
             <span className="brand-gradient w-10 h-10 rounded-full flex items-center justify-center shadow-primary flex-shrink-0">
-              <img src="/Logo.svg" alt="" className="w-6 h-6 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              {/* Georgi neigt neugierig den Kopf (Hover) und hüpft beim Antippen */}
+              <motion.img
+                src="/Logo.svg"
+                alt=""
+                className="w-6 h-6 object-contain"
+                style={{ filter: 'brightness(0) invert(1)' }}
+                variants={{
+                  rest: { rotate: 0, y: 0 },
+                  hover: { rotate: -10, y: 0, transition: { type: 'spring', duration: 0.4, bounce: 0.4 } },
+                  tap: { rotate: -6, y: -3, transition: { type: 'spring', duration: 0.25, bounce: 0.5 } },
+                }}
+              />
             </span>
             <h1 className="text-[15px] font-bold tracking-tight text-foreground truncate">{title}</h1>
-          </button>
+          </motion.button>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}

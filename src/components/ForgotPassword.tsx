@@ -185,7 +185,9 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
         <motion.div
           className="flex items-start gap-3 p-4 bg-destructive/8 border border-destructive/20 rounded-2xl text-sm text-destructive"
           initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
+          // Fehlermeldung schüttelt kurz den Kopf
+          animate={{ opacity: 1, y: 0, x: [0, -6, 5, -3, 2, 0] }}
+          transition={{ duration: 0.22, x: { duration: 0.38, delay: 0.05 } }}
           exit={{ opacity: 0, y: -6 }}
           role="alert"
         >

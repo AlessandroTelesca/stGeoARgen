@@ -2,6 +2,7 @@ import { Trophy, Flag, Gift, Lock, Check, ChevronRight, ArrowRight, QrCode } fro
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PathCard } from './PathCard';
+import { CountUp } from './CountUp';
 
 interface Path {
   id: string;
@@ -73,7 +74,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
         {/* Reise-Karte */}
         <motion.button
           onClick={() => (isLoggedIn ? onNavigate?.('progress') : onNavigateToLogin?.())}
-          className="brand-gradient relative w-full overflow-hidden rounded-[28px] p-6 text-left text-white shadow-lg pressable"
+          className="group brand-gradient relative w-full overflow-hidden rounded-[28px] p-6 text-left text-white shadow-lg pressable"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.08, ease }}
@@ -98,7 +99,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 </p>
               </div>
               <span className="flex-shrink-0 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-sm font-bold tabular-nums">
-                {isLoggedIn ? `${Math.round(completionPercentage)}%` : <Lock className="w-4 h-4 my-0.5" />}
+                {isLoggedIn ? <><CountUp value={Math.round(completionPercentage)} delay={0.3} />%</> : <Lock className="w-4 h-4 my-0.5" />}
               </span>
             </div>
 
@@ -113,7 +114,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                       className={`relative flex items-center justify-center rounded-full w-8 h-8 flex-shrink-0 ${done
                         ? 'bg-white text-primary shadow-md'
                         : isNext
-                          ? 'bg-white/15 ring-2 ring-white'
+                          ? 'bg-white/15 ring-2 ring-white text-white mi-beacon'
                           : 'bg-white/12 ring-1 ring-white/25'
                         }`}
                       initial={{ scale: 0.6, opacity: 0 }}
@@ -145,7 +146,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                   : t('loginNow')}
               </p>
               <span className="w-9 h-9 rounded-full bg-white text-primary flex items-center justify-center flex-shrink-0 shadow-md">
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 nudge-x" />
               </span>
             </div>
           </div>
@@ -164,7 +165,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               {isLoggedIn ? <Trophy className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </span>
             <span className="min-w-0">
-              <p className="text-xl font-extrabold leading-tight tabular-nums">{isLoggedIn ? totalPoints : '—'}</p>
+              <p className="text-xl font-extrabold leading-tight tabular-nums">{isLoggedIn ? <CountUp value={totalPoints} delay={0.25} /> : '—'}</p>
               <p className="text-xs text-muted-foreground truncate">{t('points')}</p>
             </span>
           </motion.button>
@@ -193,10 +194,10 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             {paths.length > 0 && (
               <button
                 onClick={onNavigateToPaths}
-                className="text-sm font-semibold text-primary hover:text-primary-dark transition-colors flex items-center gap-0.5 -mr-1 px-1 py-1"
+                className="group text-sm font-semibold text-primary hover:text-primary-dark transition-colors flex items-center gap-0.5 -mr-1 px-1 py-1"
               >
                 {t('viewAll')}
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 nudge-x" />
               </button>
             )}
           </div>
@@ -233,7 +234,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 <h4 className="font-bold">{t('qrCodeScan')}</h4>
                 <p className="text-sm text-muted-foreground leading-snug mt-0.5">{t('qrCodeScanDesc')}</p>
               </span>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary nudge-x flex-shrink-0" />
             </button>
           )}
 
@@ -244,7 +245,8 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
             className="w-full flex items-center gap-4 p-4 text-left hover:bg-muted/50 transition-colors group"
           >
             <span className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${hasUnlockedVoucher ? 'bg-gold-soft text-gold' : 'bg-muted text-muted-foreground'}`}>
-              <Gift className="w-6 h-6" />
+              {/* Freigeschalteter Gutschein: das Geschenk wackelt einmal kurz */}
+              <Gift className={`w-6 h-6 ${hasUnlockedVoucher ? 'mi-wiggle' : ''}`} />
             </span>
             <span className="flex-1 min-w-0">
               <h4 className="font-bold">
@@ -274,7 +276,7 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 </span>
               )}
             </span>
-            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary nudge-x flex-shrink-0" />
           </button>
         </motion.section>
       </div>

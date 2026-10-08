@@ -43,7 +43,7 @@ export function PathCard({
   return (
     <motion.button
       onClick={onClick}
-      className="group w-full surface-card text-left overflow-hidden transition-shadow hover:shadow-md"
+      className="group w-full surface-card text-left overflow-hidden pressable hover:shadow-md"
       whileTap={{ scale: 0.985 }}
     >
       {/* Bild */}
@@ -118,7 +118,7 @@ export function PathCard({
 
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-white transition-colors group-hover:bg-primary-dark">
           <span className="text-sm font-bold">{t('start')}</span>
-          <ArrowRight className="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="w-5 h-5 flex-shrink-0 nudge-x" />
         </div>
       </div>
     </motion.button>

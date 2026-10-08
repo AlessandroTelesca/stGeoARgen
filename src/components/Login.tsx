@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Check } from 'lucide-react';
+import { IconSwap } from './ui/icon-swap';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -180,7 +181,9 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
               className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <IconSwap swapKey={showPassword ? 'hide' : 'show'}>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </IconSwap>
             </button>
           </div>
           {fieldError(touched.password ? errors.password : undefined)}
@@ -218,7 +221,9 @@ export function Login({ onLogin, onNavigateBack, onNavigateToRegister, onNavigat
             <motion.div
               className="flex items-start gap-3 p-4 bg-destructive/8 border border-destructive/20 rounded-2xl text-sm text-destructive"
               initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
+              // Fehlermeldung schüttelt kurz den Kopf
+              animate={{ opacity: 1, y: 0, x: [0, -6, 5, -3, 2, 0] }}
+              transition={{ duration: 0.22, x: { duration: 0.38, delay: 0.05 } }}
               exit={{ opacity: 0, y: -6 }}
               role="alert"
             >

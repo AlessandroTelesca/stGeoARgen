@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Gift, Lock, MapPin, Trophy, Copy, X } from 'lucide-react';
+import { Gift, Lock, MapPin, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { VoucherRedeemPage } from './VoucherRedeemPage';
 import { apiRedeemVoucherFromShop } from '../services/api';
 import { BackLink } from './PageHeader';
+import { CopyCodeButton } from './CopyCodeButton';
 
 interface Voucher {
   id: number;
@@ -50,7 +51,6 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
   const [createdVoucherTitle, setCreatedVoucherTitle] = useState<string | null>(null);
   const [createdVoucherDescription, setCreatedVoucherDescription] = useState<string | null>(null);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
   const [confirmPurchase, setConfirmPurchase] = useState<Voucher | null>(null);
   const [availableVouchers, setAvailableVouchers] = useState<Voucher[]>(vouchers);
   const [activeTab, setActiveTab] = useState<TabType>('rewards');
@@ -63,21 +63,8 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
     setCreatedVoucherTitle(null);
     setCreatedVoucherDescription(null);
     setDialogMessage(null);
-    setCopiedCode(false);
   };
 
-  const handleCopyCode = async () => {
-    if (!createdVoucherCode) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(createdVoucherCode);
-      setCopiedCode(true);
-    } catch {
-      setCopiedCode(false);
-    }
-  };
 
   const handleRedeemVoucher = (voucher: Voucher) => {
     if (!userId) {
@@ -228,10 +215,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                       <p className="mt-4 text-sm text-muted-foreground">Dein Code</p>
                       <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
                         <span className="text-lg font-bold tracking-[0.2em] text-primary font-mono break-all">{createdVoucherCode}</span>
-                        <Button variant="outline" size="sm" onClick={handleCopyCode}>
-                          <Copy className="h-4 w-4" />
-                          {copiedCode ? 'Kopiert' : 'Code kopieren'}
-                        </Button>
+                        <CopyCodeButton code={createdVoucherCode} />
                       </div>
                     </div>
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">

@@ -50,13 +50,13 @@ export function SettingsRow({ icon, title, description, onClick, trailing, tone 
         <span className={`block font-semibold ${titleTone}`}>{title}</span>
         {description && <span className="block text-sm text-muted-foreground leading-snug mt-0.5">{description}</span>}
       </span>
-      {trailing ?? (onClick ? <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" /> : null)}
+      {trailing ?? (onClick ? <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 nudge-x" /> : null)}
     </>
   );
 
   if (onClick) {
     return (
-      <button onClick={onClick} className="w-full min-h-[68px] px-4 py-3 flex items-center gap-3.5 hover:bg-muted/60 active:bg-muted transition-colors">
+      <button onClick={onClick} className="group w-full min-h-[68px] px-4 py-3 flex items-center gap-3.5 hover:bg-muted/60 active:bg-muted transition-colors">
         {content}
       </button>
     );
@@ -72,10 +72,11 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
       aria-label={label}
       onClick={onChange}
       disabled={disabled}
-      className={`relative w-[52px] h-8 rounded-full flex-shrink-0 transition-colors duration-200 ${checked ? 'bg-primary' : 'bg-switch-background'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+      className={`group relative w-[52px] h-8 rounded-full flex-shrink-0 transition-colors duration-200 ${checked ? 'bg-primary' : 'bg-switch-background'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
     >
+      {/* Daumen streckt sich beim Drücken leicht in Schaltrichtung (wie bei iOS) */}
       <span
-        className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-200 ease-out ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+        className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-[translate,width] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] group-enabled:group-active:w-7 ${checked ? 'translate-x-5 group-enabled:group-active:translate-x-4' : 'translate-x-0'}`}
       />
     </button>
   );

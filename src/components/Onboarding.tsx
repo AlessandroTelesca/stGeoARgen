@@ -169,10 +169,10 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
 
             <button
               onClick={handleNext}
-              className="h-14 flex-1 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold shadow-primary transition-colors flex items-center justify-center gap-2 pressable whitespace-nowrap"
+              className="group h-14 flex-1 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold shadow-primary transition-colors flex items-center justify-center gap-2 pressable whitespace-nowrap"
             >
               <span>{isLastStep ? t('letsGo') : t('next')}</span>
-              {isLastStep ? <Trophy className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              {isLastStep ? <Trophy className="w-5 h-5" /> : <ChevronRight className="w-5 h-5 nudge-x" />}
             </button>
           </div>
         </div>

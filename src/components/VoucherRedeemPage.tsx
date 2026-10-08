@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { motion, AnimatePresence } from 'motion/react';
-import { Copy, Check, Gift, MapPin, X } from 'lucide-react';
+import { Check, Gift, MapPin, X } from 'lucide-react';
+import { CopyCodeButton } from './CopyCodeButton';
 import { apiGetUserVouchers } from '../services/api';
 
 interface VoucherListItem {
@@ -27,7 +28,6 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
   const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
   const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showCodePopup, setShowCodePopup] = useState(false);
   const [popupCode, setPopupCode] = useState<string | null>(null);
   const [popupDescription, setPopupDescription] = useState<string | null>(null);
@@ -80,16 +80,6 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     setPopupDescription(null);
   };
 
-  const copyToClipboard = async () => {
-    if (!popupCode) return;
-    try {
-      await navigator.clipboard.writeText(popupCode);
-      setCopiedId(Date.now()); // Verwende Timestamp statt ID
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (e) {
-      console.error('Fehler beim Kopieren');
-    }
-  };
 
   const formatDate = (value: string, withTime = false) => {
     const date = new Date(value.replace(' ', 'T'));
@@ -257,10 +247,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                   <p className="text-sm text-muted-foreground">Dein Code</p>
                   <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
                     <span className="text-xl font-bold tracking-[0.2em] text-primary font-mono break-all">{popupCode}</span>
-                    <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                      <Copy className="h-4 w-4" />
-                      {copiedId ? 'Kopiert' : 'Code kopieren'}
-                    </Button>
+                    {popupCode && <CopyCodeButton code={popupCode} />}
                   </div>
                 </div>
                 <div className="flex justify-end">

@@ -1165,6 +1165,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                           key={`lesson-answer-${soundType}`}
                           onClick={() => handleMediumLessonAnswerSelection(soundType)}
                           disabled={isWrongSelection || hasAnswered}
+                          className={isWrongSelection ? 'mi-shake' : isSelected ? 'mi-pop' : undefined}
                           style={{
                             border: isWrongSelection
                               ? '1px solid var(--color-danger)'
@@ -1408,6 +1409,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                             key={`${option}-${index}`}
                             onClick={() => handleAnswerSelection(index)}
                             disabled={isWrongSelection}
+                            className={isWrongSelection ? 'mi-shake' : isSelectedCorrect ? 'mi-pop' : undefined}
                             style={{
                               border: isWrongSelection
                                 ? '1px solid var(--color-danger)'
