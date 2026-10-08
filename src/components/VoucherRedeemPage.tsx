@@ -91,163 +91,154 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     }
   };
 
+  const formatDate = (value: string, withTime = false) => {
+    const date = new Date(value.replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return value;
+    return withTime ? date.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : date.toLocaleDateString('de-DE', { dateStyle: 'medium' });
+  };
+
+  const emptyState = (text: string) => (
+    <div className="rounded-[24px] border border-dashed border-border-strong px-6 py-10 text-center">
+      <span className="w-12 h-12 rounded-2xl bg-muted text-muted-foreground mx-auto mb-3 flex items-center justify-center">
+        <Gift className="w-6 h-6" />
+      </span>
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex justify-center items-start sm:pt-12 pt-6 sm:pb-12 pb-6">
+    <div className={embedded ? '' : 'min-h-screen bg-background px-4 pt-6 pb-12'}>
       <motion.div
-        className="relative w-full max-w-2xl sm:max-w-2xl max-w-full mx-auto bg-white rounded-3xl shadow-2xl border border-border overflow-hidden"
-        style={{ minHeight: '420px', height: 'auto', maxWidth: '700px' }}
-        initial={{ opacity: 0, y: 40 }}
+        className="max-w-2xl mx-auto"
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 24 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Logo-Header */}
-        <div className="flex flex-col items-center text-center pt-16 sm:pt-24 pb-6 px-4 sm:px-10" style={{ marginTop: '10px' }}>
-          <div className="w-16 sm:w-20 h-16 sm:h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ marginTop: '10px' }}>
-            <img src="/Logo.svg" alt="St.GeoARgen" className="w-10 sm:w-12 h-10 sm:h-12 object-contain" style={{filter: 'brightness(0) invert(1)', marginTop: '10px'}} />
+        <div className="flex items-end justify-between gap-4 mb-5">
+          <div>
+            <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">Meine Gutscheine</h1>
+            <p className="text-muted-foreground text-sm mt-1.5">Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ marginTop: '10px' }}>Meine Gutscheine</h1>
-          <p className="text-muted-foreground text-sm sm:text-base font-semibold mb-1">Deine Punkte: {userPoints}</p>
-          <p className="text-muted-foreground text-xs sm:text-base mb-2" style={{ marginTop: '10px' }}>Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
+          <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1.5 text-sm font-bold text-gold-foreground tabular-nums">
+            {userPoints} Punkte
+          </span>
         </div>
 
-        {/* Tabs */}
-        <div className="px-4 sm:px-10 pb-4">
-          <div className="flex border-b">
+        <div className="flex gap-2 mb-5">
+          {([
+            ['redeemable', `Einlösbar (${redeemableVouchers.length})`],
+            ['redeemed', `Eingelöst (${redeemedVouchers.length})`],
+          ] as const).map(([tab, label]) => (
             <button
-              onClick={() => setActiveTab('redeemable')}
-              className={`flex-1 py-2 text-center font-medium ${activeTab === 'redeemable' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              aria-pressed={activeTab === tab}
+              className={`h-10 px-4 rounded-full text-sm font-semibold transition-colors ${activeTab === tab ? 'bg-foreground text-white' : 'bg-card border border-border hover:border-border-strong'}`}
             >
-              Einlösbar ({redeemableVouchers.length})
+              {label}
             </button>
-            <button
-              onClick={() => setActiveTab('redeemed')}
-              className={`flex-1 py-2 text-center font-medium ${activeTab === 'redeemed' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-            >
-              Bereits eingelöst ({redeemedVouchers.length})
-            </button>
-          </div>
+          ))}
         </div>
 
-        <div className="px-4 sm:px-10 pb-10" style={{ minHeight: '180px', marginTop: '10px' }}>
-          {loading ? (
-            <div className="text-center">Lade Gutscheine...</div>
-          ) : activeTab === 'redeemable' ? (
-            redeemableVouchers.length === 0 ? (
-              <div className="text-center text-muted-foreground">Keine einlösbaren Gutscheine vorhanden.</div>
-            ) : (
-              <div className="space-y-4">
-                {redeemableVouchers.map((voucher) => (
-                  <motion.div
-                    key={voucher.id}
-                    className="border rounded-xl p-4 bg-gray-50"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">{voucher.description}</h3>
-                        {voucher.partner_name && (
-                          <p className="text-sm text-muted-foreground">Partner: {voucher.partner_name}</p>
-                        )}
-                        {voucher.purchased_at && (
-                          <p className="text-sm text-muted-foreground">Erworben am: {new Date(voucher.purchased_at).toLocaleString('de-DE')}</p>
-                        )}
-                        {voucher.expiry_date && (
-                          <p className="text-sm text-muted-foreground">Gültig bis: {new Date(voucher.expiry_date).toLocaleDateString('de-DE')}</p>
-                        )}
-                        {!voucher.expiry_date && (
-                          <p className="text-sm text-muted-foreground">Kein Ablaufdatum</p>
-                        )}
+        {loading ? (
+          <div className="space-y-3" aria-busy="true">
+            {[0, 1].map((i) => <div key={i} className="h-28 rounded-[24px] bg-muted animate-pulse" />)}
+          </div>
+        ) : activeTab === 'redeemable' ? (
+          redeemableVouchers.length === 0 ? emptyState('Keine einlösbaren Gutscheine vorhanden.') : (
+            <div className="space-y-3">
+              {redeemableVouchers.map((voucher) => (
+                <motion.article
+                  key={voucher.id}
+                  className="surface-card p-4"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <span className="w-11 h-11 rounded-2xl bg-gold-soft text-gold flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold leading-snug">{voucher.description}</h3>
+                      {voucher.partner_name && <p className="text-sm text-muted-foreground mt-0.5">{voucher.partner_name}</p>}
+                      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                        {voucher.purchased_at && <p>Erworben am {formatDate(voucher.purchased_at, true)}</p>}
+                        <p>{voucher.expiry_date ? `Gültig bis ${formatDate(voucher.expiry_date)}` : 'Kein Ablaufdatum'}</p>
                         {voucher.address && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{voucher.address}</span>
-                          </div>
+                          <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{voucher.address}</p>
                         )}
-                      </div>
-                      {voucher.code ? (
-                        <Button
-                          onClick={() => openCodePopup(voucher.code, voucher.description)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Code anzeigen
-                        </Button>
-                      ) : (
-                        <div className="rounded-full border border-border px-4 py-2 text-sm text-muted-foreground">Kein Code verfügbar</div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )
-          ) : (
-            redeemedVouchers.length === 0 ? (
-              <div className="text-center text-muted-foreground">Noch keine bereits eingelösten Gutscheine vorhanden.</div>
-            ) : (
-              <div className="space-y-4">
-                {redeemedVouchers.map((voucher) => (
-                  <motion.div
-                    key={voucher.id}
-                    className="border rounded-xl p-4 bg-gray-50"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">{voucher.description}</h3>
-                        {voucher.partner_name && (
-                          <p className="text-sm text-muted-foreground">{voucher.partner_name}</p>
-                        )}
-                        {voucher.address && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4" />
-                            <span>{voucher.address}</span>
-                          </div>
-                        )}
-                        {voucher.redeemed_at && (
-                          <p className="text-sm text-muted-foreground mt-1">Eingelöst am: {new Date(voucher.redeemed_at).toLocaleString('de-DE')}</p>
-                        )}
-                        <p className="text-sm font-medium text-primary mt-1">Kosten: {voucher.points_value} Punkte</p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                        <Gift className="w-4 h-4" />
-                        Verwendet
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )
-          )}
-        </div>
+                  </div>
+                  {voucher.code ? (
+                    <Button
+                      onClick={() => openCodePopup(voucher.code, voucher.description)}
+                      className="mt-4 w-full h-11 rounded-2xl font-bold"
+                    >
+                      Code anzeigen
+                    </Button>
+                  ) : (
+                    <p className="mt-4 rounded-2xl bg-muted px-4 py-2.5 text-center text-sm text-muted-foreground">Kein Code verfügbar</p>
+                  )}
+                </motion.article>
+              ))}
+            </div>
+          )
+        ) : (
+          redeemedVouchers.length === 0 ? emptyState('Noch keine eingelösten Gutscheine vorhanden.') : (
+            <div className="space-y-3">
+              {redeemedVouchers.map((voucher) => (
+                <motion.article
+                  key={voucher.id}
+                  className="surface-card p-4 opacity-80"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 0.8, y: 0 }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-bold leading-snug">{voucher.description}</h3>
+                      {voucher.partner_name && <p className="text-sm text-muted-foreground mt-0.5">{voucher.partner_name}</p>}
+                      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                        {voucher.address && <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{voucher.address}</p>}
+                        {voucher.redeemed_at && <p>Eingelöst am {formatDate(voucher.redeemed_at, true)}</p>}
+                        <p className="font-semibold text-foreground">Kosten: {voucher.points_value} Punkte</p>
+                      </div>
+                    </div>
+                    <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary-dark">
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                      Verwendet
+                    </span>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          )
+        )}
       </motion.div>
 
       {/* Code Popup */}
       <AnimatePresence>
         {showCodePopup && popupCode && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gray-900/55 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeCodePopup}
           >
             <motion.div
-              className="w-full max-w-md overflow-hidden rounded-3xl bg-background shadow-2xl"
+              className="w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-2xl"
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 260, damping: 24 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="relative bg-gradient-to-br from-primary to-primary-light px-6 py-8 text-white">
+              <div className="brand-gradient relative px-6 py-8 text-white">
                 <button
                   type="button"
                   onClick={closeCodePopup}
-                  className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white/90 transition hover:bg-white/25"
+                  className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Fenster schließen"
                 >
                   <X className="h-4 w-4" />
@@ -256,7 +247,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-semibold">Gutschein Code</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Gutschein-Code</h2>
                   <p className="mt-2 text-sm text-white/85">{popupDescription}</p>
                 </div>
               </div>
@@ -265,7 +256,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                 <div className="rounded-2xl border border-border bg-muted/30 p-4">
                   <p className="text-sm text-muted-foreground">Dein Code</p>
                   <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
-                    <span className="text-lg font-semibold tracking-[0.2em] text-primary">{popupCode}</span>
+                    <span className="text-xl font-bold tracking-[0.2em] text-primary font-mono break-all">{popupCode}</span>
                     <Button variant="outline" size="sm" onClick={copyToClipboard}>
                       <Copy className="h-4 w-4" />
                       {copiedId ? 'Kopiert' : 'Code kopieren'}

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import emailjs from '@emailjs/browser';
-import { ArrowLeft, Mail, AlertCircle, CheckCircle, LockKeyhole } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle, LockKeyhole } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { requestPasswordReset, resetPasswordWithToken } from '../services/auth';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AuthShell, AuthDivider, FieldLabel } from './AuthShell';
 
 interface ForgotPasswordProps {
   onNavigateBack?: () => void;
@@ -92,7 +93,8 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
 
       if (response.resetToken) {
         if (!isEmailJsConfigured) {
-          throw new Error('EmailJS ist noch nicht konfiguriert. Bitte VITE_EMAILJS_* Variablen setzen.');
+          console.warn('[ForgotPassword] EmailJS ist nicht konfiguriert (VITE_EMAILJS_* fehlen).');
+          throw new Error(`Der E-Mail-Versand ist gerade nicht verfügbar. Bitte wende dich an ${supportEmail}.`);
         }
 
         const resetLink = `${window.location.origin}/forgot-password?token=${encodeURIComponent(response.resetToken)}`;
@@ -160,524 +162,246 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
   const isResetMode = !!resetToken && !isPasswordResetSuccess;
   const isResetFormValid = !!password && !!confirmPassword && !errors.password && !errors.confirmPassword;
 
-  if (isPasswordResetSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary-light/10 flex items-center justify-center px-6 sm:px-8 py-12 sm:py-16">
-        <motion.div
-          className="w-full max-w-lg"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
+  const fieldError = (msg?: string) => (
+    <AnimatePresence>
+      {msg && (
+        <motion.p
+          className="flex items-center gap-1.5 mt-2 text-sm font-medium text-destructive"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          role="alert"
         >
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {/* Success Icon */}
-            <motion.div
-              className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-green-100 rounded-full mb-8"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-            >
-              <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-green-600" />
-            </motion.div>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{msg}</span>
+        </motion.p>
+      )}
+    </AnimatePresence>
+  );
 
-            {/* Success Message */}
-            <motion.h1
-              className="text-3xl sm:text-4xl font-bold mb-4 text-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              Passwort aktualisiert!
-            </motion.h1>
-            <motion.p
-              className="text-base sm:text-lg text-muted-foreground mb-8 px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt mit dem neuen Passwort anmelden.
-            </motion.p>
-
-            {/* Logo */}
-            <motion.div
-              className="flex justify-center mb-8"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, type: 'spring', stiffness: 200 }}
-            >
-              <div style={{ width: '64px', height: '64px', backgroundColor: '#0C690F', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(12,105,15,0.2)' }}>
-                <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '38px', height: '38px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-              </div>
-            </motion.div>
-
-            {/* Back to Login Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Button
-                onClick={onNavigateToLogin}
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
-              >
-                {t('backToLogin')}
-              </Button>
-            </motion.div>
-
-            {/* Help Text */}
-            <motion.p
-              className="text-sm sm:text-base text-muted-foreground mt-8 px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              Aus Sicherheitsgründen ist der Link nur einmal nutzbar.
-            </motion.p>
-          </motion.div>
+  const generalError = (
+    <AnimatePresence>
+      {errors.general && (
+        <motion.div
+          className="flex items-start gap-3 p-4 bg-destructive/8 border border-destructive/20 rounded-2xl text-sm text-destructive"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          role="alert"
+        >
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="font-medium break-words min-w-0">{errors.general}</span>
         </motion.div>
-      </div>
+      )}
+    </AnimatePresence>
+  );
+
+  const spinner = <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />;
+
+  const successState = (title: string, body: ReactNode, action: ReactNode, extra?: ReactNode) => (
+    <AuthShell title={title} onBack={onNavigateBack}>
+      <motion.div
+        className="text-center"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <motion.span
+          className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary-soft mb-6"
+          initial={{ scale: 0.6 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.15 }}
+        >
+          <CheckCircle className="w-10 h-10 text-primary" />
+        </motion.span>
+        <p className="text-gray-700 leading-relaxed mb-7">{body}</p>
+        {action}
+        {extra}
+      </motion.div>
+    </AuthShell>
+  );
+
+  if (isPasswordResetSuccess) {
+    return successState(
+      'Passwort aktualisiert!',
+      'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt mit dem neuen Passwort anmelden.',
+      <Button onClick={onNavigateToLogin} className="w-full h-14 rounded-2xl text-base font-bold shadow-primary">
+        {t('loginNow')}
+      </Button>,
     );
   }
 
   if (isRequestSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary-light/10 flex items-center justify-center px-6 sm:px-8 py-12 sm:py-16">
-        <motion.div
-          className="w-full max-w-lg"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
+    return successState(
+      'Anfrage gesendet!',
+      <>Falls ein Konto mit <span className="font-semibold text-foreground break-all">{email}</span> existiert, wurde dir ein Link zum Zurücksetzen gesendet.</>,
+      <Button onClick={onNavigateToLogin} className="w-full h-14 rounded-2xl text-base font-bold shadow-primary">
+        Zurück zur Anmeldung
+      </Button>,
+      <p className="text-sm text-muted-foreground mt-6">
+        {t('noEmailReceived')}{' '}
+        <button
+          onClick={() => setIsRequestSuccess(false)}
+          className="text-primary hover:text-primary-dark font-semibold transition-colors"
         >
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <motion.div
-              className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-green-100 rounded-full mb-8"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-            >
-              <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-green-600" />
-            </motion.div>
-
-            <motion.h1
-              className="text-3xl sm:text-4xl font-bold mb-4 text-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              Anfrage gesendet!
-            </motion.h1>
-            <motion.p
-              className="text-base sm:text-lg text-muted-foreground mb-8 px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              Falls ein Konto mit <span className="font-medium text-foreground">{email}</span> existiert,
-              wurde dir ein Link zum Zurücksetzen gesendet.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Button
-                onClick={onNavigateToLogin}
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
-              >
-                Zurück zur Anmeldung
-              </Button>
-            </motion.div>
-
-            <motion.p
-              className="text-sm sm:text-base text-muted-foreground mt-8 px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              {t('noEmailReceived')}{' '}
-              <button
-                onClick={() => setIsRequestSuccess(false)}
-                className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
-              >
-                {t('sendAgain')}
-              </button>
-            </motion.p>
-          </motion.div>
-        </motion.div>
-      </div>
+          {t('sendAgain')}
+        </button>
+      </p>,
     );
   }
 
   if (isResetMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary-light/10 flex items-center justify-center px-6 sm:px-8 py-12 sm:py-16">
-        <motion.div
-          className="w-full max-w-lg"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          {onNavigateBack && (
-            <motion.button
-              onClick={onNavigateBack}
-              className="mb-10 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-base font-medium">Zurück</span>
-            </motion.button>
-          )}
-
-          <motion.div className="p-0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-            <div className="flex flex-col items-center mb-12">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-                style={{
-                  width: '88px',
-                  height: '88px',
-                  backgroundColor: '#0C690F',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 20px rgba(12,105,15,0.25)',
+      <AuthShell
+        title="Neues Passwort setzen"
+        subtitle="Vergib jetzt ein neues Passwort für dein Konto."
+        onBack={onNavigateBack}
+      >
+        <form onSubmit={handleResetSubmit} className="space-y-5" noValidate>
+          <div>
+            <FieldLabel htmlFor="new-password">Neues Passwort</FieldLabel>
+            <div className="relative">
+              <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+              <Input
+                id="new-password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPassword(value);
+                  if (touched.password) {
+                    setErrors(prev => ({ ...prev, password: validatePassword(value) }));
+                  }
+                  if (touched.confirmPassword) {
+                    setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(value, confirmPassword) }));
+                  }
                 }}
-              >
-                <LockKeyhole className="w-10 h-10 text-white" />
-              </motion.div>
-              <motion.h1 className="text-3xl sm:text-4xl font-bold mt-6 mb-3 text-center text-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-                Neues Passwort setzen
-              </motion.h1>
-              <motion.p className="text-base sm:text-lg text-muted-foreground text-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-                Vergib jetzt ein neues Passwort für dein Konto.
-              </motion.p>
+                onBlur={() => {
+                  setTouched(prev => ({ ...prev, password: true }));
+                  setErrors(prev => ({ ...prev, password: validatePassword(password) }));
+                }}
+                className={`h-14 pl-12 rounded-2xl ${touched.password && errors.password ? 'border-destructive' : ''}`}
+                disabled={isLoading}
+                autoComplete="new-password"
+              />
             </div>
+            {fieldError(touched.password ? errors.password : undefined)}
+          </div>
 
-            <form onSubmit={handleResetSubmit} className="space-y-6 sm:space-y-7">
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}>
-                <label htmlFor="new-password" className="block text-base sm:text-lg font-medium mb-3">Neues Passwort</label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setPassword(value);
-                    if (touched.password) {
-                      setErrors(prev => ({ ...prev, password: validatePassword(value) }));
-                    }
-                    if (touched.confirmPassword) {
-                      setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(value, confirmPassword) }));
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched(prev => ({ ...prev, password: true }));
-                    setErrors(prev => ({ ...prev, password: validatePassword(password) }));
-                  }}
-                  className={`h-12 sm:h-14 text-base sm:text-lg bg-white ${touched.password && errors.password ? 'border-destructive' : ''}`}
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <AnimatePresence>
-                  {touched.password && errors.password && (
-                    <motion.div className="flex items-center gap-2 mt-1.5 text-sm sm:text-base text-destructive" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                      <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{errors.password}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+          <div>
+            <FieldLabel htmlFor="confirm-password">Passwort bestätigen</FieldLabel>
+            <div className="relative">
+              <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setConfirmPassword(value);
+                  if (touched.confirmPassword) {
+                    setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(password, value) }));
+                  }
+                }}
+                onBlur={() => {
+                  setTouched(prev => ({ ...prev, confirmPassword: true }));
+                  setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(password, confirmPassword) }));
+                }}
+                className={`h-14 pl-12 rounded-2xl ${touched.confirmPassword && errors.confirmPassword ? 'border-destructive' : ''}`}
+                disabled={isLoading}
+                autoComplete="new-password"
+              />
+            </div>
+            {fieldError(touched.confirmPassword ? errors.confirmPassword : undefined)}
+          </div>
 
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}>
-                <label htmlFor="confirm-password" className="block text-base sm:text-lg font-medium mb-3">Passwort bestätigen</label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setConfirmPassword(value);
-                    if (touched.confirmPassword) {
-                      setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(password, value) }));
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched(prev => ({ ...prev, confirmPassword: true }));
-                    setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(password, confirmPassword) }));
-                  }}
-                  className={`h-12 sm:h-14 text-base sm:text-lg bg-white ${touched.confirmPassword && errors.confirmPassword ? 'border-destructive' : ''}`}
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <AnimatePresence>
-                  {touched.confirmPassword && errors.confirmPassword && (
-                    <motion.div className="flex items-center gap-2 mt-1.5 text-sm sm:text-base text-destructive" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                      <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{errors.confirmPassword}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+          {generalError}
 
-              <motion.div className="pt-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-                <Button
-                  type="submit"
-                  className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
-                  disabled={isLoading || !isResetFormValid}
-                >
-                  {isLoading ? 'Speichert...' : 'Passwort aktualisieren'}
-                </Button>
-              </motion.div>
-
-              <AnimatePresence>
-                {errors.general && (
-                  <motion.div className="flex items-center gap-3 p-4 sm:p-5 bg-destructive/10 border border-destructive/20 rounded-lg text-base sm:text-lg text-destructive" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
-                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-                    <span>{errors.general}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </form>
-          </motion.div>
-        </motion.div>
-      </div>
+          <Button
+            type="submit"
+            className="w-full h-14 rounded-2xl text-base font-bold shadow-primary disabled:shadow-none"
+            disabled={isLoading || !isResetFormValid}
+          >
+            {isLoading ? <span className="flex items-center gap-3">{spinner}Speichert...</span> : 'Passwort aktualisieren'}
+          </Button>
+        </form>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary-light/10 flex items-center justify-center px-6 sm:px-8 py-12 sm:py-16">
-      <motion.div
-        className="w-full max-w-lg"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        {/* Back Button */}
-        {onNavigateBack && (
-          <motion.button
-            onClick={onNavigateBack}
-            className="mb-10 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-base font-medium">{t('back')}</span>
-          </motion.button>
+    <AuthShell
+      title={t('forgotPassword')}
+      subtitle={t('forgotPasswordSubtitle')}
+      onBack={onNavigateBack}
+      footer={
+        onNavigateToRegister ? (
+          <p className="text-center text-sm text-muted-foreground leading-relaxed px-4">
+            {t('forgotPasswordAccountHint')}{' '}
+            <button
+              type="button"
+              onClick={onNavigateToRegister}
+              className="text-primary hover:text-primary-dark font-semibold"
+              disabled={isLoading}
+            >
+              {t('registerHere')}
+            </button>
+          </p>
+        ) : null
+      }
+    >
+      <form onSubmit={handleSubmitRequest} className="space-y-5" noValidate>
+        <div>
+          <FieldLabel htmlFor="email">{t('emailAddress')}</FieldLabel>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={handleEmailChange}
+              onBlur={handleBlur}
+              placeholder={t('emailPlaceholder')}
+              className={`h-14 pl-12 pr-4 rounded-2xl ${touched.email && errors.email ? 'border-destructive' : ''}`}
+              disabled={isLoading}
+              autoComplete="email"
+              inputMode="email"
+              aria-invalid={touched.email && !!errors.email}
+            />
+          </div>
+          {fieldError(touched.email ? errors.email : undefined)}
+        </div>
+
+        {import.meta.env.DEV && !isEmailJsConfigured && (
+          <div className="flex items-start gap-3 p-4 bg-gold-soft border border-gold/30 rounded-2xl text-xs text-gold-foreground">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span className="break-words min-w-0">
+              Dev-Hinweis: EmailJS ist nicht konfiguriert (VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET, VITE_EMAILJS_PUBLIC_KEY).
+            </span>
+          </div>
         )}
 
-        {/* Forgot Password Form */}
-        <motion.div
-          className="p-0"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+        {generalError}
+
+        <Button
+          type="submit"
+          className="w-full h-14 rounded-2xl text-base font-bold shadow-primary disabled:shadow-none"
+          disabled={isLoading || !isRequestFormValid}
         >
-          {/* Header with Logo */}
-          <div className="flex flex-col items-center mb-16" style={{ marginBottom: '5rem' }}>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-              style={{
-                width: '88px',
-                height: '88px',
-                backgroundColor: '#0C690F',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(12,105,15,0.25)',
-              }}
-            >
-              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '52px', height: '52px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-            </motion.div>
-            <motion.h1
-              className="text-3xl sm:text-4xl font-bold mt-6 mb-3 text-center text-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              {t('forgotPassword')}
-            </motion.h1>
-            <motion.p
-              className="text-base sm:text-lg text-muted-foreground text-center px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              {t('forgotPasswordSubtitle')}
-            </motion.p>
-          </div>
+          {isLoading ? <span className="flex items-center gap-3">{spinner}{t('sending')}</span> : t('sendResetLink')}
+        </Button>
+      </form>
 
-          {/* Form */}
-          <form onSubmit={handleSubmitRequest} className="space-y-10 sm:space-y-12">
-            {/* Email Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <label htmlFor="email" className="block text-base sm:text-lg font-medium mb-4">
-                {t('emailAddress')}
-              </label>
-              <div className="relative">
-                <Mail className="absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground pointer-events-none" style={{ left: '1.25rem' }} />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  onBlur={handleBlur}
-                  placeholder={t('emailPlaceholder')}
-                  className={`pr-4 h-14 sm:h-16 text-base sm:text-lg bg-white ${touched.email && errors.email ? 'border-destructive' : ''}`}
-                  style={{ paddingLeft: '3.5rem' }}
-                  disabled={isLoading}
-                  autoComplete="email"
-                  aria-invalid={touched.email && !!errors.email}
-                />
-              </div>
-              <AnimatePresence>
-                {touched.email && errors.email && (
-                  <motion.div
-                    className="flex items-center gap-2 mt-1.5 text-sm sm:text-base text-destructive"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>{errors.email}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+      <AuthDivider label={t('or')} />
 
-            {/* Submit Button */}
-            <motion.div
-              className="pt-6"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Button
-                type="submit"
-                className="w-full h-14 sm:h-16 text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary shadow-md hover:shadow-lg transition-all"
-                disabled={isLoading || !isRequestFormValid}
-              >
-                {isLoading ? (
-                  <span className="flex items-center gap-3">
-                    <motion.span
-                      className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    />
-                    {t('sending')}
-                  </span>
-                ) : (
-                  t('sendResetLink')
-                )}
-              </Button>
-            </motion.div>
-
-            {!isEmailJsConfigured && (
-              <motion.div
-                className="flex items-center gap-3 p-4 sm:p-5 bg-amber-100/80 border border-amber-300 rounded-lg text-sm sm:text-base text-amber-800"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
-                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-                <span>
-                  EmailJS ist noch nicht konfiguriert. Setze `VITE_EMAILJS_SERVICE_ID`,
-                  `VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET` und `VITE_EMAILJS_PUBLIC_KEY`.
-                </span>
-              </motion.div>
-            )}
-
-            {/* General Error */}
-            <AnimatePresence>
-              {errors.general && (
-                <motion.div
-                  className="flex items-center gap-3 p-4 sm:p-5 bg-destructive/10 border border-destructive/20 rounded-lg text-base sm:text-lg text-destructive"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                >
-                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-                  <span>{errors.general}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </form>
-
-          {/* Divider */}
-          <motion.div
-            className="relative my-14 sm:my-16"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm sm:text-base uppercase">
-              <span className="bg-background px-5 sm:px-6 py-1 text-muted-foreground">{t('or')}</span>
-            </div>
-          </motion.div>
-
-          {/* Login Link */}
-          <motion.div
-            className="text-center pt-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
-          >
-            <p className="text-base sm:text-lg text-foreground">
-              {t('rememberedPassword')}{' '}
-              <button
-                type="button"
-                onClick={onNavigateToLogin}
-                className="text-primary hover:text-primary/80 hover:underline font-semibold transition-colors"
-                disabled={isLoading}
-              >
-                {t('loginNow')}
-              </button>
-            </p>
-          </motion.div>
-        </motion.div>
-
-        {/* Info Text */}
-        <motion.p
-          className="text-center text-sm sm:text-base text-muted-foreground mt-10 sm:mt-12 px-6 leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0 }}
-        >
-          {t('forgotPasswordAccountHint')}{' '}
-          <button
-            type="button"
-            onClick={onNavigateToRegister}
-            className="text-primary hover:underline"
-            disabled={isLoading}
-          >
-            {t('registerHere')}
-          </button>
-        </motion.p>
-      </motion.div>
-    </div>
+      <button
+        type="button"
+        onClick={onNavigateToLogin}
+        disabled={isLoading}
+        className="w-full h-14 rounded-2xl border-2 border-primary/20 bg-card hover:border-primary transition-colors pressable"
+      >
+        <span className="text-sm text-muted-foreground">{t('rememberedPassword')}</span>{' '}
+        <span className="text-sm font-bold text-primary">{t('loginNow')}</span>
+      </button>
+    </AuthShell>
   );
 }

@@ -55,95 +55,29 @@ export const ARProfileMenu = ({
           {/* Menu Panel */}
           <motion.div
             className="ar-menu-panel"
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            initial={{ opacity: 0, scale: 0.96, y: -8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            style={{ width: '280px', padding: '16px' }}
+            exit={{ opacity: 0, scale: 0.96, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            style={{ transformOrigin: 'top right' }}
           >
-            {/* Action buttons - no duplicate profile display */}
-            <div style={{
-              padding: '8px',
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              border: '1px solid #e5e7eb',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px'
-            }}>
-              {!username ? (
-                <>
-                  <button
-                    onClick={handleLogin}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <LogIn style={{ width: '16px', height: '16px' }} />
-                    {t('login')}
-                  </button>
-                  <button
-                    onClick={handleRegister}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <UserPlus style={{ width: '16px', height: '16px' }} />
-                    {t('register')}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#dc2626',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <LogOut style={{ width: '16px', height: '16px' }} />
-                  {t('logout')}
+            {!username ? (
+              <>
+                <button onClick={handleLogin} className="ar-menu-item">
+                  <span className="ar-menu-icon ar-menu-icon-primary"><LogIn className="w-4 h-4" /></span>
+                  {t('login')}
                 </button>
-              )}
-            </div>
+                <button onClick={handleRegister} className="ar-menu-item">
+                  <span className="ar-menu-icon ar-menu-icon-primary"><UserPlus className="w-4 h-4" /></span>
+                  {t('register')}
+                </button>
+              </>
+            ) : (
+              <button onClick={handleLogout} className="ar-menu-item ar-menu-item-logout">
+                <span className="ar-menu-icon ar-menu-icon-danger"><LogOut className="w-4 h-4" /></span>
+                {t('logout')}
+              </button>
+            )}
           </motion.div>
         </>
       )}

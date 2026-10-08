@@ -1,6 +1,5 @@
-import { RefObject } from 'react';
 import { motion } from 'motion/react';
-import { Home, User } from 'lucide-react';
+import { Home, User, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARTopBarProps {
@@ -14,47 +13,35 @@ export const ARTopBar = ({ onNavigateHome, onProfileClick, profileMenuOpen, user
   const { t } = useLanguage();
   return (
     <div className="ar-top-bar">
-      {/* Home Button */}
       <motion.button
         onClick={onNavigateHome}
         className="ar-home-button"
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.94 }}
+        aria-label={t('home')}
       >
-        <Home style={{ width: '28px', height: '28px', color: '#0C690F' }} />
+        <Home className="w-6 h-6" />
       </motion.button>
 
-      {/* Profile Button */}
       <motion.button
         onClick={onProfileClick}
         className="ar-profile-button"
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.97 }}
+        aria-expanded={profileMenuOpen}
       >
-        <div style={{
-          width: '36px',
-          height: '36px',
-          background: 'linear-gradient(to bottom right, #0C690F, #0e7a11)',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-          flexShrink: 0
-        }}>
-          <User style={{ width: '20px', height: '20px', color: 'white' }} />
-        </div>
-        <div style={{ textAlign: 'left', flex: 1 }}>
-          <div className="ar-profile-name">{username || t('guest')}</div>
-          <div className="ar-profile-email">{username ? t('loggedIn') : t('notLoggedIn')}</div>
-        </div>
-        <motion.div
+        <span className="ar-profile-avatar" aria-hidden="true">
+          {username ? username.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
+        </span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className="ar-profile-name block">{username || t('guest')}</span>
+          <span className="ar-profile-email block">{username ? t('loggedIn') : t('notLoggedIn')}</span>
+        </span>
+        <motion.span
           animate={{ rotate: profileMenuOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          style={{ display: 'flex', alignItems: 'center' }}
+          className="flex items-center text-muted-foreground"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </motion.div>
+          <ChevronDown className="w-4 h-4" />
+        </motion.span>
       </motion.button>
     </div>
   );

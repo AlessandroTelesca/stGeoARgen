@@ -1,5 +1,6 @@
-import { ArrowLeft, ExternalLink, Mail, MapPin, Globe, Phone } from 'lucide-react';
+import { ExternalLink, Mail, MapPin, Globe, Phone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BackLink } from './PageHeader';
 import GisslerBranding from './GisslerBranding';
 
 interface ImpressumProps {
@@ -18,31 +19,22 @@ export function Impressum({ onBack }: ImpressumProps) {
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            aria-label={isDE ? 'Zurück' : 'Back'}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold">{isDE ? 'Impressum' : 'Legal Notice'}</h1>
-        </div >
+      <div className="max-w-2xl mx-auto px-4 pt-5">
+        <BackLink onBack={onBack} />
+        <h1 className="mt-5 text-[28px] leading-[1.15] font-extrabold tracking-tight">{isDE ? 'Impressum' : 'Legal Notice'}</h1>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
         {/* Angaben gemäß § 5 TMG */}
-        <section className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-4 text-foreground">
+        <section className="surface-card p-5">
+          <h2 className="text-lg font-bold tracking-tight mb-4 text-foreground">
             {isDE ? 'Angaben gemäß § 5 TMG' : 'Information pursuant to § 5 TMG'}
           </h2>
           <div className="space-y-4">
 
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                 <Globe className="w-4 h-4 text-primary" />
               </div >
               <div >
@@ -52,7 +44,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-4 h-4 text-primary" />
               </div >
               <div >
@@ -62,7 +54,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                 <Mail className="w-4 h-4 text-primary" />
               </div >
               <a
@@ -74,7 +66,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                 <Phone className="w-4 h-4 text-primary" />
               </div >
               <a
@@ -86,7 +78,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                 <ExternalLink className="w-4 h-4 text-primary" />
               </div >
               <a
@@ -111,13 +103,13 @@ export function Impressum({ onBack }: ImpressumProps) {
         </section>
 
         {/* Entwickelt von */}
-        <section className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-4 text-foreground">
+        <section className="surface-card p-5">
+          <h2 className="text-lg font-bold tracking-tight mb-4 text-foreground">
             {isDE ? 'Entwickelt von' : 'Developed by'}
           </h2>
           <div className="space-y-3">
             {/* Jonas Gissler – with G&A Webdesign branding */}
-            <div className="flex items-start gap-3 py-2 border-b border-border">
+            <div className="flex items-start gap-3 py-3 border-b border-border">
               <div className="flex flex-col">
                 <p className="text-sm font-semibold text-foreground">Jonas Gissler</p>
                 <p className="text-xs text-muted-foreground mb-2">
@@ -135,7 +127,7 @@ export function Impressum({ onBack }: ImpressumProps) {
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline"
                   >
-                    /in/jonas-gissler-37b1482b0
+                    LinkedIn
                   </a>
                 </div>
                 <GisslerBranding href="https://ga-webdesign.de" />
@@ -150,7 +142,7 @@ export function Impressum({ onBack }: ImpressumProps) {
             ].map((person) => (
               <div 
                 key={person.name} 
-                className={`flex items-start gap-3 py-2 border-b border-border last:border-0`}
+                className="flex items-start gap-3 py-3 border-b border-border last:border-0"
               >
                 <div className="flex flex-col"> 
                   <p className="text-sm font-semibold text-foreground">{person.name}</p>
@@ -173,8 +165,7 @@ export function Impressum({ onBack }: ImpressumProps) {
                         rel="noopener noreferrer" 
                         className="text-xs text-primary hover:underline cursor-pointer"
                       >
-                        /in/{person.name.toLowerCase().replace(/\s+/g, '-')}-{person.linkedin?.split('/').pop() || ''}
-                        {/* Note: Using a more descriptive link display might be better than just "LinkedIn Profile" */}
+                        LinkedIn
                       </a>
                     </div >
                   )}
@@ -185,8 +176,8 @@ export function Impressum({ onBack }: ImpressumProps) {
         </section>
 
         {/* Projektkontext */}
-        <section className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-3 text-foreground">
+        <section className="surface-card p-5">
+          <h2 className="text-lg font-bold tracking-tight mb-3 text-foreground">
             {isDE ? 'Projektkontext' : 'Project Context'}
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -196,7 +187,7 @@ export function Impressum({ onBack }: ImpressumProps) {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {['IIIUS Institut', 'HFU', isDE ? 'Stadt St. Georgen' : 'City of St. Georgen'].map((tag) => (
-              <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span key={tag} className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary-soft text-primary-dark text-xs font-semibold">
                 {tag}
               </span>
             ))}
@@ -204,8 +195,8 @@ export function Impressum({ onBack }: ImpressumProps) {
         </section>
 
         {/* Haftung & Hosting */}
-        <section className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-3 text-foreground">
+        <section className="surface-card p-5">
+          <h2 className="text-lg font-bold tracking-tight mb-3 text-foreground">
             {isDE ? 'Haftungshinweis' : 'Liability Notice'}
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">

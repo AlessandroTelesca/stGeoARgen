@@ -22,14 +22,12 @@ describe('Settings', () => {
       </LanguageProvider>
     );
 
-    const toggle = screen
-      .getAllByRole('button')
-      .find((btn) => btn.className.includes('w-12') && btn.className.includes('h-6')) as HTMLButtonElement;
+    const toggle = screen.getAllByRole('switch')[0] as HTMLButtonElement;
 
     expect(toggle).toBeDefined();
-    const beforeClass = toggle.className;
+    const before = toggle.getAttribute('aria-checked');
     await userEvent.click(toggle);
-    expect(toggle.className).not.toBe(beforeClass);
+    expect(toggle.getAttribute('aria-checked')).not.toBe(before);
 
     // Language is now a <select> dropdown
     const languageSelect = screen.getByRole('combobox');

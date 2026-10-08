@@ -11,6 +11,7 @@ import { AR_VIEW_STATION_MAP } from '../../../data/stationsConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
 import { MobileOnlyNotice } from '../MobileOnlyNotice';
+import { ARStartCard } from '../ARStartCard';
 
 const PHONOGRAPH_MODEL_URL = new URL('./models/Phono_1_Object.glb', import.meta.url).href;
 const GRAMOPHONE_MODEL_URL = new URL('./models/gramophone.glb', import.meta.url).href;
@@ -960,61 +961,17 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
         />
 
         {isAuthorized && !hasStarted && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 30000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              pointerEvents: 'auto',
-              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
+          <ARStartCard
+            zIndex={30000}
+            title={phonomuseumTexts.arStartTitle}
+            description={phonomuseumTexts.arStartDescription}
+            error={startError}
+            loading={isStarting}
+            buttonLabel={isStarting ? phonomuseumTexts.arStartingButton : phonomuseumTexts.arStartButton}
+            onStart={() => {
+              void startARSession();
             }}
-          >
-            <div
-              style={{
-                width: 'min(460px, 100%)',
-                borderRadius: '16px',
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '20px',
-                textAlign: 'center',
-              }}
-            >
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)' }}>
-                {phonomuseumTexts.arStartTitle}
-              </h2>
-              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
-                {phonomuseumTexts.arStartDescription}
-              </p>
-              {startError && (
-                <p style={{ marginBottom: '12px', color: '#ffd3d3', fontWeight: 700 }}>
-                  {startError}
-                </p>
-              )}
-              <button
-                onClick={() => {
-                  void startARSession();
-                }}
-                disabled={isStarting}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-white)',
-                  fontWeight: 700,
-                  cursor: isStarting ? 'default' : 'pointer',
-                  opacity: isStarting ? 0.75 : 1,
-                }}
-              >
-                {isStarting ? phonomuseumTexts.arStartingButton : phonomuseumTexts.arStartButton}
-              </button>
-            </div>
-          </div>
+          />
         )}
 
         {hasStarted && (

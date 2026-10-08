@@ -54,7 +54,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-br from-[#0C690F] to-[#0a5a0d] text-white p-6 rounded-t-2xl">
+        <div className="sticky top-0 bg-gradient-to-br from-primary to-primary-dark text-white p-6 rounded-t-2xl">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
@@ -69,7 +69,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4"
             >
-              <Trophy className="w-12 h-12 text-yellow-300" />
+              <Trophy className="w-12 h-12 text-gold-bright" />
             </motion.div>
             <h2 className="text-2xl mb-2">{t('congratulations')}</h2>
             <p className="text-white/90">
@@ -90,8 +90,8 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
                 key={locality.id}
                 className={`p-4 cursor-pointer transition-all border-2 ${
                   selectedLocality === locality.id
-                    ? 'border-[#0C690F] bg-[#0C690F]/5'
-                    : 'border-gray-200 hover:border-[#0C690F]/50'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-primary/50'
                 }`}
                 onClick={() => setSelectedLocality(locality.id)}
               >
@@ -99,7 +99,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
                   <div
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
                       selectedLocality === locality.id
-                        ? 'border-[#0C690F] bg-[#0C690F]'
+                        ? 'border-primary bg-primary'
                         : 'border-gray-300'
                     }`}
                   >
@@ -116,7 +116,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
                       </div>
                     </div>
                     
-                    <p className="text-[#0C690F] mb-2">
+                    <p className="text-primary mb-2">
                       {t(locality.descriptionKey)}
                     </p>
                     
@@ -141,7 +141,7 @@ export function RewardDialog({ onClose, onSelectReward }: RewardDialogProps) {
             <Button
               onClick={handleConfirm}
               disabled={!selectedLocality}
-              className="flex-1 bg-[#0C690F] hover:bg-[#0a5a0d] text-white"
+              className="flex-1 bg-primary hover:bg-primary-dark text-white"
             >
               {t('redeemVoucher')}
             </Button>

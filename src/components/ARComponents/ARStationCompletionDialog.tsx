@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X } from 'lucide-react';
+import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X, Flag } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARStationCompletionDialogProps {
@@ -48,257 +48,121 @@ export const ARStationCompletionDialog = ({
     const { t } = useLanguage();
     const completedCount = totalStations - remainingStations;
 
+    const stats = [
+        {
+            Icon: Clock,
+            value: formatDuration(durationSeconds),
+            label: t('duration'),
+            highlight: false,
+        },
+        {
+            Icon: CheckCircle2,
+            value: `${completedCount}/${totalStations}`,
+            label: remainingStations > 0 ? `noch ${remainingStations}` : t('allFinished'),
+            highlight: false,
+        },
+        {
+            Icon: remainingStations > 0 ? MapPin : Flag,
+            value: remainingStations > 0 ? formatDistance(distanceToNextStation) : '✓',
+            label: remainingStations > 0 ? t('nextStationLabel') : t('pathCompletedLabel'),
+            highlight: remainingStations === 0,
+        },
+    ];
+
     return (
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
                     <motion.div
-                        className="ar-completion-backdrop"
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            backgroundColor: 'rgba(0,0,0,0.75)',
-                            zIndex: 200,
-                            backdropFilter: 'blur(4px)',
-                        }}
+                        className="ar-completion-backdrop fixed inset-0 z-[200] bg-gray-900/70 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     />
 
-                    {/* Dialog */}
                     <motion.div
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            zIndex: 210,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '16px',
-                        }}
-                        initial={{ y: 20, opacity: 0, scale: 0.98 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
-                        exit={{ y: 20, opacity: 0, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                        className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center p-4"
+                        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 30, opacity: 0 }}
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div
-                            style={{
-                                maxWidth: '440px',
-                                width: '100%',
-                                maxHeight: '92vh',
-                                backgroundColor: '#fff',
-                                borderRadius: '24px',
-                                overflowY: 'auto',
-                                boxShadow: '0 -4px 40px rgba(0,0,0,0.3)',
-                                position: 'relative',
-                            }}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="station-complete-title"
+                            className="relative w-full max-w-[440px] max-h-[92dvh] overflow-y-auto rounded-[32px] bg-card shadow-2xl"
                         >
-                            {/* Close Button */}
                             {onClose && (
                                 <button
                                     onClick={onClose}
-                                    style={{
-                                        position: 'absolute',
-                                        top: '12px',
-                                        right: '12px',
-                                        zIndex: 10001,
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '8px',
-                                        transition: 'background-color 0.2s',
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/15 border border-white/20 text-white flex items-center justify-center hover:bg-white/25 transition-colors"
                                     aria-label="Schließen"
                                 >
-                                    <X style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                                    <X className="w-5 h-5" />
                                 </button>
                             )}
 
-                            {/* Green success header */}
-                            <div
-                                style={{
-                                    background: 'linear-gradient(135deg, #0C690F, #094d0b)',
-                                    padding: '24px 24px 20px',
-                                    textAlign: 'center',
-                                    color: 'white',
-                                }}
-                            >
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.2, type: 'spring', damping: 15 }}
-                                    style={{
-                                        width: '72px',
-                                        height: '72px',
-                                        backgroundColor: 'rgba(255,255,255,0.25)',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        margin: '0 auto 12px',
-                                        border: '3px solid rgba(255,255,255,0.5)',
-                                    }}
+                            {/* Kopf */}
+                            <div className="brand-gradient relative overflow-hidden px-6 pt-8 pb-12 text-center text-white">
+                                <div className="topo-texture absolute inset-0" aria-hidden="true" />
+                                <motion.span
+                                    className="relative mx-auto mb-4 flex w-20 h-20 items-center justify-center rounded-full bg-white text-primary shadow-lg"
+                                    initial={{ scale: 0, rotate: -20 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ delay: 0.15, type: 'spring', damping: 13, stiffness: 220 }}
                                 >
-                                    <CheckCircle2 style={{ width: '40px', height: '40px', color: 'white' }} />
-                                </motion.div>
-                                <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 700 }}>
+                                    <span className="absolute -inset-2.5 rounded-full border-2 border-white/30" aria-hidden="true" />
+                                    <CheckCircle2 className="w-10 h-10" strokeWidth={2.25} />
+                                </motion.span>
+                                <h2 id="station-complete-title" className="relative text-2xl font-extrabold tracking-tight">
                                     {t('stationCompletedTitle')}
                                 </h2>
-                                <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>
-                                    {stationTitle}
-                                </p>
+                                <p className="relative mt-1 text-sm text-white/85">{stationTitle}</p>
                             </div>
 
-                            {/* Stats */}
-                            <div style={{ padding: '16px 20px 0' }}>
-                                {/* Points earned */}
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        backgroundColor: '#fef9c3',
-                                        border: '1px solid #fde047',
-                                        borderRadius: '12px',
-                                        padding: '10px 16px',
-                                        marginBottom: '12px',
-                                    }}
+                            <div className="relative -mt-6 rounded-t-[28px] bg-card px-5 pt-5 pb-5">
+                                {/* Punkte */}
+                                <motion.div
+                                    className="mb-4 flex items-center justify-center gap-2 rounded-2xl bg-gold-soft px-4 py-3"
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.3, type: 'spring', stiffness: 260, damping: 16 }}
                                 >
-                                    <Trophy style={{ width: '20px', height: '20px', color: '#ca8a04' }} />
-                                    <span style={{ fontWeight: 700, fontSize: '18px', color: '#854d0e' }}>
+                                    <Trophy className="w-5 h-5 text-gold" />
+                                    <span className="text-lg font-extrabold text-gold-foreground tabular-nums">
                                         +{stationPoints} {t('points')} {t('earned')}!
                                     </span>
+                                </motion.div>
+
+                                {/* Kennzahlen */}
+                                <div className="mb-5 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border">
+                                    {stats.map(({ Icon, value, label, highlight }) => (
+                                        <div key={label} className="px-2 py-3 text-center">
+                                            <Icon className={`mx-auto mb-1 w-5 h-5 ${highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <div className="text-sm font-bold tabular-nums">{value}</div>
+                                            <div className="mt-0.5 text-[11px] text-muted-foreground">{label}</div>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                {/* 3-column stats */}
-                                <div
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr 1fr',
-                                        gap: '8px',
-                                        marginBottom: '20px',
-                                    }}
-                                >
-                                    {/* Time spent */}
-                                    <div
-                                        style={{
-                                            backgroundColor: '#f8fafc',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            padding: '12px 8px',
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        <Clock style={{ width: '20px', height: '20px', color: '#64748b', margin: '0 auto 4px' }} />
-                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
-                                            {formatDuration(durationSeconds)}
-                                        </div>
-                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            {t('duration')}
-                                        </div>
-                                    </div>
-
-                                    {/* Remaining stations */}
-                                    <div
-                                        style={{
-                                            backgroundColor: '#f8fafc',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            padding: '12px 8px',
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        <CheckCircle2 style={{ width: '20px', height: '20px', color: '#64748b', margin: '0 auto 4px' }} />
-                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
-                                            {completedCount}/{totalStations}
-                                        </div>
-                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            {remainingStations > 0 ? `noch ${remainingStations}` : t('allFinished')}
-                                        </div>
-                                    </div>
-
-                                    {/* Distance to next */}
-                                    <div
-                                        style={{
-                                            backgroundColor: remainingStations > 0 ? '#f8fafc' : '#f0fdf4',
-                                            border: `1px solid ${remainingStations > 0 ? '#e2e8f0' : '#bbf7d0'}`,
-                                            borderRadius: '12px',
-                                            padding: '12px 8px',
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        <MapPin style={{ width: '20px', height: '20px', color: remainingStations > 0 ? '#6b7280' : '#0C690F', margin: '0 auto 4px' }} />
-                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
-                                            {remainingStations > 0 ? formatDistance(distanceToNextStation) : '🎉'}
-                                        </div>
-                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                                            {remainingStations > 0 ? t('nextStationLabel') : t('pathCompletedLabel')}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Buttons */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '8px' }}>
-                                    {/* Primary: Navigate to next station */}
+                                {/* Aktionen */}
+                                <div className="flex flex-col gap-2.5">
                                     {remainingStations > 0 && (
                                         <button
                                             onClick={onNavigateToNextStation}
-                                            style={{
-                                                width: '100%',
-                                                backgroundColor: '#0C690F',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '14px',
-                                                padding: '15px 20px',
-                                                fontSize: '15px',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                transition: 'background-color 0.2s',
-                                            }}
-                                            onTouchStart={(e) => (e.currentTarget.style.backgroundColor = '#094d0b')}
-                                            onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '#0C690F')}
+                                            className="w-full min-h-[54px] rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
                                         >
-                                            <Navigation style={{ width: '18px', height: '18px' }} />
+                                            <Navigation className="w-[18px] h-[18px]" />
                                             {t('navigateToNextStation')}
                                         </button>
                                     )}
-
-                                    {/* Secondary: Back to home */}
                                     <button
                                         onClick={onNavigateHome}
-                                        style={{
-                                            width: '100%',
-                                            backgroundColor: 'transparent',
-                                            color: '#64748b',
-                                            border: '2px solid #e2e8f0',
-                                            borderRadius: '14px',
-                                            padding: '13px 20px',
-                                            fontSize: '15px',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px',
-                                            transition: 'border-color 0.2s, background-color 0.2s',
-                                        }}
-                                        onTouchStart={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; }}
-                                        onTouchEnd={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                        className="w-full min-h-[50px] rounded-2xl border border-border bg-card font-semibold text-foreground flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                                     >
-                                        <Home style={{ width: '18px', height: '18px' }} />
+                                        <Home className="w-[18px] h-[18px]" />
                                         {t('backToHome')}
                                     </button>
                                 </div>

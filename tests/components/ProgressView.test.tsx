@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 vi.mock('../../src/components/Georgi', () => ({
   Georgi: () => <div data-testid="georgi" />,
+  GeorgiAvatar: () => <div data-testid="georgi" />,
 }));
 
 vi.mock('../../src/components/ui/progress', () => ({

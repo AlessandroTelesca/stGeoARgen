@@ -1,6 +1,7 @@
-import { ArrowLeft, BookOpen, Layers, MapPin, QrCode, Sparkles, Smartphone, Trophy } from 'lucide-react';
+import { BookOpen, Layers, MapPin, QrCode, Sparkles, Smartphone, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BackLink } from './PageHeader';
 
 interface InfoProps {
   onBack: () => void;
@@ -49,36 +50,25 @@ export function Info({ onBack }: InfoProps) {
 
   return (
     <div className="min-h-screen bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]">
-      <div className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            aria-label={t('back')}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold">{t('aboutApp')}</h1>
-        </div>
+      <div className="max-w-3xl mx-auto px-4 pt-5">
+        <BackLink onBack={onBack} />
+        <h1 className="mt-5 text-[28px] leading-[1.15] font-extrabold tracking-tight">{t('aboutApp')}</h1>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <section className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-2">
-                {t('infoKicker')}
-              </p>
-              <h2 className="text-2xl font-bold text-foreground leading-tight">
-                {t('infoHeroTitle')}
-              </h2>
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                {t('infoHeroSubtitle')}
-              </p>
-            </div>
+        <section className="brand-gradient relative overflow-hidden rounded-[28px] p-6 text-white shadow-lg">
+          <div className="topo-texture absolute inset-0" aria-hidden="true" />
+          <img src="/Logo.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-8 -bottom-10 w-44 h-44 opacity-[0.08]" style={{ filter: 'brightness(0) invert(1)' }} />
+          <div className="relative">
+            <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center mb-4">
+              <Sparkles className="w-6 h-6" />
+            </span>
+            <h2 className="text-2xl font-extrabold leading-tight tracking-tight max-w-[22ch]">
+              {t('infoHeroTitle')}
+            </h2>
+            <p className="mt-3 text-sm text-white/85 leading-relaxed">
+              {t('infoHeroSubtitle')}
+            </p>
           </div>
         </section>
 
@@ -86,31 +76,31 @@ export function Info({ onBack }: InfoProps) {
           {highlights.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <div key={item.title} className="surface-card p-5">
+                <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="text-sm font-semibold text-foreground leading-snug">{item.title}</h3>
+                <h3 className="font-bold text-foreground leading-snug">{item.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.text}</p>
               </div>
             );
           })}
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-base font-semibold text-foreground">{t('infoWhyTitle')}</h2>
+        <section className="surface-card p-6 space-y-4">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">{t('infoWhyTitle')}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{t('infoWhyText')}</p>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 pt-1">
             {pillars.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="rounded-xl border border-border/80 bg-muted/30 p-4">
+                <div key={item.title} className="pt-1">
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 border border-border">
+                    <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                       <Icon className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                      <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.text}</p>
                     </div>
                   </div>
@@ -120,8 +110,8 @@ export function Info({ onBack }: InfoProps) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-base font-semibold text-foreground">{t('infoProcessTitle')}</h2>
+        <section className="surface-card p-6 space-y-4">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">{t('infoProcessTitle')}</h2>
           <ol className="space-y-3">
             {processSteps.map((step, index) => (
               <li key={step} className="flex gap-3">
@@ -134,15 +124,15 @@ export function Info({ onBack }: InfoProps) {
           </ol>
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-6 shadow-sm space-y-3">
-          <h2 className="text-base font-semibold text-foreground">{t('infoResultTitle')}</h2>
+        <section className="surface-card p-6 space-y-3">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">{t('infoResultTitle')}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{t('infoResult1')}</p>
           <p className="text-sm text-muted-foreground leading-relaxed">{t('infoResult2')}</p>
         </section>
 
         <div className="flex flex-wrap gap-2">
           {[t('infoTagStudentProject'), 'IIIUS Institut', t('infoTagHfu'), t('infoTagStGeorgen')].map((tag) => (
-            <span key={tag} className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <span key={tag} className="inline-flex items-center rounded-full bg-primary-soft px-3 py-1.5 text-xs font-semibold text-primary-dark">
               {tag}
             </span>
           ))}
@@ -151,9 +141,6 @@ export function Info({ onBack }: InfoProps) {
         <p className="text-center text-xs text-muted-foreground">{t('infoFooterNote')}</p>
 
         <div className="border-t border-border pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {language === 'de' ? 'Rechtliches' : 'Legal'}
-          </p>
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
             <Link to="/impressum" className="text-sm font-medium text-foreground hover:text-primary hover:underline">
               {language === 'de' ? 'Impressum' : 'Legal Notice'}

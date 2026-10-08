@@ -12,6 +12,8 @@ import { findNearestVisibleBellHit, getBellColliderRadius } from './hitDetection
 import { createScrollLockController } from './scrollLock';
 import { clampMelodyLength, getRecentOtherUserMelodies, getLatestOtherUserMelody, getPlaybackDelayMs, parseMelody, serializeMelody, StoredMelodyEntry, type MelodyNote } from './melody';
 import { withTimeout } from './loading';
+import { ARStartCard } from '../ARStartCard';
+import { Bell } from 'lucide-react';
 
 // TODO: Replace with your own glockenturm.glb model
 // Place the GLB file in: src/components/ARComponents/glockenspiel/models/glockenturm.glb
@@ -1686,162 +1688,41 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
 
         {/* Intro overlays */}
         {!hasSeen && !initError && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 10005,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              pointerEvents: 'auto',
-              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
-            }}
-          >
-            <div
-              style={{
-                width: 'min(460px, !isLoading && 100%)',
-                borderRadius: '16px',
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '20px',
-                textAlign: 'center',
-              }}
-            >
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)' }}>
-                {glockenspielTexts.arStartTitle}
-              </h2>
-              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
-                {glockenspielTexts.arPermissionDescription}
-              </p>
-              <button
-                onClick={handleConfirmSight}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-white)',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {glockenspielTexts.arPermissionButton}
-              </button>
-            </div>
-          </div>
+          <ARStartCard
+            title={glockenspielTexts.arStartTitle}
+            description={glockenspielTexts.arPermissionDescription}
+            buttonLabel={glockenspielTexts.arPermissionButton}
+            onStart={handleConfirmSight}
+          />
         )}
 
         {hasSeen && !hasStarted && !showStartGuide && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 14050,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              pointerEvents: 'auto',
-              background: 'linear-gradient(to bottom, rgba(16,24,32,0.75), rgba(16,24,32,0.45))',
-            }}
-          >
-            <div
-              style={{
-                width: 'min(460px, 100%)',
-                borderRadius: '16px',
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '20px',
-                textAlign: 'center',
-              }}
-            >
-              <p style={{ marginBottom: '14px', color: 'var(--color-white)', opacity: 0.95 }}>
-                {glockenspielTexts.arStartDescription}
-              </p>
-              {startError && (
-                <p style={{ marginBottom: '12px', color: '#ffd3d3', fontWeight: 700 }}>
-                  {startError}
-                </p>
-              )}
-              <button
-                onClick={() => void handlePrepareExperience()}
-                disabled={isPreparingExperience || isStarting}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-white)',
-                  fontWeight: 700,
-                  cursor: isPreparingExperience || isStarting ? 'default' : 'pointer',
-                  opacity: isPreparingExperience || isStarting ? 0.75 : 1,
-                }}
-              >
-                {isPreparingExperience ? 'Wird geladen…' : (isStarting ? glockenspielTexts.arStartingButton : glockenspielTexts.arStartButton)}
-              </button>
-            </div>
-          </div>
+          <ARStartCard
+            zIndex={14050}
+            description={glockenspielTexts.arStartDescription}
+            error={startError}
+            loading={isPreparingExperience || isStarting}
+            buttonLabel={isPreparingExperience ? 'Wird geladen…' : (isStarting ? glockenspielTexts.arStartingButton : glockenspielTexts.arStartButton)}
+            onStart={() => void handlePrepareExperience()}
+          />
         )}
 
         {showStartGuide && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 14050,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              pointerEvents: 'auto',
-              background: 'rgba(5, 10, 16, 0.72)',
-            }}
-          >
-            <div
-              style={{
-                width: 'min(460px, 100%)',
-                borderRadius: '16px',
-                background: 'rgba(0,0,0,0.72)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '20px',
-                textAlign: 'center',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
-              }}
-            >
-              <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
-                Glockenspiel AR
-              </h3>
-              <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.95)', lineHeight: 1.5 }}>
-                Richte das Fadenkreuz auf eine Glocke, um Klänge zu erzeugen.
-              </p>
-              <button
-                onClick={handleStartGuideConfirm}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-white)',
-                  fontWeight: 700,
-                  cursor: isCurrentStationCompleted ? 'default' : 'pointer',
-                }}
-              >
-                OK
-              </button>
-            </div>
-          </div>
+          <ARStartCard
+            zIndex={14050}
+            title="Glockenspiel AR"
+            description="Richte das Fadenkreuz auf eine Glocke, um Klänge zu erzeugen."
+            icon={<Bell className="w-8 h-8 text-primary" />}
+            buttonLabel="OK"
+            onStart={handleStartGuideConfirm}
+          />
         )}
 
         {isPreparingExperience && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/85 backdrop-blur-sm pointer-events-none">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-white mb-4 mx-auto" />
-              <p className="text-white text-sm">Lädt Glockenspiel-Mesh…</p>
+              <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4 mx-auto" />
+              <p className="text-white/85 text-sm font-semibold">Lädt Glockenspiel…</p>
             </div>
           </div>
         )}

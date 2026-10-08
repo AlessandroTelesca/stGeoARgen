@@ -1,4 +1,4 @@
-import { ArrowRight, MapPin, Trophy, Clock } from 'lucide-react';
+import { ArrowRight, MapPin, Trophy, Clock, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -30,93 +30,95 @@ export function PathCard({
   onClick,
 }: PathCardProps) {
   const { t } = useLanguage();
-  const progress = (completedStations / totalStations) * 100;
+  const progress = totalStations > 0 ? (completedStations / totalStations) * 100 : 0;
   const isStarted = completedStations > 0;
-  const isCompleted = completedStations === totalStations;
+  const isCompleted = totalStations > 0 && completedStations === totalStations;
 
-  const difficultyColors = {
-    'Einfach': 'bg-success/10 text-success',
-    'Mittel': 'bg-warning/10 text-warning-foreground',
-    'Schwer': 'bg-destructive/10 text-destructive',
+  const difficultyDot = {
+    'Einfach': 'bg-green-400',
+    'Mittel': 'bg-gold-bright',
+    'Schwer': 'bg-red-400',
   };
 
   return (
     <motion.button
       onClick={onClick}
-      className="w-full bg-white rounded-2xl border border-border shadow-sm transition-all text-left overflow-hidden"
-      whileTap={{ scale: 0.98 }}
+      className="group w-full surface-card text-left overflow-hidden transition-shadow hover:shadow-md"
+      whileTap={{ scale: 0.985 }}
     >
-      {/* Image */}
+      {/* Bild */}
       <div className="relative h-48 overflow-hidden">
         <ImageWithFallback
           src={imageUrl}
           alt={title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
         />
-        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/0" aria-hidden="true" />
+
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1.5 text-xs font-semibold text-white">
+          <span className={`w-2 h-2 rounded-full ${difficultyDot[difficulty]}`} />
+          {difficulty}
+        </div>
+
         {isCompleted && (
-          <div className="absolute top-3 right-3 bg-primary text-white rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
-            <span className="text-sm font-semibold">✓ {t('completed')}</span>
-          </div>
-        )}
-        
-        {!isCompleted && isStarted && (
-          <div className="absolute top-3 right-3 bg-white rounded-full px-3 py-1.5 shadow-lg">
-            <span className="text-sm font-semibold">{Math.round(progress)}%</span>
+          <div className="absolute top-3 right-3 bg-primary text-white rounded-full pl-2 pr-3 py-1.5 flex items-center gap-1 shadow-md text-xs font-bold">
+            <Check className="w-3.5 h-3.5" strokeWidth={3} />
+            {t('completed')}
           </div>
         )}
 
-        <div className={`absolute top-3 left-3 ${difficultyColors[difficulty]} rounded-full px-3 py-1.5 text-xs font-semibold`}>
-          {difficulty}
+        {/* Titel auf dem Bild */}
+        <div className="absolute inset-x-0 bottom-0 p-4 pt-10">
+          <h3 className="text-xl font-bold text-white leading-tight drop-shadow-sm">{title}</h3>
+          {isStarted && !isCompleted && (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-1.5 flex-1 bg-white/25 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-white rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                />
+              </div>
+              <span className="text-xs font-bold text-white tabular-nums">{Math.round(progress)}%</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-5">
-        <h3 className="font-semibold mb-2">{title}</h3>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+      {/* Inhalt */}
+      <div className="p-4 pt-3.5">
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {description}
         </p>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-2 bg-muted/50 rounded-lg">
-            <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('stations')}</p>
-            <p className="text-sm font-semibold">{completedStations}/{totalStations}</p>
+        <dl className="mt-4 grid grid-cols-3 divide-x divide-border rounded-2xl bg-secondary/70 py-2.5">
+          <div className="px-2 text-center">
+            <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <MapPin className="w-3.5 h-3.5" />
+              {t('stations')}
+            </dt>
+            <dd className="mt-0.5 text-sm font-bold tabular-nums">{completedStations}/{totalStations}</dd>
           </div>
-          <div className="text-center p-2 bg-muted/50 rounded-lg">
-            <Trophy className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('points')}</p>
-            <p className="text-sm font-semibold">{earnedPoints}/{totalPoints}</p>
+          <div className="px-2 text-center">
+            <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <Trophy className="w-3.5 h-3.5" />
+              {t('points')}
+            </dt>
+            <dd className="mt-0.5 text-sm font-bold tabular-nums">{earnedPoints}/{totalPoints}</dd>
           </div>
-          <div className="text-center p-2 bg-muted/50 rounded-lg">
-            <Clock className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{t('time')}</p>
-            <p className="text-sm font-semibold">{estimatedTime}</p>
+          <div className="px-2 text-center">
+            <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <Clock className="w-3.5 h-3.5" />
+              {t('time')}
+            </dt>
+            <dd className="mt-0.5 text-sm font-bold">{estimatedTime}</dd>
           </div>
-        </div>
+        </dl>
 
-        {/* Progress Bar */}
-        {isStarted && !isCompleted && (
-          <div className="mb-4">
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="flex items-center justify-between pt-3 border-t border-border">
-          <span className="text-sm font-medium text-primary">
-            {t('start')}
-          </span>
-          <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
+        <div className="mt-4 flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-white transition-colors group-hover:bg-primary-dark">
+          <span className="text-sm font-bold">{t('start')}</span>
+          <ArrowRight className="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5" />
         </div>
       </div>
     </motion.button>

@@ -421,5 +421,9 @@
   "pleaseTryAgain": "Please try again.",
   "progressResetDone": "Progress reset.",
   "progressResetDoneDb": "Your progress was also deleted from the database.",
-  "progressResetDoneLocal": "Local progress was deleted."
+  "progressResetDoneLocal": "Local progress was deleted.",
+  "journeyGuestHint": "Log in so Georgi can remember your progress.",
+  "pathsDoneShort": "Paths done",
+  "memberSinceDate": "Member since {date}",
+  "unknown": "Unknown"
 }

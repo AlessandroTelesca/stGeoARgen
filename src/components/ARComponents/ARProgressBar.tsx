@@ -90,13 +90,13 @@ export const ARProgressBar = ({ progress, stations, onCompactChange }: ARProgres
                     <div className="ar-station-current-dot" />
                   )}
                   {status === 'locked' && !isLastStation && (
-                    <svg width={lockedIconSize} height={lockedIconSize} viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                    <svg width={lockedIconSize} height={lockedIconSize} viewBox="0 0 24 24" fill="none" stroke="#9aa39a" strokeWidth="2">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                   )}
                   {status === 'locked' && isLastStation && (
-                    <Gift style={{ width: `${lockedGiftIconSize}px`, height: `${lockedGiftIconSize}px`, color: '#9ca3af' }} />
+                    <Gift style={{ width: `${lockedGiftIconSize}px`, height: `${lockedGiftIconSize}px`, color: '#9aa39a' }} />
                   )}
                 </motion.div>
 

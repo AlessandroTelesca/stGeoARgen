@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, CheckCircle2, Navigation, Play, AlertCircle, LogIn, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
@@ -9,6 +8,7 @@ import { MapPin, Clock, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { GuestWarningDialog } from './GuestWarningDialog';
 
 interface QuizQuestion {
   question: string;
@@ -66,17 +66,6 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
     RADIUS_METERS
   );
 
-  // Log access status
-  React.useEffect(() => {
-    if (hasARRoute && distance !== null) {
-      if (isWithinRadius) {
-        console.log(`[StationDetail] Access granted - Station ${station.id} (${station.title}) within radius`);
-      } else {
-        console.log(`[StationDetail] Access denied - Station ${station.id} (${station.title}) ${Math.round(distance)}m away (requires ≤100m)`);
-      }
-    }
-  }, [hasARRoute, distance, isWithinRadius, station.id, station.title]);
-
   const handleNavigateToStation = () => {
     // Open Google Maps with directions to the station
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
@@ -96,69 +85,77 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
     }
   };
 
+  const navigateLabel = t('navigateToStation', { stationName: station.title });
+
   return (
     <motion.div
-      className="fixed inset-0 bg-background z-50 overflow-y-auto"
+      className="fixed inset-0 bg-background z-50 overflow-y-auto overscroll-contain"
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
-      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      transition={{ type: 'spring', damping: 34, stiffness: 320 }}
     >
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-border p-4 z-10 shadow-sm">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+      {/* Hero */}
+      <div className="relative h-[clamp(260px,42dvh,380px)] overflow-hidden">
+        <ImageWithFallback
+          src={station.imageUrl}
+          alt={station.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/0 to-black/70" aria-hidden="true" />
+
+        <div
+          className="absolute inset-x-0 top-0 flex items-center justify-between px-4"
+          style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}
+        >
           <button
             onClick={onClose}
-            className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center hover:bg-muted/70 transition-colors"
+            aria-label={t('close')}
+            className="w-11 h-11 rounded-full bg-black/35 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/50 transition-colors pressable"
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-lg">
-            <Trophy className="w-4 h-4" />
-            <span className="font-semibold">{station.points} Punkte</span>
+          <div className="flex items-center gap-1.5 rounded-full bg-black/35 backdrop-blur-md border border-white/20 px-3.5 py-2 text-white">
+            <Trophy className="w-4 h-4 text-gold-bright" />
+            <span className="text-sm font-bold tabular-nums">{station.points} {t('points')}</span>
           </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-10 max-w-md mx-auto">
+          {isCompleted && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white mb-2">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {t('completed')}
+            </span>
+          )}
+          <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-tight text-white drop-shadow-sm">{station.title}</h1>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto p-4 pb-24">
-        {/* Hero Image */}
-        <div className="relative h-64 rounded-2xl overflow-hidden mb-6">
-          <ImageWithFallback
-            src={station.imageUrl}
-            alt={station.title}
-            className="w-full h-full object-cover"
-          />
-          {isCompleted && (
-            <div className="absolute top-4 right-4 bg-black text-white rounded-full p-2">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          )}
-        </div>
+      <div className="relative -mt-6 rounded-t-[28px] bg-background">
+        <div className="max-w-md mx-auto px-4 pt-6 pb-32 space-y-5">
+          <p className="text-[15px] leading-relaxed text-gray-700 px-1">
+            {station.longDescription}
+          </p>
 
-        {/* Content */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="mb-2">{station.title}</h1>
-            <p className="text-muted-foreground">
-              {station.longDescription}
-            </p>
-          </div>
-
-          {/* LOGIN GATE – shown when not logged in and AR is available */}
+          {/* LOGIN-GATE */}
           {needsLogin && (
             <motion.div
-              className="bg-white text-gray-900 rounded-2xl p-6 text-center shadow-xl border border-gray-100"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="surface-card p-6 text-center"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="font-semibold mb-2 text-lg text-gray-900">{t('loginRequired')}</h3>
-              <p className="text-sm text-gray-500 mb-6">
+              <span className="w-14 h-14 rounded-2xl bg-primary-soft text-primary mx-auto mb-4 flex items-center justify-center">
+                <LogIn className="w-6 h-6" />
+              </span>
+              <h3 className="font-bold text-lg">{t('loginRequired')}</h3>
+              <p className="text-sm text-muted-foreground mt-1.5 mb-6 leading-relaxed">
                 {t('loginToStartAR')}
               </p>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <button
                   onClick={onNavigateToLogin}
-                  className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  className="w-full h-13 min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
                 >
                   <LogIn className="w-5 h-5" />
                   <span>{t('loginNow')}</span>
@@ -166,147 +163,155 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                 {onNavigateToRegister && (
                   <button
                     onClick={onNavigateToRegister}
-                    className="w-full bg-white text-primary border-2 border-primary py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
+                    className="w-full min-h-[52px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold transition-colors pressable"
                   >
                     {t('createAccount')}
                   </button>
                 )}
                 <button
                   onClick={() => setShowGuestWarning(true)}
-                  className="w-full py-3 rounded-xl font-semibold active:scale-[0.98] transition-transform"
-                  style={{ backgroundColor: '#dc2626', color: '#ffffff', border: '2px solid #b91c1c' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  className="w-full min-h-[48px] rounded-2xl font-semibold text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
                 >
+                  <AlertTriangle className="w-4 h-4 text-gold" />
                   {t('startStationAsGuest')}
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* Location Error */}
+          {/* Standortfehler */}
           {!needsLogin && hasARRoute && locationError && !isCompleted && (
             <motion.div
-              className="bg-warning/10 border border-warning/30 rounded-2xl p-6"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-[24px] bg-gold-soft border border-gold/25 p-5"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
-                <div className="w-full">
-                  <h3 className="font-semibold mb-1 text-warning">{t('locationAccessRequired')}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <span className="w-10 h-10 rounded-xl bg-gold/15 text-gold flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </span>
+                <div className="w-full min-w-0">
+                  <h3 className="font-bold text-gold-foreground">{t('locationAccessRequired')}</h3>
+                  <p className="text-sm text-gold-foreground/80 mt-1 mb-4 leading-snug">
                     {locationError}
                   </p>
                   <button
                     onClick={handleNavigateToStation}
-                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                    className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable"
                   >
                     <Navigation className="w-5 h-5" />
-                    <span>{t('navigateToStation', { stationName: station.title })}</span>
+                    <span>{navigateLabel}</span>
                   </button>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Distance Check - Too Far (Echtzeit-Anzeige) */}
+          {/* Zu weit entfernt */}
           {!needsLogin && hasARRoute && !locationError && distance !== null && !isWithinRadius && !isCompleted && (
             <motion.div
-              className="bg-black text-white rounded-2xl p-6 text-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              key={Math.round(distance)} // Re-animate on distance change
+              className="relative overflow-hidden rounded-[24px] bg-gray-900 text-white p-6 text-center shadow-lg"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              <div className="w-20 h-20 bg-warning/20 border-2 border-warning rounded-full mx-auto mb-4 flex items-center justify-center">
-                <MapPin className="w-10 h-10 text-warning" />
-              </div>
-              <h3 className="font-semibold mb-2">{t('tooFarAway')}</h3>
-              <div className="inline-block bg-warning/20 text-warning px-4 py-2 rounded-lg mb-4">
-                <p className="text-2xl font-bold">{Math.round(distance)}m</p>
-                <p className="text-xs opacity-75">{t('estimatedDistance')}</p>
-              </div>
-              <p className="text-sm opacity-75 mb-6">
-                {t('getCloserDistance')}
-              </p>
-              <div className="space-y-3">
+              <div className="topo-texture absolute inset-0 opacity-60" aria-hidden="true" />
+              <div className="relative">
+                <span className="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-gold/25 animate-ping" style={{ animationDuration: '2.4s' }} aria-hidden="true" />
+                  <span className="relative w-16 h-16 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center">
+                    <MapPin className="w-7 h-7 text-gold-bright" />
+                  </span>
+                </span>
+                <h3 className="font-bold text-lg">{t('tooFarAway')}</h3>
+                <p className="mt-3 text-4xl font-extrabold tabular-nums text-gold-bright">
+                  {distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)} m`}
+                </p>
+                <p className="text-xs text-white/60 mt-1">{t('estimatedDistance')}</p>
+                <p className="text-sm text-white/75 mt-4 mb-6 leading-relaxed">
+                  {t('getCloserDistance')}
+                </p>
                 <button
                   onClick={handleNavigateToStation}
-                  className="w-full bg-white text-black py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  className="w-full min-h-[52px] bg-white text-gray-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors pressable"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span>{t('navigateToStation', { stationName: station.title })}</span>
+                  <span>{navigateLabel}</span>
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* AR Experience Button - Within Radius */}
+          {/* In Reichweite */}
           {!needsLogin && hasARRoute && !locationError && isWithinRadius && !isCompleted && (
             <motion.div
-              className="bg-primary text-white rounded-2xl p-6 text-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="brand-gradient relative overflow-hidden text-white rounded-[24px] p-6 text-center shadow-lg"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              <div className="inline-flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-lg mb-3">
-                <CheckCircle2 className="w-4 h-4" />
-                <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
-              </div>
-              <h3 className="font-semibold mb-2">{t('arExperienceAvailable')}</h3>
-              <p className="text-sm opacity-90 mb-6">
-                {t('closeEnoughDescription')}
-              </p>
-              <div className="space-y-3">
-                <button
-                  onClick={handleStartARExperience}
-                  className="w-full bg-white text-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
-                >
-                  <Play className="w-5 h-5" />
-                  <span>{t('startARExperience')}</span>
-                </button>
-                <button
-                  onClick={handleNavigateToStation}
-                  className="w-full bg-white/20 text-white border-2 border-white/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                >
-                  <Navigation className="w-5 h-5" />
-                  <span>{t('navigateToStation', { stationName: station.title })}</span>
-                </button>
+              <div className="topo-texture absolute inset-0" aria-hidden="true" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-1.5 bg-white/15 border border-white/20 px-3 py-1.5 rounded-full mb-4">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
+                </div>
+                <h3 className="font-bold text-xl">{t('arExperienceAvailable')}</h3>
+                <p className="text-sm text-white/85 mt-1.5 mb-6 leading-relaxed">
+                  {t('closeEnoughDescription')}
+                </p>
+                <div className="space-y-2.5">
+                  <button
+                    onClick={handleStartARExperience}
+                    className="w-full min-h-[56px] bg-white text-primary rounded-2xl font-extrabold flex items-center justify-center gap-2 shadow-lg pressable"
+                  >
+                    <Play className="w-5 h-5" fill="currentColor" />
+                    <span>{t('startARExperience')}</span>
+                  </button>
+                  <button
+                    onClick={handleNavigateToStation}
+                    className="w-full min-h-[48px] bg-white/12 hover:bg-white/20 text-white border border-white/25 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Navigation className="w-4 h-4" />
+                    <span>{navigateLabel}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
 
-          {/* No AR available - fallback */}
+          {/* Ohne AR */}
           {!isCompleted && !STATION_AR_ROUTES[station.id] && (
             <motion.div
-              className="bg-muted rounded-2xl p-6 text-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="surface-card p-6 text-center"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="font-semibold mb-2">{t('informationStation')}</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <h3 className="font-bold text-lg">{t('informationStation')}</h3>
+              <p className="text-sm text-muted-foreground mt-1.5 mb-5">
                 {t('noARExperience')}
               </p>
               <button
                 onClick={handleNavigateToStation}
-                className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable"
               >
                 <Navigation className="w-5 h-5" />
-                <span>{t('navigateToStation', { stationName: station.title })}</span>
+                <span>{navigateLabel}</span>
               </button>
             </motion.div>
           )}
 
-          {/* Completed State */}
+          {/* Abgeschlossen */}
           {isCompleted && (
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 text-center">
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">{t('stationCompleted')}</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="rounded-[24px] bg-primary-soft p-6 text-center">
+              <span className="w-14 h-14 rounded-full bg-primary text-white mx-auto mb-3 flex items-center justify-center shadow-primary">
+                <CheckCircle2 className="w-7 h-7" />
+              </span>
+              <h3 className="font-bold text-lg text-primary-dark">{t('stationCompleted')}</h3>
+              <p className="text-sm text-gray-700 mt-1 mb-5">
                 {t('stationCompletedReplay')}
               </p>
               <button
                 onClick={handleStartARExperience}
-                className="w-full bg-white text-primary border border-primary/30 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                className="w-full min-h-[52px] bg-card text-primary border border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable"
               >
                 <Play className="w-5 h-5" />
                 <span>{t('repeatStation')}</span>
@@ -314,23 +319,23 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
             </div>
           )}
 
-          {/* Additional Info */}
-          <div className="bg-white border border-border rounded-2xl p-4">
-            <h4 className="font-semibold mb-3">{t('stationFunFacts')}</h4>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+          {/* Gut zu wissen */}
+          <div className="surface-card p-5">
+            <h4 className="font-bold mb-3">{t('stationFunFacts')}</h4>
+            <ul className="space-y-3 text-sm text-gray-700">
+              <li className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0"><MapPin className="w-4 h-4" /></span>
                 <span>{t('stationLocation')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0"><Clock className="w-4 h-4" /></span>
                 <span>{t('stationEstimatedDuration')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0"><Target className="w-4 h-4" /></span>
                 <span>{t('stationDifficulty')}</span>
-              </div>
-            </div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -351,52 +356,15 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         position="bottom-right"
       />
 
-      {showGuestWarning && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close')}
-            className="absolute inset-0 bg-black/45 backdrop-blur-sm"
-            onClick={() => setShowGuestWarning(false)}
-          />
-          <motion.div
-            className="relative w-full max-w-md rounded-2xl bg-white p-6"
-            style={{ borderWidth: '2px', borderColor: '#ef4444', boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3), 0 0 30px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.25)' }}
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <h3 className="text-lg font-semibold">{t('guestStartWarningTitle')}</h3>
-            </div>
-            <p className="mb-6 text-sm text-muted-foreground">{t('guestStartWarningText')}</p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => setShowGuestWarning(false)}
-                className="flex-1 rounded-lg border border-border bg-white px-6 py-4 font-semibold text-foreground hover:bg-muted/50 transition-colors text-lg"
-              >
-                {t('guestStartWarningCancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGuestWarning(false);
-                  onEnableGuestStart?.();
-                  handleStartARExperience();
-                }}
-                className="flex-1 rounded-lg bg-primary px-6 py-4 font-semibold text-white hover:opacity-90 transition-opacity text-lg"
-              >
-                {t('guestStartWarningContinue')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <GuestWarningDialog
+        open={showGuestWarning}
+        onCancel={() => setShowGuestWarning(false)}
+        onContinue={() => {
+          setShowGuestWarning(false);
+          onEnableGuestStart?.();
+          handleStartARExperience();
+        }}
+      />
     </motion.div>
   );
 }

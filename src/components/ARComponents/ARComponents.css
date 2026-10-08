@@ -42,61 +42,88 @@
   pointer-events: none;
 }
 
-/* Top Bar */
+/* ===== AR-Chrome: helles Milchglas über dem Kamerabild ===== */
 .ar-top-bar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 20;
-  padding: 16px;
+  padding: max(14px, env(safe-area-inset-top)) 14px 14px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  gap: 12px;
   pointer-events: auto;
 }
 
 .ar-home-button {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background-color: var(--color-white-95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
+  background-color: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+  backdrop-filter: saturate(1.6) blur(16px);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  color: var(--primary);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .ar-profile-button {
-  background-color: var(--color-white-95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 70%;
+  background-color: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+  backdrop-filter: saturate(1.6) blur(16px);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 28px;
-  border: none;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
   cursor: pointer;
+  color: var(--foreground);
+}
+
+.ar-profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  background: linear-gradient(140deg, #0f7a13 0%, #0C690F 45%, #074a09 100%);
 }
 
 .ar-profile-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
-  color: var(--color-black);
+  line-height: 1.2;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ar-profile-email {
   font-size: 11px;
-  color: var(--color-gray-600);
+  line-height: 1.3;
+  color: var(--muted-foreground);
 }
 
 .ar-profile-points {
   font-size: 11px;
-  color: var(--color-gray-600);
+  color: var(--muted-foreground);
 }
 
 /* Bottom Bar */
@@ -106,23 +133,25 @@
   left: 0;
   right: 0;
   z-index: 18;
-  padding: 16px;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  padding: 14px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 
 .ar-progress-container {
-  background-color: var(--color-white-95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 20px 16px;
-  box-shadow: var(--shadow-sm);
+  background-color: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+  backdrop-filter: saturate(1.6) blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  padding: 16px 16px 14px;
+  box-shadow: var(--shadow-lg);
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transform: scaleX(1);
   transform-origin: center bottom;
-  transition: padding 0.35s ease, border-radius 0.35s ease, transform 0.35s ease;
+  transition: padding 0.35s var(--ease-out-quart), border-radius 0.35s var(--ease-out-quart), transform 0.35s var(--ease-out-quart);
 }
 
 .ar-progress-container-compact {
@@ -135,7 +164,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
   transition: margin-bottom 0.35s ease;
 }
@@ -161,6 +190,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  flex-shrink: 0;
   transition: width 0.35s ease, height 0.35s ease;
 }
 
@@ -170,16 +200,18 @@
 }
 
 .ar-station-completed {
-  background-color: var(--color-primary);
+  background-color: var(--primary);
+  box-shadow: 0 2px 6px rgba(12, 105, 15, 0.35);
 }
 
 .ar-station-current {
-  background-color: var(--color-primary);
-  box-shadow: var(--shadow-primary-light);
+  background-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(12, 105, 15, 0.18);
 }
 
 .ar-station-locked {
-  background-color: var(--color-gray-200);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
 }
 
 .ar-station-current-dot {
@@ -209,7 +241,7 @@
 }
 
 .ar-station-line-completed {
-  background-color: var(--color-primary);
+  background-color: var(--primary);
 }
 
 .ar-station-line-locked {
@@ -236,43 +268,54 @@
 
 .ar-station-text {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--color-gray-800);
+  font-weight: 700;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
 }
 
 .ar-points-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--color-primary);
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--gold-foreground);
+}
+
+.ar-points-badge svg {
+  color: var(--gold);
 }
 
 .ar-points-text {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Profile Menu */
 .ar-menu-backdrop {
   position: absolute;
   inset: 0;
-  background-color: var(--color-black-30);
+  background-color: rgba(10, 18, 13, 0.35);
   pointer-events: auto;
   z-index: 30;
 }
 
 .ar-menu-panel {
   position: absolute;
-  top: 88px;
-  right: 16px;
-  width: 280px;
-  background-color: rgba(255, 255, 255, 0.98);
+  top: calc(max(14px, env(safe-area-inset-top)) + 64px);
+  right: 14px;
+  width: min(280px, calc(100vw - 28px));
+  background-color: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border-radius: 20px;
+  border-radius: 22px;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
   z-index: 31;
+  padding: 8px;
 }
 
 .ar-menu-items {
@@ -281,15 +324,19 @@
 
 .ar-menu-item {
   width: 100%;
+  min-height: 48px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
   transition: background-color 0.2s;
 }
 
@@ -297,36 +344,43 @@
   background-color: var(--color-gray-100);
 }
 
+.ar-menu-item-logout {
+  color: var(--destructive);
+}
+
 .ar-menu-item-logout:hover {
   background-color: var(--color-danger-hover);
 }
 
 .ar-menu-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .ar-menu-icon-primary {
-  background-color: var(--color-primary-light);
+  background-color: var(--primary-soft);
+  color: var(--primary);
 }
 
 .ar-menu-icon-danger {
   background-color: var(--color-danger-light);
+  color: var(--destructive);
 }
 
 .ar-menu-text {
-  font-weight: 500;
-  color: var(--color-gray-800);
+  font-weight: 600;
+  color: var(--foreground);
   font-size: 15px;
 }
 
 .ar-menu-text-danger {
-  font-weight: 500;
-  color: var(--color-danger);
+  font-weight: 600;
+  color: var(--destructive);
   font-size: 15px;
 }
 
@@ -407,6 +461,7 @@
 
 .ar-fish-btn-tertiary {
   flex: 1;
+  min-height: 48px;
   padding: 13px 8px;
   border-radius: 32px;
   border: none;
@@ -415,7 +470,7 @@
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-md);
   transition: all 0.15s ease;
 }
 
@@ -431,6 +486,7 @@
 
 .ar-fish-btn-secondary {
   flex: 2;
+  min-height: 48px;
   padding: 13px 16px;
   border-radius: 32px;
   border: 2px solid var(--color-primary);
@@ -443,7 +499,7 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-md);
   transition: all 0.15s ease;
 }
 

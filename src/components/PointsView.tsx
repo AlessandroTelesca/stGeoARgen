@@ -1,7 +1,8 @@
-import { Trophy, Award, Star, Zap, Target, Crown, Medal, Gift, ArrowLeft } from 'lucide-react';
+import { Trophy, Award, Star, Zap, Target, Crown, Medal, Gift } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Georgi } from './Georgi';
+import { GeorgiAvatar } from './Georgi';
+import { BackLink } from './PageHeader';
 
 interface Achievement {
   id: string;
@@ -89,29 +90,18 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
   const maxPossiblePoints = paths.reduce((sum, p) => sum + p.totalPoints, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Back Button */}
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-12">
+        <BackLink onBack={onBack} />
+        <div className="h-5" />
         {/* Georgi Mentor */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <Georgi size={48} />
+          <div className="surface-card p-4 flex items-center gap-3">
+            <GeorgiAvatar size="md" animated={false} />
             <div className="flex-1">
               <p className="text-sm">
                 {totalPoints === 0 
@@ -126,7 +116,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
 
         {/* Level Card */}
         <motion.div
-          className="bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 mb-6 shadow-lg"
+          className="brand-gradient text-white rounded-[28px] p-6 mb-6 shadow-lg"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
@@ -134,7 +124,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm opacity-90 mb-1">{t('yourLevel')}</p>
-              <h2 className="text-4xl">{level}</h2>
+              <h2 className="text-5xl font-extrabold tabular-nums">{level}</h2>
             </div>
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
               <Zap className="w-8 h-8" />
@@ -163,7 +153,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
         {/* Points Overview */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -173,12 +163,12 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
                 <Trophy className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{totalPoints}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{totalPoints}</p>
             <p className="text-sm text-muted-foreground">{t('collectedPoints')}</p>
           </motion.div>
 
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -188,7 +178,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
                 <Gift className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{maxPossiblePoints - totalPoints}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{maxPossiblePoints - totalPoints}</p>
             <p className="text-sm text-muted-foreground">{t('stillAvailable')}</p>
           </motion.div>
         </div>
@@ -197,15 +187,13 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
         {onNavigateToRewards && (
           <motion.button
             onClick={onNavigateToRewards}
-            className="w-full bg-white rounded-2xl p-5 mb-6 shadow-sm border-2 border-primary/30 hover:border-primary hover:shadow-md transition-all group relative overflow-hidden"
+            className="w-full surface-card p-5 mb-6 hover:shadow-md transition-shadow group relative overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            {/* Green gradient accent */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary-light to-primary" />
             
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
@@ -235,19 +223,19 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="mb-4">{t('pointsByPath')}</h3>
+          <h3 className="text-lg font-bold tracking-tight mb-4">{t('pointsByPath')}</h3>
           <div className="space-y-3">
             {paths.map((path, index) => (
               <motion.div
                 key={path.id}
-                className="bg-white rounded-xl p-4 border border-border shadow-sm"
+                className="surface-card p-4"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4>{path.title}</h4>
-                  <span className="text-primary">
+                  <h4 className="font-bold">{path.title}</h4>
+                  <span className="text-primary font-bold tabular-nums">
                     {path.earnedPoints}/{path.totalPoints}
                   </span>
                 </div>
@@ -271,7 +259,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
           transition={{ delay: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3>{t('achievements')}</h3>
+            <h3 className="text-lg font-bold tracking-tight">{t('achievements')}</h3>
             <span className="text-sm text-muted-foreground">
               {unlockedCount}/{achievements.length}
             </span>
@@ -282,7 +270,7 @@ export function PointsView({ totalPoints, paths, onBack, onNavigateToRewards }: 
                 key={achievement.id}
                 className={`rounded-xl p-4 border shadow-sm transition-all ${
                   achievement.unlocked
-                    ? 'bg-white border-primary/30'
+                    ? 'bg-card border-primary/25'
                     : 'bg-muted/30 border-border opacity-60'
                 }`}
                 initial={{ opacity: 0, scale: 0.9 }}

@@ -4,6 +4,7 @@ import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
 import * as THREE from 'three';
+import { ARStartCard } from '../ARStartCard';
 
 class PanoramaPlaneVisualizer extends GyroARVisualizer {
     private xMin = 0;
@@ -376,15 +377,13 @@ const thumbH = Math.round(thumbW * 0.56);       // 16:9 bleibt
             />
 
             {!hasStarted && !error && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(0,0,0,0.75)' }}>
-                    <div style={{ width: 'min(400px, 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15,25,10,0.8)', padding: '24px', textAlign: 'center', color: 'white' }}>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>{texts.zeitreiseStartTitle}</h2>
-                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', marginBottom: '20px', lineHeight: 1.5 }}>{texts.zeitreiseStartDescription}</p>
-                        <button onClick={() => setHasStarted(true)} style={{ width: '100%', border: 'none', borderRadius: '12px', padding: '14px', background: 'var(--color-primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem' }}>
-                            {texts.zeitreiseStartButtonLabel}
-                        </button>
-                    </div>
-                </div>
+                <ARStartCard
+                    zIndex={30000}
+                    title={texts.zeitreiseStartTitle}
+                    description={texts.zeitreiseStartDescription}
+                    buttonLabel={texts.zeitreiseStartButtonLabel}
+                    onStart={() => setHasStarted(true)}
+                />
             )}
 
             {hasStarted && isStarting && !isReady && !error && (

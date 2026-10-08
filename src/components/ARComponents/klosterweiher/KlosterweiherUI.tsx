@@ -180,28 +180,9 @@ export const WaitingForGroundDetection = ({ overlayRoot }: WaitingForGroundProps
   const klosterweiherTexts = getKlosterweiherTexts(language);
 
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: '20%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 10003,
-        pointerEvents: 'none',
-        width: 'calc(100% - 40px)',
-        maxWidth: '420px',
-        boxSizing: 'border-box',
-        padding: '20px 28px',
-        background: 'var(--color-white)',
-        color: 'var(--color-gray-800)',
-        borderRadius: '16px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        fontWeight: 600,
-        fontSize: '16px',
-        textAlign: 'center',
-      }}
-    >
-      {klosterweiherTexts.waitingForGround}
+    <div className="fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10003] w-[calc(100%-32px)] max-w-[420px] ar-glass rounded-[24px] px-6 py-5 text-center shadow-2xl pointer-events-none flex items-center gap-3 text-left" style={{ top: '20%' }}>
+      <span className="w-9 h-9 flex-shrink-0 rounded-full border-[3px] border-white/25 border-t-white animate-spin" aria-hidden="true" />
+      <p className="m-0 font-semibold text-[15px] leading-snug">{klosterweiherTexts.waitingForGround}</p>
     </div>,
     overlayRoot
   );
@@ -218,49 +199,18 @@ export const WaitingForReady = ({ overlayRoot, onReady, modelsLoaded = false }: 
   const klosterweiherTexts = getKlosterweiherTexts(language);
 
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: '30%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 10003,
-        pointerEvents: 'auto',
-        width: 'calc(100% - 40px)',
-        maxWidth: '420px',
-        boxSizing: 'border-box',
-        padding: '20px 28px',
-        background: 'var(--color-white)',
-        color: 'var(--color-gray-800)',
-        borderRadius: '16px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-      }}
-    >
-      <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        {klosterweiherTexts.waitingForReadyPrompt}
-      </p>
+    <div className="fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10003] w-[calc(100%-32px)] max-w-[420px] ar-glass rounded-[24px] px-6 py-5 text-center shadow-2xl pointer-events-auto flex flex-col gap-4" style={{ top: '30%' }}>
+      <p className="m-0 font-semibold text-[15px] leading-snug">{klosterweiherTexts.waitingForReadyPrompt}</p>
       {modelsLoaded ? (
         <button
           onClick={onReady}
-          style={{
-            padding: '10px 16px',
-            borderRadius: '12px',
-            border: 'none',
-            background: 'var(--color-primary)',
-            color: 'var(--color-white)',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          }}
+          className="min-h-[52px] rounded-2xl bg-primary hover:bg-primary-light text-white font-bold shadow-primary transition-colors pressable"
         >
           {klosterweiherTexts.waitingForReadyButton}
         </button>
       ) : (
-        <p style={{ margin: 0, fontWeight: 400, fontSize: '14px', opacity: 0.8 }}>
+        <p className="m-0 flex items-center justify-center gap-2 text-sm text-white/75">
+          <span className="w-4 h-4 rounded-full border-2 border-white/25 border-t-white animate-spin" aria-hidden="true" />
           {klosterweiherTexts.waitingForReadyLoading}
         </p>
       )}
@@ -279,43 +229,14 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
   const klosterweiherTexts = getKlosterweiherTexts(language);
 
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 10003,
-        pointerEvents: 'auto',
-        width: 'calc(100% - 40px)',
-        maxWidth: '420px',
-        boxSizing: 'border-box',
-        padding: '20px 28px',
-        background: 'var(--color-white)',
-        color: 'var(--color-gray-800)',
-        borderRadius: '16px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-      }}
-    >
-      <p style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>
-        {klosterweiherTexts.fishingInstruction}
-      </p>
+    <div className="fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10003] w-[calc(100%-32px)] max-w-[420px] ar-glass rounded-[24px] px-6 py-5 text-center shadow-2xl pointer-events-auto flex flex-col gap-4" style={{ top: '50%' }}>
+      <span className="mx-auto w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg">
+        <img src="/Logo.svg" alt="" className="w-8 h-8 object-contain" />
+      </span>
+      <p className="m-0 font-semibold text-[15px] leading-relaxed">{klosterweiherTexts.fishingInstruction}</p>
       <button
         onClick={onStart}
-        style={{
-          padding: '10px 16px',
-          borderRadius: '12px',
-          border: 'none',
-          background: 'var(--color-primary)',
-          color: 'var(--color-white)',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-        }}
+        className="min-h-[54px] rounded-2xl bg-primary hover:bg-primary-light text-white font-bold shadow-primary transition-colors pressable"
       >
         {klosterweiherTexts.fishingStartButton}
       </button>

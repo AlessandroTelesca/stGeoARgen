@@ -1,9 +1,11 @@
-import { MapPin, CheckCircle2, Lock, Play, Filter, Search, ArrowLeft } from 'lucide-react';
+import { MapPin, CheckCircle2, Lock, Play, Search, Check, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Badge } from './ui/badge';
 import { useStationProximity } from './ARComponents/ARComponentBase';
+import { BackLink } from './PageHeader';
+
+const ease = [0.16, 1, 0.3, 1] as const;
 
 interface Station {
   id: number;
@@ -67,260 +69,174 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
   const completedStations = allStations.filter(s => s.status === 'completed').length;
   const availableStations = allStations.filter(s => s.status === 'available').length;
 
-  const getStatusIcon = (status: Station['status']) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle2 className="w-5 h-5 text-success" />;
-      case 'available':
-        return <Play className="w-5 h-5 text-primary" />;
-      case 'locked':
-        return <Lock className="w-5 h-5 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusColor = (status: Station['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'border-success/30 bg-success/5';
-      case 'available':
-        return 'border-primary/30 bg-white';
-      case 'locked':
-        return 'border-border bg-muted/30 opacity-60';
-    }
-  };
-
-  // Station Item Component with distance
-  const StationItem = ({ station, index }: { station: Station; index: number }) => {
-    const { distance } = useStationProximity(station.latitude, station.longitude, 100);
-    const displayStatus: Station['status'] = isLoggedIn ? station.status : 'locked';
-    
-    return (
-      <motion.button
-        onClick={() => displayStatus !== 'locked' && onStationClick(station.pathId, station.id)}
-        disabled={displayStatus === 'locked'}
-        className={`w-full rounded-xl p-4 border shadow-sm text-left transition-all ${getStatusColor(displayStatus)} ${
-          displayStatus !== 'locked' ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' : 'cursor-not-allowed'
-        }`}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.7 + index * 0.05 }}
-        whileHover={displayStatus !== 'locked' ? { scale: 1.01 } : {}}
-        whileTap={displayStatus !== 'locked' ? { scale: 0.99 } : {}}
-      >
-        <div className="flex gap-4">
-          {/* Image */}
-          <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative">
-            <img
-              src={station.imageUrl}
-              alt={station.title}
-              className="w-full h-full object-cover"
-            />
-            {displayStatus === 'completed' && (
-              <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-success" />
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h4 className="truncate font-semibold">{station.title}</h4>
-              {getStatusIcon(displayStatus)}
-            </div>
-            <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
-              {station.description}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-xs">
-                {station.pathTitle}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {station.points} {t('points')}
-              </Badge>
-              {displayStatus !== 'completed' && distance !== null && (
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {Math.round(distance)}m
-                </Badge>
-              )}
-            </div>
-
-          </div>
-        </div>
-      </motion.button>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Back Button */}
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-16">
+        <BackLink onBack={onBack} />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Georgi Mentor */}
+        {/* Georgi */}
         <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: -20 }}
+          className="mt-5 mb-5 brand-gradient relative overflow-hidden rounded-[24px] p-5 text-white shadow-md"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease }}
         >
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <div style={{ width: '48px', height: '48px', backgroundColor: '#0C690F', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 10px rgba(12,105,15,0.2)' }}>
-              <img src="/Logo.svg" alt="St.GeoARgen" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm">
-                {completedStations === totalStations
-                  ? t('stationsMentorAllVisited')
-                  : completedStations === 0
+          <div className="topo-texture absolute inset-0" aria-hidden="true" />
+          <div className="relative flex items-center gap-4">
+            <span className="w-12 h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md">
+              <img src="/Logo.svg" alt="" className="w-7 h-7 object-contain" />
+            </span>
+            <p className="text-[15px] font-semibold leading-snug">
+              {completedStations === totalStations
+                ? t('stationsMentorAllVisited')
+                : completedStations === 0
                   ? t('stationsMentorStart')
                   : t('stationsMentorProgress')
                     .replace('{completed}', String(completedStations))
                     .replace('{total}', String(totalStations))}
-              </p>
-            </div>
+            </p>
           </div>
         </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-primary" />
-              </div>
+        {/* Kennzahlen */}
+        <dl className="surface-card grid grid-cols-3 divide-x divide-border mb-5 py-4">
+          {[
+            { value: totalStations, label: t('total'), Icon: MapPin },
+            { value: completedStations, label: t('completed'), Icon: CheckCircle2 },
+            { value: availableStations, label: t('available'), Icon: Play },
+          ].map(({ value, label, Icon }) => (
+            <div key={label} className="px-3 text-center">
+              <dd className="text-2xl font-extrabold tabular-nums leading-none">{value}</dd>
+              <dt className="mt-1.5 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                <span aria-hidden="true">{label}</span>
+              </dt>
             </div>
-            <p className="text-xl mb-1">{totalStations}</p>
-            <p className="text-xs text-muted-foreground">{t('total')}</p>
-          </motion.div>
+          ))}
+        </dl>
 
-          <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-              </div>
-            </div>
-            <p className="text-xl mb-1">{completedStations}</p>
-            <p className="text-xs text-muted-foreground">{t('completed')}</p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Play className="w-4 h-4 text-primary" />
-              </div>
-            </div>
-            <p className="text-xl mb-1">{availableStations}</p>
-            <p className="text-xs text-muted-foreground">{t('available')}</p>
-          </motion.div>
+        {/* Suche */}
+        <div className="relative mb-3">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            placeholder={t('searchStationOrPath')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-12 pl-12 pr-4 rounded-2xl border border-input bg-card shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-primary/15 focus:border-primary transition-[border-color,box-shadow]"
+          />
         </div>
 
-        {/* Search Bar */}
-        <motion.div
-          className="mb-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder={t('searchStationOrPath')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-          </div>
-        </motion.div>
+        {/* Filter */}
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1 -mx-4 px-4">
+          {([
+            ['all', t('all')],
+            ['available', t('available')],
+            ['completed', t('completed')],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              aria-pressed={filterStatus === value}
+              onClick={() => setFilterStatus(value)}
+              className={`h-10 px-4 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${filterStatus === value
+                ? 'bg-foreground text-white'
+                : 'bg-card border border-border text-foreground hover:border-border-strong'
+                }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {/* Filter Buttons */}
-        <motion.div
-          className="flex gap-2 mb-6 overflow-x-auto pb-2"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-              filterStatus === 'all'
-                ? 'bg-primary text-white'
-                : 'bg-white border border-border text-foreground hover:border-primary/50'
-            }`}
-          >
-            {t('all')}
-          </button>
-          <button
-            onClick={() => setFilterStatus('available')}
-            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-              filterStatus === 'available'
-                ? 'bg-primary text-white'
-                : 'bg-white border border-border text-foreground hover:border-primary/50'
-            }`}
-          >
-            {t('available')}
-          </button>
-          <button
-            onClick={() => setFilterStatus('completed')}
-            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-              filterStatus === 'completed'
-                ? 'bg-primary text-white'
-                : 'bg-white border border-border text-foreground hover:border-primary/50'
-            }`}
-          >
-            {t('completed')}
-          </button>
-        </motion.div>
-
-        {/* Stations List */}
-        <motion.div
-          className="space-y-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
+        {/* Liste */}
+        <div className="space-y-3">
           {filteredStations.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border-strong">
+              <Search className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">{t('noStationsFound')}</p>
             </div>
           ) : (
             filteredStations.map((station, index) => (
-              <StationItem 
-                key={`${station.pathId}-${station.id}`} 
-                station={station} 
-                index={index} 
+              <StationItem
+                key={`${station.pathId}-${station.id}`}
+                station={station}
+                index={index}
+                isLoggedIn={isLoggedIn}
+                onStationClick={onStationClick}
               />
             ))
           )}
-        </motion.div>
+        </div>
       </div>
-
     </div>
+  );
+}
+
+interface StationItemProps {
+  station: Station;
+  index: number;
+  isLoggedIn: boolean;
+  onStationClick: (pathId: string, stationId: number) => void;
+}
+
+function StationItem({ station, index, isLoggedIn, onStationClick }: StationItemProps) {
+  const { t } = useLanguage();
+  const { distance } = useStationProximity(station.latitude, station.longitude, 100);
+  const displayStatus: Station['status'] = isLoggedIn ? station.status : 'locked';
+  const isLocked = displayStatus === 'locked';
+  const isCompleted = displayStatus === 'completed';
+
+  return (
+    <motion.button
+      onClick={() => !isLocked && onStationClick(station.pathId, station.id)}
+      disabled={isLocked}
+      className={`group w-full surface-card p-3 text-left transition-shadow ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md'}`}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + index * 0.05, duration: 0.4, ease }}
+      whileTap={!isLocked ? { scale: 0.985 } : {}}
+    >
+      <div className="flex gap-3.5">
+        <div className="w-[84px] h-[84px] rounded-2xl overflow-hidden bg-muted flex-shrink-0 relative">
+          <img
+            src={station.imageUrl}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          {isCompleted && (
+            <div className="absolute inset-0 bg-primary/55 flex items-center justify-center" aria-hidden="true">
+              <span className="w-9 h-9 rounded-full bg-white text-primary flex items-center justify-center">
+                <Check className="w-5 h-5" strokeWidth={3} />
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0 py-0.5">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="truncate font-bold">{station.title}</h4>
+            <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isCompleted ? 'bg-primary-soft text-primary' : isLocked ? 'bg-muted text-muted-foreground' : 'bg-primary text-white'}`} aria-hidden="true">
+              {isCompleted ? <Check className="w-4 h-4" strokeWidth={3} /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+            {station.description}
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground tabular-nums">
+              <Trophy className="w-3 h-3 text-gold" />
+              {station.points} {t('points')}
+            </span>
+            {!isCompleted && distance !== null && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-gray-700 tabular-nums">
+                <MapPin className="w-3 h-3" />
+                {distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)} m`}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground truncate">{station.pathTitle}</span>
+          </div>
+        </div>
+      </div>
+    </motion.button>
   );
 }

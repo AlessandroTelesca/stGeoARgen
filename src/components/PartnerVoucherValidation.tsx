@@ -1,111 +1,125 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { CheckCircle2, AlertCircle, Info, User, Lock, Ticket } from 'lucide-react';
 import { Button } from './ui/button';
-import { motion } from 'motion/react';
+import { Input } from './ui/input';
 import { apiValidatePartnerVoucher } from '../services/api';
+import { AuthShell, FieldLabel } from './AuthShell';
+
+type Status = { type: 'success' | 'error'; text: string } | null;
 
 export function PartnerVoucherValidation() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>(null);
   const [loading, setLoading] = useState(false);
 
-  const validateVoucher = async () => {
+  const validateVoucher = async (event?: FormEvent) => {
+    event?.preventDefault();
+    if (loading || !username || !password || !code) return;
     setLoading(true);
-    setMessage(null);
+    setStatus(null);
     try {
-      const data = await apiValidatePartnerVoucher(username, password, code.toUpperCase());
-      setMessage(data.success ? `✅ ${data.message}` : `🔴 ${data.message}`);
+      const data = await apiValidatePartnerVoucher(username, password, code.trim().toUpperCase());
+      setStatus({ type: 'success', text: data.message });
     } catch (error) {
-      setMessage('🔴 Serverfehler beim Validieren.');
+      // apiFetch wirft bei success:false mit der Server-Meldung (z. B. „Code ungültig“)
+      setStatus({ type: 'error', text: error instanceof Error ? error.message : 'Serverfehler beim Validieren.' });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8">
-      <motion.div
-        className="w-full max-w-md mx-auto"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 24 }}
-      >
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-lg">
-            <img src="/Logo.svg" alt="St.GeoARgen" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" style={{filter: 'brightness(0) invert(1)'}} />
-          </div>
-        </div>
-
-        {/* Titel */}
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center mb-8 lg:mb-10">
-          Partner Gutschein Validierung
-        </h1>
-
-        {/* Form Container */}
-        <div className="w-full max-w-md mx-auto px-6 sm:px-8 lg:px-10 space-y-6">
-          {/* Login Felder */}
-          <div className="space-y-4 mb-6">
-            <div className="grid grid-cols-1 gap-3">
-              <input
-                className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-                placeholder="Partner Benutzername"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoFocus
-              />
-              <input
-                className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-                placeholder="Passwort"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            {/* Gutscheincode */}
-            <input
-              className="w-full border border-gray-300 rounded-lg sm:rounded-xl px-4 py-3 text-base uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              placeholder="Gutscheincode (z.B. ABC123DE)"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+    <AuthShell title="Gutschein prüfen" subtitle="Partner-Bereich: Gutscheine von Besucher:innen validieren">
+      <form onSubmit={validateVoucher} className="space-y-5" noValidate>
+        <div>
+          <FieldLabel htmlFor="partner-user">Partner-Benutzername</FieldLabel>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Input
+              id="partner-user"
+              className="h-14 pl-12 rounded-2xl"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoFocus
             />
           </div>
+        </div>
 
-          {/* Validieren Button */}
-          <Button
-            onClick={validateVoucher}
-            disabled={loading || !username || !password || !code}
-            className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-lg sm:rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Validiere...' : 'Gutschein validieren'}
-          </Button>
-
-          {/* Nachricht */}
-          {message && (
-            <motion.div
-              className={`mt-4 p-3 rounded-lg text-center text-sm font-medium ${
-                message.startsWith('✅')
-                  ? 'bg-green-50 border border-green-200 text-green-800'
-                  : 'bg-red-50 border border-red-200 text-red-800'
-              }`}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 24 }}
-            >
-              {message}
-            </motion.div>
-          )}
-
-          {/* Hinweis */}
-          <div className="mt-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
-            <p className="font-semibold text-sm mb-1 text-center">ℹ️ Hinweis:</p>
-            <p className="text-sm text-center leading-relaxed">
-              Nach erfolgreicher Validierung wird der Gutschein-Code als eingelöst markiert und kann nicht mehr verwendet werden.
-            </p>
+        <div>
+          <FieldLabel htmlFor="partner-password">Passwort</FieldLabel>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Input
+              id="partner-password"
+              type="password"
+              className="h-14 pl-12 rounded-2xl"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
           </div>
         </div>
-      </motion.div>
-    </div>
+
+        <div>
+          <FieldLabel htmlFor="partner-code">Gutscheincode</FieldLabel>
+          <div className="relative">
+            <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Input
+              id="partner-code"
+              className="h-14 pl-12 rounded-2xl uppercase font-mono font-semibold tracking-[0.18em] placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
+              placeholder="z. B. ABC123DE"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {status && (
+            <motion.div
+              key={status.text}
+              role="status"
+              className={`flex items-start gap-3 p-4 rounded-2xl text-sm font-medium ${status.type === 'success'
+                ? 'bg-primary-soft text-primary-dark'
+                : 'bg-destructive/8 border border-destructive/20 text-destructive'
+                }`}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+            >
+              {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+              <span>{status.text}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <Button
+          type="submit"
+          disabled={loading || !username || !password || !code}
+          className="w-full h-14 rounded-2xl text-base font-bold shadow-primary disabled:shadow-none"
+        >
+          {loading ? (
+            <span className="flex items-center gap-3">
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Wird geprüft …
+            </span>
+          ) : 'Gutschein validieren'}
+        </Button>
+      </form>
+
+      <div className="mt-6 flex items-start gap-3 rounded-2xl bg-secondary p-4 text-sm text-gray-700">
+        <Info className="w-5 h-5 text-primary flex-shrink-0" />
+        <p className="leading-relaxed">
+          Nach erfolgreicher Validierung wird der Gutschein-Code als eingelöst markiert und kann nicht mehr verwendet werden.
+        </p>
+      </div>
+    </AuthShell>
   );
 }

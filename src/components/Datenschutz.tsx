@@ -1,5 +1,6 @@
-import { ArrowLeft, Shield, Lock, Database, UserCheck, Trash2, Server, Scale, Clock, HardDrive, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Database, UserCheck, Trash2, Server, Scale, Clock, HardDrive, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BackLink } from './PageHeader';
 
 interface DatenschutzProps {
   onBack: () => void;
@@ -127,26 +128,15 @@ export function Datenschutz({ onBack }: DatenschutzProps) {
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-border z-30 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            aria-label={isDE ? 'Zurück' : 'Back'}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold">
-            {isDE ? 'Datenschutzerklärung' : 'Privacy Policy'}
-          </h1>
-        </div>
+      <div className="max-w-2xl mx-auto px-4 pt-5">
+        <BackLink onBack={onBack} />
+        <h1 className="mt-5 text-[28px] leading-[1.15] font-extrabold tracking-tight">{isDE ? 'Datenschutzerklärung' : 'Privacy Policy'}</h1>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* Intro banner */}
-        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 p-5 flex items-start gap-3">
+        <div className="bg-primary-soft rounded-[20px] p-5 flex items-start gap-3">
           <Shield className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground leading-relaxed">
             {isDE
@@ -159,12 +149,12 @@ export function Datenschutz({ onBack }: DatenschutzProps) {
         {sections.map((section) => {
           const IconComponent = section.icon;
           return (
-            <section key={section.title} className="bg-white rounded-2xl border border-border p-5 shadow-sm">
+            <section key={section.title} className="surface-card p-5">
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                   <IconComponent className="w-4 h-4 text-primary" />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground pt-1.5">{section.title}</h2>
+                <h2 className="font-bold text-foreground pt-1.5">{section.title}</h2>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed pl-12 whitespace-pre-line">
                 {section.content}
@@ -174,13 +164,13 @@ export function Datenschutz({ onBack }: DatenschutzProps) {
         })}
 
         {/* Context tags */}
-        <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        <div className="surface-card p-5">
+          <p className="text-sm font-bold text-foreground mb-3">
             {isDE ? 'Projektbeteiligte' : 'Project Partners'}
           </p>
           <div className="flex flex-wrap gap-2">
             {['IIIUS Institut', 'HFU', isDE ? 'Stadt St. Georgen' : 'City of St. Georgen'].map((tag) => (
-              <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span key={tag} className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary-soft text-primary-dark text-xs font-semibold">
                 {tag}
               </span>
             ))}

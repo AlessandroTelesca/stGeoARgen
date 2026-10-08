@@ -26,123 +26,87 @@ export function PostOnboardingLoginPrompt({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-gray-900/55 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="relative bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
-            initial={{ y: 80, opacity: 0, scale: 0.95 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 80, opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-onboarding-title"
+            className="relative bg-card rounded-[32px] max-w-md w-full overflow-hidden shadow-2xl"
+            style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Close button */}
-            <div className="absolute top-5 right-5 z-10">
+            {/* Kopf */}
+            <div className="brand-gradient relative overflow-hidden px-6 pt-6 pb-10 text-white">
+              <div className="topo-texture absolute inset-0" aria-hidden="true" />
               <button
                 onClick={onSkip}
-                className="w-10 h-10 shrink-0 aspect-square rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 border border-white/20 flex items-center justify-center hover:bg-white/25 transition-colors"
                 aria-label={t('close')}
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-5 h-5" />
               </button>
+              <motion.span
+                className="relative w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg mb-4"
+                initial={{ scale: 0.6, rotate: -12 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 16 }}
+              >
+                <img src="/Logo.svg" alt="" className="w-10 h-10 object-contain" />
+              </motion.span>
+              <h2 id="post-onboarding-title" className="relative text-2xl font-extrabold tracking-tight">
+                {t('postOnboardingTitle')}
+              </h2>
+              <p className="relative text-white/85 text-sm leading-relaxed mt-1.5">
+                {t('postOnboardingDescription')}
+              </p>
             </div>
 
-            <div className="py-10 pt-14">
-              {/* Logo + Title */}
-              <div className="flex flex-col items-center text-center mb-6 px-6">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
-                  style={{
-                    width: '72px',
-                    height: '72px',
-                    backgroundColor: '#0C690F',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 16px rgba(12,105,15,0.25)',
-                    marginBottom: '16px',
-                  }}
-                >
-                  <img
-                    src="/Logo.svg"
-                    alt="St.GeoARgen"
-                    style={{ width: '44px', height: '44px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-                  />
-                </motion.div>
-
-                <motion.h2
-                  className="text-2xl font-bold mb-2"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                >
-                  {t('postOnboardingTitle')}
-                </motion.h2>
-                <motion.p
-                  className="text-muted-foreground text-base leading-relaxed"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  {t('postOnboardingDescription')}
-                </motion.p>
-              </div>
-
-              {/* Benefits list */}
-              <motion.div
-                className="space-y-3 mb-8 px-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35 }}
-              >
+            <div className="relative -mt-5 rounded-t-[24px] bg-card px-5 pt-5 pb-5">
+              <ul className="space-y-1 mb-5">
                 {benefits.map(({ icon: Icon, text }, i) => (
-                  <motion.div
-                    key={i}
-                    className="flex items-center gap-3 bg-primary/5 border border-primary/15 rounded-xl px-4 py-3"
-                    initial={{ opacity: 0, x: -12 }}
+                  <motion.li
+                    key={text}
+                    className="flex items-center gap-3 px-1 py-2"
+                    initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.07 }}
+                    transition={{ delay: 0.25 + i * 0.06 }}
                   >
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium text-foreground">{text}</span>
-                  </motion.div>
+                    <span className="w-9 h-9 rounded-xl bg-primary-soft text-primary flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="text-[15px] font-semibold text-foreground">{text}</span>
+                  </motion.li>
                 ))}
-              </motion.div>
+              </ul>
 
-              {/* Buttons */}
-              <motion.div
-                className="w-full space-y-3 px-4"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
+              <div className="space-y-2.5">
                 <button
                   onClick={onLogin}
-                  className="w-full min-h-[52px] px-6 py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
+                  className="w-full min-h-[54px] px-6 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
                 >
                   <LogIn className="w-5 h-5 shrink-0" />
                   {t('loginNow')}
                 </button>
                 <button
                   onClick={onRegister}
-                  className="w-full min-h-[52px] px-6 py-4 rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all flex items-center justify-center"
+                  className="w-full min-h-[54px] px-6 rounded-2xl font-bold border-2 border-primary/25 text-primary bg-card hover:border-primary transition-colors pressable"
                 >
                   {t('createAccount')}
                 </button>
                 <button
                   onClick={onSkip}
-                  className="w-full py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-full min-h-[44px] text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t('loginLater')}
                 </button>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </motion.div>

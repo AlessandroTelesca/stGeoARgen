@@ -1,6 +1,8 @@
-import { User, Mail, Calendar, Trash2, LogOut, Shield, ArrowLeft } from 'lucide-react';
+import { User, Mail, Calendar, Trash2, LogOut, Shield, KeyRound } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BackLink } from './PageHeader';
+import { SettingsGroup, SettingsRow } from './Settings';
 
 interface ProfileProps {
   username: string | null;
@@ -9,10 +11,16 @@ interface ProfileProps {
   onBack: () => void;
   onBackToSettings?: () => void;
   onLogout: () => void;
+  onChangePassword?: () => void;
+  onOpenPrivacy?: () => void;
 }
 
-export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout }: ProfileProps) {
-  const { t } = useLanguage();
+export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout, onChangePassword, onOpenPrivacy }: ProfileProps) {
+  const { t, language } = useLanguage();
+  const locale = language === 'de' ? 'de-DE' : 'en-GB';
+  // MySQL-Datum ("YYYY-MM-DD HH:MM:SS") für Safari-kompatibles Parsing umformen
+  const createdDate = createdAt ? new Date(createdAt.replace(' ', 'T')) : null;
+  const hasValidDate = createdDate !== null && !Number.isNaN(createdDate.getTime());
   const handleDeleteAccount = () => {
     if (confirm(t('confirmDeleteAccount'))) {
       // TODO: Implement account deletion
@@ -21,158 +29,58 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Back Button */}
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <button
-            onClick={onBackToSettings || onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-2xl mx-auto px-4 pt-5 pb-12">
+        <BackLink onBack={onBackToSettings || onBack} />
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          className="mt-5"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Profile Header */}
-          <div className="bg-white rounded-xl border border-border p-6 mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
-                <User className="w-10 h-10 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{username || t('guest')}</h2>
-                <p className="text-sm text-muted-foreground">{t('memberSince')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Information */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('accountInformation')}
-            </h3>
-
-            <div className="bg-white rounded-xl border border-border divide-y divide-border">
-              <div className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{t('username')}</p>
-                  <p className="text-sm text-muted-foreground">{username || t('notLoggedIn')}</p>
-                </div>
-              </div>
-
-              <div className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{t('email')}</p>
-                  <p className="text-sm text-muted-foreground">{email || 'N/A'}</p>
-                </div>
-              </div>
-
-              <div className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{t('registeredSince')}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {createdAt
-                      ? new Date(createdAt).toLocaleDateString('de-DE', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })
-                      : 'Unbekannt'}
-                  </p>
-                </div>
+          {/* Profilkopf */}
+          <div className="brand-gradient relative overflow-hidden rounded-[28px] p-6 text-white shadow-lg mb-7">
+            <div className="topo-texture absolute inset-0" aria-hidden="true" />
+            <div className="relative flex items-center gap-4">
+              <span className="w-[72px] h-[72px] rounded-full bg-white text-primary flex items-center justify-center text-3xl font-extrabold shadow-md flex-shrink-0">
+                {username ? username.charAt(0).toUpperCase() : <User className="w-9 h-9" />}
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-2xl font-extrabold tracking-tight truncate">{username || t('guest')}</h2>
+                <p className="text-sm text-white/80 mt-0.5">
+                  {hasValidDate
+                    ? t('memberSinceDate', { date: createdDate!.toLocaleDateString(locale, { month: 'long', year: 'numeric' }) })
+                    : t('loggedIn')}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Privacy & Security */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('privacySecurity')}
-            </h3>
+          <SettingsGroup title={t('accountInformation')}>
+            <SettingsRow icon={<User className="w-5 h-5" />} title={t('username')} description={username || t('notLoggedIn')} />
+            <SettingsRow icon={<Mail className="w-5 h-5" />} title={t('email')} description={email || '–'} />
+            <SettingsRow
+              icon={<Calendar className="w-5 h-5" />}
+              title={t('registeredSince')}
+              description={hasValidDate
+                ? createdDate!.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
+                : t('unknown')}
+            />
+          </SettingsGroup>
 
-            <div className="bg-white rounded-xl border border-border divide-y divide-border">
-              <button className="w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-medium">{t('changePassword')}</p>
-                  <p className="text-sm text-muted-foreground">{t('updatePassword')}</p>
-                </div>
-              </button>
+          <SettingsGroup title={t('privacySecurity')}>
+            <SettingsRow icon={<KeyRound className="w-5 h-5" />} title={t('changePassword')} description={t('updatePassword')} onClick={onChangePassword} />
+            <SettingsRow icon={<Shield className="w-5 h-5" />} title={t('privacySettings')} description={t('manageData')} onClick={onOpenPrivacy} />
+          </SettingsGroup>
 
-              <button className="w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-medium">{t('privacySettings')}</p>
-                  <p className="text-sm text-muted-foreground">{t('manageData')}</p>
-                </div>
-              </button>
-            </div>
-          </div>
+          <SettingsGroup title={t('accountActions')}>
+            <SettingsRow icon={<LogOut className="w-5 h-5" />} title={t('logout')} description={t('logoutDescription')} onClick={onLogout} tone="warning" />
+          </SettingsGroup>
 
-          {/* Account Actions */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-              {t('accountActions')}
-            </h3>
-
-            <div className="bg-white rounded-xl border border-border">
-              <button
-                onClick={onLogout}
-                className="w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <LogOut className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-medium text-orange-600">{t('logout')}</p>
-                  <p className="text-sm text-muted-foreground">{t('logoutDescription')}</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: '#dc2626' }}>
-              {t('dangerZone')}
-            </h3>
-
-            <div className="rounded-xl border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
-              <button
-                onClick={handleDeleteAccount}
-                className="w-full p-4 flex items-center gap-3 transition-colors"
-                style={{ ':hover': { backgroundColor: '#fee2e2' } }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
-                  <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-medium" style={{ color: '#dc2626' }}>{t('deleteAccount')}</p>
-                  <p className="text-sm text-muted-foreground">{t('deleteAccountDescription')}</p>
-                </div>
-              </button>
-            </div>
-          </div>
+          <SettingsGroup title={t('dangerZone')}>
+            <SettingsRow icon={<Trash2 className="w-5 h-5" />} title={t('deleteAccount')} description={t('deleteAccountDescription')} onClick={handleDeleteAccount} tone="danger" />
+          </SettingsGroup>
         </motion.div>
       </div>
     </div>

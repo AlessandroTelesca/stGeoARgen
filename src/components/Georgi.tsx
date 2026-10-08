@@ -30,17 +30,18 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
     <AnimatePresence>
       {show && !dismissed && (
         <motion.div
-          className={`fixed ${positionClasses[position]} z-40 max-w-sm`}
+          className={`fixed ${positionClasses[position]} z-40 max-w-[min(24rem,calc(100vw-2rem))]`}
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ type: 'spring', damping: 20, stiffness: 300 }}
         >
-          <div className="bg-white rounded-2xl shadow-lg border border-border p-4 relative">
+          <div className="bg-card rounded-[22px] shadow-lg border border-border p-4 pr-10 relative">
             {onClose && (
               <button
                 onClick={handleClose}
-                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                aria-label={t('close')}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -49,23 +50,18 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
             <div className="flex items-start gap-3">
               <motion.div
                 className="flex-shrink-0"
-                animate={{
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+                initial={{ rotate: -12 }}
+                animate={{ rotate: [-12, 8, -4, 0] }}
+                transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md">
+                <div className="brand-gradient w-12 h-12 rounded-full flex items-center justify-center shadow-primary">
                   <img src="/Logo.svg" alt="Georgi" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
                 </div>
               </motion.div>
 
               <div className="flex-1 pt-1">
-                <p className="font-semibold text-sm mb-1">{t('georgiBubbleTitle')}</p>
-                <p className="text-sm text-muted-foreground">{message}</p>
+                <p className="font-bold text-sm text-primary mb-0.5">{t('georgiBubbleTitle')}</p>
+                <p className="text-sm text-gray-700 leading-snug">{message}</p>
               </div>
             </div>
           </div>
@@ -89,7 +85,7 @@ export function GeorgiAvatar({ size = 'md', animated = true }: GeorgiAvatarProps
 
   return (
     <motion.div
-      className={`${sizeClasses[size]} bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center shadow-md`}
+      className={`${sizeClasses[size]} brand-gradient rounded-full flex items-center justify-center shadow-md`}
       animate={animated ? {
         rotate: [0, 5, -5, 0],
       } : {}}

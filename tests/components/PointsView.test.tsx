@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('../../src/components/Georgi', () => ({
   Georgi: () => <div data-testid="georgi" />,
+  GeorgiAvatar: () => <div data-testid="georgi" />,
 }));
 
 import { PointsView } from '../../src/components/PointsView';

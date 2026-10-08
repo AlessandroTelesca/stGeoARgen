@@ -1,11 +1,11 @@
-﻿import { useState } from 'react';
-import { Gift, Lock, MapPin, ArrowLeft, Trophy, Copy, X } from 'lucide-react';
+import { useState } from 'react';
+import { Gift, Lock, MapPin, Trophy, Copy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { VoucherRedeemPage } from './VoucherRedeemPage';
 import { apiRedeemVoucherFromShop } from '../services/api';
+import { BackLink } from './PageHeader';
 
 interface Voucher {
   id: number;
@@ -131,25 +131,25 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
       <AnimatePresence>
         {confirmPurchase && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gray-900/55 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setConfirmPurchase(null)}
           >
             <motion.div
-              className="w-full max-w-md overflow-hidden rounded-3xl bg-background shadow-2xl"
+              className="w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-2xl"
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 260, damping: 24 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="relative bg-gradient-to-br from-primary to-primary-light px-6 py-8 text-white">
+              <div className="brand-gradient relative px-6 py-8 text-white">
                 <button
                   type="button"
                   onClick={() => setConfirmPurchase(null)}
-                  className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white/90 transition hover:bg-white/25"
+                  className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Fenster schließen"
                 >
                   <X className="h-4 w-4" />
@@ -158,7 +158,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-semibold">Gutschein kaufen</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Gutschein kaufen</h2>
                   <p className="mt-2 text-sm text-white/85">Möchtest du diesen Gutschein wirklich kaufen?</p>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                 <div className="rounded-2xl border border-border bg-muted/30 p-4">
                   <p className="text-lg font-semibold text-foreground">{confirmPurchase.description}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{confirmPurchase.partner_name ?? 'Gutschein'}</p>
-                  <p className="mt-2 text-sm font-medium text-primary">Kosten: {confirmPurchase.points_value} Punkte</p>
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-sm font-bold text-gold-foreground"><Trophy className="w-3.5 h-3.5 text-gold" />Kosten: {confirmPurchase.points_value} Punkte</p>
                   <p className="mt-1 text-sm text-muted-foreground">Verbleibende Punkte: {totalPoints - confirmPurchase.points_value}</p>
                 </div>
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
@@ -183,25 +183,25 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
 
         {feedbackOpen && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gray-900/55 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={resetDialogState}
           >
             <motion.div
-              className="w-full max-w-md overflow-hidden rounded-3xl bg-background shadow-2xl"
+              className="w-full max-w-md overflow-hidden rounded-[28px] bg-card shadow-2xl"
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 260, damping: 24 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="relative bg-gradient-to-br from-primary to-primary-light px-6 py-8 text-white">
+              <div className="brand-gradient relative px-6 py-8 text-white">
                 <button
                   type="button"
                   onClick={resetDialogState}
-                  className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white/90 transition hover:bg-white/25"
+                  className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Fenster schließen"
                 >
                   <X className="h-4 w-4" />
@@ -210,7 +210,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-semibold">{createdVoucherCode ? 'Gutschein erstellt' : 'Hinweis'}</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">{createdVoucherCode ? 'Gutschein erstellt' : 'Hinweis'}</h2>
                   <p className="mt-2 text-sm text-white/85">
                     {createdVoucherCode ? 'Dein Gutschein ist jetzt unter Meine Gutscheine verfügbar.' : dialogMessage}
                   </p>
@@ -227,7 +227,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                       ) : null}
                       <p className="mt-4 text-sm text-muted-foreground">Dein Code</p>
                       <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
-                        <span className="text-lg font-semibold tracking-[0.2em] text-primary">{createdVoucherCode}</span>
+                        <span className="text-lg font-bold tracking-[0.2em] text-primary font-mono break-all">{createdVoucherCode}</span>
                         <Button variant="outline" size="sm" onClick={handleCopyCode}>
                           <Copy className="h-4 w-4" />
                           {copiedCode ? 'Kopiert' : 'Code kopieren'}
@@ -239,7 +239,8 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                       <Button
                         onClick={() => {
                           resetDialogState();
-                          onNavigateToMyVouchers?.();
+                          if (onNavigateToMyVouchers) onNavigateToMyVouchers();
+                          else setActiveTab('vouchers');
                         }}
                       >
                         Meine Gutscheine
@@ -257,129 +258,122 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
         )}
       </AnimatePresence>
 
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Zurück</span>
-          </button>
-        </div>
-      </div>
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-12">
+        <BackLink onBack={onBack} />
 
-      <div className="sticky top-[88px] bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex border-b gap-1">
+        {/* Segment-Umschalter */}
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1" role="tablist">
+          {([
+            ['rewards', 'Belohnungen'],
+            ['vouchers', 'Meine Gutscheine'],
+          ] as const).map(([tab, label]) => (
             <button
-              onClick={() => setActiveTab('rewards')}
-              className={`px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === 'rewards' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+              key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+              className={`h-10 rounded-xl text-sm font-bold transition-all ${activeTab === tab ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              Belohnungen
+              {label}
             </button>
-            <button
-              onClick={() => setActiveTab('vouchers')}
-              className={`px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === 'vouchers' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-            >
-              Gutscheine
-            </button>
-          </div>
+          ))}
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
         {activeTab === 'rewards' ? (
           <>
-            <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <Gift className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold">Belohnungen</h1>
-                  <p className="text-muted-foreground">
-                    {unlockedCount} von {vouchers.length} Gutscheinen freigeschaltet
-                  </p>
-                </div>
-              </div>
+            <motion.div className="mt-6 mb-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+              <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">Belohnungen</h1>
+              <p className="text-muted-foreground mt-1.5">
+                {unlockedCount} von {vouchers.length} Gutscheinen freigeschaltet
+              </p>
 
-              <Card className="p-6 bg-gradient-to-br from-primary to-primary-light text-white border-0">
-                <div className="flex items-center justify-between mb-3">
+              <div className="brand-gradient relative mt-5 overflow-hidden rounded-[28px] p-6 text-white shadow-lg">
+                <div className="topo-texture absolute inset-0" aria-hidden="true" />
+                <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-white/80 text-sm mb-1">Deine Punkte</div>
-                    <p className="text-3xl font-bold">{totalPoints}</p>
+                    <p className="text-sm font-semibold text-white/75">Deine Punkte</p>
+                    <p className="text-5xl font-extrabold tracking-tight tabular-nums mt-1">{totalPoints}</p>
                   </div>
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Trophy className="w-8 h-8" />
-                  </div>
+                  <span className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-bright to-gold flex items-center justify-center shadow-lg ring-4 ring-white/15">
+                    <Trophy className="w-8 h-8 text-white" />
+                  </span>
                 </div>
-                <div className="text-sm text-white/80">
+                <p className="relative mt-4 text-sm text-white/80">
                   Sammle mehr Punkte, um weitere Gutscheine freizuschalten!
-                </div>
-              </Card>
+                </p>
+              </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               {vouchers.length === 0 ? (
-                <div className="col-span-2 rounded-3xl border border-border bg-white p-8 text-center text-muted-foreground">Keine verfügbaren Gutscheine gefunden.</div>
+                <div className="col-span-2 rounded-[24px] border border-dashed border-border-strong p-8 text-center text-muted-foreground">Keine verfügbaren Gutscheine gefunden.</div>
               ) : (
                 vouchers.map((voucher, index) => {
                   const unlocked = totalPoints >= voucher.points_value;
                   const progressToUnlock = Math.min((totalPoints / voucher.points_value) * 100, 100);
+                  const soldOut = (voucher.quantity ?? -1) === 0;
 
                   return (
                     <motion.div
                       key={voucher.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: 0.1 + index * 0.08 }}
                     >
-                      <Card className={`overflow-hidden ${!unlocked ? 'opacity-60' : ''}`}>
-                        <div className="p-5">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h3 className="font-semibold mb-1">{voucher.description}</h3>
-                              <p className="text-sm text-muted-foreground mb-2">{voucher.partner_name ?? 'Gutschein'}</p>
-                            </div>
+                      {/* Gutschein als Ticket */}
+                      <article className={`surface-card overflow-hidden ${!unlocked ? 'opacity-70' : ''}`}>
+                        <div className="flex items-start gap-4 p-5">
+                          <span className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${unlocked ? 'bg-gold-soft text-gold' : 'bg-muted text-muted-foreground'}`}>
+                            <Gift className="w-6 h-6" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-bold leading-snug">{voucher.description}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">{voucher.partner_name ?? 'Gutschein'}</p>
+                            {voucher.address && (
+                              <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span className="line-clamp-1">{voucher.address}</span>
+                              </p>
+                            )}
                           </div>
+                        </div>
 
-                          {voucher.address && (
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-                              <MapPin className="w-4 h-4 flex-shrink-0" />
-                              <span className="line-clamp-1">{voucher.address}</span>
-                            </div>
-                          )}
+                        {/* Perforation */}
+                        <div className="relative h-0 border-t-2 border-dashed border-border mx-5" aria-hidden="true">
+                          <span className="absolute -left-[30px] -top-[11px] w-5 h-5 rounded-full bg-background border border-border" />
+                          <span className="absolute -right-[30px] -top-[11px] w-5 h-5 rounded-full bg-background border border-border" />
+                        </div>
 
+                        <div className="p-5 pt-4">
                           {!unlocked && (
                             <div className="mb-4">
                               <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                                 <span>Fortschritt</span>
-                                <span>{totalPoints} / {voucher.points_value} Punkte</span>
+                                <span className="tabular-nums font-semibold">{totalPoints} / {voucher.points_value} Punkte</span>
                               </div>
                               <Progress value={progressToUnlock} className="h-2" />
                             </div>
                           )}
 
                           <Button
-                            className={`w-full ${unlocked ? 'bg-primary hover:bg-primary-dark text-white' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-                            disabled={!unlocked || redeemingVoucherId === voucher.id || (voucher.quantity ?? -1) === 0}
+                            className={`w-full h-12 rounded-2xl font-bold ${unlocked ? 'bg-primary hover:bg-primary-dark text-white shadow-primary' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                            disabled={!unlocked || redeemingVoucherId === voucher.id || soldOut}
                             onClick={() => handleRedeemVoucher(voucher)}
                           >
                             {unlocked ? (
                               <>
-                                <Gift className="w-4 h-4 mr-2" />
+                                <Gift className="w-4 h-4" />
                                 {redeemingVoucherId === voucher.id ? 'Wird erstellt...' : `Gutschein einlösen (${voucher.points_value} Punkte)`}
                               </>
                             ) : (
                               <>
-                                <Lock className="w-4 h-4 mr-2" />
+                                <Lock className="w-4 h-4" />
                                 {voucher.points_value} Punkte nötig
                               </>
                             )}
                           </Button>
                         </div>
-                      </Card>
+                      </article>
                     </motion.div>
                   );
                 })
@@ -387,7 +381,9 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
             </div>
           </>
         ) : (
-          <VoucherRedeemPage userId={userId || 0} userPoints={totalPoints} onPointsChange={onPointsChange} embedded={true} />
+          <div className="mt-6">
+            <VoucherRedeemPage userId={userId || 0} userPoints={totalPoints} onPointsChange={onPointsChange} embedded={true} />
+          </div>
         )}
       </div>
     </div>

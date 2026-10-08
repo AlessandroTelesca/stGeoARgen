@@ -131,21 +131,22 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
       exit={{ opacity: 0 }}
     >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4">
-        <div className="flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-10 px-4" style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}>
+        <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+            aria-label={t('close')}
+            className="ar-glass w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 pressable"
           >
-            <X className="w-7 h-7 text-white" />
+            <X className="w-6 h-6 text-white" />
           </button>
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <QrCode className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">{t('qrCodeScanner')}</h2>
-              <p className="text-sm text-white/80">{t('qrCodeScanInstruction')}</p>
+          <div className="ar-glass flex-1 min-w-0 flex items-center gap-3 rounded-full pl-2 pr-4 py-2">
+            <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+              <QrCode className="w-4 h-4 text-white" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold leading-tight truncate">{t('qrCodeScanner')}</h2>
+              <p className="text-xs text-white/75 truncate">{t('qrCodeScanInstruction')}</p>
             </div>
           </div>
         </div>
@@ -160,90 +161,47 @@ export function QRScanner({ onClose, onScan }: QRScannerProps) {
           muted
           className="w-full h-full object-cover"
         />
-        
+
         {/* Hidden canvas for QR code processing */}
         <canvas
           ref={canvasRef}
           className="hidden"
         />
-        
+
+        {/* Sucher mit abgedunkelter Umgebung */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div
+            className="relative w-[min(68vw,280px)] aspect-square rounded-[28px]"
+            style={{ boxShadow: '0 0 0 100vmax rgba(5, 12, 7, 0.55)' }}
+          >
+            {(['top-0 left-0 border-t-4 border-l-4 rounded-tl-[28px]', 'top-0 right-0 border-t-4 border-r-4 rounded-tr-[28px]', 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-[28px]', 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-[28px]'] as const).map((pos) => (
+              <span key={pos} className={`absolute w-12 h-12 border-white ${pos}`} />
+            ))}
+            {!cameraError && (
+              <motion.span
+                className="absolute left-5 right-5 h-0.5 rounded-full bg-gradient-to-r from-transparent via-green-300 to-transparent shadow-[0_0_12px_rgba(134,239,172,0.9)]"
+                initial={{ top: '12%' }}
+                animate={{ top: ['12%', '88%', '12%'] }}
+                transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
+          </div>
+        </div>
+
         {/* Kamera-Fehler */}
         {cameraError && (
-          <div className="absolute inset-0 flex items-center justify-center px-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center max-w-sm">
-              <p className="text-white font-semibold mb-2">{t('qrCameraError')}</p>
-              <p className="text-white/80 text-sm">{t('qrCameraErrorHint')}</p>
+          <div className="absolute inset-0 flex items-center justify-center px-6">
+            <div className="ar-glass rounded-[24px] p-6 text-center max-w-sm">
+              <p className="font-bold mb-1.5">{t('qrCameraError')}</p>
+              <p className="text-white/75 text-sm leading-relaxed">{t('qrCameraErrorHint')}</p>
             </div>
           </div>
         )}
-
-        {/* Scanning Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-64 h-64">
-            {/* Corner Decorations - Animated - z-10 damit sie über dem Rahmen liegen */}
-            <motion.div 
-              className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-primary rounded-tl-xl z-10"
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.8, 1, 0.8]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                ease: 'easeInOut',
-                repeatType: 'loop'
-              }}
-            />
-            <motion.div 
-              className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-primary rounded-tr-xl z-10"
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.8, 1, 0.8]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                ease: 'easeInOut',
-                repeatType: 'loop'
-              }}
-            />
-            <motion.div 
-              className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-primary rounded-bl-xl z-10"
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.8, 1, 0.8]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                ease: 'easeInOut',
-                repeatType: 'loop'
-              }}
-            />
-            <motion.div 
-              className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-primary rounded-br-xl z-10"
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.8, 1, 0.8]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                ease: 'easeInOut',
-                repeatType: 'loop'
-              }}
-            />
-          </div>
-        </div>
       </div>
 
-      {/* Bottom Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-        <p className="text-white text-center text-sm">
+      {/* Hinweis unten */}
+      <div className="absolute bottom-0 left-0 right-0 px-6 pt-10 bg-gradient-to-t from-black/70 to-transparent" style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom, 0px))' }}>
+        <p className="ar-glass mx-auto w-fit max-w-full rounded-full px-5 py-2.5 text-center text-sm font-semibold">
           {t('qrHoldToCamera')}
         </p>
       </div>

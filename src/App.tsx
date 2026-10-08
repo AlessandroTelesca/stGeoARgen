@@ -767,6 +767,7 @@ export default function App() {
   const handleNavigate = (view: string) => {
     if (view === 'home') {
       navigate('/');
+      setCurrentView('home');
       setSelectedPathId(null);
       setSelectedStationId(null);
     } else if (view === 'paths') {
@@ -1009,6 +1010,7 @@ export default function App() {
         <ForgotPassword
           onNavigateBack={handleBackToDashboard}
           onNavigateToLogin={handleNavigateToLogin}
+          onNavigateToRegister={handleNavigateToRegister}
         />
       )}
 
@@ -1051,6 +1053,14 @@ export default function App() {
             setCurrentView('info');
             navigate('/info');
           }}
+          onNavigateToPrivacy={() => {
+            setCurrentView('datenschutz');
+            navigate('/datenschutz');
+          }}
+          onNavigateToHelp={() => {
+            setCurrentView('impressum');
+            navigate('/impressum');
+          }}
         />
       )}
 
@@ -1065,6 +1075,11 @@ export default function App() {
             navigate('/settings');
           }}
           onLogout={handleLogout}
+          onChangePassword={handleNavigateToForgotPassword}
+          onOpenPrivacy={() => {
+            setCurrentView('datenschutz');
+            navigate('/datenschutz');
+          }}
         />
       )}
 

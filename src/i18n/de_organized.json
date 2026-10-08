@@ -421,5 +421,9 @@
   "pleaseTryAgain": "Bitte versuche es erneut.",
   "progressResetDone": "Fortschritt zurückgesetzt.",
   "progressResetDoneDb": "Dein Fortschritt wurde auch in der Datenbank gelöscht.",
-  "progressResetDoneLocal": "Lokaler Fortschritt wurde gelöscht."
+  "progressResetDoneLocal": "Lokaler Fortschritt wurde gelöscht.",
+  "journeyGuestHint": "Melde dich an, damit Georgi sich deinen Fortschritt merkt.",
+  "pathsDoneShort": "Pfade fertig",
+  "memberSinceDate": "Mitglied seit {date}",
+  "unknown": "Unbekannt"
 }

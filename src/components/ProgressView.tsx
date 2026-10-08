@@ -1,7 +1,8 @@
-import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Calendar, ArrowLeft } from 'lucide-react';
+import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Georgi } from './Georgi';
+import { GeorgiAvatar } from './Georgi';
+import { BackLink } from './PageHeader';
 import { Progress } from './ui/progress';
 
 interface ProgressViewProps {
@@ -40,29 +41,18 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
   })).sort((a, b) => b.completionRate - a.completionRate);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Back Button */}
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-12">
+        <BackLink onBack={onBack} />
+        <div className="h-5" />
         {/* Georgi Mentor */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3">
-            <Georgi size={48} />
+          <div className="surface-card p-4 flex items-center gap-3">
+            <GeorgiAvatar size="md" animated={false} />
             <div className="flex-1">
               <p className="text-sm">
                 {completionPercentage === 100
@@ -81,7 +71,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
 
         {/* Overall Progress Card */}
         <motion.div
-          className="bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 mb-6 shadow-lg"
+          className="brand-gradient text-white rounded-[28px] p-6 mb-6 shadow-lg"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
@@ -89,7 +79,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm opacity-90 mb-1">{t('overallProgress')}</p>
-              <h2 className="text-4xl">{Math.round(completionPercentage)}%</h2>
+              <h2 className="text-5xl font-extrabold tabular-nums">{Math.round(completionPercentage)}%</h2>
             </div>
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
               <TrendingUp className="w-8 h-8" />
@@ -113,7 +103,7 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -123,12 +113,12 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
                 <CheckCircle2 className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{completedPaths}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{completedPaths}</p>
             <p className="text-sm text-muted-foreground">{t('pathsDone')}</p>
           </motion.div>
 
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -138,12 +128,12 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
                 <Target className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{inProgressPaths}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{inProgressPaths}</p>
             <p className="text-sm text-muted-foreground">{t('inProgress')}</p>
           </motion.div>
 
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -153,12 +143,12 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
                 <Trophy className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{totalPoints}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{totalPoints}</p>
             <p className="text-sm text-muted-foreground">{t('points')}</p>
           </motion.div>
 
           <motion.div
-            className="bg-white rounded-xl p-4 border border-border shadow-sm"
+            className="surface-card p-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -168,21 +158,21 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
                 <Calendar className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl mb-1">{currentStreak}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{currentStreak}</p>
             <p className="text-sm text-muted-foreground">{t('streakDays')}</p>
           </motion.div>
         </div>
 
         {/* Points Progress */}
         <motion.div
-          className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-border"
+          className="surface-card p-6 mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3>{t('pointsProgress')}</h3>
-            <span className="text-primary">
+            <h3 className="text-lg font-bold tracking-tight">{t('pointsProgress')}</h3>
+            <span className="text-primary font-bold tabular-nums">
               {totalPoints}/{maxPossiblePoints}
             </span>
           </div>
@@ -205,12 +195,12 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <h3 className="mb-4">{t('progressByPath')}</h3>
+          <h3 className="text-lg font-bold tracking-tight mb-4">{t('progressByPath')}</h3>
           <div className="space-y-4">
             {pathCompletionRates.map((path, index) => (
               <motion.div
                 key={path.id}
-                className="bg-white rounded-xl p-5 border border-border shadow-sm"
+                className="surface-card p-5"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.8 + index * 0.1 }}

@@ -93,115 +93,99 @@ export const ARProximityGate = ({ stationId, stationName, children, onNavigateBa
     return <>{children}</>;
   }
 
+  const formattedDistance = distance === null
+    ? ''
+    : distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)} m`;
+
   // Show proximity check UI
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-border p-4 z-10 shadow-sm">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <button
-            onClick={onNavigateBack}
-            className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center hover:bg-muted/70 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="font-semibold text-lg">{stationName}</h2>
-          <div className="w-10" /> {/* Spacer */}
-        </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 text-white">
+      <div className="topo-texture pointer-events-none fixed inset-0 opacity-70" aria-hidden="true" />
+
+      <div className="relative flex items-center gap-3 px-4" style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}>
+        <button
+          onClick={onNavigateBack}
+          aria-label={t('back')}
+          className="ar-glass w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 pressable"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="font-bold text-lg truncate">{stationName}</h2>
       </div>
 
-      <div className="max-w-md mx-auto p-4 pb-24 flex items-center justify-center min-h-[80vh]">
-        {/* Location Error */}
+      <div className="relative max-w-md mx-auto px-5 pt-8 flex flex-col justify-center min-h-[80dvh]" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom, 0px))' }}>
+        {/* Standortfehler */}
         {locationError && (
           <motion.div
-            className="bg-warning/10 border border-warning/30 rounded-2xl p-6 w-full"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-[28px] bg-card text-foreground p-6 shadow-2xl"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
           >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold mb-1 text-warning">{t('locationAccessRequired')}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {locationError}
-                  </p>
-                  <button
-                    onClick={handleNavigateToStation}
-                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                  >
-                    <Navigation className="w-5 h-5" />
-                    <span>{t('navigateToStation', { stationName: stationName })}</span>
-                  </button>
-              </div>
-            </div>
+            <span className="w-12 h-12 rounded-2xl bg-gold-soft text-gold flex items-center justify-center mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </span>
+            <h3 className="text-xl font-bold">{t('locationAccessRequired')}</h3>
+            <p className="text-sm text-muted-foreground mt-1.5 mb-6 leading-relaxed">{locationError}</p>
+            <button
+              onClick={handleNavigateToStation}
+              className="w-full min-h-[54px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable"
+            >
+              <Navigation className="w-5 h-5" />
+              <span>{t('navigateToStation', { stationName })}</span>
+            </button>
           </motion.div>
         )}
 
-        {/* Distance Check - Too Far */}
+        {/* Zu weit entfernt */}
         {!locationError && distance !== null && !isWithinRadius && (
           <motion.div
-            className="w-full max-w-lg"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            className="text-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Error Icon */}
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-red-500/20 border-4 border-red-500 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-12 h-12 text-red-500" />
-              </div>
+            <span className="relative mx-auto mb-6 flex w-24 h-24 items-center justify-center">
+              <span className="absolute inset-0 rounded-full bg-gold/25 animate-ping" style={{ animationDuration: '2.4s' }} aria-hidden="true" />
+              <span className="relative w-24 h-24 rounded-full bg-gold/15 border-2 border-gold flex items-center justify-center">
+                <MapPin className="w-10 h-10 text-gold-bright" />
+              </span>
+            </span>
+
+            <h2 className="text-[26px] font-extrabold tracking-tight">{t('accessDenied')}</h2>
+            <p className="text-white/75 mt-1.5">{t('stationOutOfRange')}</p>
+
+            <div className="ar-glass mt-6 rounded-[24px] p-5">
+              <p className="text-5xl font-extrabold tabular-nums text-gold-bright">{formattedDistance}</p>
+              <p className="mt-1 text-sm font-semibold text-white/80">{t('tooFarAway')}</p>
+              <p className="mt-3 pt-3 border-t border-white/10 text-xs text-white/60">{t('requiredDistance')}</p>
             </div>
-            
-            {/* Main Message */}
-            <div className="bg-white rounded-3xl p-8 shadow-2xl text-center space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('accessDenied')}</h2>
-                <p className="text-gray-600">{t('stationOutOfRange')}</p>
-              </div>
 
-              {/* Distance Display */}
-              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
-                <p className="text-5xl font-black text-red-600 mb-1">{Math.round(distance)}m</p>
-                <p className="text-sm font-semibold text-red-700 uppercase tracking-wide">{t('tooFarAway')}</p>
-                <div className="mt-4 pt-4 border-t border-red-200">
-                  <p className="text-xs text-gray-600">{t('requiredDistance')}</p>
-                </div>
-              </div>
+            <p className="text-sm text-white/70 leading-relaxed mt-5 mb-6">{t('approachStation')}</p>
 
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {t('approachStation')}
-              </p>
-              {/* Action Buttons */}
-              <div className="space-y-4">
-                <button
-                  onClick={handleNavigateToStation}
-                  className="w-full bg-primary text-primary-foreground px-6 py-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg"
-                >
-                  <Navigation className="w-6 h-6 flex-shrink-0" />
-                  <span>{t('navigateToStation', { stationName: stationName })}</span>
-                </button>
-                
-                <button
-                  onClick={handleGoToApp}
-                  className="w-full bg-muted text-muted-foreground px-6 py-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-muted/70 active:scale-[0.98] transition-all shadow-lg"
-                >
-                  <Home className="w-6 h-6 flex-shrink-0" />
-                  <span>{t('backToHome')}</span>
-                </button>
-              </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={handleNavigateToStation}
+                className="w-full min-h-[56px] bg-white text-gray-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors pressable"
+              >
+                <Navigation className="w-5 h-5 flex-shrink-0" />
+                <span>{t('navigateToStation', { stationName })}</span>
+              </button>
+              <button
+                onClick={handleGoToApp}
+                className="w-full min-h-[52px] rounded-2xl font-semibold border border-white/20 bg-white/10 hover:bg-white/15 flex items-center justify-center gap-2 transition-colors"
+              >
+                <Home className="w-5 h-5 flex-shrink-0" />
+                <span>{t('backToHome')}</span>
+              </button>
             </div>
           </motion.div>
         )}
 
-        {/* Loading state while checking proximity */}
+        {/* Standort wird ermittelt */}
         {!locationError && distance === null && (
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">{t('determiningLocation')}</p>
+          <motion.div className="text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <span className="block w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-white/75">{t('determiningLocation')}</p>
           </motion.div>
         )}
       </div>

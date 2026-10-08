@@ -1,10 +1,11 @@
-import { ArrowLeft, Navigation as NavigationIcon, Search } from 'lucide-react';
+import { Navigation as NavigationIcon, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { StationCard } from './StationCard';
 import { ProgressBar } from './ProgressBar';
 import { Input } from './ui/input';
+import { BackLink } from './PageHeader';
 
 interface Station {
   id: number;
@@ -104,29 +105,19 @@ export function PathView({
   }, [stations, searchQuery, userLocation]);
 
   return (
-    <div className="min-h-screen bg-background pb-8">
-      {/* Back Button */}
-      <div className="sticky top-16 bg-background/80 backdrop-blur-sm z-20 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">{t('back')}</span>
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-12">
+        <BackLink onBack={onBack} />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Path Header */}
+        {/* Pfad-Kopf */}
         <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
+          className="mt-5 mb-6"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h2 className="text-2xl font-bold mb-2">{pathTitle}</h2>
-          <p className="text-muted-foreground mb-6">{pathDescription}</p>
+          <h2 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">{pathTitle}</h2>
+          <p className="text-muted-foreground mt-1.5 mb-5 leading-relaxed">{pathDescription}</p>
 
           <ProgressBar
             current={userProgress.completedStations}
@@ -135,61 +126,56 @@ export function PathView({
           />
         </motion.div>
 
-        {/* Info Banner */}
+        {/* Hinweis */}
         <motion.div
-          className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6 flex items-start gap-3"
-          initial={{ opacity: 0, y: 20 }}
+          className="rounded-2xl bg-primary-soft p-4 mb-5 flex items-start gap-3"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.12, duration: 0.45 }}
         >
-          <NavigationIcon className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <span className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center flex-shrink-0">
+            <NavigationIcon className="w-4 h-4" />
+          </span>
           <div>
-            <h4 className="font-semibold text-sm mb-1">{t('freeStationChoice')}</h4>
-            <p className="text-sm text-muted-foreground">
+            <h4 className="font-bold text-sm text-primary-dark">{t('freeStationChoice')}</h4>
+            <p className="text-sm text-gray-700 leading-snug mt-0.5">
               {t('freeStationChoiceDesc')}
             </p>
           </div>
         </motion.div>
 
-        {/* Search and Filter */}
-        <motion.div
-          className="mb-6 space-y-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder={t('searchStation')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12"
-            />
-          </div>
-        </motion.div>
+        {/* Suche */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            placeholder={t('searchStation')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-12 rounded-2xl"
+          />
+        </div>
 
-        {/* Stations Grid */}
+        {/* Stationen */}
         <div>
-          <h3 className="font-semibold mb-4">
+          <h3 className="text-lg font-bold tracking-tight mb-4">
             {searchQuery
               ? `${t('foundStations')} (${processedStations.length})`
               : `${t('allStations')} (${stations.length})`}
           </h3>
           {processedStations.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border-strong">
+              <Search className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">{t('noStationsFound')}</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               {processedStations.map((station, index) => (
                 <motion.div
                   key={station.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
+                  transition={{ delay: 0.15 + index * 0.05, duration: 0.45 }}
                 >
                   <StationCard
                     {...station}
