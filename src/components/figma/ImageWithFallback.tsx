@@ -13,6 +13,7 @@ export function ImageWithFallback({ src, alt, fallbackSrc, ...props }: ImageWith
     <img
       src={errored || !src ? (fallbackSrc ?? '') : src}
       alt={alt}
+      decoding="async"
       onError={() => setErrored(true)}
       {...props}
     />

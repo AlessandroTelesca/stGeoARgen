@@ -1,23 +1,209 @@
-
   <!DOCTYPE html>
-  <html lang="en">
+  <html lang="de">
     <head>
       <meta charset="UTF-8" />
       <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
       />
+      <title>St.GeoARgen – AR-Stadtrundgang durch St. Georgen im Schwarzwald</title>
+      <meta
+        name="description"
+        content="St.GeoARgen – der interaktive Augmented-Reality-Stadtrundgang durch St. Georgen im Schwarzwald. Entdecke Glockenspiel, Bahnhof, Phonomuseum, Schwarzes Tor und Klosterweiher, sammle Punkte und löse Gutscheine ein."
+      />
+      <meta name="robots" content="index, follow, max-image-preview:large" />
+      <link rel="canonical" href="https://stgeoargen.iiius.de/" />
+      <link rel="alternate" hreflang="de" href="https://stgeoargen.iiius.de/" />
+      <link rel="alternate" hreflang="en" href="https://stgeoargen.iiius.de/?lang=en" />
+      <link rel="alternate" hreflang="x-default" href="https://stgeoargen.iiius.de/" />
+      <meta name="author" content="IIIUS Institut – Hochschule Furtwangen University" />
+      <meta name="geo.region" content="DE-BW" />
+      <meta name="geo.placename" content="St. Georgen im Schwarzwald" />
+      <meta name="geo.position" content="48.1258;8.3333" />
+      <meta name="ICBM" content="48.1258, 8.3333" />
+
+      <!-- Open Graph / Social -->
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="St.GeoARgen" />
+      <meta property="og:locale" content="de_DE" />
+      <meta property="og:locale:alternate" content="en_US" />
+      <meta property="og:url" content="https://stgeoargen.iiius.de/" />
+      <meta property="og:title" content="St.GeoARgen – AR-Stadtrundgang durch St. Georgen im Schwarzwald" />
+      <meta
+        property="og:description"
+        content="Der interaktive Augmented-Reality-Stadtrundgang durch St. Georgen: fünf Stationen zu Geschichte, Kultur und Natur – direkt auf dem Smartphone."
+      />
+      <meta property="og:image" content="https://stgeoargen.iiius.de/og-image.jpg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="Der Klosterweiher in St. Georgen im Schwarzwald" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="St.GeoARgen – AR-Stadtrundgang durch St. Georgen im Schwarzwald" />
+      <meta
+        name="twitter:description"
+        content="Der interaktive Augmented-Reality-Stadtrundgang durch St. Georgen: fünf Stationen zu Geschichte, Kultur und Natur – direkt auf dem Smartphone."
+      />
+      <meta name="twitter:image" content="https://stgeoargen.iiius.de/og-image.jpg" />
+
+      <!-- App / Icons -->
+      <meta name="application-name" content="St.GeoARgen" />
+      <meta name="apple-mobile-web-app-title" content="St.GeoARgen" />
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <title>StGeoARgen</title>
+      <meta name="theme-color" content="#0C690F" />
+      <meta name="format-detection" content="telephone=no" />
       <link rel="icon" type="image/svg+xml" href="/Logo.svg" />
-      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+      <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+      <link rel="manifest" href="/site.webmanifest" />
+
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": "https://stgeoargen.iiius.de/#website",
+              "url": "https://stgeoargen.iiius.de/",
+              "name": "St.GeoARgen",
+              "description": "Interaktiver Augmented-Reality-Stadtrundgang durch St. Georgen im Schwarzwald.",
+              "inLanguage": ["de", "en"],
+              "publisher": { "@id": "https://stgeoargen.iiius.de/#organization" }
+            },
+            {
+              "@type": "Organization",
+              "@id": "https://stgeoargen.iiius.de/#organization",
+              "name": "IIIUS Institut",
+              "url": "http://www.iiius.de/",
+              "email": "info@iiius.de",
+              "logo": "https://stgeoargen.iiius.de/icon-512.png",
+              "parentOrganization": { "@type": "CollegeOrUniversity", "name": "Hochschule Furtwangen University" },
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Goethestraße 14",
+                "postalCode": "78120",
+                "addressLocality": "Furtwangen im Schwarzwald",
+                "addressCountry": "DE"
+              }
+            },
+            {
+              "@type": "WebApplication",
+              "@id": "https://stgeoargen.iiius.de/#app",
+              "name": "St.GeoARgen",
+              "url": "https://stgeoargen.iiius.de/",
+              "applicationCategory": "TravelApplication",
+              "operatingSystem": "iOS, Android (Webbrowser)",
+              "browserRequirements": "Requires JavaScript, camera access and a WebGL-capable mobile browser.",
+              "inLanguage": ["de", "en"],
+              "image": "https://stgeoargen.iiius.de/og-image.jpg",
+              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+              "publisher": { "@id": "https://stgeoargen.iiius.de/#organization" }
+            },
+            {
+              "@type": "TouristTrip",
+              "@id": "https://stgeoargen.iiius.de/#trip",
+              "name": "Touristischer Themenpfad St. Georgen",
+              "description": "Augmented-Reality-Rundgang mit fünf Stationen zu Geschichte, Kultur und Natur in St. Georgen im Schwarzwald.",
+              "touristType": ["Familien", "Kulturinteressierte", "Schulklassen"],
+              "provider": { "@id": "https://stgeoargen.iiius.de/#organization" },
+              "itinerary": {
+                "@type": "ItemList",
+                "numberOfItems": 5,
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "item": {
+                      "@type": "TouristAttraction",
+                      "name": "Glockenspiel",
+                      "url": "https://stgeoargen.iiius.de/glockenspiel",
+                      "image": "https://stgeoargen.iiius.de/images/glockenspiel.jpg",
+                      "geo": { "@type": "GeoCoordinates", "latitude": 48.125809, "longitude": 8.333297 },
+                      "address": { "@type": "PostalAddress", "addressLocality": "St. Georgen im Schwarzwald", "addressCountry": "DE" }
+                    }
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "item": {
+                      "@type": "TouristAttraction",
+                      "name": "Bahnhof St. Georgen",
+                      "url": "https://stgeoargen.iiius.de/bahnhof",
+                      "image": "https://stgeoargen.iiius.de/images/bahnhof.jpg",
+                      "geo": { "@type": "GeoCoordinates", "latitude": 48.124428, "longitude": 8.341412 },
+                      "address": { "@type": "PostalAddress", "addressLocality": "St. Georgen im Schwarzwald", "addressCountry": "DE" }
+                    }
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "item": {
+                      "@type": "TouristAttraction",
+                      "name": "Phonomuseum",
+                      "url": "https://stgeoargen.iiius.de/phonomuseum",
+                      "image": "https://stgeoargen.iiius.de/images/phonomuseum.jpg",
+                      "geo": { "@type": "GeoCoordinates", "latitude": 48.126416, "longitude": 8.33287 },
+                      "address": { "@type": "PostalAddress", "addressLocality": "St. Georgen im Schwarzwald", "addressCountry": "DE" }
+                    }
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 4,
+                    "item": {
+                      "@type": "TouristAttraction",
+                      "name": "Schwarzes Tor",
+                      "url": "https://stgeoargen.iiius.de/schwarzes-tor",
+                      "image": "https://stgeoargen.iiius.de/images/schwarzesTor.jpg",
+                      "geo": { "@type": "GeoCoordinates", "latitude": 48.126356, "longitude": 8.334404 },
+                      "address": { "@type": "PostalAddress", "addressLocality": "St. Georgen im Schwarzwald", "addressCountry": "DE" }
+                    }
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 5,
+                    "item": {
+                      "@type": "TouristAttraction",
+                      "name": "Klosterweiher",
+                      "url": "https://stgeoargen.iiius.de/klosterweiher",
+                      "image": "https://stgeoargen.iiius.de/images/klosterweiher.jpg",
+                      "geo": { "@type": "GeoCoordinates", "latitude": 48.121061, "longitude": 8.33167 },
+                      "address": { "@type": "PostalAddress", "addressLocality": "St. Georgen im Schwarzwald", "addressCountry": "DE" }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      </script>
     </head>
 
     <body>
       <div id="root"></div>
+      <noscript>
+        <main style="font-family: system-ui, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px 16px; line-height: 1.5;">
+          <h1>St.GeoARgen – AR-Stadtrundgang durch St. Georgen im Schwarzwald</h1>
+          <p>
+            St.GeoARgen ist ein interaktiver Augmented-Reality-Stadtrundgang durch St. Georgen im Schwarzwald.
+            Mit dem Smartphone erkundest du fünf Stationen zu Geschichte, Kultur und Natur, sammelst Punkte
+            und löst Gutscheine bei lokalen Partnern ein. Bitte aktiviere JavaScript, um die App zu nutzen.
+          </p>
+          <h2>Die Stationen des Themenpfads</h2>
+          <ul>
+            <li><a href="/glockenspiel">Glockenspiel</a> – komponiere deine eigene Melodie in AR</li>
+            <li><a href="/bahnhof">Bahnhof</a> – die Geschichte des Bahnhofs St. Georgen</li>
+            <li><a href="/phonomuseum">Phonomuseum</a> – Audiomedien und Phonoindustrie in AR</li>
+            <li><a href="/schwarzes-tor">Schwarzes Tor</a> – 360°-Zeitreise durch historische Räume</li>
+            <li><a href="/klosterweiher">Klosterweiher</a> – Natur und Tierwelt am Weiher</li>
+          </ul>
+          <p>
+            <a href="/paths">Themenpfade</a> · <a href="/info">Über das Projekt</a> ·
+            <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>
+          </p>
+          <p>Ein Studienprojekt des IIIUS Instituts der Hochschule Furtwangen University in Kooperation mit der Stadt St. Georgen.</p>
+        </main>
+      </noscript>
       <script type="module" src="/src/main.tsx"></script>
     </body>
   </html>
-  

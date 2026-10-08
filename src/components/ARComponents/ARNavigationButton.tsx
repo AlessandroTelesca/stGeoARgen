@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARNavigationButtonProps {
@@ -20,9 +21,7 @@ export const ARNavigationButton = ({ onNavigateToNextStation }: ARNavigationButt
       <div className="ar-navigate-button-content">
         <span className="ar-navigate-button-text">{t('navigateToNextStation')}</span>
 
-        <span className="material-icons" style={{ fontSize: '28px', color: 'white' }}>
-          arrow_forward
-        </span>
+        <ArrowRight size={28} color="white" aria-hidden="true" />
       </div>
     </motion.button>
   );

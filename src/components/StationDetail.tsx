@@ -100,6 +100,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         <ImageWithFallback
           src={station.imageUrl}
           alt={station.title}
+          fetchPriority="high"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/0 to-black/70" aria-hidden="true" />

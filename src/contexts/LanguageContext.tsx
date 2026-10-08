@@ -33,13 +33,26 @@ const defaultLanguageContext: LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType>(defaultLanguageContext);
 
+const CRAWLER_PATTERN = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|embedly|whatsapp|telegram|linkedin|lighthouse/i;
+
 function getStoredLanguage(): Language {
+  // Explizite Sprache per URL (?lang=de|en) – Ziel der hreflang-Links
+  try {
+    const urlLang = new URLSearchParams(window.location.search).get('lang');
+    if (urlLang && isSupportedLanguage(urlLang)) return urlLang;
+  } catch {
+    // Ignore malformed URLs and continue with the other sources.
+  }
+
   try {
     const stored = localStorage.getItem('language');
     if (stored && isSupportedLanguage(stored)) return stored;
   } catch {
     // Ignore storage access issues and fall back to browser language.
   }
+
+  // Suchmaschinen melden meist "en-US" – sie sollen die deutsche Hauptversion indexieren
+  if (CRAWLER_PATTERN.test(navigator.userAgent)) return 'de';
 
   const browserLang = navigator.language.slice(0, 2).toLowerCase();
   return browserLang === 'de' ? 'de' : 'en';

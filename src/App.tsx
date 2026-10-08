@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -13,7 +13,6 @@ import { PathView } from './components/PathView';
 import { StationDetail } from './components/StationDetail';
 import { Settings } from './components/Settings';
 import { Profile } from './components/Profile';
-import { QRScanner } from './components/QRScanner';
 import { Onboarding } from './components/Onboarding';
 import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
@@ -25,23 +24,27 @@ import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
 import { Impressum } from './components/Impressum';
 import { Datenschutz } from './components/Datenschutz';
-import { KlosterweiherView } from './components/ARComponents/klosterweiher/klosterweiher.tsx';
-import { PhonomuseumView } from './components/ARComponents/phonomuseum/phonomuseum.tsx';
-import { GlockenspielView } from './components/ARComponents/glockenspiel/glockenspiel.tsx';
-import { BahnhofView } from './components/ARComponents/bahnhof/bahnhof.tsx';
-import { SchwarzesTorView } from './components/ARComponents/schwarzesTor/schwarzesTor.tsx';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
 import { ARLoginGuard } from './components/ARLoginGuard';
 import { useIsMobile } from './components/ui/use-mobile';
 import { useSiteFullscreen } from './hooks/useSiteFullscreen';
+import { useSeo } from './hooks/useSeo';
 import { useLanguage } from './contexts/LanguageContext';
 import { getKlosterweiherTexts } from './i18n/stations/klosterweiher';
 import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 import { getBahnhofTexts } from './i18n/stations/bahnhof';
 import { getSchwarzesTorTexts } from './i18n/stations/schwarzesTor';
+
+// AR-Ansichten (three.js, tone) und QR-Scanner (jsQR) erst bei Bedarf laden, damit die Startseite schnell bleibt
+const KlosterweiherView = lazy(() => import('./components/ARComponents/klosterweiher/klosterweiher.tsx').then((m) => ({ default: m.KlosterweiherView })));
+const PhonomuseumView = lazy(() => import('./components/ARComponents/phonomuseum/phonomuseum.tsx').then((m) => ({ default: m.PhonomuseumView })));
+const GlockenspielView = lazy(() => import('./components/ARComponents/glockenspiel/glockenspiel.tsx').then((m) => ({ default: m.GlockenspielView })));
+const BahnhofView = lazy(() => import('./components/ARComponents/bahnhof/bahnhof.tsx').then((m) => ({ default: m.BahnhofView })));
+const QRScanner = lazy(() => import('./components/QRScanner').then((m) => ({ default: m.QRScanner })));
+const SchwarzesTorView = lazy(() => import('./components/ARComponents/schwarzesTor/schwarzesTor.tsx').then((m) => ({ default: m.SchwarzesTorView })));
 
 
 
@@ -424,7 +427,7 @@ export default function App() {
           title: bahnhofTexts.stationName,
           description: bahnhofTexts.description,
           longDescription: bahnhofTexts.longDescription,
-          imageUrl: '/images/bahnhof.JPG',
+          imageUrl: '/images/bahnhof.jpg',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(2)?.lat || 48.1241,
@@ -456,7 +459,7 @@ export default function App() {
           title: schwarzesTorTexts.stationName,
           description: schwarzesTorTexts.description,
           longDescription: schwarzesTorTexts.longDescription,
-          imageUrl: '/images/schwarzesTor.JPG',
+          imageUrl: '/images/schwarzesTor.jpg',
           status: 'available',
           points: 50,
           latitude: getStationCoordinates(4)?.lat || 48.1263,
@@ -875,6 +878,13 @@ export default function App() {
     ? selectedPath.stations.find(s => s.id === selectedStationId)
     : null;
 
+  useSeo(
+    location.pathname,
+    currentView,
+    language,
+    currentView === 'station' ? selectedStation?.title : currentView === 'path' ? selectedPath?.title : undefined,
+  );
+
   const getStationById = (stationId: number) => {
     for (const path of paths) {
       const station = path.stations.find((s) => s.id === stationId);
@@ -930,7 +940,21 @@ export default function App() {
 
   const isArStationView = currentView.startsWith('ar-');
 
-  const renderARViewWithGate = (content: ReactNode) => {
+  const renderARViewWithGate = (arContent: ReactNode) => {
+    const content = (
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center px-6" role="status" aria-live="polite">
+            <p className="text-base font-semibold text-muted-foreground">
+              {language === 'de' ? 'AR-Station wird geladen...' : 'Loading AR station...'}
+            </p>
+          </div>
+        }
+      >
+        {arContent}
+      </Suspense>
+    );
+
     if (allowGuestStationStart) {
       return content;
     }
@@ -1156,15 +1180,17 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* QR Scanner Modal */}
-      <AnimatePresence>
-        {showQRScanner && (
-          <QRScanner
-            onClose={() => setShowQRScanner(false)}
-            onScan={handleQRScan}
-          />
-        )}
-      </AnimatePresence>
+      {/* QR Scanner Modal (jsQR wird erst beim Öffnen geladen) */}
+      <Suspense fallback={null}>
+        <AnimatePresence>
+          {showQRScanner && (
+            <QRScanner
+              onClose={() => setShowQRScanner(false)}
+              onScan={handleQRScan}
+            />
+          )}
+        </AnimatePresence>
+      </Suspense>
 
       {/* Onboarding */}
       <AnimatePresence>

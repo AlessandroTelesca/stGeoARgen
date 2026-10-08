@@ -201,6 +201,10 @@ function StationItem({ station, index, isLoggedIn, onStationClick }: StationItem
           <img
             src={station.imageUrl}
             alt=""
+            width={84}
+            height={84}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
           {isCompleted && (
