@@ -24,7 +24,7 @@
   "fishCaughtPrefix": "Glückwunsch! Du hast {article}",
   "fishCaughtSuffix": "gefangen!",
   "treasureFoundTitle": "Glückwunsch! Du hast die versunkene Glocke gefunden.",
-  "treasureFoundPoints": "du erhältst 50 punkte.",
+  "treasureFoundPoints": "du erhältst {points} punkte.",
   "treasureInfoTitle": "Sage zur Glocke im Klosterweiher",
   "treasureInfoStory": "In St. Georgen hat früher ein Benediktinerkloster gestanden. Um die Mönche mit Fisch zu versorgen, wurde ein Weiher aufgestaut - der Klosterweiher. In diesem soll der Sage nach ein Ochsengespann mit Glocken versunken sein, als es den Berg hinunterrutschte. Die Glocken waren für die Kirche oben in der Stadt bestimmt.",
   "fishInfoTitleFallback": "Fischinformation",

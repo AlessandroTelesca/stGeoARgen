@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import {
-  AlertCircle,
   ArrowDown,
   ArrowUp,
   ExternalLink,
   ImagePlus,
   LocateFixed,
   LockKeyhole,
+  Lock,
   LogOut,
   MapPinPlus,
   Pencil,
   Plus,
+  Route,
   Trash2,
   X,
 } from 'lucide-react';
@@ -23,25 +24,26 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { usePointConfig } from '../../contexts/PointConfigContext';
 import {
+  apiAdminDeletePath,
   apiAdminDeleteStation,
   apiAdminSaveStation,
   apiAdminVerify,
+  AR_PATH_ID,
   customStationImageUrl,
+  type CustomPath,
   type CustomStation,
   type CustomStationInput,
 } from '../../services/api';
+import { FieldError, FormSection, LanguageTabs, inputClass, prepareImage, type ImageItem } from './adminFormParts';
+import { PathAdminForm } from './PathAdminForm';
 
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
 const MAX_SLIDES = 10;
-const MAX_IMAGE_EDGE = 1920;
 const MIN_QUIZ_OPTIONS = 2;
 const MAX_QUIZ_OPTIONS = 6;
 const ease = [0.16, 1, 0.3, 1] as const;
-
-type ImageItem =
-  | { kind: 'existing'; filename: string; url: string }
-  | { kind: 'new'; file: File; url: string };
 
 /** Ein Bild der Bildfolge mit Text (DE Pflicht, EN optional) */
 interface SlideItem {
@@ -52,6 +54,7 @@ interface SlideItem {
 
 interface FormState {
   id?: number;
+  pathId: string;
   titleDe: string;
   titleEn: string;
   descriptionDe: string;
@@ -71,29 +74,31 @@ interface FormState {
   quizCorrect: number | null;
 }
 
-type FormErrors = Partial<Record<'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz', string>>;
+type FormErrors = Partial<Record<'pathId' | 'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz', string>>;
 
 interface StationAdminPanelProps {
-  /** Pfade, denen eine Station zugeordnet werden kann */
-  paths: Array<{ id: string; title: string }>;
-  /** Pfad, in dem alle hier angelegten/bearbeiteten Stationen gespeichert werden */
-  pathId: string;
+  /** Themenpfade aus der Stationsverwaltung (ohne den AR-Pfad) – nur ihnen können Stationen zugeordnet werden */
+  paths: CustomPath[];
+  /** Angezeigter Name je Pfad-ID (auch für den AR-Pfad, falls ältere Stationen dort liegen) */
+  pathTitles: Record<string, string>;
   /** Bereits angelegte Custom-Stationen */
   stations: CustomStation[];
-  /** Lädt die Stationen neu, nachdem gespeichert/gelöscht wurde */
-  onStationsChanged: () => Promise<void>;
+  /** Lädt Pfade und Stationen neu, nachdem gespeichert/gelöscht wurde */
+  onDataChanged: () => Promise<void>;
   onBack: () => void;
 }
 
-function emptyForm(): FormState {
+/** defaultPoints: point_settings.default_station_points aus der DB (unbekannt → leeres Feld) */
+function emptyForm(pathId: string, defaultPoints: number | undefined): FormState {
   return {
+    pathId,
     titleDe: '',
     titleEn: '',
     descriptionDe: '',
     descriptionEn: '',
     longDescriptionDe: '',
     longDescriptionEn: '',
-    points: '50',
+    points: defaultPoints === undefined ? '' : String(defaultPoints),
     latitude: '',
     longitude: '',
     cover: null,
@@ -111,6 +116,7 @@ function formFromStation(station: CustomStation): FormState {
   const optionsDe = station.quiz?.options_de ?? ['', '', '', ''];
   return {
     id: station.id,
+    pathId: station.path_id,
     titleDe: station.title_de,
     titleEn: station.title_en ?? '',
     descriptionDe: station.description_de,
@@ -137,67 +143,15 @@ function formFromStation(station: CustomStation): FormState {
   };
 }
 
-/** Verkleinert große Fotos vor dem Upload (Handyfotos haben oft > 5 MB). */
-async function prepareImage(file: File): Promise<File> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
-    if (scale === 1 && file.size <= 1.5 * 1024 * 1024 && file.type !== 'image/png') {
-      bitmap.close();
-      return file;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      bitmap.close();
-      return file;
-    }
-    ctx.fillStyle = '#fff'; // transparente PNGs bekommen weißen statt schwarzen Hintergrund
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-    if (!blob) return file;
-    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
-  } catch {
-    return file; // Server prüft das Format ohnehin
-  }
-}
-
 function parseCoordinate(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
   if (normalized === '' || !/^-?\d+(\.\d+)?$/.test(normalized)) return null;
   return Number(normalized);
 }
 
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return (
-    <p role="alert" className="mt-2 flex items-center gap-1.5 text-sm font-medium text-destructive">
-      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-      {message}
-    </p>
-  );
-}
-
-function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return (
-    <section className="surface-card p-5 space-y-5">
-      <div>
-        <h3 className="text-lg font-bold tracking-tight">{title}</h3>
-        {description && <p className="text-sm text-muted-foreground mt-1 leading-snug">{description}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-const inputClass = (hasError?: boolean) => `h-14 px-4 rounded-2xl bg-card ${hasError ? 'border-destructive' : ''}`;
-
-export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, onBack }: StationAdminPanelProps) {
+export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, onBack }: StationAdminPanelProps) {
   const { t } = useLanguage();
+  const { config: pointConfig } = usePointConfig();
   const [adminPassword, setAdminPassword] = useState<string | null>(() => sessionStorage.getItem(ADMIN_SESSION_KEY));
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -210,6 +164,11 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
   const [locating, setLocating] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [section, setSection] = useState<'stations' | 'paths'>('stations');
+  /** Offenes Pfadformular: 'new' = neuer Pfad, sonst der zu bearbeitende Pfad */
+  const [pathForm, setPathForm] = useState<CustomPath | 'new' | null>(null);
+  const [confirmDeletePathId, setConfirmDeletePathId] = useState<string | null>(null);
+  const [deletingPathId, setDeletingPathId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -368,6 +327,7 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
 
   const validate = (state: FormState): FormErrors => {
     const next: FormErrors = {};
+    if (!paths.some((p) => p.id === state.pathId)) next.pathId = t('stationEditorErrorPath');
     if (!state.titleDe.trim()) next.titleDe = t('stationEditorErrorRequired');
     if (!state.descriptionDe.trim()) next.descriptionDe = t('stationEditorErrorRequired');
     if (!state.longDescriptionDe.trim()) next.longDescriptionDe = t('stationEditorErrorRequired');
@@ -423,7 +383,7 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
 
     const payload: CustomStationInput = {
       id: form.id,
-      path_id: pathId,
+      path_id: form.pathId,
       title_de: form.titleDe.trim(),
       title_en: form.titleEn.trim() || null,
       description_de: form.descriptionDe.trim(),
@@ -449,7 +409,7 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
     setSaving(true);
     try {
       await apiAdminSaveStation(adminPassword, payload, cover.kind === 'new' ? cover.file : null, slideFiles);
-      await onStationsChanged();
+      await onDataChanged();
       toast.success(form.id ? t('stationEditorUpdated') : t('stationEditorCreated'), {
         description: payload.title_de,
       });
@@ -468,7 +428,7 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
     setDeletingId(station.id);
     try {
       await apiAdminDeleteStation(adminPassword, station.id);
-      await onStationsChanged();
+      await onDataChanged();
       toast.success(t('stationEditorDeleted'), { description: station.title_de });
       if (form?.id === station.id) setForm(null);
     } catch (err) {
@@ -478,6 +438,23 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
     } finally {
       setDeletingId(null);
       setConfirmDeleteId(null);
+    }
+  };
+
+  const handleDeletePath = async (path: CustomPath) => {
+    if (!adminPassword) return;
+    setDeletingPathId(path.id);
+    try {
+      await apiAdminDeletePath(adminPassword, path.id);
+      await onDataChanged();
+      toast.success(t('pathEditorDeleted'), { description: path.title_de });
+    } catch (err) {
+      toast.error(t('pathEditorDeleteFailed'), {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setDeletingPathId(null);
+      setConfirmDeletePathId(null);
     }
   };
 
@@ -528,6 +505,22 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
     );
   }
 
+  // ─── Pfadformular ─────────────────────────────────────────────────────────
+  if (pathForm) {
+    return (
+      <PathAdminForm
+        key={pathForm === 'new' ? 'new' : pathForm.id}
+        path={pathForm === 'new' ? null : pathForm}
+        adminPassword={adminPassword}
+        onSaved={async () => {
+          await onDataChanged();
+          setPathForm(null);
+        }}
+        onCancel={() => setPathForm(null)}
+      />
+    );
+  }
+
   // ─── Formular ─────────────────────────────────────────────────────────────
   if (form) {
     const isEn = textLanguage === 'en';
@@ -536,23 +529,7 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
     const hasCoordinates = lat !== null && lng !== null;
     const optional = isEn ? ` (${t('stationEditorOptional')})` : '';
     const enHint = isEn ? t('stationEditorEnFallback') : undefined;
-    // Sprachumschalter für alle mehrsprachigen Abschnitte (Texte, Bildfolge, Quiz)
-    const languageTabs = (
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1" role="tablist" aria-label={t('stationEditorSectionTexts')}>
-        {(['de', 'en'] as const).map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            role="tab"
-            aria-selected={textLanguage === lang}
-            onClick={() => setTextLanguage(lang)}
-            className={`h-11 rounded-xl text-sm font-bold transition-colors ${textLanguage === lang ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            {lang === 'de' ? 'Deutsch' : `English (${t('stationEditorOptional')})`}
-          </button>
-        ))}
-      </div>
-    );
+    const languageTabs = <LanguageTabs value={textLanguage} onChange={setTextLanguage} />;
 
     return (
       <div className="min-h-screen bg-background">
@@ -566,11 +543,26 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
           />
 
           <form onSubmit={handleSave} className="space-y-5" noValidate>
-            {/* Pfad (fest: Local Guide) + Punkte */}
-            <FormSection
-              title={t('stationEditorSectionBasics')}
-              description={t('stationEditorPathFixed', { path: paths.find((p) => p.id === pathId)?.title ?? pathId })}
-            >
+            {/* Pfad + Punkte */}
+            <FormSection title={t('stationEditorSectionBasics')}>
+              <div>
+                <FieldLabel htmlFor="station-path">{t('stationEditorPath')}</FieldLabel>
+                <select
+                  id="station-path"
+                  value={form.pathId}
+                  onChange={(e) => update('pathId', e.target.value)}
+                  className={`w-full h-14 px-4 rounded-2xl border bg-card font-semibold focus:outline-none focus:ring-4 focus:ring-primary/15 focus:border-primary ${errors.pathId ? 'border-destructive' : 'border-input'}`}
+                  aria-invalid={!!errors.pathId}
+                >
+                  {!paths.some((p) => p.id === form.pathId) && (
+                    <option value={form.pathId} disabled>{t('stationEditorChoosePath')}</option>
+                  )}
+                  {paths.map((path) => (
+                    <option key={path.id} value={path.id}>{path.title_de}</option>
+                  ))}
+                </select>
+                <FieldError message={errors.pathId} />
+              </div>
               <div>
                 <FieldLabel htmlFor="station-points">{t('points')}</FieldLabel>
                 <Input
@@ -939,121 +931,244 @@ export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, 
           icon={<MapPinPlus className="w-6 h-6" />}
         />
 
-        <Button
-          type="button"
-          onClick={() => openForm(emptyForm())}
-          className="w-full h-14 rounded-2xl text-base font-bold shadow-primary"
-        >
-          <Plus className="w-5 h-5" />
-          {t('stationEditorNewStation')}
-        </Button>
+        {/* Segment-Umschalter Stationen / Themenpfade */}
+        <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1" role="tablist">
+          {([['stations', t('stations')], ['paths', t('paths')]] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={section === value}
+              onClick={() => setSection(value)}
+              className={`h-11 rounded-xl text-sm font-bold transition-colors ${section === value ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <h3 className="mt-8 mb-3 px-1 text-lg font-bold tracking-tight">{t('stationEditorExisting')}</h3>
-        {stations.length === 0 ? (
-          <div className="text-center py-10 px-6 rounded-2xl border border-dashed border-border-strong">
-            <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary mx-auto mb-3 flex items-center justify-center">
-              <MapPinPlus className="w-5 h-5" />
-            </span>
-            <p className="text-muted-foreground">{t('stationEditorEmpty')}</p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {stations.map((station, index) => (
-              <motion.li
-                key={station.id}
-                className="surface-card p-3"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 + index * 0.05, duration: 0.4, ease }}
-              >
-                <div className="flex gap-3.5">
-                  <div className="w-[84px] h-[84px] rounded-2xl overflow-hidden bg-muted flex-shrink-0">
-                    {station.cover_image && (
-                      <img
-                        src={customStationImageUrl(station.cover_image)}
-                        alt=""
-                        width={84}
-                        height={84}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 py-0.5">
-                    <h4 className="truncate font-bold">{station.title_de}</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{station.description_de}</p>
-                    <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                      <span className="inline-flex items-center rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground tabular-nums">
-                        {station.points} {t('points')}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {paths.find((p) => p.id === station.path_id)?.title ?? station.path_id}
-                      </span>
-                    </div>
-                  </div>
+        {section === 'paths' && (
+          <>
+            <Button
+              type="button"
+              onClick={() => setPathForm('new')}
+              className="w-full h-14 rounded-2xl text-base font-bold shadow-primary"
+            >
+              <Plus className="w-5 h-5" />
+              {t('pathEditorNewPath')}
+            </Button>
+
+            <ul className="mt-8 space-y-3">
+              {/* AR-Pfad: fest eingebaut, nicht bearbeitbar */}
+              <li className="surface-card p-4 flex items-center gap-3.5">
+                <span className="w-11 h-11 rounded-xl bg-muted text-muted-foreground flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <h4 className="truncate font-bold">{pathTitles[AR_PATH_ID] ?? AR_PATH_ID}</h4>
+                  <p className="text-sm text-muted-foreground leading-snug">{t('pathEditorArLocked')}</p>
                 </div>
+              </li>
 
-                <AnimatePresence initial={false} mode="wait">
-                  {confirmDeleteId === station.id ? (
-                    <motion.div
-                      key="confirm"
-                      className="mt-3 rounded-2xl bg-destructive/8 border border-destructive/20 p-3"
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                    >
-                      <p className="text-sm font-semibold text-destructive">{t('stationEditorDeleteConfirm')}</p>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="min-h-[44px] rounded-xl bg-card border border-border font-semibold hover:bg-muted transition-colors"
-                        >
-                          {t('cancel')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(station)}
-                          disabled={deletingId === station.id}
-                          className="min-h-[44px] rounded-xl bg-destructive text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60"
-                        >
-                          {deletingId === station.id
-                            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            : <Trash2 className="w-4 h-4" />}
-                          {t('stationEditorDelete')}
-                        </button>
+              {paths.map((path) => {
+                const stationCount = stations.filter((s) => s.path_id === path.id).length;
+                return (
+                  <li key={path.id} className="surface-card p-3">
+                    <div className="flex gap-3.5">
+                      <div className="w-[84px] h-[84px] rounded-2xl overflow-hidden bg-primary-soft text-primary flex-shrink-0 flex items-center justify-center">
+                        {path.cover_image
+                          ? <img src={customStationImageUrl(path.cover_image)} alt="" width={84} height={84} loading="lazy" className="w-full h-full object-cover" />
+                          : <Route className="w-7 h-7" />}
                       </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="actions"
-                      className="mt-3 grid grid-cols-2 gap-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => openForm(formFromStation(station))}
-                        className="min-h-[44px] rounded-xl bg-muted font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-colors"
-                      >
-                        <Pencil className="w-4 h-4" />
-                        {t('stationEditorEdit')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDeleteId(station.id)}
-                        className="min-h-[44px] rounded-xl font-semibold text-destructive flex items-center justify-center gap-2 hover:bg-destructive/8 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        {t('stationEditorDelete')}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.li>
-            ))}
-          </ul>
+                      <div className="flex-1 min-w-0 py-0.5">
+                        <h4 className="truncate font-bold">{path.title_de}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{path.description_de}</p>
+                        <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+                          {t('pathEditorStationCount', { count: stationCount })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {confirmDeletePathId === path.id ? (
+                      <div className="mt-3 rounded-2xl bg-destructive/8 border border-destructive/20 p-3">
+                        <p className="text-sm font-semibold text-destructive">{t('pathEditorDeleteConfirm')}</p>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeletePathId(null)}
+                            className="min-h-[44px] rounded-xl bg-card border border-border font-semibold hover:bg-muted transition-colors"
+                          >
+                            {t('cancel')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeletePath(path)}
+                            disabled={deletingPathId === path.id}
+                            className="min-h-[44px] rounded-xl bg-destructive text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60"
+                          >
+                            {deletingPathId === path.id
+                              ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              : <Trash2 className="w-4 h-4" />}
+                            {t('stationEditorDelete')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPathForm(path)}
+                            className="min-h-[44px] rounded-xl bg-muted font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            {t('stationEditorEdit')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeletePathId(path.id)}
+                            disabled={stationCount > 0}
+                            className="min-h-[44px] rounded-xl font-semibold text-destructive flex items-center justify-center gap-2 hover:bg-destructive/8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t('stationEditorDelete')}
+                          </button>
+                        </div>
+                        {stationCount > 0 && (
+                          <p className="mt-2 px-1 text-xs text-muted-foreground">{t('pathEditorDeleteBlocked')}</p>
+                        )}
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+
+        {section === 'stations' && (
+          <>
+            {paths.length === 0 && (
+              <p className="mb-3 rounded-2xl bg-gold-soft px-4 py-3 text-sm text-gold-foreground">{t('stationEditorNeedPath')}</p>
+            )}
+            <Button
+              type="button"
+              onClick={() => openForm(emptyForm(paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
+              disabled={paths.length === 0}
+              className="w-full h-14 rounded-2xl text-base font-bold shadow-primary disabled:shadow-none"
+            >
+              <Plus className="w-5 h-5" />
+              {t('stationEditorNewStation')}
+            </Button>
+
+            <h3 className="mt-8 mb-3 px-1 text-lg font-bold tracking-tight">{t('stationEditorExisting')}</h3>
+            {stations.length === 0 ? (
+              <div className="text-center py-10 px-6 rounded-2xl border border-dashed border-border-strong">
+                <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary mx-auto mb-3 flex items-center justify-center">
+                  <MapPinPlus className="w-5 h-5" />
+                </span>
+                <p className="text-muted-foreground">{t('stationEditorEmpty')}</p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {stations.map((station, index) => (
+                  <motion.li
+                    key={station.id}
+                    className="surface-card p-3"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 + index * 0.05, duration: 0.4, ease }}
+                  >
+                    <div className="flex gap-3.5">
+                      <div className="w-[84px] h-[84px] rounded-2xl overflow-hidden bg-muted flex-shrink-0">
+                        {station.cover_image && (
+                          <img
+                            src={customStationImageUrl(station.cover_image)}
+                            alt=""
+                            width={84}
+                            height={84}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 py-0.5">
+                        <h4 className="truncate font-bold">{station.title_de}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{station.description_de}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                          <span className="inline-flex items-center rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground tabular-nums">
+                            {station.points} {t('points')}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {pathTitles[station.path_id] ?? station.path_id}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <AnimatePresence initial={false} mode="wait">
+                      {confirmDeleteId === station.id ? (
+                        <motion.div
+                          key="confirm"
+                          className="mt-3 rounded-2xl bg-destructive/8 border border-destructive/20 p-3"
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                        >
+                          <p className="text-sm font-semibold text-destructive">{t('stationEditorDeleteConfirm')}</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="min-h-[44px] rounded-xl bg-card border border-border font-semibold hover:bg-muted transition-colors"
+                            >
+                              {t('cancel')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleDelete(station)}
+                              disabled={deletingId === station.id}
+                              className="min-h-[44px] rounded-xl bg-destructive text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60"
+                            >
+                              {deletingId === station.id
+                                ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                : <Trash2 className="w-4 h-4" />}
+                              {t('stationEditorDelete')}
+                            </button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="actions"
+                          className="mt-3 grid grid-cols-2 gap-2"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openForm(formFromStation(station))}
+                            className="min-h-[44px] rounded-xl bg-muted font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            {t('stationEditorEdit')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(station.id)}
+                            className="min-h-[44px] rounded-xl font-semibold text-destructive flex items-center justify-center gap-2 hover:bg-destructive/8 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t('stationEditorDelete')}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </div>

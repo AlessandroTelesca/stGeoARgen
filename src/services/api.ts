@@ -247,34 +247,33 @@ export interface TreasureRewardStatusResponse {
 }
 
 /**
- * Speichert den Pfad-Abschluss-Bonus (500 Punkte) in der Datenbank.
+ * Speichert den Pfad-Abschluss in der Datenbank (vergibt serverseitig keinen Bonus).
  * Idempotent: Ein zweiter Aufruf liefert already_claimed: true.
  */
 export async function apiSavePathBonus(
     userId: number,
-    pathId: string,
-    bonus: number = 500
+    pathId: string
 ): Promise<PathBonusResponse> {
     return apiFetch<PathBonusResponse>('save_path_bonus.php', {
         method: 'POST',
-        body: JSON.stringify({ user_id: userId, path_id: pathId, bonus }),
+        body: JSON.stringify({ user_id: userId, path_id: pathId }),
     });
 }
 
+/** Punkte vergibt der Server laut reward_definitions. */
 export async function apiSaveTreasureReward(
     userId: number,
-    rewardKey: string = 'klosterweiher_treasure_chest',
-    points: number = 50
+    rewardKey: string = TREASURE_REWARD_KEY
 ): Promise<TreasureRewardSaveResponse> {
     return apiFetch<TreasureRewardSaveResponse>('save_treasure_reward.php', {
         method: 'POST',
-        body: JSON.stringify({ user_id: userId, reward_key: rewardKey, points }),
+        body: JSON.stringify({ user_id: userId, reward_key: rewardKey }),
     });
 }
 
 export async function apiGetTreasureReward(
     userId: number,
-    rewardKey: string = 'klosterweiher_treasure_chest'
+    rewardKey: string = TREASURE_REWARD_KEY
 ): Promise<TreasureRewardStatusResponse> {
     return apiFetch<TreasureRewardStatusResponse>(
         `get_treasure_reward.php?user_id=${userId}&reward_key=${encodeURIComponent(rewardKey)}`,
@@ -283,6 +282,26 @@ export async function apiGetTreasureReward(
 
 export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
     return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
+}
+
+// ─── Punkte-Konfiguration ────────────────────────────────────────────────────
+
+export const TREASURE_REWARD_KEY = 'klosterweiher_treasure_chest';
+
+/** Alle Punktwerte aus der DB (get_point_config.php). */
+export interface PointConfig {
+    /** Fest eingebaute Stationen (Custom-Stationen liefern ihre Punkte selbst) */
+    stations: { station_id: number; path_id: string; points: number }[];
+    /** reward_key → Punkte */
+    rewards: Record<string, number>;
+    /** In Anzeigereihenfolge. threshold_points null = Regel im Frontend (z. B. Pfad komplett) */
+    achievements: { key: string; threshold_points: number | null; badge_points: number }[];
+    settings: { level_size: number; default_station_points: number };
+}
+
+export async function apiGetPointConfig(): Promise<PointConfig> {
+    const { stations, rewards, achievements, settings } = await apiFetch<PointConfig & { success: boolean }>('get_point_config.php');
+    return { stations, rewards, achievements, settings };
 }
 
 // ─── Custom-Stationen (Stationsverwaltung) ──────────────────────────────────
@@ -370,6 +389,57 @@ export async function apiAdminSaveStation(
 
 export async function apiAdminDeleteStation(adminPassword: string, id: number): Promise<void> {
     await apiFetch('admin_delete_station.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body: JSON.stringify({ id }),
+    });
+}
+
+// ─── Custom-Pfade (Stationsverwaltung) ──────────────────────────────────────
+
+/** ID des fest eingebauten AR-Pfads – nicht über die Stationsverwaltung änderbar */
+export const AR_PATH_ID = 'tourist';
+
+export type PathDifficulty = 'Einfach' | 'Mittel' | 'Schwer';
+
+/** Themenpfad, wie er von get_custom_paths.php / admin_save_path.php geliefert wird. */
+export interface CustomPath {
+    /** Aus dem Namen erzeugt, ändert sich nach dem Anlegen nie */
+    id: string;
+    title_de: string;
+    title_en: string | null;
+    description_de: string;
+    description_en: string | null;
+    difficulty: PathDifficulty;
+    estimated_time: string;
+    /** Optionales Pfadbild (Dateiname in api/uploads/stations/) */
+    cover_image: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+/** Ohne `id` wird ein Pfad angelegt. `cover_image: 'new'` → `newCover`, `null` → kein Bild. */
+export type CustomPathInput = Omit<CustomPath, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+
+export async function apiGetCustomPaths(): Promise<CustomPath[]> {
+    const res = await apiFetch<{ paths: CustomPath[] }>('get_custom_paths.php');
+    return Array.isArray(res.paths) ? res.paths : [];
+}
+
+export async function apiAdminSavePath(adminPassword: string, path: CustomPathInput, newCover: File | null): Promise<CustomPath> {
+    const body = new FormData();
+    body.append('path', JSON.stringify(path));
+    if (newCover) body.append('cover', newCover, newCover.name);
+    const res = await apiFetch<{ path: CustomPath }>('admin_save_path.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body,
+    });
+    return res.path;
+}
+
+export async function apiAdminDeletePath(adminPassword: string, id: string): Promise<void> {
+    await apiFetch('admin_delete_path.php', {
         method: 'POST',
         headers: adminHeaders(adminPassword),
         body: JSON.stringify({ id }),

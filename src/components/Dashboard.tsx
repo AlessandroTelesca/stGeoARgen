@@ -1,6 +1,7 @@
 import { Trophy, Flag, Gift, Lock, Check, ChevronRight, ArrowRight, QrCode } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { usePointConfig } from '../contexts/PointConfigContext';
 import { PathCard } from './PathCard';
 import { CountUp } from './CountUp';
 
@@ -40,11 +41,13 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
 
   const completedPaths = paths.filter(path => path.completedStations === path.totalStations).length;
 
-  // Nächste Gutschein-Schwelle
-  const voucherMilestones = [50, 100, 150, 180, 200, 225];
-  const nextMilestone = voucherMilestones.find(m => m > totalPoints) || 225;
-  const pointsToNextVoucher = nextMilestone - totalPoints;
-  const hasUnlockedVoucher = totalPoints >= 50;
+  // Nächste Gutschein-Schwelle: Preise der Shop-Gutscheine aus der DB
+  const { voucherPrices } = usePointConfig();
+  const highestVoucherPrice = voucherPrices[voucherPrices.length - 1] as number | undefined;
+  const nextMilestone = voucherPrices.find(m => m > totalPoints) ?? highestVoucherPrice;
+  const allVouchersUnlocked = highestVoucherPrice !== undefined && totalPoints >= highestVoucherPrice;
+  const pointsToNextVoucher = nextMilestone === undefined ? 0 : nextMilestone - totalPoints;
+  const hasUnlockedVoucher = voucherPrices.length > 0 && totalPoints >= voucherPrices[0];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -253,13 +256,15 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
                 {hasUnlockedVoucher ? t('voucherAvailable') : t('nextVoucher')}
               </h4>
               <p className="text-sm text-muted-foreground leading-snug mt-0.5">
-                {totalPoints >= 225
-                  ? t('allVouchersUnlocked')
-                  : pointsToNextVoucher === 0
-                    ? t('congratsNewVoucher')
-                    : t('pointsToNextVoucher').replace('{points}', String(pointsToNextVoucher))}
+                {nextMilestone === undefined
+                  ? t('noVouchersAvailable')
+                  : allVouchersUnlocked
+                    ? t('allVouchersUnlocked')
+                    : pointsToNextVoucher === 0
+                      ? t('congratsNewVoucher')
+                      : t('pointsToNextVoucher').replace('{points}', String(pointsToNextVoucher))}
               </p>
-              {totalPoints < 225 && (
+              {nextMilestone !== undefined && !allVouchersUnlocked && (
                 <span className="mt-3 block">
                   <span className="block h-1.5 bg-muted rounded-full overflow-hidden">
                     <motion.span

@@ -174,6 +174,100 @@ CREATE TABLE IF NOT EXISTS `custom_stations` (
   KEY `idx_custom_stations_path_id` (`path_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabelle: custom_paths
+-- Über die Stationsverwaltung angelegte Themenpfade. Der AR-Pfad ('tourist') ist fest im Frontend
+-- eingebaut und steht hier bewusst nicht drin; Custom-Stationen gehören immer zu einem dieser Pfade.
+-- id: aus dem Namen erzeugter Kurzname (z. B. 'local-guide'); bleibt nach dem Anlegen unverändert,
+--     weil user_progress.path_id und custom_stations.path_id darauf verweisen.
+-- cover_image: optionales Pfadbild (Dateiname in api/uploads/stations/)
+-- Idempotent – kann auf einer bestehenden DB erneut ausgeführt werden.
+CREATE TABLE IF NOT EXISTS `custom_paths` (
+  `id`              VARCHAR(100) NOT NULL,
+  `title_de`        VARCHAR(150) NOT NULL,
+  `title_en`        VARCHAR(150) DEFAULT NULL,
+  `description_de`  VARCHAR(500) NOT NULL,
+  `description_en`  VARCHAR(500) DEFAULT NULL,
+  `difficulty`      ENUM('Einfach', 'Mittel', 'Schwer') NOT NULL DEFAULT 'Einfach',
+  `estimated_time`  VARCHAR(50) NOT NULL DEFAULT '',
+  `cover_image`     VARCHAR(64) DEFAULT NULL,
+  `created_at`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bisher fest im Frontend eingebauter Pfad „Local Guide“ – übernimmt die vorhandenen Stationen
+INSERT IGNORE INTO `custom_paths` (`id`, `title_de`, `title_en`, `description_de`, `description_en`, `difficulty`, `estimated_time`) VALUES
+  ('local-guide', 'Local Guide', 'Local Guide',
+   'Geschichten von Einheimischen: entdecke besondere Orte in St.Georgen Bild für Bild.',
+   'Stories from locals: discover special places in St.Georgen picture by picture.',
+   'Einfach', '1-2 Std');
+
+-- ============================================================
+-- Punkte-Konfiguration: alle Punktwerte, die das Frontend anzeigt bzw. der Server vergibt.
+-- Idempotent (IF NOT EXISTS / INSERT IGNORE) – kann auf einer bestehenden DB erneut ausgeführt
+-- werden, ohne geänderte Werte zu überschreiben. Ausgeliefert über get_point_config.php.
+-- ============================================================
+
+-- Tabelle: builtin_stations
+-- Punkte der fest eingebauten Stationen (IDs < 1000; Custom-Stationen haben ihre Punkte in custom_stations)
+CREATE TABLE IF NOT EXISTS `builtin_stations` (
+  `station_id`   INT NOT NULL,
+  `path_id`      VARCHAR(100) NOT NULL,
+  `points`       INT NOT NULL,
+  PRIMARY KEY (`station_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `builtin_stations` (`station_id`, `path_id`, `points`) VALUES
+  (1, 'tourist', 50),
+  (2, 'tourist', 50),
+  (3, 'tourist', 50),
+  (4, 'tourist', 50),
+  (5, 'tourist', 50);
+
+-- Tabelle: reward_definitions
+-- Punkte der einmaligen Sonderbelohnungen (reward_key wie in user_rewards)
+CREATE TABLE IF NOT EXISTS `reward_definitions` (
+  `reward_key`   VARCHAR(120) NOT NULL,
+  `points`       INT NOT NULL,
+  PRIMARY KEY (`reward_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `reward_definitions` (`reward_key`, `points`) VALUES
+  ('klosterweiher_treasure_chest', 50);
+
+-- Tabelle: achievements
+-- Nur Anzeige (es werden keine Punkte gutgeschrieben).
+-- threshold_points: freigeschaltet ab so vielen verdienten Punkten; NULL = Regel im Frontend
+-- (pathfinder: ein Pfad komplett, completionist: alle Pfade komplett).
+-- badge_points: im Badge angezeigter Wert.
+CREATE TABLE IF NOT EXISTS `achievements` (
+  `achievement_key`  VARCHAR(50) NOT NULL,
+  `threshold_points` INT DEFAULT NULL,
+  `badge_points`     INT NOT NULL,
+  `sort_order`       INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`achievement_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `achievements` (`achievement_key`, `threshold_points`, `badge_points`, `sort_order`) VALUES
+  ('first-steps',   10,   10,  1),
+  ('explorer',      50,   50,  2),
+  ('adventurer',    100,  100, 3),
+  ('pathfinder',    NULL, 150, 4),
+  ('master',        200,  200, 5),
+  ('completionist', NULL, 300, 6);
+
+-- Tabelle: point_settings
+-- level_size: Punkte pro Level; default_station_points: Vorschlagswert für neue Custom-Stationen
+CREATE TABLE IF NOT EXISTS `point_settings` (
+  `setting_key`  VARCHAR(50) NOT NULL,
+  `value`        INT NOT NULL,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `point_settings` (`setting_key`, `value`) VALUES
+  ('level_size', 100),
+  ('default_station_points', 50);
+
 -- Migration für eine bereits angelegte custom_stations-Tabelle (Version mit Spalte `images`).
 -- Vorhandene Stationen behalten ihr erstes Bild als Profilbild und bekommen eine leere Bildfolge;
 -- sie müssen danach in der Stationsverwaltung um Bilder mit Texten ergänzt werden.

@@ -9,6 +9,21 @@ interface ARProgressBarProps {
   onCompactChange?: (isCompact: boolean) => void;
 }
 
+/** Fortschritt und Stationsstatus für die ARProgressBar aus den App-Zählern. */
+export function buildARProgress(completedStations: number, totalStations: number, totalPoints: number) {
+  const progress = {
+    current: completedStations + 1 > totalStations ? totalStations : completedStations + 1,
+    total: totalStations || 1,
+    points: totalPoints,
+  };
+  const stations = Array.from({ length: Math.max(progress.total, 1) }, (_, i) => {
+    if (i < completedStations) return 'completed';
+    if (i === completedStations && completedStations < progress.total) return 'current';
+    return 'locked';
+  });
+  return { progress, stations };
+}
+
 export const ARProgressBar = ({ progress, stations, onCompactChange }: ARProgressBarProps) => {
   const { t } = useLanguage();
   const [isCompact, setIsCompact] = useState(false);

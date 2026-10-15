@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ARTopBar } from '../ARComponents/ARTopBar';
+import { ARProgressBar, buildARProgress } from '../ARComponents/ARProgressBar';
+import { ARProfileMenu } from '../ARComponents/ARProfileMenu';
+import '../ARComponents/ARComponents.css';
 
 export interface StationImageSlide {
   imageUrl: string;
   text: string;
+}
+
+/** Daten für die AR-Oberfläche (Top-Bar, Profilmenü, Fortschrittsleiste) wie in den AR-Stationen */
+export interface ARChromeProps {
+  username: string | null;
+  onNavigateHome: () => void;
+  onLogin: () => void;
+  onLogout: () => void;
+  onNavigateProfile: () => void;
+  onRegister: () => void;
+  completedStations: number;
+  totalStations: number;
+  totalPoints: number;
 }
 
 interface StationImageSequenceProps {
@@ -15,13 +32,17 @@ interface StationImageSequenceProps {
   finishLabel: string;
   onFinish: () => void;
   onClose: () => void;
+  arChrome: ARChromeProps;
 }
 
 /** Vollbild-Bildfolge einer Station: Bild für Bild mit kurzem Text durchklicken. */
-export function StationImageSequence({ title, slides, finishLabel, onFinish, onClose }: StationImageSequenceProps) {
+export function StationImageSequence({ title, slides, finishLabel, onFinish, onClose, arChrome }: StationImageSequenceProps) {
   const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isProgressCompact, setIsProgressCompact] = useState(false);
+  const { progress, stations } = buildARProgress(arChrome.completedStations, arChrome.totalStations, arChrome.totalPoints);
   const isLast = index === slides.length - 1;
   const slide = slides[index];
 
@@ -33,7 +54,10 @@ export function StationImageSequence({ title, slides, finishLabel, onFinish, onC
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (profileMenuOpen) setProfileMenuOpen(false);
+        else onClose();
+      }
       else if (e.key === 'ArrowLeft') goTo(index - 1);
       else if (e.key === 'ArrowRight') {
         if (isLast) onFinish();
@@ -61,28 +85,18 @@ export function StationImageSequence({ title, slides, finishLabel, onFinish, onC
       exit={{ opacity: 0 }}
       transition={{ duration: 0.24 }}
     >
-      {/* Fortschritt + Kopf */}
-      <div className="px-4 pb-3" style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}>
+      {/* Kopf unter der ARTopBar (gleicher Abstand wie das Profilmenü) */}
+      <div className="px-4 pb-3" style={{ paddingTop: 'calc(max(14px, env(safe-area-inset-top, 0px)) + 72px)' }}>
         <div className="flex gap-1" aria-hidden="true">
           {slides.map((_, i) => (
             <span key={i} className={`h-1 flex-1 rounded-full transition-colors duration-200 ${i <= index ? 'bg-white' : 'bg-white/25'}`} />
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-bold truncate">{title}</p>
-            <p className="text-xs text-white/70 tabular-nums">
-              {t('stationImageSequenceProgress', { current: index + 1, total: slides.length })}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('close')}
-            className="w-11 h-11 rounded-full bg-white/15 border border-white/20 flex items-center justify-center hover:bg-white/25 transition-colors flex-shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="mt-3 min-w-0">
+          <p className="font-bold truncate">{title}</p>
+          <p className="text-xs text-white/70 tabular-nums">
+            {t('stationImageSequenceProgress', { current: index + 1, total: slides.length })}
+          </p>
         </div>
       </div>
 
@@ -117,10 +131,14 @@ export function StationImageSequence({ title, slides, finishLabel, onFinish, onC
         />
       </div>
 
-      {/* Text + Steuerung */}
+      {/* Text + Steuerung – über der ARProgressBar (gleiche Abstände wie der AR-Abschlussbutton) */}
       <div
-        className="bg-gradient-to-t from-black via-black to-black/80 px-5 pt-4"
-        style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 0px))' }}
+        className="bg-gradient-to-t from-black via-black to-black/80 px-5 pt-4 transition-[padding] duration-300"
+        style={{
+          paddingBottom: isProgressCompact
+            ? 'calc(62px + max(24px, env(safe-area-inset-bottom, 0px)))'
+            : 'calc(112px + max(24px, env(safe-area-inset-bottom, 0px)))',
+        }}
       >
         <div className="max-w-md mx-auto">
           <AnimatePresence mode="wait" initial={false}>
@@ -156,6 +174,26 @@ export function StationImageSequence({ title, slides, finishLabel, onFinish, onC
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Gleiche AR-Oberfläche wie in den AR-Stationen */}
+      <div className="ar-ui-overlay">
+        <ARTopBar
+          onNavigateHome={arChrome.onNavigateHome}
+          onProfileClick={() => setProfileMenuOpen(!profileMenuOpen)}
+          profileMenuOpen={profileMenuOpen}
+          username={arChrome.username}
+        />
+        <ARProgressBar progress={progress} stations={stations} onCompactChange={setIsProgressCompact} />
+        <ARProfileMenu
+          isOpen={profileMenuOpen}
+          onClose={() => setProfileMenuOpen(false)}
+          username={arChrome.username}
+          onLogin={arChrome.onLogin}
+          onLogout={arChrome.onLogout}
+          onNavigateProfile={arChrome.onNavigateProfile}
+          onRegister={arChrome.onRegister}
+        />
       </div>
     </motion.div>
   );

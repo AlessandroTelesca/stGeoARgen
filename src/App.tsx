@@ -4,7 +4,8 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, saveStationProgress, resetUserProgress } from './services/auth';
-import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints, apiGetCustomStations, customStationImageUrl, type CustomStation } from './services/api';
+import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints, apiGetCustomStations, apiGetCustomPaths, customStationImageUrl, TREASURE_REWARD_KEY, AR_PATH_ID, type CustomPath, type CustomStation } from './services/api';
+import { usePointConfig } from './contexts/PointConfigContext';
 import { Header } from './components/Header';
 import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
@@ -50,8 +51,8 @@ const SchwarzesTorView = lazy(() => import('./components/ARComponents/schwarzesT
 
 // IDs der über die Stationsverwaltung angelegten Stationen beginnen hier (siehe api/setup.sql, custom_stations)
 const CUSTOM_STATION_MIN_ID = 1000;
-// Pfad für die über die Stationsverwaltung angelegten Stationen (neue Pfad-ID, bestehende Daten bleiben unverändert)
-const LOCAL_GUIDE_PATH_ID = 'local-guide';
+// Bild für Custom-Pfade ohne eigenes Pfadbild
+const DEFAULT_PATH_IMAGE = '/images/stgeorgen.jpg';
 
 
 interface Station {
@@ -85,6 +86,7 @@ interface Path {
 
 export default function App() {
   const { t, language } = useLanguage();
+  const { config: pointConfig } = usePointConfig();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const glockenspielTexts = getGlockenspielTexts(language);
   const phonomuseumTexts = getPhonomuseumTexts(language);
@@ -410,11 +412,11 @@ export default function App() {
     };
   }, [fallbackAppModeActive, isFullscreen, isMobile]);
 
-  // Pfade: 'tourist' = AR-Pfad mit den fest eingebauten Stationen (ID bleibt wegen gespeicherter Daten,
-  // nur der angezeigte Name ist „Augmented-Reality-Pfad“); Local Guide = Stationen aus der Stationsverwaltung
+  // Fest eingebaut ist nur der AR-Pfad (ID 'tourist' bleibt wegen gespeicherter Daten, angezeigt als
+  // „Augmented-Reality-Pfad“). Weitere Pfade kommen aus der Stationsverwaltung (custom_paths), siehe unten.
   const [paths, setPaths] = useState<Path[]>([
     {
-      id: 'tourist',
+      id: AR_PATH_ID,
       title: t('touristPathTitle'),
       description: t('touristPathDescription'),
       imageUrl: '/images/stgeorgen.jpg',
@@ -428,7 +430,8 @@ export default function App() {
           longDescription: glockenspielTexts.longDescription,
           imageUrl: '/images/glockenspiel.jpg',
           status: 'available',
-          points: 50,
+          // Punkte der fest eingebauten Stationen kommen aus der DB (builtin_stations)
+          points: 0,
           latitude: getStationCoordinates(1)?.lat || 48.1242,
           longitude: getStationCoordinates(1)?.lng || 8.3336,
           quiz: {
@@ -444,7 +447,7 @@ export default function App() {
           longDescription: bahnhofTexts.longDescription,
           imageUrl: '/images/bahnhof.jpg',
           status: 'available',
-          points: 50,
+          points: 0,
           latitude: getStationCoordinates(2)?.lat || 48.1241,
           longitude: getStationCoordinates(2)?.lng || 8.3341,
           quiz: {
@@ -460,7 +463,7 @@ export default function App() {
           longDescription: phonomuseumTexts.longDescription,
           imageUrl: '/images/phonomuseum.jpg',
           status: 'available',
-          points: 50,
+          points: 0,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
           longitude: getStationCoordinates(3)?.lng || 8.3345,
           quiz: {
@@ -476,7 +479,7 @@ export default function App() {
           longDescription: schwarzesTorTexts.longDescription,
           imageUrl: '/images/schwarzesTor.jpg',
           status: 'available',
-          points: 50,
+          points: 0,
           latitude: getStationCoordinates(4)?.lat || 48.1263,
           longitude: getStationCoordinates(4)?.lng || 8.3344,
         },
@@ -487,7 +490,7 @@ export default function App() {
           longDescription: klosterweiherTexts.longDescription,
           imageUrl: '/images/klosterweiher.jpg',
           status: 'available',
-          points: 50,
+          points: 0,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
           longitude: getStationCoordinates(5)?.lng || 8.3350,
           quiz: {
@@ -497,15 +500,6 @@ export default function App() {
           },
         },
       ],
-    },
-    {
-      id: LOCAL_GUIDE_PATH_ID,
-      title: t('localGuidePathTitle'),
-      description: t('localGuidePathDescription'),
-      imageUrl: '/images/stgeorgen.jpg',
-      difficulty: 'Einfach',
-      estimatedTime: '1-2 Std',
-      stations: [],
     },
   ]);
 
@@ -626,18 +620,11 @@ export default function App() {
   useEffect(() => {
     setPaths((prev) =>
       prev.map((path) => {
-        if (path.id === 'tourist') {
+        if (path.id === AR_PATH_ID) {
           return {
             ...path,
             title: t('touristPathTitle'),
             description: t('touristPathDescription'),
-          };
-        }
-        if (path.id === LOCAL_GUIDE_PATH_ID) {
-          return {
-            ...path,
-            title: t('localGuidePathTitle'),
-            description: t('localGuidePathDescription'),
           };
         }
         return path;
@@ -645,65 +632,95 @@ export default function App() {
     );
   }, [language, t]);
 
-  // Über die Stationsverwaltung angelegte Stationen – liegen auf dem Server und gelten für alle Nutzer
+  // Über die Stationsverwaltung angelegte Pfade und Stationen – liegen auf dem Server und gelten für alle Nutzer
+  const [customPaths, setCustomPaths] = useState<CustomPath[]>([]);
   const [customStations, setCustomStations] = useState<CustomStation[]>([]);
 
-  const loadCustomStations = useCallback(async () => {
-    try {
-      setCustomStations(await apiGetCustomStations());
-    } catch {
-      /* Server nicht erreichbar – es bleiben die fest eingebauten Stationen */
-    }
+  const loadCustomContent = useCallback(async () => {
+    // Unabhängig laden: fällt eins aus (Server nicht erreichbar, Tabelle fehlt), bleibt der Rest nutzbar
+    const [pathsResult, stationsResult] = await Promise.allSettled([apiGetCustomPaths(), apiGetCustomStations()]);
+    if (pathsResult.status === 'fulfilled') setCustomPaths(pathsResult.value);
+    if (stationsResult.status === 'fulfilled') setCustomStations(stationsResult.value);
   }, []);
 
   useEffect(() => {
-    void loadCustomStations();
-  }, [loadCustomStations]);
+    void loadCustomContent();
+  }, [loadCustomContent]);
 
-  // Custom-Stationen in ihre Pfade einsortieren (Status bleibt beim Neuladen/Sprachwechsel erhalten)
+  // Custom-Pfade aufbauen und Custom-Stationen einsortieren (Status bleibt beim Neuladen/Sprachwechsel erhalten).
+  // Ältere Custom-Stationen mit path_id 'tourist' bleiben im AR-Pfad.
   useEffect(() => {
     const isEn = language === 'en';
+    setPaths((prev) => {
+      const previousStatus = new Map(prev.flatMap((path) => path.stations.map((s) => [s.id, s.status] as const)));
+      const customStationsOf = (pathId: string): Station[] =>
+        customStations
+          .filter((c) => c.path_id === pathId)
+          .map((c) => ({
+            id: c.id,
+            title: (isEn && c.title_en) || c.title_de,
+            description: (isEn && c.description_en) || c.description_de,
+            longDescription: (isEn && c.long_description_en) || c.long_description_de,
+            imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
+            imageSequence: c.slides.map((slide) => ({
+              imageUrl: customStationImageUrl(slide.image),
+              text: (isEn && slide.text_en) || slide.text_de,
+            })),
+            status: previousStatus.get(c.id) ?? 'available',
+            points: c.points,
+            latitude: c.latitude,
+            longitude: c.longitude,
+            quiz: c.quiz
+              ? {
+                question: (isEn && c.quiz.question_en) || c.quiz.question_de,
+                options: (isEn && c.quiz.options_en) || c.quiz.options_de,
+                correctAnswer: c.quiz.correct_answer,
+              }
+              : undefined,
+          }));
+
+      const arPaths = prev
+        .filter((path) => path.id === AR_PATH_ID)
+        .map((path) => ({
+          ...path,
+          stations: [...path.stations.filter((s) => s.id < CUSTOM_STATION_MIN_ID), ...customStationsOf(path.id)],
+        }));
+      const adminPaths = customPaths.map((p): Path => ({
+        id: p.id,
+        title: (isEn && p.title_en) || p.title_de,
+        description: (isEn && p.description_en) || p.description_de,
+        imageUrl: p.cover_image ? customStationImageUrl(p.cover_image) : DEFAULT_PATH_IMAGE,
+        difficulty: p.difficulty,
+        estimatedTime: p.estimated_time,
+        stations: customStationsOf(p.id),
+      }));
+      return [...arPaths, ...adminPaths];
+    });
+  }, [customPaths, customStations, language]);
+
+  // Punkte der fest eingebauten Stationen aus der DB übernehmen
+  useEffect(() => {
+    if (!pointConfig) return;
+    const pointsById: Record<number, number> = Object.fromEntries(
+      pointConfig.stations.map((s) => [s.station_id, s.points])
+    );
     setPaths((prev) =>
       prev.map((path) => ({
         ...path,
-        stations: [
-          ...path.stations.filter((s) => s.id < CUSTOM_STATION_MIN_ID),
-          ...customStations
-            .filter((c) => c.path_id === path.id)
-            .map((c): Station => {
-              return {
-                id: c.id,
-                title: (isEn && c.title_en) || c.title_de,
-                description: (isEn && c.description_en) || c.description_de,
-                longDescription: (isEn && c.long_description_en) || c.long_description_de,
-                imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
-                imageSequence: c.slides.map((slide) => ({
-                  imageUrl: customStationImageUrl(slide.image),
-                  text: (isEn && slide.text_en) || slide.text_de,
-                })),
-                status: path.stations.find((s) => s.id === c.id)?.status ?? 'available',
-                points: c.points,
-                latitude: c.latitude,
-                longitude: c.longitude,
-                quiz: c.quiz
-                  ? {
-                    question: (isEn && c.quiz.question_en) || c.quiz.question_de,
-                    options: (isEn && c.quiz.options_en) || c.quiz.options_de,
-                    correctAnswer: c.quiz.correct_answer,
-                  }
-                  : undefined,
-              };
-            }),
-        ],
+        stations: path.stations.map((station) =>
+          station.id < CUSTOM_STATION_MIN_ID && station.id in pointsById
+            ? { ...station, points: pointsById[station.id] }
+            : station
+        ),
       }))
     );
-  }, [customStations, language]);
+  }, [pointConfig]);
 
   // Abschluss-Status für neu geladene Custom-Stationen aus der DB wiederherstellen.
   // Bewusst nur von customStations abhängig: Login/Session-Wiederherstellung deckt der Effekt weiter oben ab.
   useEffect(() => {
     if (customStations.length > 0) void refreshUserProgress();
-  }, [customStations]);
+  }, [customPaths, customStations]);
 
   const handlePathSelect = (pathId: string) => {
     setSelectedPathId(pathId);
@@ -777,7 +794,7 @@ export default function App() {
           await saveStationProgress(user.id, currentPath.id, stationId);
           await refreshUserProgress();
 
-          // 500-Punkte-Bonus wenn Pfad vollständig abgeschlossen (nach State-Update prüfen)
+          // Pfad-Abschluss speichern (Bonus-Punkte, falls vorhanden, liefert der Server)
           // Da setState async ist, berechnen wir hier direkt
           const updatedStations = currentPath.stations.map((s) =>
             s.id === stationId ? { ...s, status: 'completed' as const } : s
@@ -786,7 +803,7 @@ export default function App() {
 
           if (pathNowComplete && !claimedPathBonuses[currentPath.id]) {
             try {
-              const bonusRes = await apiSavePathBonus(user.id, currentPath.id, 500);
+              const bonusRes = await apiSavePathBonus(user.id, currentPath.id);
               if (bonusRes.success && !bonusRes.already_claimed) {
                 await refreshUserProgress();
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
@@ -836,7 +853,7 @@ export default function App() {
     }
 
     try {
-      const res = await apiSaveTreasureReward(user.id, 'klosterweiher_treasure_chest', 50);
+      const res = await apiSaveTreasureReward(user.id, TREASURE_REWARD_KEY);
       setTreasurePoints((prev) => Math.max(prev, res.points_total));
       await refreshUserProgress();
 
@@ -845,7 +862,7 @@ export default function App() {
           duration: 3000,
         });
       } else {
-        toast.success(language === 'de' ? '50 Punkte gutgeschrieben!' : '50 points added!', {
+        toast.success(language === 'de' ? `${res.points_awarded} Punkte gutgeschrieben!` : `${res.points_awarded} points added!`, {
           duration: 3000,
         });
       }
@@ -871,7 +888,7 @@ export default function App() {
       setSelectedStationId(null);
     } else if (view === 'path') {
       // Directly go to the single path
-      setSelectedPathId('tourist');
+      setSelectedPathId(AR_PATH_ID);
       setCurrentView('path');
       setSelectedStationId(null);
     } else if (view === 'qr-scanner') {
@@ -1015,6 +1032,15 @@ export default function App() {
       earnedPoints: progress.earnedPoints,
     };
   });
+
+  // Verdiente Punkte (Stationen + Schatzkiste) unabhängig vom Kontostand: totalPoints ist
+  // der Server-Kontostand und sinkt durch Gutscheinkäufe. "Noch verfügbar" und Level
+  // müssen auf Verdientem basieren, sonst entstehen negative/zu hohe Werte.
+  const earnedPoints = user
+    ? pathsWithProgress.reduce((sum, p) => sum + p.earnedPoints, 0) + treasurePoints
+    : 0;
+  const treasureMaxPoints = pointConfig?.rewards[TREASURE_REWARD_KEY] ?? 0;
+  const maxPossiblePoints = pathsWithProgress.reduce((sum, p) => sum + p.totalPoints, 0) + treasureMaxPoints;
 
   const getPageTitle = () => {
     if (currentView === 'home') return 'St.GeoARgen';
@@ -1208,6 +1234,9 @@ export default function App() {
       {currentView === 'points' && (
         <PointsView
           totalPoints={totalPoints}
+          earnedPoints={earnedPoints}
+          maxPossiblePoints={maxPossiblePoints}
+          treasure={{ earnedPoints: treasurePoints, totalPoints: treasureMaxPoints }}
           paths={pathsWithProgress}
           onBack={handleBackToDashboard}
           onNavigateToRewards={() => setCurrentView('rewards')}
@@ -1232,6 +1261,8 @@ export default function App() {
         <ProgressView
           paths={pathsWithProgress}
           totalPoints={totalPoints}
+          earnedPoints={earnedPoints}
+          maxPossiblePoints={maxPossiblePoints}
           totalCompletedStations={totalCompletedStations}
           onBack={handleBackToDashboard}
         />
@@ -1264,10 +1295,10 @@ export default function App() {
 
       {currentView === 'admin-stations' && (
         <StationAdminPanel
-          paths={paths.map((path) => ({ id: path.id, title: path.title }))}
-          pathId={LOCAL_GUIDE_PATH_ID}
+          paths={customPaths}
+          pathTitles={Object.fromEntries(paths.map((path) => [path.id, path.title]))}
           stations={customStations}
-          onStationsChanged={loadCustomStations}
+          onDataChanged={loadCustomContent}
           onBack={() => handleNavigate('settings')}
         />
       )}
@@ -1284,6 +1315,17 @@ export default function App() {
             onEnableGuestStart={() => setAllowGuestStationStart(true)}
             onNavigateToLogin={handleNavigateToLogin}
             onNavigateToRegister={handleNavigateToRegister}
+            arChrome={{
+              username,
+              onNavigateHome: () => handleNavigate('home'),
+              onLogin: handleNavigateToLogin,
+              onLogout: handleLogout,
+              onNavigateProfile: () => handleNavigate('profile'),
+              onRegister: handleNavigateToRegister,
+              completedStations: totalCompletedStations,
+              totalStations: paths.reduce((sum, p) => sum + p.stations.length, 0),
+              totalPoints,
+            }}
           />
         )}
       </AnimatePresence>

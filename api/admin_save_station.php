@@ -34,34 +34,6 @@ if (!is_array($input)) {
     sendResponse(['success' => false, 'message' => 'Ungültige Stationsdaten.'], 400);
 }
 
-function fail(string $message): void {
-    sendResponse(['success' => false, 'message' => $message], 400);
-}
-
-/** Pflichttext (nicht leer) mit Maximallänge. */
-function requiredText(array $input, string $key, int $maxLength, string $label): string {
-    $value = trim((string) ($input[$key] ?? ''));
-    if ($value === '') {
-        fail("$label fehlt.");
-    }
-    if (mb_strlen($value) > $maxLength) {
-        fail("$label ist zu lang (max. $maxLength Zeichen).");
-    }
-    return $value;
-}
-
-/** Optionaler Text; leer → null. */
-function optionalText(array $input, string $key, int $maxLength, string $label): ?string {
-    $value = trim((string) ($input[$key] ?? ''));
-    if ($value === '') {
-        return null;
-    }
-    if (mb_strlen($value) > $maxLength) {
-        fail("$label ist zu lang (max. $maxLength Zeichen).");
-    }
-    return $value;
-}
-
 $id = isset($input['id']) ? filter_var($input['id'], FILTER_VALIDATE_INT) : null;
 if ($id === false || ($id !== null && $id <= 0)) {
     fail('Ungültige Stations-ID.');
@@ -179,6 +151,13 @@ if (count($usedNewSlides) !== $newSlideCount) {
 
 try {
     $db = getDB();
+
+    // Custom-Stationen nur in Pfaden aus der Stationsverwaltung (nicht im AR-Pfad)
+    $stmt = $db->prepare('SELECT 1 FROM custom_paths WHERE id = ?');
+    $stmt->execute([$pathId]);
+    if (!$stmt->fetch()) {
+        fail('Bitte einen Themenpfad aus der Stationsverwaltung wählen.');
+    }
 
     $previousImages = [];
     if ($id !== null) {

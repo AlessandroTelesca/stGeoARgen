@@ -6,6 +6,14 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus, X, Info } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getKlosterweiherTexts } from '../../../i18n/stations/klosterweiher';
+import { usePointConfig } from '../../../contexts/PointConfigContext';
+import { TREASURE_REWARD_KEY } from '../../../services/api';
+
+/** "du erhältst {points} punkte." mit den Schatzkisten-Punkten aus der DB; leer, solange unbekannt. */
+function useTreasureFoundPointsText(template: string): string {
+  const points = usePointConfig().config?.rewards[TREASURE_REWARD_KEY];
+  return points === undefined ? '' : template.replace('{points}', String(points));
+}
 
 // Fish gender mapping for correct German articles
 const FISH_GENDERS: Record<string, 'male' | 'female' | 'neuter'> = {
@@ -281,6 +289,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, isChest = false }: Fis
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const article = getArticle(fishName, language);
+  const treasureFoundPoints = useTreasureFoundPointsText(klosterweiherTexts.treasureFoundPoints);
 
   return createPortal(
     <div
@@ -314,7 +323,7 @@ export const FishCaughtDialog = ({ overlayRoot, fishName, isChest = false }: Fis
             {klosterweiherTexts.treasureFoundTitle}
           </p>
           <p style={{ margin: '0', fontWeight: 500, fontSize: '15px', letterSpacing: '0.4px' }}>
-            {klosterweiherTexts.treasureFoundPoints}
+            {treasureFoundPoints}
           </p>
         </>
       ) : (
@@ -352,6 +361,7 @@ interface FishInfoPopupWebXRProps {
 export const FishInfoPopup = ({ overlayRoot, fishName, onClose, isChest = false }: FishInfoPopupProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
+  const treasureFoundPoints = useTreasureFoundPointsText(klosterweiherTexts.treasureFoundPoints);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
@@ -421,7 +431,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose, isChest = false 
           </SheetTitle>
           <SheetDescription className="text-base italic opacity-80 mt-1">
             {isChest
-              ? klosterweiherTexts.treasureFoundPoints
+              ? treasureFoundPoints
               : fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
           </SheetDescription>
           <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
@@ -606,6 +616,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose, isChest = false 
 export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose, isChest = false }: FishInfoPopupWebXRProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
+  const treasureFoundPoints = useTreasureFoundPointsText(klosterweiherTexts.treasureFoundPoints);
   const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
   const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
@@ -689,7 +700,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose, isChest = f
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.75, fontStyle: 'italic' }}>
               {isChest
-                ? klosterweiherTexts.treasureFoundPoints
+                ? treasureFoundPoints
                 : fishInfo?.scientificName || klosterweiherTexts.fishScientificNameFallback}
             </p>
           </div>

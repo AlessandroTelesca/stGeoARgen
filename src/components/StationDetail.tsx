@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GuestWarningDialog } from './GuestWarningDialog';
-import { StationImageSequence, type StationImageSlide } from './StationAdminPanel/StationImageSequence';
+import { StationImageSequence, type ARChromeProps, type StationImageSlide } from './StationAdminPanel/StationImageSequence';
 
 interface QuizQuestion {
   question: string;
@@ -42,6 +42,8 @@ interface StationDetailProps {
   onEnableGuestStart?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
+  /** AR-Oberfläche (Top-Bar, Fortschrittsleiste) für die Bildfolge – wie in den AR-Stationen */
+  arChrome: ARChromeProps;
 }
 
 // Station ID to AR Route mapping
@@ -53,7 +55,7 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister, arChrome }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const navigate = useNavigate();
@@ -63,7 +65,10 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const hasARRoute = !!STATION_AR_ROUTES[station.id];
-  const needsLogin = requireLoginForAR && isLoggedIn === false && hasARRoute;
+  // Gleiche Login-Regeln für alle Stationen (AR und Stationsverwaltung): ohne Login erst Login-Karte,
+  // als Gast darf man die Station erleben, schließt sie aber nicht ab (wie der AR-Abschlussbutton)
+  const needsLogin = requireLoginForAR && isLoggedIn === false;
+  const isGuest = isLoggedIn === false;
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,
@@ -112,7 +117,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
   const handleImageSequenceFinish = () => {
     setImageSequenceOpen(false);
-    if (isCompleted) return;
+    if (isCompleted || isGuest) return;
     setImageSequenceDone(true);
     if (!station.quiz) onComplete(station.id);
   };
@@ -310,7 +315,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           )}
 
           {/* Ohne AR (z. B. Stationen aus der Stationsverwaltung): vor Ort abschließen, ggf. mit Quiz */}
-          {!isCompleted && !hasARRoute && (
+          {!needsLogin && !isCompleted && !hasARRoute && (
             <motion.div
               className="surface-card p-6"
               initial={{ opacity: 0, y: 12 }}
@@ -322,12 +327,20 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                   ? imageSequence.length > 0 ? t('stationImageSequenceGoThere') : t('noARExperience')
                   : imageSequencePending
                     ? t('stationImageSequenceIntro')
-                    : station.quiz
-                      ? t('stationQuizIntro')
-                      : t('stationCompleteOnSite')}
+                    : isGuest
+                      ? t('stationGuestNoCompletion')
+                      : station.quiz
+                        ? t('stationQuizIntro')
+                        : t('stationCompleteOnSite')}
               </p>
+              {isGuest && canCompleteOnSite && imageSequencePending && (
+                <p className="-mt-3 mb-5 flex items-center justify-center gap-2 text-center text-sm text-gold-foreground">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 text-gold" />
+                  {t('stationGuestNoCompletion')}
+                </p>
+              )}
 
-              {canCompleteOnSite && !imageSequencePending && station.quiz && (
+              {canCompleteOnSite && !imageSequencePending && !isGuest && station.quiz && (
                 <fieldset className="mb-5">
                   <legend className="font-bold mb-3">{station.quiz.question}</legend>
                   <div className="space-y-2">
@@ -368,7 +381,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                     <span>{t('stationImageSequenceStart')}</span>
                   </button>
                 )}
-                {canCompleteOnSite && !imageSequencePending && (
+                {canCompleteOnSite && !imageSequencePending && !isGuest && (
                   <button
                     onClick={handleCompleteInfoStation}
                     disabled={!!station.quiz && quizAnswer === null}
@@ -454,9 +467,10 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
             <StationImageSequence
               title={station.title}
               slides={imageSequence}
-              finishLabel={isCompleted ? t('stationImageSequenceFinish') : station.quiz ? t('stationImageSequenceToQuiz') : t('completeStation')}
+              finishLabel={isCompleted || isGuest ? t('stationImageSequenceFinish') : station.quiz ? t('stationImageSequenceToQuiz') : t('completeStation')}
               onFinish={handleImageSequenceFinish}
               onClose={() => setImageSequenceOpen(false)}
+              arChrome={arChrome}
             />
           )}
         </AnimatePresence>,
@@ -469,7 +483,9 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         onContinue={() => {
           setShowGuestWarning(false);
           onEnableGuestStart?.();
-          handleStartARExperience();
+          // AR: Proximity prüft die AR-Ansicht; Bildfolge nur vor Ort direkt starten
+          if (hasARRoute) handleStartARExperience();
+          else if (canCompleteOnSite && imageSequence.length > 0) setImageSequenceOpen(true);
         }}
       />
     </motion.div>

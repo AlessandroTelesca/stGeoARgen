@@ -16,15 +16,18 @@ interface ProgressViewProps {
     difficulty: 'Einfach' | 'Mittel' | 'Schwer';
     estimatedTime: string;
   }>;
+  /** Aktueller Kontostand (verdient minus für Gutscheine ausgegeben) */
   totalPoints: number;
+  /** Insgesamt verdiente Punkte (Stationen + Schatzkiste) */
+  earnedPoints: number;
+  maxPossiblePoints: number;
   totalCompletedStations: number;
   onBack: () => void;
 }
 
-export function ProgressView({ paths, totalPoints, totalCompletedStations, onBack }: ProgressViewProps) {
+export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoints, totalCompletedStations, onBack }: ProgressViewProps) {
   const { t } = useLanguage();
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
-  const maxPossiblePoints = paths.reduce((sum, path) => sum + path.totalPoints, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
 
   const completedPaths = paths.filter(p => p.completedStations === p.totalStations && p.totalStations > 0).length;
@@ -173,19 +176,19 @@ export function ProgressView({ paths, totalPoints, totalCompletedStations, onBac
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold tracking-tight">{t('pointsProgress')}</h3>
             <span className="text-primary font-bold tabular-nums">
-              {totalPoints}/{maxPossiblePoints}
+              {earnedPoints}/{maxPossiblePoints}
             </span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${maxPossiblePoints > 0 ? (totalPoints / maxPossiblePoints) * 100 : 0}%` }}
+              animate={{ width: `${maxPossiblePoints > 0 ? (earnedPoints / maxPossiblePoints) * 100 : 0}%` }}
               transition={{ duration: 1, delay: 0.7 }}
             />
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {t('pointsStillAvailable').replace('{points}', String(maxPossiblePoints - totalPoints))}
+            {t('pointsStillAvailable').replace('{points}', String(Math.max(0, maxPossiblePoints - earnedPoints)))}
           </p>
         </motion.div>
 

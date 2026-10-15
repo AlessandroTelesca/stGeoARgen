@@ -24,7 +24,7 @@
   "fishCaughtPrefix": "Congratulations! You caught {article}",
   "fishCaughtSuffix": "!",
   "treasureFoundTitle": "Congratulations! You discovered the sunken bell.",
-  "treasureFoundPoints": "you receive 50 points.",
+  "treasureFoundPoints": "you receive {points} points.",
   "treasureInfoTitle": "Legend of the Bell at Monastery Pond",
   "treasureInfoStory": "A Benedictine monastery once stood in St. Georgen. To supply the monks with fish, the Monastery Pond was dammed. According to legend, an ox team carrying bells sank there after sliding down the hillside. The bells were meant for the church up in town.",
   "fishInfoTitleFallback": "Fish Information",

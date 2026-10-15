@@ -1,7 +1,7 @@
 <?php
 /**
- * Gemeinsame Helfer für die über die Stationsverwaltung angelegten Stationen
- * (Tabelle custom_stations, Bilder in api/uploads/stations/).
+ * Gemeinsame Helfer für die über die Stationsverwaltung angelegten Stationen und Pfade
+ * (Tabellen custom_stations / custom_paths, Bilder in api/uploads/stations/).
  */
 
 require_once __DIR__ . '/config.php';
@@ -14,6 +14,67 @@ const STATION_IMAGE_TYPES = [
     'image/png'  => 'png',
     'image/webp' => 'webp',
 ];
+const PATH_DIFFICULTIES = ['Einfach', 'Mittel', 'Schwer'];
+/** Fest im Frontend eingebaute Pfade – dürfen nicht als Custom-Pfad angelegt werden */
+const BUILTIN_PATH_IDS = ['tourist'];
+
+/** Bricht mit 400 und der Meldung ab. */
+function fail(string $message): void {
+    sendResponse(['success' => false, 'message' => $message], 400);
+}
+
+/** Pflichttext (nicht leer) mit Maximallänge. */
+function requiredText(array $input, string $key, int $maxLength, string $label): string {
+    $value = trim((string) ($input[$key] ?? ''));
+    if ($value === '') {
+        fail("$label fehlt.");
+    }
+    if (mb_strlen($value) > $maxLength) {
+        fail("$label ist zu lang (max. $maxLength Zeichen).");
+    }
+    return $value;
+}
+
+/** Optionaler Text; leer → null. */
+function optionalText(array $input, string $key, int $maxLength, string $label): ?string {
+    $value = trim((string) ($input[$key] ?? ''));
+    if ($value === '') {
+        return null;
+    }
+    if (mb_strlen($value) > $maxLength) {
+        fail("$label ist zu lang (max. $maxLength Zeichen).");
+    }
+    return $value;
+}
+
+/**
+ * Wandelt eine custom_paths-Zeile in das API-Format um.
+ */
+function formatPathRow(array $row): array {
+    return [
+        'id' => $row['id'],
+        'title_de' => $row['title_de'],
+        'title_en' => $row['title_en'],
+        'description_de' => $row['description_de'],
+        'description_en' => $row['description_en'],
+        'difficulty' => $row['difficulty'],
+        'estimated_time' => $row['estimated_time'],
+        'cover_image' => isValidStationImageName($row['cover_image']) ? $row['cover_image'] : null,
+        'created_at' => $row['created_at'],
+        'updated_at' => $row['updated_at'],
+    ];
+}
+
+/**
+ * Erzeugt aus einem Namen eine Pfad-ID (z. B. „Alte Mühlen“ → „alte-muehlen“).
+ */
+function pathSlug(string $title): string {
+    $slug = mb_strtolower($title);
+    $slug = strtr($slug, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss']);
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    $slug = trim(substr(trim($slug, '-'), 0, 80), '-');
+    return $slug === '' ? 'pfad' : $slug;
+}
 
 /**
  * Bildfolge einer Station aus der DB-Spalte `slides`: [{ image, text_de, text_en }].
