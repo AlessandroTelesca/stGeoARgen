@@ -1,4 +1,4 @@
-import { User, Mail, Calendar, Trash2, LogOut, Shield, KeyRound } from 'lucide-react';
+import { User, Mail, Calendar, Trash2, LogOut, Shield, KeyRound, RotateCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackLink } from './PageHeader';
@@ -13,9 +13,10 @@ interface ProfileProps {
   onLogout: () => void;
   onChangePassword?: () => void;
   onOpenPrivacy?: () => void;
+  onResetProgress?: () => void;
 }
 
-export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout, onChangePassword, onOpenPrivacy }: ProfileProps) {
+export function Profile({ username, email, createdAt, onBack, onBackToSettings, onLogout, onChangePassword, onOpenPrivacy, onResetProgress }: ProfileProps) {
   const { t, language } = useLanguage();
   const locale = language === 'de' ? 'de-DE' : 'en-GB';
   // MySQL-Datum ("YYYY-MM-DD HH:MM:SS") für Safari-kompatibles Parsing umformen
@@ -80,6 +81,17 @@ export function Profile({ username, email, createdAt, onBack, onBackToSettings, 
 
           <SettingsGroup title={t('dangerZone')}>
             <SettingsRow icon={<Trash2 className="w-5 h-5" />} title={t('deleteAccount')} description={t('deleteAccountDescription')} onClick={handleDeleteAccount} tone="danger" />
+            {onResetProgress && (
+              <SettingsRow
+                icon={<RotateCcw className="w-5 h-5" />}
+                title={t('resetProgress')}
+                description={t('resetProgressDesc')}
+                onClick={() => {
+                  if (confirm(t('resetProgressConfirm'))) onResetProgress();
+                }}
+                tone="danger"
+              />
+            )}
           </SettingsGroup>
         </motion.div>
       </div>

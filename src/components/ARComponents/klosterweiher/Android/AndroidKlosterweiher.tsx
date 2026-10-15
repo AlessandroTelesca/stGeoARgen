@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { ARComponentBase } from "../../ARComponentBase";
 import { ARProximityGate } from "../../ARProximityGate";
 import { WebXRVisualizer } from "../../../../ARbackend/WebXRVisualizer";
+import { IOSKlosterweiherView } from "../IOS/IOSKlosterweiher";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
@@ -498,6 +499,7 @@ export const AndroidKlosterweiherView = ({
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useIOSFallback, setUseIOSFallback] = useState(false);
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [isTreasureChestCaught, setIsTreasureChestCaught] = useState(false);
@@ -647,7 +649,13 @@ export const AndroidKlosterweiherView = ({
       setWaitingForGroundDetection(true);
     } catch (e: any) {
       const msg = e?.message || "Failed to start AR";
-      setError(msg);
+      if (msg === "WebXR is required but not available") {
+        sessionRef.current?.stop();
+        sessionRef.current = null;
+        setUseIOSFallback(true);
+      } else {
+        setError(msg);
+      }
       console.error("[KlosterweiherView] AR start failed", e);
     } finally {
       setIsStarting(false);
@@ -667,6 +675,27 @@ export const AndroidKlosterweiherView = ({
 
     sessionRef.current.releaseCurrentFish();
   };
+
+  if (useIOSFallback) {
+    return (
+      <IOSKlosterweiherView
+        onNavigateHome={onNavigateHome}
+        username={username}
+        onLogin={onLogin}
+        onLogout={onLogout}
+        onNavigateProfile={onNavigateProfile}
+        onRegister={onRegister}
+        completedStations={completedStations}
+        totalStations={totalStations}
+        totalPoints={totalPoints}
+        currentStationPoints={currentStationPoints}
+        onCompleteStation={onCompleteStation}
+        isCurrentStationCompleted={isCurrentStationCompleted}
+        onTreasureCollect={onTreasureCollect}
+        isGuestMode={isGuestMode}
+      />
+    );
+  }
 
   const arContent = (
     <>

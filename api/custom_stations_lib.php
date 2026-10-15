@@ -1,0 +1,167 @@
+<?php
+/**
+ * Gemeinsame Helfer für die über die Stationsverwaltung angelegten Stationen
+ * (Tabelle custom_stations, Bilder in api/uploads/stations/).
+ */
+
+require_once __DIR__ . '/config.php';
+
+const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
+const STATION_MAX_SLIDES = 10;
+const STATION_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const STATION_IMAGE_TYPES = [
+    'image/jpeg' => 'jpg',
+    'image/png'  => 'png',
+    'image/webp' => 'webp',
+];
+
+/**
+ * Bildfolge einer Station aus der DB-Spalte `slides`: [{ image, text_de, text_en }].
+ */
+function decodeStationSlides(?string $json): array {
+    $slides = json_decode($json ?? '', true);
+    if (!is_array($slides)) {
+        return [];
+    }
+    $result = [];
+    foreach ($slides as $slide) {
+        if (is_array($slide) && isValidStationImageName($slide['image'] ?? null)) {
+            $result[] = [
+                'image' => $slide['image'],
+                'text_de' => (string) ($slide['text_de'] ?? ''),
+                'text_en' => isset($slide['text_en']) && $slide['text_en'] !== '' ? (string) $slide['text_en'] : null,
+            ];
+        }
+    }
+    return $result;
+}
+
+/**
+ * Alle Bilddateien einer Station (Profilbild + Bilder der Bildfolge).
+ */
+function stationImageFiles(array $row): array {
+    $files = array_column(decodeStationSlides($row['slides']), 'image');
+    if (isValidStationImageName($row['cover_image'])) {
+        $files[] = $row['cover_image'];
+    }
+    return array_values(array_unique($files));
+}
+
+/**
+ * Wandelt eine DB-Zeile in das API-Format um.
+ */
+function formatStationRow(array $row): array {
+    $quiz = null;
+    if ($row['quiz_question_de'] !== null && $row['quiz_options_de'] !== null && $row['quiz_correct_answer'] !== null) {
+        $quiz = [
+            'question_de' => $row['quiz_question_de'],
+            'question_en' => $row['quiz_question_en'],
+            'options_de' => json_decode($row['quiz_options_de'], true) ?: [],
+            'options_en' => $row['quiz_options_en'] !== null ? (json_decode($row['quiz_options_en'], true) ?: null) : null,
+            'correct_answer' => (int) $row['quiz_correct_answer'],
+        ];
+    }
+
+    return [
+        'id' => (int) $row['id'],
+        'path_id' => $row['path_id'],
+        'title_de' => $row['title_de'],
+        'title_en' => $row['title_en'],
+        'description_de' => $row['description_de'],
+        'description_en' => $row['description_en'],
+        'long_description_de' => $row['long_description_de'],
+        'long_description_en' => $row['long_description_en'],
+        'cover_image' => $row['cover_image'],
+        'slides' => decodeStationSlides($row['slides']),
+        'points' => (int) $row['points'],
+        'latitude' => (float) $row['latitude'],
+        'longitude' => (float) $row['longitude'],
+        'quiz' => $quiz,
+        'created_at' => $row['created_at'],
+        'updated_at' => $row['updated_at'],
+    ];
+}
+
+/** Normalisiert $_FILES[$field] (einzeln oder Array) auf Listen; leere Slots fallen weg. */
+function uploadedFiles(string $field): array {
+    if (!isset($_FILES[$field])) {
+        return [];
+    }
+    $files = $_FILES[$field];
+    $names = (array) $files['name'];
+    $result = [];
+    foreach ($names as $i => $name) {
+        $error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        $result[] = [
+            'name' => (string) $name,
+            'tmp_name' => is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'],
+            'error' => $error,
+            'size' => is_array($files['size']) ? $files['size'][$i] : $files['size'],
+        ];
+    }
+    return $result;
+}
+
+/**
+ * Prüft und speichert die hochgeladenen Dateien der angegebenen Formularfelder.
+ * Gibt [feld => [neue Dateinamen in Upload-Reihenfolge]] zurück. Bei einem Fehler
+ * werden alle in diesem Request gespeicherten Dateien gelöscht und mit 400 abgebrochen.
+ */
+function storeUploadedImages(array $fields): array {
+    if (!is_dir(STATION_UPLOAD_DIR) && !mkdir(STATION_UPLOAD_DIR, 0755, true)) {
+        sendResponse(['success' => false, 'message' => 'Upload-Verzeichnis konnte nicht angelegt werden.'], 500);
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $stored = array_fill_keys($fields, []);
+
+    foreach ($fields as $field) {
+        foreach (uploadedFiles($field) as $file) {
+            $originalName = $file['name'];
+            $fail = null;
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > STATION_MAX_IMAGE_BYTES) {
+                $fail = "Bild \"$originalName\" ist zu groß.";
+            } elseif ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+                $fail = "Bild \"$originalName\" konnte nicht hochgeladen werden.";
+            } else {
+                $mime = $finfo->file($file['tmp_name']);
+                if (!isset(STATION_IMAGE_TYPES[$mime]) || @getimagesize($file['tmp_name']) === false) {
+                    $fail = "Bild \"$originalName\" hat kein unterstütztes Format (JPG, PNG, WebP).";
+                }
+            }
+
+            if ($fail === null) {
+                $filename = bin2hex(random_bytes(16)) . '.' . STATION_IMAGE_TYPES[$mime];
+                if (move_uploaded_file($file['tmp_name'], STATION_UPLOAD_DIR . '/' . $filename)) {
+                    $stored[$field][] = $filename;
+                    continue;
+                }
+                $fail = "Bild \"$originalName\" konnte nicht gespeichert werden.";
+            }
+
+            deleteStationImages(array_merge(...array_values($stored)));
+            sendResponse(['success' => false, 'message' => $fail], 400);
+        }
+    }
+
+    return $stored;
+}
+
+/**
+ * Löscht Bilddateien aus dem Upload-Verzeichnis. Nur eigene, generierte
+ * Dateinamen werden akzeptiert (kein Path-Traversal).
+ */
+function deleteStationImages(array $filenames): void {
+    foreach ($filenames as $filename) {
+        if (isValidStationImageName($filename)) {
+            @unlink(STATION_UPLOAD_DIR . '/' . $filename);
+        }
+    }
+}
+
+function isValidStationImageName($filename): bool {
+    return is_string($filename) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $filename) === 1;
+}

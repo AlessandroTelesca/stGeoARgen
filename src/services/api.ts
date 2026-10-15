@@ -20,16 +20,15 @@ async function apiFetch<T>(
     options: RequestInit = {}
 ): Promise<T> {
     const url = `${API_BASE_URL}/${endpoint}`;
+    const headers = new Headers(options.headers);
+    // Bei FormData setzt der Browser Content-Type inkl. multipart-Boundary selbst
+    if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+    }
 
     let response: Response;
     try {
-        response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
+        response = await fetch(url, { ...options, headers });
     } catch {
         throw new Error(`API nicht erreichbar (${url}).`);
     }
@@ -284,4 +283,95 @@ export async function apiGetTreasureReward(
 
 export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
     return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
+}
+
+// ─── Custom-Stationen (Stationsverwaltung) ──────────────────────────────────
+
+/** Station, wie sie von get_custom_stations.php / admin_save_station.php geliefert wird. */
+export interface CustomStation {
+    id: number;
+    path_id: string;
+    title_de: string;
+    title_en: string | null;
+    description_de: string;
+    description_en: string | null;
+    long_description_de: string;
+    long_description_en: string | null;
+    /** Profilbild (Dateiname in api/uploads/stations/) – Listen und Titelbild */
+    cover_image: string;
+    /** Bildfolge, die beim Start der Station durchgeklickt wird */
+    slides: CustomStationSlide[];
+    points: number;
+    latitude: number;
+    longitude: number;
+    quiz: {
+        question_de: string;
+        question_en: string | null;
+        options_de: string[];
+        options_en: string[] | null;
+        correct_answer: number;
+    } | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CustomStationSlide {
+    image: string;
+    text_de: string;
+    text_en: string | null;
+}
+
+/**
+ * Daten zum Anlegen/Aktualisieren. Bildreferenzen sind vorhandene Dateinamen (werden behalten)
+ * oder neue Dateien: `cover_image: 'new'` → `newCover`, `slides[i].image: 'new:N'` → `newSlideImages[N]`.
+ */
+export type CustomStationInput = Omit<CustomStation, 'id' | 'created_at' | 'updated_at'> & { id?: number };
+
+export function customStationImageUrl(filename: string): string {
+    return `${API_BASE_URL}/uploads/stations/${encodeURIComponent(filename)}`;
+}
+
+function adminHeaders(adminPassword: string): HeadersInit {
+    return { Authorization: `Bearer ${adminPassword}` };
+}
+
+export async function apiGetCustomStations(): Promise<CustomStation[]> {
+    const res = await apiFetch<{ stations: Partial<CustomStation>[] }>('get_custom_stations.php');
+    // Serverdaten absichern: ein veralteter Server (z. B. noch ohne cover_image/slides)
+    // darf die App nicht zum Absturz bringen.
+    return (Array.isArray(res.stations) ? res.stations : []).map((s) => ({
+        ...(s as CustomStation),
+        cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
+        slides: Array.isArray(s.slides) ? s.slides : [],
+    }));
+}
+
+export async function apiAdminVerify(adminPassword: string): Promise<void> {
+    await apiFetch('admin_verify.php', { method: 'POST', headers: adminHeaders(adminPassword) });
+}
+
+export async function apiAdminSaveStation(
+    adminPassword: string,
+    station: CustomStationInput,
+    newCover: File | null,
+    newSlideImages: File[]
+): Promise<CustomStation> {
+    const body = new FormData();
+    body.append('station', JSON.stringify(station));
+    if (newCover) body.append('cover', newCover, newCover.name);
+    newSlideImages.forEach((file) => body.append('slide_images[]', file, file.name));
+    const res = await apiFetch<{ station: CustomStation }>('admin_save_station.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body,
+    });
+    return res.station;
+}
+
+export async function apiAdminDeleteStation(adminPassword: string, id: number): Promise<void> {
+    await apiFetch('admin_delete_station.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body: JSON.stringify({ id }),
+    });
 }

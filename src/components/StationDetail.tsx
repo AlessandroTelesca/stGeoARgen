@@ -1,6 +1,7 @@
 import { X, CheckCircle2, Navigation, Play, AlertCircle, LogIn, AlertTriangle } from 'lucide-react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Georgi } from './Georgi';
 import { Trophy } from 'lucide-react';
@@ -9,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GuestWarningDialog } from './GuestWarningDialog';
+import { StationStory, type StorySlide } from './StationStory';
 
 interface QuizQuestion {
   question: string;
@@ -29,6 +31,8 @@ interface StationDetailProps {
     arContent?: string;
     latitude: number;
     longitude: number;
+    /** Bildfolge, die beim Start durchgeklickt wird (Stationen aus der Stationsverwaltung) */
+    story?: StorySlide[];
   };
   onClose: () => void;
   onComplete: (stationId: number) => void;
@@ -79,6 +83,8 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
       navigate(arRoute, {
         state: allowGuestARStart ? { allowGuestStart: true } : undefined,
       });
+    } else if (story.length > 0) {
+      setStoryOpen(true);
     } else {
       // Fallback: Mark as completed if no AR route
       onComplete(station.id);
@@ -86,6 +92,30 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
   };
 
   const navigateLabel = t('navigateToStation', { stationName: station.title });
+
+  // Stationen ohne AR werden vor Ort abgeschlossen: erst die Bildfolge, dann ggf. das Quiz
+  const canCompleteOnSite = !hasARRoute && !locationError && isWithinRadius;
+  const story = station.story ?? [];
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [storyDone, setStoryDone] = useState(false);
+  const storyPending = story.length > 0 && !storyDone;
+  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [quizWrong, setQuizWrong] = useState(false);
+
+  const handleCompleteInfoStation = () => {
+    if (station.quiz && quizAnswer !== station.quiz.correctAnswer) {
+      setQuizWrong(true);
+      return;
+    }
+    onComplete(station.id);
+  };
+
+  const handleStoryFinish = () => {
+    setStoryOpen(false);
+    if (isCompleted) return;
+    setStoryDone(true);
+    if (!station.quiz) onComplete(station.id);
+  };
 
   return (
     <motion.div
@@ -135,7 +165,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
       <div className="relative -mt-6 rounded-t-[28px] bg-background">
         <div className="max-w-md mx-auto px-4 pt-6 pb-32 space-y-5">
-          <p className="text-[15px] leading-relaxed text-gray-700 px-1">
+          <p className="text-[15px] leading-relaxed text-gray-700 px-1 whitespace-pre-line">
             {station.longDescription}
           </p>
 
@@ -279,24 +309,85 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
             </motion.div>
           )}
 
-          {/* Ohne AR */}
-          {!isCompleted && !STATION_AR_ROUTES[station.id] && (
+          {/* Ohne AR (z. B. Stationen aus der Stationsverwaltung): vor Ort abschließen, ggf. mit Quiz */}
+          {!isCompleted && !hasARRoute && (
             <motion.div
-              className="surface-card p-6 text-center"
+              className="surface-card p-6"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="font-bold text-lg">{t('informationStation')}</h3>
-              <p className="text-sm text-muted-foreground mt-1.5 mb-5">
-                {t('noARExperience')}
+              <h3 className="font-bold text-lg text-center">{t('informationStation')}</h3>
+              <p className="text-sm text-muted-foreground mt-1.5 mb-5 text-center">
+                {!canCompleteOnSite
+                  ? story.length > 0 ? t('stationStoryGoThere') : t('noARExperience')
+                  : storyPending
+                    ? t('stationStoryIntro')
+                    : station.quiz
+                      ? t('stationQuizIntro')
+                      : t('stationCompleteOnSite')}
               </p>
-              <button
-                onClick={handleNavigateToStation}
-                className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable"
-              >
-                <Navigation className="w-5 h-5" />
-                <span>{navigateLabel}</span>
-              </button>
+
+              {canCompleteOnSite && !storyPending && station.quiz && (
+                <fieldset className="mb-5">
+                  <legend className="font-bold mb-3">{station.quiz.question}</legend>
+                  <div className="space-y-2">
+                    {station.quiz.options.map((option, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        aria-pressed={quizAnswer === index}
+                        onClick={() => {
+                          setQuizAnswer(index);
+                          setQuizWrong(false);
+                        }}
+                        className={`w-full min-h-[48px] px-4 py-2.5 rounded-2xl border-2 text-left font-semibold transition-colors ${quizAnswer === index
+                          ? 'border-primary bg-primary-soft text-primary-dark'
+                          : 'border-border bg-card hover:border-border-strong'
+                          }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  {quizWrong && (
+                    <p role="alert" className="mt-3 flex items-center gap-2 text-sm font-semibold text-destructive">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      {t('stationQuizWrong')}
+                    </p>
+                  )}
+                </fieldset>
+              )}
+
+              <div className="space-y-2.5">
+                {canCompleteOnSite && storyPending && (
+                  <button
+                    onClick={() => setStoryOpen(true)}
+                    className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
+                  >
+                    <Play className="w-5 h-5" fill="currentColor" />
+                    <span>{t('stationStoryStart')}</span>
+                  </button>
+                )}
+                {canCompleteOnSite && !storyPending && (
+                  <button
+                    onClick={handleCompleteInfoStation}
+                    disabled={!!station.quiz && quizAnswer === null}
+                    className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>{t('completeStation')}</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleNavigateToStation}
+                  className={canCompleteOnSite
+                    ? 'w-full min-h-[48px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable'
+                    : 'w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable'}
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span>{navigateLabel}</span>
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -356,6 +447,21 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         onClose={() => setShowGeorgi(false)}
         position="bottom-right"
       />
+
+      {createPortal(
+        <AnimatePresence>
+          {storyOpen && (
+            <StationStory
+              title={station.title}
+              slides={story}
+              finishLabel={isCompleted ? t('stationStoryFinish') : station.quiz ? t('stationStoryToQuiz') : t('completeStation')}
+              onFinish={handleStoryFinish}
+              onClose={() => setStoryOpen(false)}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <GuestWarningDialog
         open={showGuestWarning}

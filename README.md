@@ -108,7 +108,14 @@ Neue API-Endpunkte:
 
 ### Adding New Stations
 
-Edit [src/data/stationsConfig.ts](src/data/stationsConfig.ts) to add new stations with:
+**Ohne Code (Stationsverwaltung):** Unter *Einstellungen → Verwaltung → Stationen verwalten* (`/admin/stations`) lassen sich Stationen anlegen, bearbeiten und löschen: Profilbild, Texte (DE Pflicht, EN optional), Themenpfad, Koordinaten, Punkte, eine **Bildfolge** aus 1–10 Bildern mit je einem kurzen Text und ein optionales Quiz. Sie werden in der Tabelle `custom_stations` gespeichert (IDs ab 1000) und erscheinen sofort für alle Nutzer:innen. Vor Ort startet man die Station, klickt sich durch die Bildfolge und schließt sie danach ab (mit Quiz nach richtiger Antwort). Solche Stationen haben kein AR-Erlebnis.
+
+Einrichtung auf dem PHP-Server:
+- `custom_stations`-Tabelle aus [api/setup.sql](api/setup.sql) ausführen.
+- Admin-Passwort setzen: Umgebungsvariable `ADMIN_PASSWORD` oder Zeile `'ADMIN_PASSWORD', '…'` in `api/credentials.txt`. Ohne Passwort ist die Verwaltung deaktiviert.
+- `api/uploads/` muss für PHP beschreibbar sein (Bilder landen in `api/uploads/stations/`; die mitgelieferte `.htaccess` verhindert Skriptausführung). PHP-Limits `upload_max_filesize`/`post_max_size` ggf. erhöhen (Bilder werden im Browser auf max. 1920 px verkleinert).
+
+**Mit AR-Erlebnis:** Edit [src/data/stationsConfig.ts](src/data/stationsConfig.ts) and `src/App.tsx` to add built-in stations with:
 - Geographic coordinates (latitude/longitude)
 - Quiz questions
 - AR content references

@@ -142,3 +142,43 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
   PRIMARY KEY (`id`),
   KEY `idx_glockenspiel_melodies_station_id` (`station_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabelle: custom_stations
+-- Über die Stationsverwaltung (/admin/stations) angelegte Stationen.
+-- IDs starten bei 1000, damit sie nie mit den fest eingebauten Stationen (1–99) kollidieren.
+-- cover_image: Profilbild (Dateiname in api/uploads/stations/), erscheint in Listen und als Titelbild
+-- slides: JSON-Array der Bildfolge [{ "image", "text_de", "text_en" }], wird beim Start der Station durchgeklickt
+-- quiz_options_*: JSON-Array mit Antwortoptionen
+CREATE TABLE IF NOT EXISTS `custom_stations` (
+  `id`                   INT NOT NULL AUTO_INCREMENT,
+  `path_id`              VARCHAR(100) NOT NULL,
+  `title_de`             VARCHAR(150) NOT NULL,
+  `title_en`             VARCHAR(150) DEFAULT NULL,
+  `description_de`       VARCHAR(255) NOT NULL,
+  `description_en`       VARCHAR(255) DEFAULT NULL,
+  `long_description_de`  TEXT NOT NULL,
+  `long_description_en`  TEXT DEFAULT NULL,
+  `cover_image`          VARCHAR(64) NOT NULL,
+  `slides`               MEDIUMTEXT NOT NULL,
+  `points`               INT NOT NULL DEFAULT 50,
+  `latitude`             DOUBLE NOT NULL,
+  `longitude`            DOUBLE NOT NULL,
+  `quiz_question_de`     VARCHAR(255) DEFAULT NULL,
+  `quiz_question_en`     VARCHAR(255) DEFAULT NULL,
+  `quiz_options_de`      TEXT DEFAULT NULL,
+  `quiz_options_en`      TEXT DEFAULT NULL,
+  `quiz_correct_answer`  TINYINT DEFAULT NULL,
+  `created_at`           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_custom_stations_path_id` (`path_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migration für eine bereits angelegte custom_stations-Tabelle (Version mit Spalte `images`).
+-- Vorhandene Stationen behalten ihr erstes Bild als Profilbild und bekommen eine leere Bildfolge;
+-- sie müssen danach in der Stationsverwaltung um Bilder mit Texten ergänzt werden.
+-- ALTER TABLE `custom_stations`
+--   ADD COLUMN `cover_image` VARCHAR(64) NOT NULL DEFAULT '' AFTER `long_description_en`,
+--   ADD COLUMN `slides` MEDIUMTEXT NULL AFTER `cover_image`;
+-- UPDATE `custom_stations` SET `cover_image` = JSON_UNQUOTE(JSON_EXTRACT(`images`, '$[0]')), `slides` = '[]';
+-- ALTER TABLE `custom_stations` DROP COLUMN `images`, MODIFY `slides` MEDIUMTEXT NOT NULL, ALTER `cover_image` DROP DEFAULT;

@@ -43,6 +43,18 @@ if (!$stmt->fetch()) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
+// Punkte der Station: fest eingebaute Stationen 50, Custom-Stationen (ID >= 1000) laut DB
+$stationPoints = 50;
+if ($stationId >= 1000) {
+    $stmt = $db->prepare('SELECT points FROM custom_stations WHERE id = ? AND path_id = ?');
+    $stmt->execute([$stationId, $pathId]);
+    $customStation = $stmt->fetch();
+    if (!$customStation) {
+        sendResponse(['success' => false, 'message' => 'Station nicht gefunden.'], 404);
+    }
+    $stationPoints = (int) $customStation['points'];
+}
+
 // Bereits gespeichert? Dann nur idempotent antworten, keine Punkte erneut vergeben.
 $stmt = $db->prepare(
     'SELECT id FROM user_progress WHERE user_id = ? AND path_id = ? AND station_id = ? LIMIT 1'
@@ -65,7 +77,7 @@ $stmt = $db->prepare(
 $stmt->execute([$userId, $pathId, $stationId]);
 
 $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
-   ->execute([50, $userId]);
+   ->execute([$stationPoints, $userId]);
 
 $userPointsStmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');
 $userPointsStmt->execute([$userId]);
@@ -74,6 +86,6 @@ $userPoints = $userPointsStmt->fetch();
 sendResponse([
     'success' => true,
     'message' => 'Fortschritt gespeichert.',
-    'points_awarded' => 50,
+    'points_awarded' => $stationPoints,
     'total_points' => (int)($userPoints['total_points'] ?? 0),
 ]);
