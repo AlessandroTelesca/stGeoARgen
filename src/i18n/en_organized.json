@@ -515,11 +515,11 @@
   "stationEditorMoveSlideDown": "Move picture down",
   "stationEditorErrorSlides": "Add at least one picture to the picture story.",
   "stationEditorErrorSlideTexts": "Every picture needs a German text.",
-  "stationStoryGoThere": "Go to the station to discover its story in pictures.",
-  "stationStoryIntro": "You're on site! Start the station and click through the story of this place.",
-  "stationStoryStart": "Start station",
-  "stationStoryNext": "Next",
-  "stationStoryToQuiz": "Continue to quiz",
-  "stationStoryFinish": "Done",
-  "stationStoryProgress": "Picture {current} of {total}"
+  "stationImageSequenceGoThere": "Go to the station to discover its story in pictures.",
+  "stationImageSequenceIntro": "You're on site! Start the station and click through the story of this place.",
+  "stationImageSequenceStart": "Start station",
+  "stationImageSequenceNext": "Next",
+  "stationImageSequenceToQuiz": "Continue to quiz",
+  "stationImageSequenceFinish": "Done",
+  "stationImageSequenceProgress": "Picture {current} of {total}"
 }

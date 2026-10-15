@@ -515,11 +515,11 @@
   "stationEditorMoveSlideDown": "Bild nach unten",
   "stationEditorErrorSlides": "Mindestens ein Bild zur Bildfolge hinzufügen.",
   "stationEditorErrorSlideTexts": "Jedes Bild braucht einen deutschen Text.",
-  "stationStoryGoThere": "Geh zur Station, um ihre Geschichte in Bildern zu entdecken.",
-  "stationStoryIntro": "Du bist vor Ort! Starte die Station und klick dich durch die Geschichte dieses Ortes.",
-  "stationStoryStart": "Station starten",
-  "stationStoryNext": "Weiter",
-  "stationStoryToQuiz": "Weiter zum Quiz",
-  "stationStoryFinish": "Fertig",
-  "stationStoryProgress": "Bild {current} von {total}"
+  "stationImageSequenceGoThere": "Geh zur Station, um ihre Geschichte in Bildern zu entdecken.",
+  "stationImageSequenceIntro": "Du bist vor Ort! Starte die Station und klick dich durch die Geschichte dieses Ortes.",
+  "stationImageSequenceStart": "Station starten",
+  "stationImageSequenceNext": "Weiter",
+  "stationImageSequenceToQuiz": "Weiter zum Quiz",
+  "stationImageSequenceFinish": "Fertig",
+  "stationImageSequenceProgress": "Bild {current} von {total}"
 }
