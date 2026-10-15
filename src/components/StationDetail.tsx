@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GuestWarningDialog } from './GuestWarningDialog';
-import { StationStory, type StorySlide } from './StationStory';
+import { StationImageSequence, type StationImageSlide } from './StationAdminPanel/StationImageSequence';
 
 interface QuizQuestion {
   question: string;
@@ -32,7 +32,7 @@ interface StationDetailProps {
     latitude: number;
     longitude: number;
     /** Bildfolge, die beim Start durchgeklickt wird (Stationen aus der Stationsverwaltung) */
-    story?: StorySlide[];
+    imageSequence?: StationImageSlide[];
   };
   onClose: () => void;
   onComplete: (stationId: number) => void;
@@ -83,8 +83,8 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
       navigate(arRoute, {
         state: allowGuestARStart ? { allowGuestStart: true } : undefined,
       });
-    } else if (story.length > 0) {
-      setStoryOpen(true);
+    } else if (imageSequence.length > 0) {
+      setImageSequenceOpen(true);
     } else {
       // Fallback: Mark as completed if no AR route
       onComplete(station.id);
@@ -95,10 +95,10 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
   // Stationen ohne AR werden vor Ort abgeschlossen: erst die Bildfolge, dann ggf. das Quiz
   const canCompleteOnSite = !hasARRoute && !locationError && isWithinRadius;
-  const story = station.story ?? [];
-  const [storyOpen, setStoryOpen] = useState(false);
-  const [storyDone, setStoryDone] = useState(false);
-  const storyPending = story.length > 0 && !storyDone;
+  const imageSequence = station.imageSequence ?? [];
+  const [imageSequenceOpen, setImageSequenceOpen] = useState(false);
+  const [imageSequenceDone, setImageSequenceDone] = useState(false);
+  const imageSequencePending = imageSequence.length > 0 && !imageSequenceDone;
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [quizWrong, setQuizWrong] = useState(false);
 
@@ -110,10 +110,10 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
     onComplete(station.id);
   };
 
-  const handleStoryFinish = () => {
-    setStoryOpen(false);
+  const handleImageSequenceFinish = () => {
+    setImageSequenceOpen(false);
     if (isCompleted) return;
-    setStoryDone(true);
+    setImageSequenceDone(true);
     if (!station.quiz) onComplete(station.id);
   };
 
@@ -319,15 +319,15 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               <h3 className="font-bold text-lg text-center">{t('informationStation')}</h3>
               <p className="text-sm text-muted-foreground mt-1.5 mb-5 text-center">
                 {!canCompleteOnSite
-                  ? story.length > 0 ? t('stationStoryGoThere') : t('noARExperience')
-                  : storyPending
-                    ? t('stationStoryIntro')
+                  ? imageSequence.length > 0 ? t('stationImageSequenceGoThere') : t('noARExperience')
+                  : imageSequencePending
+                    ? t('stationImageSequenceIntro')
                     : station.quiz
                       ? t('stationQuizIntro')
                       : t('stationCompleteOnSite')}
               </p>
 
-              {canCompleteOnSite && !storyPending && station.quiz && (
+              {canCompleteOnSite && !imageSequencePending && station.quiz && (
                 <fieldset className="mb-5">
                   <legend className="font-bold mb-3">{station.quiz.question}</legend>
                   <div className="space-y-2">
@@ -359,16 +359,16 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
               )}
 
               <div className="space-y-2.5">
-                {canCompleteOnSite && storyPending && (
+                {canCompleteOnSite && imageSequencePending && (
                   <button
-                    onClick={() => setStoryOpen(true)}
+                    onClick={() => setImageSequenceOpen(true)}
                     className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
                   >
                     <Play className="w-5 h-5" fill="currentColor" />
-                    <span>{t('stationStoryStart')}</span>
+                    <span>{t('stationImageSequenceStart')}</span>
                   </button>
                 )}
-                {canCompleteOnSite && !storyPending && (
+                {canCompleteOnSite && !imageSequencePending && (
                   <button
                     onClick={handleCompleteInfoStation}
                     disabled={!!station.quiz && quizAnswer === null}
@@ -450,13 +450,13 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
       {createPortal(
         <AnimatePresence>
-          {storyOpen && (
-            <StationStory
+          {imageSequenceOpen && (
+            <StationImageSequence
               title={station.title}
-              slides={story}
-              finishLabel={isCompleted ? t('stationStoryFinish') : station.quiz ? t('stationStoryToQuiz') : t('completeStation')}
-              onFinish={handleStoryFinish}
-              onClose={() => setStoryOpen(false)}
+              slides={imageSequence}
+              finishLabel={isCompleted ? t('stationImageSequenceFinish') : station.quiz ? t('stationImageSequenceToQuiz') : t('completeStation')}
+              onFinish={handleImageSequenceFinish}
+              onClose={() => setImageSequenceOpen(false)}
             />
           )}
         </AnimatePresence>,

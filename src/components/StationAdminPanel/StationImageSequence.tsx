@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-export interface StorySlide {
+export interface StationImageSlide {
   imageUrl: string;
   text: string;
 }
 
-interface StationStoryProps {
+interface StationImageSequenceProps {
   title: string;
-  slides: StorySlide[];
+  slides: StationImageSlide[];
   /** Beschriftung des Buttons auf dem letzten Bild */
   finishLabel: string;
   onFinish: () => void;
@@ -18,7 +18,7 @@ interface StationStoryProps {
 }
 
 /** Vollbild-Bildfolge einer Station: Bild für Bild mit kurzem Text durchklicken. */
-export function StationStory({ title, slides, finishLabel, onFinish, onClose }: StationStoryProps) {
+export function StationImageSequence({ title, slides, finishLabel, onFinish, onClose }: StationImageSequenceProps) {
   const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -72,7 +72,7 @@ export function StationStory({ title, slides, finishLabel, onFinish, onClose }: 
           <div className="min-w-0">
             <p className="font-bold truncate">{title}</p>
             <p className="text-xs text-white/70 tabular-nums">
-              {t('stationStoryProgress', { current: index + 1, total: slides.length })}
+              {t('stationImageSequenceProgress', { current: index + 1, total: slides.length })}
             </p>
           </div>
           <button
@@ -111,7 +111,7 @@ export function StationStory({ title, slides, finishLabel, onFinish, onClose }: 
         <button
           type="button"
           onClick={() => (isLast ? undefined : goTo(index + 1))}
-          aria-label={t('stationStoryNext')}
+          aria-label={t('stationImageSequenceNext')}
           tabIndex={-1}
           className="absolute inset-y-0 right-0 w-1/3"
         />
@@ -151,7 +151,7 @@ export function StationStory({ title, slides, finishLabel, onFinish, onClose }: 
               onClick={() => (isLast ? onFinish() : goTo(index + 1))}
               className="flex-1 min-h-[52px] rounded-2xl bg-white text-primary font-extrabold flex items-center justify-center gap-2 shadow-lg pressable"
             >
-              <span>{isLast ? finishLabel : t('stationStoryNext')}</span>
+              <span>{isLast ? finishLabel : t('stationImageSequenceNext')}</span>
               {!isLast && <ChevronRight className="w-5 h-5" />}
             </button>
           </div>

@@ -24,8 +24,8 @@ import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
 import { Impressum } from './components/Impressum';
 import { Datenschutz } from './components/Datenschutz';
-import type { StorySlide } from './components/StationStory';
-import { StationEditor } from './components/StationEditor';
+import type { StationImageSlide } from './components/StationAdminPanel/StationImageSequence';
+import { StationAdminPanel } from './components/StationAdminPanel/StationAdminPanel';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
@@ -70,7 +70,7 @@ interface Station {
     correctAnswer: number;
   };
   arContent?: string;
-  story?: StorySlide[];
+  imageSequence?: StationImageSlide[];
 }
 
 interface Path {
@@ -677,7 +677,7 @@ export default function App() {
                 description: (isEn && c.description_en) || c.description_de,
                 longDescription: (isEn && c.long_description_en) || c.long_description_de,
                 imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
-                story: c.slides.map((slide) => ({
+                imageSequence: c.slides.map((slide) => ({
                   imageUrl: customStationImageUrl(slide.image),
                   text: (isEn && slide.text_en) || slide.text_de,
                 })),
@@ -1263,7 +1263,7 @@ export default function App() {
       )}
 
       {currentView === 'admin-stations' && (
-        <StationEditor
+        <StationAdminPanel
           paths={paths.map((path) => ({ id: path.id, title: path.title }))}
           pathId={LOCAL_GUIDE_PATH_ID}
           stations={customStations}

@@ -16,13 +16,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { BackLink, PageIntro } from './PageHeader';
-import { FieldLabel } from './AuthShell';
-import { Switch } from './Settings';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Button } from './ui/button';
-import { useLanguage } from '../contexts/LanguageContext';
+import { BackLink, PageIntro } from '../PageHeader';
+import { FieldLabel } from '../AuthShell';
+import { Switch } from '../Settings';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Button } from '../ui/button';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   apiAdminDeleteStation,
   apiAdminSaveStation,
@@ -30,7 +30,7 @@ import {
   customStationImageUrl,
   type CustomStation,
   type CustomStationInput,
-} from '../services/api';
+} from '../../services/api';
 
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
 const MAX_SLIDES = 10;
@@ -73,7 +73,7 @@ interface FormState {
 
 type FormErrors = Partial<Record<'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz', string>>;
 
-interface StationEditorProps {
+interface StationAdminPanelProps {
   /** Pfade, denen eine Station zugeordnet werden kann */
   paths: Array<{ id: string; title: string }>;
   /** Pfad, in dem alle hier angelegten/bearbeiteten Stationen gespeichert werden */
@@ -196,7 +196,7 @@ function FormSection({ title, description, children }: { title: string; descript
 
 const inputClass = (hasError?: boolean) => `h-14 px-4 rounded-2xl bg-card ${hasError ? 'border-destructive' : ''}`;
 
-export function StationEditor({ paths, pathId, stations, onStationsChanged, onBack }: StationEditorProps) {
+export function StationAdminPanel({ paths, pathId, stations, onStationsChanged, onBack }: StationAdminPanelProps) {
   const { t } = useLanguage();
   const [adminPassword, setAdminPassword] = useState<string | null>(() => sessionStorage.getItem(ADMIN_SESSION_KEY));
   const [passwordInput, setPasswordInput] = useState('');
