@@ -412,8 +412,8 @@ export default function App() {
     };
   }, [fallbackAppModeActive, isFullscreen, isMobile]);
 
-  // Fest eingebaut ist nur der AR-Pfad (ID 'tourist' bleibt wegen gespeicherter Daten, angezeigt als
-  // „Augmented-Reality-Pfad“). Weitere Pfade kommen aus der Stationsverwaltung (custom_paths), siehe unten.
+  // Fest eingebaut ist nur der Pfad 'tourist' mit den AR-Stationen.
+  // Weitere Pfade kommen aus der Stationsverwaltung (custom_paths), siehe unten.
   const [paths, setPaths] = useState<Path[]>([
     {
       id: AR_PATH_ID,
