@@ -15,6 +15,9 @@ const STATION_IMAGE_TYPES = [
     'image/webp' => 'webp',
 ];
 const PATH_DIFFICULTIES = ['Einfach', 'Mittel', 'Schwer'];
+/** image_sequence: Bildfolge mit Texten (+ optionales Quiz); panorama_quiz: 360°-Bild mit Quiz (GyroARVisualizer) */
+const STATION_TYPES = ['image_sequence', 'panorama_quiz'];
+const STATION_MAX_QUIZ_QUESTIONS = 10;
 /** Fest im Frontend eingebaute Pfade – dürfen nicht als Custom-Pfad angelegt werden */
 const BUILTIN_PATH_IDS = ['tourist'];
 
@@ -98,14 +101,89 @@ function decodeStationSlides(?string $json): array {
 }
 
 /**
- * Alle Bilddateien einer Station (Profilbild + Bilder der Bildfolge).
+ * Alle Bilddateien einer Station (Profilbild, Bilder der Bildfolge, 360°-Bild, Bilder der Quizfragen).
  */
 function stationImageFiles(array $row): array {
     $files = array_column(decodeStationSlides($row['slides']), 'image');
-    if (isValidStationImageName($row['cover_image'])) {
-        $files[] = $row['cover_image'];
+    $questionImages = array_column(decodeQuizQuestions($row['quiz_questions'] ?? null), 'image');
+    foreach ([$row['cover_image'], $row['panorama_image'] ?? null, ...$questionImages] as $file) {
+        if (isValidStationImageName($file)) {
+            $files[] = $file;
+        }
     }
     return array_values(array_unique($files));
+}
+
+/**
+ * Prüft eine Quizfrage aus der Anfrage; bricht bei Fehlern mit 400 ab.
+ * $label benennt die Frage in Fehlermeldungen (z. B. „Quizfrage 2“).
+ * Rückgabe: { question_de, question_en, options_de, options_en, correct_answer }
+ */
+function parseQuizQuestion($quiz, string $label): array {
+    if (!is_array($quiz)) {
+        fail("$label ist ungültig.");
+    }
+    $questionDe = requiredText($quiz, 'question_de', 255, "$label (DE)");
+    $questionEn = optionalText($quiz, 'question_en', 255, "$label (EN)");
+
+    $optionsDe = $quiz['options_de'] ?? null;
+    if (!is_array($optionsDe) || count($optionsDe) < 2 || count($optionsDe) > 6) {
+        fail("$label braucht 2 bis 6 Antwortoptionen.");
+    }
+    $optionsDe = array_map(fn($o) => trim((string) $o), array_values($optionsDe));
+    if (in_array('', $optionsDe, true)) {
+        fail("$label: Alle Antwortoptionen (DE) müssen ausgefüllt sein.");
+    }
+
+    $optionsEn = $quiz['options_en'] ?? null;
+    if (is_array($optionsEn)) {
+        $optionsEn = array_map(fn($o) => trim((string) $o), array_values($optionsEn));
+        if (count(array_filter($optionsEn, fn($o) => $o !== '')) === 0) {
+            $optionsEn = null;
+        } elseif (count($optionsEn) !== count($optionsDe) || in_array('', $optionsEn, true)) {
+            fail("$label: Englische Antwortoptionen müssen entweder alle oder gar nicht ausgefüllt sein.");
+        }
+    } else {
+        $optionsEn = null;
+    }
+
+    $correct = filter_var($quiz['correct_answer'] ?? null, FILTER_VALIDATE_INT);
+    if ($correct === false || $correct < 0 || $correct >= count($optionsDe)) {
+        fail("$label: Bitte die richtige Antwort markieren.");
+    }
+
+    return [
+        'question_de' => $questionDe,
+        'question_en' => $questionEn,
+        'options_de' => $optionsDe,
+        'options_en' => $optionsEn,
+        'correct_answer' => $correct,
+    ];
+}
+
+/**
+ * Quizfragen einer 360°-Station aus der DB-Spalte `quiz_questions`.
+ */
+function decodeQuizQuestions(?string $json): array {
+    $questions = json_decode($json ?? '', true);
+    if (!is_array($questions)) {
+        return [];
+    }
+    $result = [];
+    foreach ($questions as $q) {
+        if (!is_array($q) || !is_array($q['options_de'] ?? null)) {
+            continue;
+        }
+        $result[] = [
+            'question_de' => (string) ($q['question_de'] ?? ''),
+            'question_en' => isset($q['question_en']) && $q['question_en'] !== '' ? (string) $q['question_en'] : null,
+            'options_de' => array_values(array_map('strval', $q['options_de'])),
+            'options_en' => is_array($q['options_en'] ?? null) ? array_values(array_map('strval', $q['options_en'])) : null,
+            'correct_answer' => (int) ($q['correct_answer'] ?? 0),
+            'image' => isValidStationImageName($q['image'] ?? null) ? $q['image'] : null,
+        ];
+    }
+    return $result;
 }
 
 /**
@@ -132,8 +210,11 @@ function formatStationRow(array $row): array {
         'description_en' => $row['description_en'],
         'long_description_de' => $row['long_description_de'],
         'long_description_en' => $row['long_description_en'],
+        'station_type' => in_array($row['station_type'] ?? null, STATION_TYPES, true) ? $row['station_type'] : 'image_sequence',
         'cover_image' => $row['cover_image'],
         'slides' => decodeStationSlides($row['slides']),
+        'panorama_image' => isValidStationImageName($row['panorama_image'] ?? null) ? $row['panorama_image'] : null,
+        'quiz_questions' => decodeQuizQuestions($row['quiz_questions'] ?? null),
         'points' => (int) $row['points'],
         'latitude' => (float) $row['latitude'],
         'longitude' => (float) $row['longitude'],

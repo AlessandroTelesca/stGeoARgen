@@ -33,6 +33,8 @@ interface StationDetailProps {
     longitude: number;
     /** Bildfolge, die beim Start durchgeklickt wird (Stationen aus der Stationsverwaltung) */
     imageSequence?: StationImageSlide[];
+    /** AR-Route für Stationen aus der Stationsverwaltung (360°-Quiz), sonst aus STATION_AR_ROUTES */
+    arRoute?: string;
   };
   onClose: () => void;
   onComplete: (stationId: number) => void;
@@ -64,7 +66,8 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
-  const hasARRoute = !!STATION_AR_ROUTES[station.id];
+  const arRoute = STATION_AR_ROUTES[station.id] ?? station.arRoute;
+  const hasARRoute = !!arRoute;
   // Gleiche Login-Regeln für alle Stationen (AR und Stationsverwaltung): ohne Login erst Login-Karte,
   // als Gast darf man die Station erleben, schließt sie aber nicht ab (wie der AR-Abschlussbutton)
   const needsLogin = requireLoginForAR && isLoggedIn === false;
@@ -83,7 +86,6 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
   const handleStartARExperience = () => {
     // Navigate to AR view - proximity check happens there
-    const arRoute = STATION_AR_ROUTES[station.id];
     if (arRoute) {
       navigate(arRoute, {
         state: allowGuestARStart ? { allowGuestStart: true } : undefined,

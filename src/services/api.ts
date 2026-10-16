@@ -318,20 +318,33 @@ export interface CustomStation {
     long_description_en: string | null;
     /** Profilbild (Dateiname in api/uploads/stations/) – Listen und Titelbild */
     cover_image: string;
-    /** Bildfolge, die beim Start der Station durchgeklickt wird */
+    /** 'image_sequence' = Bildfolge mit Texten; 'panorama_quiz' = 360°-Bild mit Quiz (GyroARVisualizer) */
+    station_type: CustomStationType;
+    /** Bildfolge, die beim Start der Station durchgeklickt wird (nur image_sequence) */
     slides: CustomStationSlide[];
+    /** 360°-Bild (equirektangular, Dateiname in api/uploads/stations/) – nur panorama_quiz */
+    panorama_image: string | null;
+    /** Quizfragen über dem 360°-Bild – nur panorama_quiz */
+    quiz_questions: CustomQuizQuestion[];
     points: number;
     latitude: number;
     longitude: number;
-    quiz: {
-        question_de: string;
-        question_en: string | null;
-        options_de: string[];
-        options_en: string[] | null;
-        correct_answer: number;
-    } | null;
+    /** Optionale Quizfrage nach der Bildfolge (nur image_sequence) */
+    quiz: CustomQuizQuestion | null;
     created_at: string;
     updated_at: string;
+}
+
+export type CustomStationType = 'image_sequence' | 'panorama_quiz';
+
+export interface CustomQuizQuestion {
+    question_de: string;
+    question_en: string | null;
+    options_de: string[];
+    options_en: string[] | null;
+    correct_answer: number;
+    /** Optionales Bild zur Frage (nur Fragen von 360°-Stationen) – Dateiname in api/uploads/stations/ */
+    image?: string | null;
 }
 
 export interface CustomStationSlide {
@@ -342,7 +355,8 @@ export interface CustomStationSlide {
 
 /**
  * Daten zum Anlegen/Aktualisieren. Bildreferenzen sind vorhandene Dateinamen (werden behalten)
- * oder neue Dateien: `cover_image: 'new'` → `newCover`, `slides[i].image: 'new:N'` → `newSlideImages[N]`.
+ * oder neue Dateien: `cover_image: 'new'` → `newCover`, `slides[i].image: 'new:N'` → `newSlideImages[N]`,
+ * `panorama_image: 'new'` → `newPanorama`, `quiz_questions[i].image: 'new:N'` → `newQuestionImages[N]`.
  */
 export type CustomStationInput = Omit<CustomStation, 'id' | 'created_at' | 'updated_at'> & { id?: number };
 
@@ -361,7 +375,10 @@ export async function apiGetCustomStations(): Promise<CustomStation[]> {
     return (Array.isArray(res.stations) ? res.stations : []).map((s) => ({
         ...(s as CustomStation),
         cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
+        station_type: s.station_type === 'panorama_quiz' ? 'panorama_quiz' : 'image_sequence',
         slides: Array.isArray(s.slides) ? s.slides : [],
+        panorama_image: typeof s.panorama_image === 'string' ? s.panorama_image : null,
+        quiz_questions: Array.isArray(s.quiz_questions) ? s.quiz_questions : [],
     }));
 }
 
@@ -373,12 +390,16 @@ export async function apiAdminSaveStation(
     adminPassword: string,
     station: CustomStationInput,
     newCover: File | null,
-    newSlideImages: File[]
+    newSlideImages: File[],
+    newPanorama: File | null = null,
+    newQuestionImages: File[] = []
 ): Promise<CustomStation> {
     const body = new FormData();
     body.append('station', JSON.stringify(station));
     if (newCover) body.append('cover', newCover, newCover.name);
     newSlideImages.forEach((file) => body.append('slide_images[]', file, file.name));
+    if (newPanorama) body.append('panorama', newPanorama, newPanorama.name);
+    newQuestionImages.forEach((file) => body.append('question_images[]', file, file.name));
     const res = await apiFetch<{ station: CustomStation }>('admin_save_station.php', {
         method: 'POST',
         headers: adminHeaders(adminPassword),

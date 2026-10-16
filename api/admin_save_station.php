@@ -6,12 +6,20 @@
  *   station  – JSON:
  *     { id?, path_id, title_de, title_en?, description_de, description_en?,
  *       long_description_de, long_description_en?, points, latitude, longitude,
+ *       station_type: "image_sequence" (Standard) | "panorama_quiz",
  *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover"),
+ *       – nur image_sequence:
  *       slides: [{ image: vorhandener Dateiname | "new:N" (N-te Datei aus "slide_images[]"),
  *                  text_de, text_en? }]   – 1 bis 10 Bilder der Bildfolge, Reihenfolge zählt
- *       quiz: null | { question_de, question_en?, options_de: [], options_en?: [], correct_answer } }
+ *       quiz: null | { question_de, question_en?, options_de: [], options_en?: [], correct_answer }
+ *       – nur panorama_quiz:
+ *       panorama_image: vorhandener Dateiname | "new" (Datei im Feld "panorama") – 360°-Bild (equirektangular)
+ *       quiz_questions: [{ question_de, question_en?, options_de: [], options_en?: [], correct_answer,
+ *                          image?: null | vorhandener Dateiname | "new:N" (N-te Datei aus "question_images[]") }] – 1 bis 10 }
  *   cover          – neues Profilbild (JPG/PNG/WebP)
  *   slide_images[] – neue Bilder der Bildfolge; jede Datei muss genau einmal referenziert werden
+ *   panorama       – neues 360°-Bild
+ *   question_images[] – neue Bilder der Quizfragen; jede Datei muss genau einmal referenziert werden
  *
  * Response: { success, message, station }
  */
@@ -62,46 +70,22 @@ if ($latitude === false || $latitude < -90 || $latitude > 90 || $longitude === f
     fail('Ungültige Koordinaten.');
 }
 
-// Quiz (optional)
-$quizQuestionDe = $quizQuestionEn = $quizOptionsDe = $quizOptionsEn = $quizCorrect = null;
-if (isset($input['quiz']) && $input['quiz'] !== null) {
-    $quiz = $input['quiz'];
-    if (!is_array($quiz)) {
-        fail('Ungültiges Quiz.');
-    }
-    $quizQuestionDe = requiredText($quiz, 'question_de', 255, 'Quizfrage (DE)');
-    $quizQuestionEn = optionalText($quiz, 'question_en', 255, 'Quizfrage (EN)');
-
-    $optionsDe = $quiz['options_de'] ?? null;
-    if (!is_array($optionsDe) || count($optionsDe) < 2 || count($optionsDe) > 6) {
-        fail('Das Quiz braucht 2 bis 6 Antwortoptionen.');
-    }
-    $optionsDe = array_map(fn($o) => trim((string) $o), array_values($optionsDe));
-    if (in_array('', $optionsDe, true)) {
-        fail('Alle Antwortoptionen (DE) müssen ausgefüllt sein.');
-    }
-
-    $optionsEn = $quiz['options_en'] ?? null;
-    if (is_array($optionsEn)) {
-        $optionsEn = array_map(fn($o) => trim((string) $o), array_values($optionsEn));
-        if (count(array_filter($optionsEn, fn($o) => $o !== '')) === 0) {
-            $optionsEn = null;
-        } elseif (count($optionsEn) !== count($optionsDe) || in_array('', $optionsEn, true)) {
-            fail('Englische Antwortoptionen müssen entweder alle oder gar nicht ausgefüllt sein.');
-        }
-    } else {
-        $optionsEn = null;
-    }
-
-    $quizCorrect = filter_var($quiz['correct_answer'] ?? null, FILTER_VALIDATE_INT);
-    if ($quizCorrect === false || $quizCorrect < 0 || $quizCorrect >= count($optionsDe)) {
-        fail('Bitte die richtige Antwort markieren.');
-    }
-
-    $quizOptionsDe = json_encode($optionsDe, JSON_UNESCAPED_UNICODE);
-    $quizOptionsEn = $optionsEn !== null ? json_encode($optionsEn, JSON_UNESCAPED_UNICODE) : null;
+$stationType = (string) ($input['station_type'] ?? 'image_sequence');
+if (!in_array($stationType, STATION_TYPES, true)) {
+    fail('Ungültiger Stationstyp.');
 }
+$isPanorama = $stationType === 'panorama_quiz';
 
+// Quiz (optional, nur Bildfolge-Stationen)
+$quizQuestionDe = $quizQuestionEn = $quizOptionsDe = $quizOptionsEn = $quizCorrect = null;
+if (!$isPanorama && isset($input['quiz']) && $input['quiz'] !== null) {
+    $quiz = parseQuizQuestion($input['quiz'], 'Quizfrage');
+    $quizQuestionDe = $quiz['question_de'];
+    $quizQuestionEn = $quiz['question_en'];
+    $quizCorrect = $quiz['correct_answer'];
+    $quizOptionsDe = json_encode($quiz['options_de'], JSON_UNESCAPED_UNICODE);
+    $quizOptionsEn = $quiz['options_en'] !== null ? json_encode($quiz['options_en'], JSON_UNESCAPED_UNICODE) : null;
+}
 // Profilbild
 $coverRef = (string) ($input['cover_image'] ?? '');
 $newCoverCount = count(uploadedFiles('cover'));
@@ -112,9 +96,9 @@ if ($coverRef === 'new' ? $newCoverCount !== 1 : ($coverRef === '' || $newCoverC
     fail('Bitte ein Profilbild auswählen.');
 }
 
-// Bildfolge
-$slidesInput = $input['slides'] ?? null;
-if (!is_array($slidesInput) || count($slidesInput) < 1) {
+// Bildfolge (nur image_sequence)
+$slidesInput = $isPanorama ? [] : ($input['slides'] ?? null);
+if (!$isPanorama && (!is_array($slidesInput) || count($slidesInput) < 1)) {
     fail('Die Bildfolge braucht mindestens ein Bild.');
 }
 if (count($slidesInput) > STATION_MAX_SLIDES) {
@@ -149,6 +133,48 @@ if (count($usedNewSlides) !== $newSlideCount) {
     fail('Nicht zugeordnete Bilder hochgeladen.');
 }
 
+// 360°-Bild + Quizfragen (nur panorama_quiz)
+$panoramaRef = null;
+$quizQuestions = null;
+$newPanoramaCount = count(uploadedFiles('panorama'));
+$newQuestionImageCount = count(uploadedFiles('question_images'));
+$usedNewQuestionImages = [];
+if ($isPanorama) {
+    $panoramaRef = (string) ($input['panorama_image'] ?? '');
+    if ($newPanoramaCount > 1 || ($panoramaRef === 'new' ? $newPanoramaCount !== 1 : ($panoramaRef === '' || $newPanoramaCount !== 0))) {
+        fail('Bitte ein 360°-Bild auswählen.');
+    }
+
+    $questionsInput = $input['quiz_questions'] ?? null;
+    if (!is_array($questionsInput) || count($questionsInput) < 1) {
+        fail('Das Quiz braucht mindestens eine Frage.');
+    }
+    if (count($questionsInput) > STATION_MAX_QUIZ_QUESTIONS) {
+        fail('Maximal ' . STATION_MAX_QUIZ_QUESTIONS . ' Quizfragen.');
+    }
+    $quizQuestions = [];
+    foreach (array_values($questionsInput) as $index => $question) {
+        $parsed = parseQuizQuestion($question, 'Quizfrage ' . ($index + 1));
+        // Optionales Bild zur Frage
+        $imageRef = $question['image'] ?? null;
+        $imageRef = $imageRef === null || $imageRef === '' ? null : (string) $imageRef;
+        if ($imageRef !== null && preg_match('/^new:(\d+)$/', $imageRef, $m)) {
+            $newIndex = (int) $m[1];
+            if ($newIndex >= $newQuestionImageCount || isset($usedNewQuestionImages[$newIndex])) {
+                fail('Ungültige Bildreferenz.');
+            }
+            $usedNewQuestionImages[$newIndex] = true;
+        } elseif ($imageRef !== null && !isValidStationImageName($imageRef)) {
+            fail('Ungültige Bildreferenz.');
+        }
+        $parsed['image'] = $imageRef;
+        $quizQuestions[] = $parsed;
+    }
+}
+if ((!$isPanorama && $newPanoramaCount > 0) || count($usedNewQuestionImages) !== $newQuestionImageCount) {
+    fail('Nicht zugeordnete Bilder hochgeladen.');
+}
+
 try {
     $db = getDB();
 
@@ -161,7 +187,7 @@ try {
 
     $previousImages = [];
     if ($id !== null) {
-        $stmt = $db->prepare('SELECT cover_image, slides FROM custom_stations WHERE id = ?');
+        $stmt = $db->prepare('SELECT cover_image, slides, panorama_image, quiz_questions FROM custom_stations WHERE id = ?');
         $stmt->execute([$id]);
         $existing = $stmt->fetch();
         if (!$existing) {
@@ -176,8 +202,8 @@ try {
 
 // Vorhandene Bilder dürfen nur aus dieser Station stammen
 $keptImages = array_filter(
-    array_merge([$coverRef], array_column($slides, 'image')),
-    fn($ref) => $ref !== 'new' && !str_starts_with($ref, 'new:')
+    array_merge([$coverRef, $panoramaRef], array_column($slides, 'image'), array_column($quizQuestions ?? [], 'image')),
+    fn($ref) => $ref !== null && $ref !== 'new' && !str_starts_with($ref, 'new:')
 );
 foreach ($keptImages as $filename) {
     if (!in_array($filename, $previousImages, true)) {
@@ -185,16 +211,25 @@ foreach ($keptImages as $filename) {
     }
 }
 
-$stored = storeUploadedImages(['cover', 'slide_images']);
-$newImages = array_merge($stored['cover'], $stored['slide_images']);
+$stored = storeUploadedImages(['cover', 'slide_images', 'panorama', 'question_images']);
+$newImages = array_merge($stored['cover'], $stored['slide_images'], $stored['panorama'], $stored['question_images']);
 
 $coverImage = $coverRef === 'new' ? $stored['cover'][0] : $coverRef;
+$panoramaImage = $panoramaRef === 'new' ? $stored['panorama'][0] : $panoramaRef;
 foreach ($slides as &$slide) {
     if (preg_match('/^new:(\d+)$/', $slide['image'], $m)) {
         $slide['image'] = $stored['slide_images'][(int) $m[1]];
     }
 }
 unset($slide);
+if ($quizQuestions !== null) {
+    foreach ($quizQuestions as &$question) {
+        if ($question['image'] !== null && preg_match('/^new:(\d+)$/', $question['image'], $m)) {
+            $question['image'] = $stored['question_images'][(int) $m[1]];
+        }
+    }
+    unset($question);
+}
 
 $params = [
     ':path_id' => $pathId,
@@ -204,8 +239,11 @@ $params = [
     ':description_en' => $descriptionEn,
     ':long_description_de' => $longDescriptionDe,
     ':long_description_en' => $longDescriptionEn,
+    ':station_type' => $stationType,
     ':cover_image' => $coverImage,
     ':slides' => json_encode($slides, JSON_UNESCAPED_UNICODE),
+    ':panorama_image' => $panoramaImage,
+    ':quiz_questions' => $quizQuestions !== null ? json_encode($quizQuestions, JSON_UNESCAPED_UNICODE) : null,
     ':points' => $points,
     ':latitude' => $latitude,
     ':longitude' => $longitude,
@@ -221,10 +259,12 @@ try {
         $db->prepare(
             'INSERT INTO custom_stations
                (path_id, title_de, title_en, description_de, description_en, long_description_de, long_description_en,
-                cover_image, slides, points, latitude, longitude, quiz_question_de, quiz_question_en, quiz_options_de, quiz_options_en, quiz_correct_answer)
+                station_type, cover_image, slides, panorama_image, quiz_questions,
+                points, latitude, longitude, quiz_question_de, quiz_question_en, quiz_options_de, quiz_options_en, quiz_correct_answer)
              VALUES
                (:path_id, :title_de, :title_en, :description_de, :description_en, :long_description_de, :long_description_en,
-                :cover_image, :slides, :points, :latitude, :longitude, :quiz_question_de, :quiz_question_en, :quiz_options_de, :quiz_options_en, :quiz_correct_answer)'
+                :station_type, :cover_image, :slides, :panorama_image, :quiz_questions,
+                :points, :latitude, :longitude, :quiz_question_de, :quiz_question_en, :quiz_options_de, :quiz_options_en, :quiz_correct_answer)'
         )->execute($params);
         $id = (int) $db->lastInsertId();
     } else {
@@ -233,7 +273,8 @@ try {
                path_id = :path_id, title_de = :title_de, title_en = :title_en,
                description_de = :description_de, description_en = :description_en,
                long_description_de = :long_description_de, long_description_en = :long_description_en,
-               cover_image = :cover_image, slides = :slides,
+               station_type = :station_type, cover_image = :cover_image, slides = :slides,
+               panorama_image = :panorama_image, quiz_questions = :quiz_questions,
                points = :points, latitude = :latitude, longitude = :longitude,
                quiz_question_de = :quiz_question_de, quiz_question_en = :quiz_question_en,
                quiz_options_de = :quiz_options_de, quiz_options_en = :quiz_options_en,
@@ -241,7 +282,7 @@ try {
              WHERE id = :id'
         )->execute($params + [':id' => $id]);
 
-        $nowUsed = array_merge([$coverImage], array_column($slides, 'image'));
+        $nowUsed = array_merge([$coverImage, $panoramaImage], array_column($slides, 'image'), array_column($quizQuestions ?? [], 'image'));
         deleteStationImages(array_diff($previousImages, $nowUsed));
     }
 

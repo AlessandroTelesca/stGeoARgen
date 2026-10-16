@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import {
   ArrowDown,
   ArrowUp,
+  Orbit,
   ExternalLink,
+  GalleryHorizontal,
   ImagePlus,
   LocateFixed,
   LockKeyhole,
@@ -35,8 +37,17 @@ import {
   type CustomPath,
   type CustomStation,
   type CustomStationInput,
+  type CustomStationType,
 } from '../../services/api';
-import { FieldError, FormSection, LanguageTabs, inputClass, prepareImage, type ImageItem } from './adminFormParts';
+import { FieldError, FormSection, LanguageTabs, MAX_PANORAMA_EDGE, inputClass, prepareImage, type ImageItem } from './adminFormParts';
+import {
+  PanoramaQuizEditor,
+  emptyQuizQuestion,
+  findQuizQuestionError,
+  quizQuestionFromApi,
+  quizQuestionToApi,
+  type QuizQuestionDraft,
+} from './PanoramaQuizEditor';
 import { PathAdminForm } from './PathAdminForm';
 
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
@@ -54,6 +65,8 @@ interface SlideItem {
 
 interface FormState {
   id?: number;
+  /** Stationstyp; wird beim Anlegen gewählt und danach nicht mehr geändert */
+  stationType: CustomStationType;
   pathId: string;
   titleDe: string;
   titleEn: string;
@@ -72,9 +85,12 @@ interface FormState {
   quizOptionsDe: string[];
   quizOptionsEn: string[];
   quizCorrect: number | null;
+  /** nur panorama_quiz: 360°-Bild und Quizfragen */
+  panorama: ImageItem | null;
+  panoramaQuestions: QuizQuestionDraft[];
 }
 
-type FormErrors = Partial<Record<'pathId' | 'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz', string>>;
+type FormErrors = Partial<Record<'pathId' | 'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz' | 'panorama' | 'panoramaQuiz', string>>;
 
 interface StationAdminPanelProps {
   /** Themenpfade aus der Stationsverwaltung (ohne den AR-Pfad) – nur ihnen können Stationen zugeordnet werden */
@@ -89,8 +105,9 @@ interface StationAdminPanelProps {
 }
 
 /** defaultPoints: point_settings.default_station_points aus der DB (unbekannt → leeres Feld) */
-function emptyForm(pathId: string, defaultPoints: number | undefined): FormState {
+function emptyForm(stationType: CustomStationType, pathId: string, defaultPoints: number | undefined): FormState {
   return {
+    stationType,
     pathId,
     titleDe: '',
     titleEn: '',
@@ -109,6 +126,8 @@ function emptyForm(pathId: string, defaultPoints: number | undefined): FormState
     quizOptionsDe: ['', '', '', ''],
     quizOptionsEn: ['', '', '', ''],
     quizCorrect: null,
+    panorama: null,
+    panoramaQuestions: [emptyQuizQuestion()],
   };
 }
 
@@ -116,6 +135,7 @@ function formFromStation(station: CustomStation): FormState {
   const optionsDe = station.quiz?.options_de ?? ['', '', '', ''];
   return {
     id: station.id,
+    stationType: station.station_type,
     pathId: station.path_id,
     titleDe: station.title_de,
     titleEn: station.title_en ?? '',
@@ -140,6 +160,12 @@ function formFromStation(station: CustomStation): FormState {
     quizOptionsDe: optionsDe,
     quizOptionsEn: station.quiz?.options_en ?? optionsDe.map(() => ''),
     quizCorrect: station.quiz?.correct_answer ?? null,
+    panorama: station.panorama_image
+      ? { kind: 'existing', filename: station.panorama_image, url: customStationImageUrl(station.panorama_image) }
+      : null,
+    panoramaQuestions: station.quiz_questions.length > 0
+      ? station.quiz_questions.map(quizQuestionFromApi)
+      : [emptyQuizQuestion()],
   };
 }
 
@@ -171,6 +197,9 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
   const [deletingPathId, setDeletingPathId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const panoramaInputRef = useRef<HTMLInputElement>(null);
+  /** Index der Quizfrage mit Fehler (360°-Station) */
+  const [panoramaQuizErrorIndex, setPanoramaQuizErrorIndex] = useState<number | undefined>(undefined);
 
   // Gespeichertes Passwort beim Öffnen prüfen (z. B. nach Passwortänderung auf dem Server)
   useEffect(() => {
@@ -251,12 +280,12 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
   };
 
   /** Prüft das Format, verkleinert die Fotos und erzeugt Vorschau-URLs. */
-  const prepareImageItems = async (fileList: FileList | null, limit: number): Promise<ImageItem[]> => {
+  const prepareImageItems = async (fileList: FileList | null, limit: number, maxEdge?: number): Promise<ImageItem[]> => {
     if (!fileList) return [];
     const files = Array.from(fileList).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type));
     if (files.length < fileList.length) toast.error(t('stationEditorImageFormat'));
     if (files.length > limit) toast.error(t('stationEditorImageLimit', { max: MAX_SLIDES }));
-    const prepared = await Promise.all(files.slice(0, Math.max(0, limit)).map(prepareImage));
+    const prepared = await Promise.all(files.slice(0, Math.max(0, limit)).map((file) => prepareImage(file, maxEdge)));
     return prepared.map((file) => {
       const url = URL.createObjectURL(file);
       previewUrlsRef.current.push(url);
@@ -270,6 +299,14 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     if (!cover) return;
     setForm((prev) => (prev ? { ...prev, cover } : prev));
     setErrors((prev) => ({ ...prev, cover: undefined }));
+  };
+
+  const handlePanoramaChange = async (fileList: FileList | null) => {
+    const [panorama] = await prepareImageItems(fileList, 1, MAX_PANORAMA_EDGE);
+    if (panoramaInputRef.current) panoramaInputRef.current.value = '';
+    if (!panorama) return;
+    setForm((prev) => (prev ? { ...prev, panorama } : prev));
+    setErrors((prev) => ({ ...prev, panorama: undefined }));
   };
 
   const handleAddSlides = async (fileList: FileList | null) => {
@@ -338,6 +375,14 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     if (lat === null || lat < -90 || lat > 90) next.latitude = t('stationEditorErrorLatitude');
     if (lng === null || lng < -180 || lng > 180) next.longitude = t('stationEditorErrorLongitude');
     if (!state.cover) next.cover = t('stationEditorErrorCover');
+    if (state.stationType === 'panorama_quiz') {
+      if (!state.panorama) next.panorama = t('stationEditorErrorPanorama');
+      const quizError = findQuizQuestionError(state.panoramaQuestions);
+      setPanoramaQuizErrorIndex(quizError?.index);
+      if (state.panoramaQuestions.length === 0) next.panoramaQuiz = t('stationEditorErrorPanoramaQuiz');
+      else if (quizError) next.panoramaQuiz = t('stationEditorPanoramaQuestionError', { n: quizError.index + 1, error: t(quizError.key) });
+      return next;
+    }
     if (state.slides.length === 0) next.slides = t('stationEditorErrorSlides');
     else if (state.slides.some((slide) => !slide.textDe.trim())) next.slides = t('stationEditorErrorSlideTexts');
     if (state.quizEnabled) {
@@ -360,7 +405,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      if (nextErrors.titleDe || nextErrors.descriptionDe || nextErrors.longDescriptionDe || nextErrors.slides || nextErrors.quiz) {
+      if (nextErrors.titleDe || nextErrors.descriptionDe || nextErrors.longDescriptionDe || nextErrors.slides || nextErrors.quiz || nextErrors.panoramaQuiz) {
         setTextLanguage('de');
       }
       toast.error(t('stationEditorFixErrors'));
@@ -379,6 +424,17 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       return { image, text_de: slide.textDe.trim(), text_en: slide.textEn.trim() || null };
     });
     const cover = form.cover!;
+    const isPanorama = form.stationType === 'panorama_quiz';
+    const panorama = isPanorama ? form.panorama! : null;
+    const questionImageFiles: File[] = [];
+    const quizQuestions = isPanorama
+      ? form.panoramaQuestions.map((q) => {
+        if (!q.image) return quizQuestionToApi(q, null);
+        if (q.image.kind === 'existing') return quizQuestionToApi(q, q.image.filename);
+        questionImageFiles.push(q.image.file);
+        return quizQuestionToApi(q, `new:${questionImageFiles.length - 1}`);
+      })
+      : [];
     const enOptionsFilled = form.quizOptionsEn.some((o) => o.trim());
 
     const payload: CustomStationInput = {
@@ -390,12 +446,15 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       description_en: form.descriptionEn.trim() || null,
       long_description_de: form.longDescriptionDe.trim(),
       long_description_en: form.longDescriptionEn.trim() || null,
+      station_type: form.stationType,
       cover_image: cover.kind === 'existing' ? cover.filename : 'new',
-      slides,
+      slides: isPanorama ? [] : slides,
+      panorama_image: panorama ? (panorama.kind === 'existing' ? panorama.filename : 'new') : null,
+      quiz_questions: quizQuestions,
       points: Number(form.points),
       latitude: parseCoordinate(form.latitude)!,
       longitude: parseCoordinate(form.longitude)!,
-      quiz: form.quizEnabled
+      quiz: !isPanorama && form.quizEnabled
         ? {
           question_de: form.quizQuestionDe.trim(),
           question_en: form.quizQuestionEn.trim() || null,
@@ -408,7 +467,14 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
 
     setSaving(true);
     try {
-      await apiAdminSaveStation(adminPassword, payload, cover.kind === 'new' ? cover.file : null, slideFiles);
+      await apiAdminSaveStation(
+        adminPassword,
+        payload,
+        cover.kind === 'new' ? cover.file : null,
+        isPanorama ? [] : slideFiles,
+        panorama?.kind === 'new' ? panorama.file : null,
+        questionImageFiles
+      );
       await onDataChanged();
       toast.success(form.id ? t('stationEditorUpdated') : t('stationEditorCreated'), {
         description: payload.title_de,
@@ -530,6 +596,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     const optional = isEn ? ` (${t('stationEditorOptional')})` : '';
     const enHint = isEn ? t('stationEditorEnFallback') : undefined;
     const languageTabs = <LanguageTabs value={textLanguage} onChange={setTextLanguage} />;
+    const isPanorama = form.stationType === 'panorama_quiz';
 
     return (
       <div className="min-h-screen bg-background">
@@ -537,9 +604,9 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
           <BackLink onBack={() => setForm(null)} label={t('cancel')} />
           <PageIntro
             className="mt-5 mb-6"
-            title={form.id ? t('stationEditorEditTitle') : t('stationEditorNewTitle')}
-            description={t('stationEditorFormIntro')}
-            icon={<MapPinPlus className="w-6 h-6" />}
+            title={form.id ? t('stationEditorEditTitle') : isPanorama ? t('stationEditorNewPanoramaTitle') : t('stationEditorNewTitle')}
+            description={isPanorama ? t('stationEditorPanoramaFormIntro') : t('stationEditorFormIntro')}
+            icon={isPanorama ? <Orbit className="w-6 h-6" /> : <MapPinPlus className="w-6 h-6" />}
           />
 
           <form onSubmit={handleSave} className="space-y-5" noValidate>
@@ -667,95 +734,150 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
               <FieldError message={errors.cover} />
             </FormSection>
 
-            {/* Bildfolge */}
-            <FormSection title={t('stationEditorSectionSlides')} description={t('stationEditorSlidesIntro', { max: MAX_SLIDES })}>
-              {form.slides.length > 0 && (
-                <>
+            {isPanorama && (
+              <>
+                {/* 360°-Bild */}
+                <FormSection title={t('stationEditorSectionPanorama')} description={t('stationEditorPanoramaIntro')}>
+                  {form.panorama && (
+                    <div className="rounded-2xl overflow-hidden bg-muted aspect-[2/1]">
+                      <img src={form.panorama.url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label
+                    className={form.panorama
+                      ? 'w-full min-h-[48px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer focus-within:ring-4 focus-within:ring-primary/15'
+                      : `flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.panorama ? 'border-destructive' : 'border-border-strong'}`}
+                  >
+                    {form.panorama ? (
+                      <>
+                        <Orbit className="w-5 h-5" />
+                        <span>{t('stationEditorChangePanorama')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
+                          <Orbit className="w-5 h-5" />
+                        </span>
+                        <span className="text-sm font-bold">{t('stationEditorChoosePanorama')}</span>
+                        <span className="text-xs text-muted-foreground">JPG, PNG, WebP · 2:1</span>
+                      </>
+                    )}
+                    <input
+                      ref={panoramaInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => void handlePanoramaChange(e.target.files)}
+                    />
+                  </label>
+                  <FieldError message={errors.panorama} />
+                </FormSection>
+
+                {/* Quiz über dem 360°-Bild */}
+                <FormSection title={t('stationEditorSectionPanoramaQuiz')} description={t('stationEditorPanoramaQuizIntro')}>
                   {languageTabs}
-                  <ol className="space-y-4">
-                    {form.slides.map((slide, index) => {
-                      const missingText = !!errors.slides && !isEn && !slide.textDe.trim();
-                      return (
-                        <li key={slide.image.url} className="rounded-2xl border border-border p-3 space-y-3">
-                          <div className="flex gap-3">
-                            <img src={slide.image.url} alt="" className="w-28 aspect-[4/3] rounded-xl object-cover bg-muted flex-shrink-0" />
-                            <div className="flex-1 min-w-0 flex flex-col justify-between">
-                              <span className="font-bold tabular-nums">{t('stationEditorSlideLabel', { n: index + 1 })}</span>
-                              <div className="flex gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => moveSlide(index, -1)}
-                                  disabled={index === 0}
-                                  aria-label={t('stationEditorMoveSlideUp')}
-                                  className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                  <ArrowUp className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveSlide(index, 1)}
-                                  disabled={index === form.slides.length - 1}
-                                  aria-label={t('stationEditorMoveSlideDown')}
-                                  className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                  <ArrowDown className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => removeSlide(index)}
-                                  aria-label={t('stationEditorRemoveImage')}
-                                  className="w-11 h-11 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors ml-auto"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                  <PanoramaQuizEditor
+                    questions={form.panoramaQuestions}
+                    onChange={(apply) => setForm((prev) => (prev ? { ...prev, panoramaQuestions: apply(prev.panoramaQuestions) } : prev))}
+                    language={textLanguage}
+                    errorIndex={errors.panoramaQuiz ? panoramaQuizErrorIndex : undefined}
+                  />
+                  <FieldError message={errors.panoramaQuiz} />
+                </FormSection>
+              </>
+            )}
+
+            {/* Bildfolge */}
+            {!isPanorama && (
+              <FormSection title={t('stationEditorSectionSlides')} description={t('stationEditorSlidesIntro', { max: MAX_SLIDES })}>
+                {form.slides.length > 0 && (
+                  <>
+                    {languageTabs}
+                    <ol className="space-y-4">
+                      {form.slides.map((slide, index) => {
+                        const missingText = !!errors.slides && !isEn && !slide.textDe.trim();
+                        return (
+                          <li key={slide.image.url} className="rounded-2xl border border-border p-3 space-y-3">
+                            <div className="flex gap-3">
+                              <img src={slide.image.url} alt="" className="w-28 aspect-[4/3] rounded-xl object-cover bg-muted flex-shrink-0" />
+                              <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                <span className="font-bold tabular-nums">{t('stationEditorSlideLabel', { n: index + 1 })}</span>
+                                <div className="flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveSlide(index, -1)}
+                                    disabled={index === 0}
+                                    aria-label={t('stationEditorMoveSlideUp')}
+                                    className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    <ArrowUp className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveSlide(index, 1)}
+                                    disabled={index === form.slides.length - 1}
+                                    aria-label={t('stationEditorMoveSlideDown')}
+                                    className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    <ArrowDown className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSlide(index)}
+                                    aria-label={t('stationEditorRemoveImage')}
+                                    className="w-11 h-11 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors ml-auto"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div>
-                            <FieldLabel htmlFor={`slide-text-${index}`}>
-                              {t('stationEditorSlideText', { n: index + 1 })}{optional}
-                            </FieldLabel>
-                            <Textarea
-                              id={`slide-text-${index}`}
-                              value={isEn ? slide.textEn : slide.textDe}
-                              onChange={(e) => setSlideText(index, e.target.value)}
-                              placeholder={isEn ? slide.textDe : t('stationEditorSlideTextPlaceholder')}
-                              maxLength={1000}
-                              rows={3}
-                              className={`px-4 py-3 rounded-2xl bg-card min-h-24 ${missingText ? 'border-destructive' : ''}`}
-                              aria-invalid={missingText}
-                            />
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </>
-              )}
+                            <div>
+                              <FieldLabel htmlFor={`slide-text-${index}`}>
+                                {t('stationEditorSlideText', { n: index + 1 })}{optional}
+                              </FieldLabel>
+                              <Textarea
+                                id={`slide-text-${index}`}
+                                value={isEn ? slide.textEn : slide.textDe}
+                                onChange={(e) => setSlideText(index, e.target.value)}
+                                placeholder={isEn ? slide.textDe : t('stationEditorSlideTextPlaceholder')}
+                                maxLength={1000}
+                                rows={3}
+                                className={`px-4 py-3 rounded-2xl bg-card min-h-24 ${missingText ? 'border-destructive' : ''}`}
+                                aria-invalid={missingText}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </>
+                )}
 
-              {form.slides.length < MAX_SLIDES && (
-                <label
-                  className={`flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.slides && form.slides.length === 0 ? 'border-destructive' : 'border-border-strong'}`}
-                >
-                  <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
-                    <ImagePlus className="w-5 h-5" />
-                  </span>
-                  <span className="text-sm font-bold">{t('stationEditorAddSlides')}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    JPG, PNG, WebP · {form.slides.length} / {MAX_SLIDES}
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    className="sr-only"
-                    onChange={(e) => void handleAddSlides(e.target.files)}
-                  />
-                </label>
-              )}
-              <FieldError message={errors.slides} />
-            </FormSection>
+                {form.slides.length < MAX_SLIDES && (
+                  <label
+                    className={`flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.slides && form.slides.length === 0 ? 'border-destructive' : 'border-border-strong'}`}
+                  >
+                    <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
+                      <ImagePlus className="w-5 h-5" />
+                    </span>
+                    <span className="text-sm font-bold">{t('stationEditorAddSlides')}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      JPG, PNG, WebP · {form.slides.length} / {MAX_SLIDES}
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="sr-only"
+                      onChange={(e) => void handleAddSlides(e.target.files)}
+                    />
+                  </label>
+                )}
+                <FieldError message={errors.slides} />
+              </FormSection>
+            )}
 
             {/* Standort */}
             <FormSection title={t('stationEditorSectionLocation')} description={t('stationEditorLocationIntro')}>
@@ -815,81 +937,83 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
             </FormSection>
 
             {/* Quiz */}
-            <FormSection title={t('stationEditorSectionQuiz')} description={t('stationEditorQuizIntro')}>
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold">{t('stationEditorQuizEnable')}</span>
-                <Switch
-                  checked={form.quizEnabled}
-                  onChange={() => update('quizEnabled', !form.quizEnabled)}
-                  label={t('stationEditorQuizEnable')}
-                />
-              </div>
+            {!isPanorama && (
+              <FormSection title={t('stationEditorSectionQuiz')} description={t('stationEditorQuizIntro')}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold">{t('stationEditorQuizEnable')}</span>
+                  <Switch
+                    checked={form.quizEnabled}
+                    onChange={() => update('quizEnabled', !form.quizEnabled)}
+                    label={t('stationEditorQuizEnable')}
+                  />
+                </div>
 
-              {form.quizEnabled && (
-                <>
-                  {languageTabs}
-                  <div>
-                    <FieldLabel htmlFor="quiz-question">{t('stationEditorQuizQuestion')}{optional}</FieldLabel>
-                    <Input
-                      id="quiz-question"
-                      value={isEn ? form.quizQuestionEn : form.quizQuestionDe}
-                      onChange={(e) => update(isEn ? 'quizQuestionEn' : 'quizQuestionDe', e.target.value)}
-                      placeholder={isEn ? form.quizQuestionDe : undefined}
-                      maxLength={255}
-                      className={inputClass()}
-                    />
-                  </div>
-                  <fieldset>
-                    <legend className="block text-sm font-bold mb-2">{t('stationEditorQuizOptions')}</legend>
-                    <div className="space-y-2.5">
-                      {form.quizOptionsDe.map((optionDe, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            role="radio"
-                            aria-checked={form.quizCorrect === index}
-                            aria-label={t('stationEditorQuizMarkCorrect', { n: index + 1 })}
-                            onClick={() => update('quizCorrect', index)}
-                            className={`w-11 h-11 flex-shrink-0 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-colors ${form.quizCorrect === index ? 'border-primary bg-primary text-white' : 'border-border-strong bg-card text-muted-foreground hover:border-primary/60'}`}
-                          >
-                            {index + 1}
-                          </button>
-                          <Input
-                            value={isEn ? form.quizOptionsEn[index] : optionDe}
-                            onChange={(e) => setQuizOption(isEn ? 'en' : 'de', index, e.target.value)}
-                            placeholder={isEn ? optionDe : t('stationEditorQuizOptionPlaceholder', { n: index + 1 })}
-                            aria-label={t('stationEditorQuizOptionPlaceholder', { n: index + 1 })}
-                            className={inputClass()}
-                          />
-                          {form.quizOptionsDe.length > MIN_QUIZ_OPTIONS && (
+                {form.quizEnabled && (
+                  <>
+                    {languageTabs}
+                    <div>
+                      <FieldLabel htmlFor="quiz-question">{t('stationEditorQuizQuestion')}{optional}</FieldLabel>
+                      <Input
+                        id="quiz-question"
+                        value={isEn ? form.quizQuestionEn : form.quizQuestionDe}
+                        onChange={(e) => update(isEn ? 'quizQuestionEn' : 'quizQuestionDe', e.target.value)}
+                        placeholder={isEn ? form.quizQuestionDe : undefined}
+                        maxLength={255}
+                        className={inputClass()}
+                      />
+                    </div>
+                    <fieldset>
+                      <legend className="block text-sm font-bold mb-2">{t('stationEditorQuizOptions')}</legend>
+                      <div className="space-y-2.5">
+                        {form.quizOptionsDe.map((optionDe, index) => (
+                          <div key={index} className="flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => removeQuizOption(index)}
-                              aria-label={t('stationEditorQuizRemoveOption')}
-                              className="w-11 h-11 flex-shrink-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors"
+                              role="radio"
+                              aria-checked={form.quizCorrect === index}
+                              aria-label={t('stationEditorQuizMarkCorrect', { n: index + 1 })}
+                              onClick={() => update('quizCorrect', index)}
+                              className={`w-11 h-11 flex-shrink-0 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-colors ${form.quizCorrect === index ? 'border-primary bg-primary text-white' : 'border-border-strong bg-card text-muted-foreground hover:border-primary/60'}`}
                             >
-                              <X className="w-4 h-4" />
+                              {index + 1}
                             </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">{t('stationEditorQuizCorrectHint')}</p>
-                  </fieldset>
-                  {form.quizOptionsDe.length < MAX_QUIZ_OPTIONS && (
-                    <button
-                      type="button"
-                      onClick={addQuizOption}
-                      className="min-h-[44px] inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dark"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {t('stationEditorQuizAddOption')}
-                    </button>
-                  )}
-                  <FieldError message={errors.quiz} />
-                </>
-              )}
-            </FormSection>
+                            <Input
+                              value={isEn ? form.quizOptionsEn[index] : optionDe}
+                              onChange={(e) => setQuizOption(isEn ? 'en' : 'de', index, e.target.value)}
+                              placeholder={isEn ? optionDe : t('stationEditorQuizOptionPlaceholder', { n: index + 1 })}
+                              aria-label={t('stationEditorQuizOptionPlaceholder', { n: index + 1 })}
+                              className={inputClass()}
+                            />
+                            {form.quizOptionsDe.length > MIN_QUIZ_OPTIONS && (
+                              <button
+                                type="button"
+                                onClick={() => removeQuizOption(index)}
+                                aria-label={t('stationEditorQuizRemoveOption')}
+                                className="w-11 h-11 flex-shrink-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">{t('stationEditorQuizCorrectHint')}</p>
+                    </fieldset>
+                    {form.quizOptionsDe.length < MAX_QUIZ_OPTIONS && (
+                      <button
+                        type="button"
+                        onClick={addQuizOption}
+                        className="min-h-[44px] inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dark"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {t('stationEditorQuizAddOption')}
+                      </button>
+                    )}
+                    <FieldError message={errors.quiz} />
+                  </>
+                )}
+              </FormSection>
+            )}
 
             <Button
               type="submit"
@@ -1051,15 +1175,24 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
             {paths.length === 0 && (
               <p className="mb-3 rounded-2xl bg-gold-soft px-4 py-3 text-sm text-gold-foreground">{t('stationEditorNeedPath')}</p>
             )}
-            <Button
+            <button
               type="button"
-              onClick={() => openForm(emptyForm(paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
+              onClick={() => openForm(emptyForm('image_sequence', paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
               disabled={paths.length === 0}
-              className="w-full h-14 rounded-2xl text-base font-bold shadow-primary disabled:shadow-none"
+              className="w-full min-h-[52px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-5 h-5" />
-              {t('stationEditorNewStation')}
-            </Button>
+              <GalleryHorizontal className="w-5 h-5" />
+              {t('stationEditorNewSlideshowStation')}
+            </button>
+            <button
+              type="button"
+              onClick={() => openForm(emptyForm('panorama_quiz', paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
+              disabled={paths.length === 0}
+              className="mt-2.5 w-full min-h-[52px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Orbit className="w-5 h-5" />
+              {t('stationEditorNewPanoramaStation')}
+            </button>
 
             <h3 className="mt-8 mb-3 px-1 text-lg font-bold tracking-tight">{t('stationEditorExisting')}</h3>
             {stations.length === 0 ? (
@@ -1099,6 +1232,12 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                           <span className="inline-flex items-center rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground tabular-nums">
                             {station.points} {t('points')}
                           </span>
+                          {station.station_type === 'panorama_quiz' && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary">
+                              <Orbit className="w-3 h-3" />
+                              {t('stationEditorPanoramaBadge')}
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground truncate">
                             {pathTitles[station.path_id] ?? station.path_id}
                           </span>

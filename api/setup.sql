@@ -149,6 +149,9 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 -- cover_image: Profilbild (Dateiname in api/uploads/stations/), erscheint in Listen und als Titelbild
 -- slides: JSON-Array der Bildfolge [{ "image", "text_de", "text_en" }], wird beim Start der Station durchgeklickt
 -- quiz_options_*: JSON-Array mit Antwortoptionen
+-- station_type: 'image_sequence' = Bildfolge mit Texten (+ optional eine Quizfrage in quiz_*),
+--               'panorama_quiz'  = 360°-Bild (panorama_image) mit Quiz (quiz_questions, JSON-Array)
+-- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql ausführen.
 CREATE TABLE IF NOT EXISTS `custom_stations` (
   `id`                   INT NOT NULL AUTO_INCREMENT,
   `path_id`              VARCHAR(100) NOT NULL,
@@ -158,8 +161,11 @@ CREATE TABLE IF NOT EXISTS `custom_stations` (
   `description_en`       VARCHAR(255) DEFAULT NULL,
   `long_description_de`  TEXT NOT NULL,
   `long_description_en`  TEXT DEFAULT NULL,
+  `station_type`         ENUM('image_sequence', 'panorama_quiz') NOT NULL DEFAULT 'image_sequence',
   `cover_image`          VARCHAR(64) NOT NULL,
   `slides`               MEDIUMTEXT NOT NULL,
+  `panorama_image`       VARCHAR(64) DEFAULT NULL,
+  `quiz_questions`       MEDIUMTEXT DEFAULT NULL,
   `points`               INT NOT NULL DEFAULT 50,
   `latitude`             DOUBLE NOT NULL,
   `longitude`            DOUBLE NOT NULL,

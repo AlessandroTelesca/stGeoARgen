@@ -22,7 +22,7 @@ if (!$id || $id <= 0) {
 
 try {
     $db = getDB();
-    $stmt = $db->prepare('SELECT cover_image, slides FROM custom_stations WHERE id = ?');
+    $stmt = $db->prepare('SELECT cover_image, slides, panorama_image, quiz_questions FROM custom_stations WHERE id = ?');
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     if (!$row) {

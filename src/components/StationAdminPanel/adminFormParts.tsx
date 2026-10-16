@@ -5,16 +5,18 @@ import { useLanguage } from '../../contexts/LanguageContext';
 /** Gemeinsame Bausteine der Formulare in der Stationsverwaltung (Stationen und Pfade). */
 
 const MAX_IMAGE_EDGE = 1920;
+/** 360°-Bilder brauchen mehr Auflösung, sonst wirken sie im Vollbild unscharf (4096 × 2048 ist für WebGL auf Handys sicher) */
+export const MAX_PANORAMA_EDGE = 4096;
 
 export type ImageItem =
   | { kind: 'existing'; filename: string; url: string }
   | { kind: 'new'; file: File; url: string };
 
 /** Verkleinert große Fotos vor dem Upload (Handyfotos haben oft > 5 MB). */
-export async function prepareImage(file: File): Promise<File> {
+export async function prepareImage(file: File, maxEdge: number = MAX_IMAGE_EDGE): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     if (scale === 1 && file.size <= 1.5 * 1024 * 1024 && file.type !== 'image/png') {
       bitmap.close();
       return file;

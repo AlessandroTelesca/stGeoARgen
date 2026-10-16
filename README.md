@@ -110,6 +110,8 @@ Neue API-Endpunkte:
 
 **Ohne Code (Stationsverwaltung):** Unter *Einstellungen → Verwaltung → Stationen verwalten* (`/admin/stations`) lassen sich Stationen anlegen, bearbeiten und löschen: Profilbild, Texte (DE Pflicht, EN optional), Themenpfad, Koordinaten, Punkte, eine **Bildfolge** aus 1–10 Bildern mit je einem kurzen Text und ein optionales Quiz. Sie werden in der Tabelle `custom_stations` gespeichert (IDs ab 1000) und erscheinen sofort für alle Nutzer:innen. Vor Ort startet man die Station, klickt sich durch die Bildfolge und schließt sie danach ab (mit Quiz nach richtiger Antwort). Solche Stationen haben kein AR-Erlebnis.
 
+Zweiter Stationstyp **360°-Quiz** („Neue 360°-Quiz-Station anlegen“): statt der Bildfolge ein 360°-Bild (equirektangular, 2:1) und ein Quiz mit 1–10 Fragen, jede optional mit eigenem Bild. Vor Ort öffnet „AR-Erlebnis starten“ die Route `/ar/station/<id>`: das 360°-Bild wird mit dem `GyroARVisualizer` angezeigt (Umschauen per Handy-Drehung), das Quiz liegt darüber – Ablauf, AR-Top-Bar, Fortschrittsleiste und Login-Regeln wie im Phonomuseum. Bestehende Datenbank: einmalig [api/migrate_panorama_stations.sql](api/migrate_panorama_stations.sql) ausführen.
+
 Im Reiter *Themenpfade* lassen sich eigene Pfade anlegen, bearbeiten und – wenn sie leer sind – löschen; jede Station gehört zu einem dieser Pfade. Der AR-Pfad (`tourist`) ist fest eingebaut und weder bearbeitbar noch für neue Stationen wählbar. Pfade liegen in der Tabelle `custom_paths`; ihre ID wird beim Anlegen aus dem Namen erzeugt und ändert sich danach nicht (Fortschritt und Pfad-Bonus hängen daran). Pfade ohne Stationen sind für Nutzer:innen ausgeblendet.
 
 Einrichtung auf dem PHP-Server:

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense, type ReactNode } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -47,10 +47,17 @@ const PhonomuseumView = lazy(() => import('./components/ARComponents/phonomuseum
 const GlockenspielView = lazy(() => import('./components/ARComponents/glockenspiel/glockenspiel.tsx').then((m) => ({ default: m.GlockenspielView })));
 const BahnhofView = lazy(() => import('./components/ARComponents/bahnhof/bahnhof.tsx').then((m) => ({ default: m.BahnhofView })));
 const QRScanner = lazy(() => import('./components/QRScanner').then((m) => ({ default: m.QRScanner })));
+const CustomPanoramaQuizView = lazy(() => import('./components/ARComponents/customPanorama/CustomPanoramaQuizView').then((m) => ({ default: m.CustomPanoramaQuizView })));
 const SchwarzesTorView = lazy(() => import('./components/ARComponents/schwarzesTor/schwarzesTor.tsx').then((m) => ({ default: m.SchwarzesTorView })));
 
 // IDs der über die Stationsverwaltung angelegten Stationen beginnen hier (siehe api/setup.sql, custom_stations)
 const CUSTOM_STATION_MIN_ID = 1000;
+// AR-Route der 360°-Quiz-Stationen aus der Stationsverwaltung: /ar/station/<id>
+const CUSTOM_AR_ROUTE_PREFIX = '/ar/station/';
+const customArStationIdFromPath = (pathname: string): number | null => {
+  const match = pathname.match(/^\/ar\/station\/(\d+)$/);
+  return match ? Number(match[1]) : null;
+};
 // Bild für Custom-Pfade ohne eigenes Pfadbild
 const DEFAULT_PATH_IMAGE = '/images/stgeorgen.jpg';
 
@@ -72,6 +79,8 @@ interface Station {
   };
   arContent?: string;
   imageSequence?: StationImageSlide[];
+  /** AR-Route einer 360°-Quiz-Station aus der Stationsverwaltung */
+  arRoute?: string;
 }
 
 interface Path {
@@ -99,7 +108,7 @@ export default function App() {
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
   const { user, isInitializing, login, register, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'info' | 'partner' | 'admin-stations'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'info' | 'partner' | 'admin-stations' | 'ar-custom'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -224,6 +233,7 @@ export default function App() {
     else if (path === '/glockenspiel') setCurrentView('ar-glockenspiel');
     else if (path === '/bahnhof') setCurrentView('ar-bahnhof');
     else if (path === '/schwarzes-tor') setCurrentView('ar-schwarzes-tor');
+    else if (customArStationIdFromPath(path) !== null) setCurrentView('ar-custom');
     else if (path === '/settings') setCurrentView('settings');
     else if (path === '/profile') setCurrentView('profile');
     else if (path === '/points') setCurrentView('points');
@@ -349,7 +359,8 @@ export default function App() {
       location.pathname === '/bahnhof' ||
       location.pathname === '/phonomuseum' ||
       location.pathname === '/glockenspiel' ||
-      location.pathname === '/schwarzes-tor';
+      location.pathname === '/schwarzes-tor' ||
+      customArStationIdFromPath(location.pathname) !== null;
 
     if (!isArPath) {
       setAllowGuestStationStart(false);
@@ -635,12 +646,14 @@ export default function App() {
   // Über die Stationsverwaltung angelegte Pfade und Stationen – liegen auf dem Server und gelten für alle Nutzer
   const [customPaths, setCustomPaths] = useState<CustomPath[]>([]);
   const [customStations, setCustomStations] = useState<CustomStation[]>([]);
+  const [customContentLoaded, setCustomContentLoaded] = useState(false);
 
   const loadCustomContent = useCallback(async () => {
     // Unabhängig laden: fällt eins aus (Server nicht erreichbar, Tabelle fehlt), bleibt der Rest nutzbar
     const [pathsResult, stationsResult] = await Promise.allSettled([apiGetCustomPaths(), apiGetCustomStations()]);
     if (pathsResult.status === 'fulfilled') setCustomPaths(pathsResult.value);
     if (stationsResult.status === 'fulfilled') setCustomStations(stationsResult.value);
+    setCustomContentLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -662,6 +675,7 @@ export default function App() {
             description: (isEn && c.description_en) || c.description_de,
             longDescription: (isEn && c.long_description_en) || c.long_description_de,
             imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
+            arRoute: c.station_type === 'panorama_quiz' ? `${CUSTOM_AR_ROUTE_PREFIX}${c.id}` : undefined,
             imageSequence: c.slides.map((slide) => ({
               imageUrl: customStationImageUrl(slide.image),
               text: (isEn && slide.text_en) || slide.text_de,
@@ -670,7 +684,7 @@ export default function App() {
             points: c.points,
             latitude: c.latitude,
             longitude: c.longitude,
-            quiz: c.quiz
+            quiz: c.station_type === 'image_sequence' && c.quiz
               ? {
                 question: (isEn && c.quiz.question_en) || c.quiz.question_de,
                 options: (isEn && c.quiz.options_en) || c.quiz.options_de,
@@ -1015,6 +1029,36 @@ export default function App() {
   const isPhonomuseumCompleted = phonomuseumStation?.status === 'completed';
   const isSchwarzesTorCompleted = schwarzesTorStation?.status === 'completed';
   const isKlosterweiherCompleted = klosterweiherStation?.status === 'completed';
+
+  // 360°-Quiz-Station aus der Stationsverwaltung für /ar/station/<id> (Texte in der aktuellen Sprache)
+  const customArStationId = currentView === 'ar-custom' ? customArStationIdFromPath(location.pathname) : null;
+  const customArRaw = customArStationId !== null
+    ? customStations.find((c) => c.id === customArStationId && c.station_type === 'panorama_quiz' && c.panorama_image)
+    : undefined;
+  const customArStation = customArRaw ? getStationById(customArRaw.id) : null;
+  const customArStationData = useMemo(() => {
+    if (!customArRaw) return null;
+    const isEn = language === 'en';
+    return {
+      id: customArRaw.id,
+      title: (isEn && customArRaw.title_en) || customArRaw.title_de,
+      description: (isEn && customArRaw.description_en) || customArRaw.description_de,
+      latitude: customArRaw.latitude,
+      longitude: customArRaw.longitude,
+      panoramaUrl: customStationImageUrl(customArRaw.panorama_image!),
+      questions: customArRaw.quiz_questions.map((q) => ({
+        question: (isEn && q.question_en) || q.question_de,
+        options: (isEn && q.options_en) || q.options_de,
+        correctAnswer: q.correct_answer,
+        imageUrl: q.image ? customStationImageUrl(q.image) : undefined,
+      })),
+    };
+  }, [customArRaw, language]);
+
+  // Unbekannte oder gelöschte 360°-Station unter /ar/station/<id> → zurück zur Startseite
+  useEffect(() => {
+    if (currentView === 'ar-custom' && customContentLoaded && !customArRaw) navigate('/');
+  }, [currentView, customContentLoaded, customArRaw, navigate]);
 
   // Pfade ohne Stationen (z. B. Local Guide vor der ersten Station) nicht anzeigen
   const pathsWithProgress = paths.filter((path) => path.stations.length > 0).map(path => {
@@ -1463,6 +1507,27 @@ export default function App() {
             currentStationPoints={glockenspielStation?.points}
             onCompleteStation={(stationId) => handleStationComplete(stationId)}
             isCurrentStationCompleted={isGlockenspielCompleted}
+            isGuestMode={allowGuestStationStart}
+          />
+        )
+      )}
+
+      {currentView === 'ar-custom' && customArStationData && (
+        renderARViewWithGate(
+          <CustomPanoramaQuizView
+            station={customArStationData}
+            onNavigateHome={() => navigate('/')}
+            username={username}
+            onLogin={handleNavigateToLogin}
+            onLogout={handleLogout}
+            onNavigateProfile={() => navigate('/profile')}
+            onRegister={handleNavigateToRegister}
+            completedStations={totalCompletedStations}
+            totalStations={paths.reduce((sum, p) => sum + p.stations.length, 0)}
+            totalPoints={totalPoints}
+            currentStationPoints={customArStation?.points}
+            onCompleteStation={(stationId) => handleStationComplete(stationId)}
+            isCurrentStationCompleted={customArStation?.status === 'completed'}
             isGuestMode={allowGuestStationStart}
           />
         )
