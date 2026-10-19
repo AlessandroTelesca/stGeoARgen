@@ -56,8 +56,6 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
     return t('goodEvening');
   };
 
-  const shownCompleted = isLoggedIn ? totalCompletedStations : 0;
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-12">
@@ -106,35 +104,45 @@ export function Dashboard({ paths, totalPoints, totalCompletedStations, onPathSe
               </span>
             </div>
 
-            {/* Stations-Spur */}
-            <div className="mt-6 mb-5 flex items-center" aria-hidden="true">
-              {Array.from({ length: totalStations }).map((_, i) => {
-                const done = i < shownCompleted;
-                const isNext = i === shownCompleted && isLoggedIn;
+            {/* Stations-Spur je Themenpfad */}
+            <div className="mt-6 mb-5 space-y-5">
+              {paths.map((path) => {
+                const pathShown = isLoggedIn ? path.completedStations : 0;
                 return (
-                  <div key={i} className="flex items-center flex-1 last:flex-none">
-                    <motion.span
-                      className={`relative flex items-center justify-center rounded-full w-8 h-8 flex-shrink-0 ${done
-                        ? 'bg-white text-primary shadow-md'
-                        : isNext
-                          ? 'bg-white/15 ring-2 ring-white text-white mi-beacon'
-                          : 'bg-white/12 ring-1 ring-white/25'
-                        }`}
-                      initial={{ scale: 0.6, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.25 + i * 0.07, duration: 0.45, ease }}
-                    >
-                      {done ? (
-                        <Check className="w-4 h-4" strokeWidth={3} />
-                      ) : isNext ? (
-                        <span className="w-2.5 h-2.5 rounded-full bg-white" />
-                      ) : (
-                        <span className="text-xs font-bold text-white/60">{i + 1}</span>
-                      )}
-                    </motion.span>
-                    {i < totalStations - 1 && (
-                      <span className={`h-[3px] flex-1 mx-1 rounded-full ${i + 1 < shownCompleted ? 'bg-white' : i === shownCompleted - 1 ? 'bg-gradient-to-r from-white to-white/25' : 'bg-white/20'}`} />
-                    )}
+                  <div key={path.id}>
+                    <p className="text-xs font-semibold text-white/80 mb-2 truncate">{path.title}</p>
+                    <div className="flex items-center" aria-hidden="true">
+                      {Array.from({ length: path.totalStations }).map((_, i) => {
+                        const done = i < pathShown;
+                        const isNext = i === pathShown && isLoggedIn;
+                        return (
+                          <div key={i} className="flex items-center flex-1 last:flex-none">
+                            <motion.span
+                              className={`relative flex items-center justify-center rounded-full w-8 h-8 flex-shrink-0 ${done
+                                ? 'bg-white text-primary shadow-md'
+                                : isNext
+                                  ? 'bg-white/15 ring-2 ring-white text-white mi-beacon'
+                                  : 'bg-white/12 ring-1 ring-white/25'
+                                }`}
+                              initial={{ scale: 0.6, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: 0.25 + i * 0.07, duration: 0.45, ease }}
+                            >
+                              {done ? (
+                                <Check className="w-4 h-4" strokeWidth={3} />
+                              ) : isNext ? (
+                                <span className="w-2.5 h-2.5 rounded-full bg-white" />
+                              ) : (
+                                <span className="text-xs font-bold text-white/60">{i + 1}</span>
+                              )}
+                            </motion.span>
+                            {i < path.totalStations - 1 && (
+                              <span className={`h-[3px] flex-1 mx-1 rounded-full ${i + 1 < pathShown ? 'bg-white' : i === pathShown - 1 ? 'bg-gradient-to-r from-white to-white/25' : 'bg-white/20'}`} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
