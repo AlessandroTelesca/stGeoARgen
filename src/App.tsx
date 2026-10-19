@@ -1046,6 +1046,10 @@ export default function App() {
       latitude: customArRaw.latitude,
       longitude: customArRaw.longitude,
       panoramaUrl: customStationImageUrl(customArRaw.panorama_image!),
+      slides: customArRaw.slides.map((slide) => ({
+        imageUrl: customStationImageUrl(slide.image),
+        text: (isEn && slide.text_en) || slide.text_de,
+      })),
       questions: customArRaw.quiz_questions.map((q) => ({
         question: (isEn && q.question_en) || q.question_de,
         options: (isEn && q.options_en) || q.options_de,

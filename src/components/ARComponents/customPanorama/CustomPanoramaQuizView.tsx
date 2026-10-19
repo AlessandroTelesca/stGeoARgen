@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import * as THREE from 'three';
-import { Check } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARStartCard } from '../ARStartCard';
@@ -32,6 +32,8 @@ export interface PanoramaQuizStation {
   latitude: number;
   longitude: number;
   panoramaUrl: string;
+  /** Optionale Bildfolge, die vor dem Quiz im selben Glas-Panel gezeigt wird */
+  slides: { imageUrl: string; text: string }[];
   questions: PanoramaQuizQuestion[];
 }
 
@@ -87,7 +89,7 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   }
 }
 
-type Phase = 'intro' | 'question' | 'feedback' | 'summary';
+type Phase = 'intro' | 'slides' | 'question' | 'feedback' | 'summary';
 
 const panelStyle = {
   pointerEvents: 'auto' as const,
@@ -155,11 +157,15 @@ export const CustomPanoramaQuizView = ({
   const [correctSelection, setCorrectSelection] = useState<number | null>(null);
   const [hideQuizSummary, setHideQuizSummary] = useState(false);
   const currentQuestion = questions[questionIndex];
+  const slides = station.slides;
+  const [slideIndex, setSlideIndex] = useState(0);
+  const currentSlide = slides[slideIndex];
 
-  // Beim Sprachwechsel bzw. geänderten Fragen von vorn beginnen (Inhalt vergleichen, nicht die Array-Identität)
-  const questionsKey = JSON.stringify(questions);
+  // Beim Sprachwechsel bzw. geänderten Inhalten von vorn beginnen (Inhalt vergleichen, nicht die Array-Identität)
+  const questionsKey = JSON.stringify([questions, slides]);
   useEffect(() => {
     setPhase('intro');
+    setSlideIndex(0);
     setQuestionIndex(0);
     setWrongSelections(questions.map(() => []));
     setCorrectSelection(null);
@@ -168,13 +174,16 @@ export const CustomPanoramaQuizView = ({
 
   useEffect(() => () => sessionRef.current?.stop(), []);
 
-  // Bilder der Fragen vorladen, damit sie beim Weiterklicken sofort da sind
+  // Bilder der Bildfolge und der Fragen vorladen, damit sie beim Weiterklicken sofort da sind
   useEffect(() => {
     if (!hasStarted) return;
+    slides.forEach((slide) => {
+      new Image().src = slide.imageUrl;
+    });
     questions.forEach((q) => {
       if (q.imageUrl) new Image().src = q.imageUrl;
     });
-  }, [hasStarted, questions]);
+  }, [hasStarted, slides, questions]);
 
   // Beim ersten Versuch richtig beantwortete Fragen
   const firstTryCorrect = useMemo(() => wrongSelections.filter((wrong) => wrong.length === 0).length, [wrongSelections]);
@@ -297,11 +306,97 @@ export const CustomPanoramaQuizView = ({
                   {station.title}
                 </h2>
                 <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  {t('customPanoramaIntro', { count: totalQuestions })}
+                  {slides.length > 0
+                    ? t('customPanoramaIntroWithSlides', { slides: slides.length, count: totalQuestions })
+                    : t('customPanoramaIntro', { count: totalQuestions })}
                 </p>
-                <button type="button" onClick={() => setPhase('question')} style={primaryButtonStyle}>
-                  {t('customPanoramaQuizStart')}
+                <button type="button" onClick={() => setPhase(slides.length > 0 ? 'slides' : 'question')} style={primaryButtonStyle}>
+                  {slides.length > 0 ? t('customPanoramaSlidesStart') : t('customPanoramaQuizStart')}
                 </button>
+              </div>
+            )}
+
+            {/* Bildfolge im selben Glas-Panel wie das Quiz */}
+            {phase === 'slides' && currentSlide && (
+              <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                  <span className="tabular-nums">{t('stationImageSequenceProgress', { current: slideIndex + 1, total: slides.length })}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} aria-hidden="true">
+                    {slides.map((_, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          width: i === slideIndex ? '18px' : '8px',
+                          height: '8px',
+                          borderRadius: '999px',
+                          background: i <= slideIndex ? 'var(--color-white)' : 'rgba(255,255,255,0.35)',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                          transition: 'width 0.2s ease',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <img
+                  key={currentSlide.imageUrl}
+                  src={currentSlide.imageUrl}
+                  alt=""
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    maxHeight: '34vh',
+                    objectFit: 'contain',
+                    marginBottom: '14px',
+                    borderRadius: '12px',
+                    background: 'rgba(10, 14, 22, 0.35)',
+                  }}
+                />
+
+                <div
+                  style={{
+                    borderRadius: '12px',
+                    padding: '14px 14px 12px',
+                    background: 'rgba(10, 14, 22, 0.52)',
+                    border: '1px solid rgba(255,255,255,0.32)',
+                  }}
+                >
+                  <p aria-live="polite" style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, whiteSpace: 'pre-line', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                    {currentSlide.text}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSlideIndex((i) => i - 1)}
+                    disabled={slideIndex === 0}
+                    aria-label={t('back')}
+                    style={{
+                      width: '52px',
+                      flexShrink: 0,
+                      border: '1px solid rgba(255,255,255,0.35)',
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.18)',
+                      color: 'var(--color-white)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: slideIndex === 0 ? 'default' : 'pointer',
+                      opacity: slideIndex === 0 ? 0.35 : 1,
+                    }}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => (slideIndex >= slides.length - 1 ? setPhase('question') : setSlideIndex((i) => i + 1))}
+                    style={{ ...primaryButtonStyle, marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    {slideIndex >= slides.length - 1 ? t('customPanoramaQuizStart') : t('stationImageSequenceNext')}
+                    {slideIndex < slides.length - 1 && <ChevronRight size={18} />}
+                  </button>
+                </div>
               </div>
             )}
 

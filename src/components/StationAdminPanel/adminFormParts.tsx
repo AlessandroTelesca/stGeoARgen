@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -64,6 +64,44 @@ export function FormSection({ title, description, children }: { title: string; d
 }
 
 export const inputClass = (hasError?: boolean) => `h-14 px-4 rounded-2xl bg-card ${hasError ? 'border-destructive' : ''}`;
+
+/**
+ * Scrollt nach einem fehlgeschlagenen Absenden zum ersten markierten Feld und fokussiert es.
+ * `trigger()` nach setErrors aufrufen – gescrollt wird nach dem nächsten Rendern, wenn die Fehler im DOM stehen.
+ */
+export function useScrollToFirstError(formRef: RefObject<HTMLFormElement | null>): () => void {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (tick === 0 || !formRef.current) return;
+    const target = formRef.current.querySelector<HTMLElement>('[aria-invalid="true"], [role="alert"]:not([data-submit-feedback])');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (target.matches('input, textarea, select')) target.focus({ preventScroll: true });
+  }, [tick, formRef]);
+  return () => setTick((n) => n + 1);
+}
+
+/** Hinweis direkt über dem Speichern-Button: was fehlt bzw. warum das Speichern fehlgeschlagen ist. */
+export function SubmitFeedback({ title, items = [] }: { title: string | null; items?: string[] }) {
+  if (!title) return null;
+  return (
+    <div
+      role="alert"
+      data-submit-feedback
+      className="rounded-2xl border border-destructive/25 bg-destructive/8 p-4 text-sm text-destructive"
+    >
+      <p className="flex items-start gap-2 font-bold">
+        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+        {title}
+      </p>
+      {items.length > 0 && (
+        <ul className="mt-2 ml-6 list-disc space-y-0.5 font-medium">
+          {items.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /** Umschalter Deutsch / English für mehrsprachige Felder */
 export function LanguageTabs({ value, onChange }: { value: 'de' | 'en'; onChange: (lang: 'de' | 'en') => void }) {

@@ -14,7 +14,7 @@ import {
   type CustomPathInput,
   type PathDifficulty,
 } from '../../services/api';
-import { FieldError, FormSection, LanguageTabs, inputClass, prepareImage, type ImageItem } from './adminFormParts';
+import { FieldError, FormSection, LanguageTabs, SubmitFeedback, inputClass, prepareImage, useScrollToFirstError, type ImageItem } from './adminFormParts';
 
 const DIFFICULTIES: PathDifficulty[] = ['Einfach', 'Mittel', 'Schwer'];
 
@@ -45,6 +45,10 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
   const [errors, setErrors] = useState<PathErrors>({});
   const [saving, setSaving] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const scrollToFirstError = useScrollToFirstError(formRef);
+  /** Fehlermeldung des Servers beim letzten Speichern */
+  const [saveError, setSaveError] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   useEffect(() => () => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -75,7 +79,8 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setTextLanguage('de');
-      toast.error(t('stationEditorFixErrors'));
+      setSaveError(null);
+      scrollToFirstError();
       return;
     }
 
@@ -96,7 +101,7 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
       await onSaved();
       toast.success(path ? t('pathEditorUpdated') : t('pathEditorCreated'), { description: payload.title_de });
     } catch (err) {
-      toast.error(t('pathEditorSaveFailed'), { description: err instanceof Error ? err.message : undefined });
+      setSaveError(err instanceof Error && err.message ? err.message : t('pathEditorSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -113,7 +118,7 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
           icon={<Route className="w-6 h-6" />}
         />
 
-        <form onSubmit={handleSave} className="space-y-5" noValidate>
+        <form ref={formRef} onSubmit={handleSave} className="space-y-5" noValidate>
           <FormSection title={t('stationEditorSectionTexts')} description={t('stationEditorTextsIntro')}>
             <LanguageTabs value={textLanguage} onChange={setTextLanguage} />
             <div>
@@ -199,6 +204,18 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
               />
             </label>
           </FormSection>
+
+          {saveError ? (
+            <SubmitFeedback title={`${t('pathEditorSaveFailed')}: ${saveError}`} />
+          ) : (
+            <SubmitFeedback
+              title={errors.titleDe || errors.descriptionDe ? t('stationEditorFixErrors') : null}
+              items={[
+                ...(errors.titleDe ? [t('pathEditorName')] : []),
+                ...(errors.descriptionDe ? [t('stationEditorLongDescription')] : []),
+              ]}
+            />
+          )}
 
           <Button
             type="submit"

@@ -39,7 +39,7 @@ import {
   type CustomStationInput,
   type CustomStationType,
 } from '../../services/api';
-import { FieldError, FormSection, LanguageTabs, MAX_PANORAMA_EDGE, inputClass, prepareImage, type ImageItem } from './adminFormParts';
+import { FieldError, FormSection, LanguageTabs, MAX_PANORAMA_EDGE, SubmitFeedback, inputClass, prepareImage, useScrollToFirstError, type ImageItem } from './adminFormParts';
 import {
   PanoramaQuizEditor,
   emptyQuizQuestion,
@@ -91,6 +91,22 @@ interface FormState {
 }
 
 type FormErrors = Partial<Record<'pathId' | 'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'latitude' | 'longitude' | 'cover' | 'slides' | 'quiz' | 'panorama' | 'panoramaQuiz', string>>;
+
+/** Übersetzungsschlüssel des Feld- bzw. Abschnittsnamens je Fehler (für die Liste über dem Speichern-Button), in Formular-Reihenfolge */
+const ERROR_FIELD_LABELS: Record<keyof FormErrors, string> = {
+  pathId: 'stationEditorPath',
+  titleDe: 'stationEditorName',
+  descriptionDe: 'stationEditorShortDescription',
+  longDescriptionDe: 'stationEditorLongDescription',
+  points: 'points',
+  cover: 'stationEditorSectionCover',
+  panorama: 'stationEditorSectionPanorama',
+  slides: 'stationEditorSectionSlides',
+  panoramaQuiz: 'stationEditorSectionPanoramaQuiz',
+  latitude: 'stationEditorSectionLocation',
+  longitude: 'stationEditorSectionLocation',
+  quiz: 'stationEditorSectionQuiz',
+};
 
 interface StationAdminPanelProps {
   /** Themenpfade aus der Stationsverwaltung (ohne den AR-Pfad) – nur ihnen können Stationen zugeordnet werden */
@@ -197,6 +213,10 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
   const [deletingPathId, setDeletingPathId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const scrollToFirstError = useScrollToFirstError(formRef);
+  /** Fehlermeldung des Servers beim letzten Speichern */
+  const [saveError, setSaveError] = useState<string | null>(null);
   const panoramaInputRef = useRef<HTMLInputElement>(null);
   /** Index der Quizfrage mit Fehler (360°-Station) */
   const [panoramaQuizErrorIndex, setPanoramaQuizErrorIndex] = useState<number | undefined>(undefined);
@@ -241,6 +261,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
   const openForm = (next: FormState) => {
     setForm(next);
     setErrors({});
+    setSaveError(null);
     setTextLanguage('de');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -375,6 +396,9 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     if (lat === null || lat < -90 || lat > 90) next.latitude = t('stationEditorErrorLatitude');
     if (lng === null || lng < -180 || lng > 180) next.longitude = t('stationEditorErrorLongitude');
     if (!state.cover) next.cover = t('stationEditorErrorCover');
+    // Bildfolge: Pflicht bei Bildfolge-Stationen, optional bei 360°-Stationen; jedes Bild braucht einen deutschen Text
+    if (state.slides.length === 0 && state.stationType === 'image_sequence') next.slides = t('stationEditorErrorSlides');
+    else if (state.slides.some((slide) => !slide.textDe.trim())) next.slides = t('stationEditorErrorSlideTexts');
     if (state.stationType === 'panorama_quiz') {
       if (!state.panorama) next.panorama = t('stationEditorErrorPanorama');
       const quizError = findQuizQuestionError(state.panoramaQuestions);
@@ -383,8 +407,6 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       else if (quizError) next.panoramaQuiz = t('stationEditorPanoramaQuestionError', { n: quizError.index + 1, error: t(quizError.key) });
       return next;
     }
-    if (state.slides.length === 0) next.slides = t('stationEditorErrorSlides');
-    else if (state.slides.some((slide) => !slide.textDe.trim())) next.slides = t('stationEditorErrorSlideTexts');
     if (state.quizEnabled) {
       const enFilled = state.quizOptionsEn.filter((o) => o.trim()).length;
       if (!state.quizQuestionDe.trim() || state.quizOptionsDe.some((o) => !o.trim())) {
@@ -408,7 +430,8 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       if (nextErrors.titleDe || nextErrors.descriptionDe || nextErrors.longDescriptionDe || nextErrors.slides || nextErrors.quiz || nextErrors.panoramaQuiz) {
         setTextLanguage('de');
       }
-      toast.error(t('stationEditorFixErrors'));
+      setSaveError(null);
+      scrollToFirstError();
       return;
     }
 
@@ -448,7 +471,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       long_description_en: form.longDescriptionEn.trim() || null,
       station_type: form.stationType,
       cover_image: cover.kind === 'existing' ? cover.filename : 'new',
-      slides: isPanorama ? [] : slides,
+      slides,
       panorama_image: panorama ? (panorama.kind === 'existing' ? panorama.filename : 'new') : null,
       quiz_questions: quizQuestions,
       points: Number(form.points),
@@ -471,7 +494,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
         adminPassword,
         payload,
         cover.kind === 'new' ? cover.file : null,
-        isPanorama ? [] : slideFiles,
+        slideFiles,
         panorama?.kind === 'new' ? panorama.file : null,
         questionImageFiles
       );
@@ -481,9 +504,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       });
       setForm(null);
     } catch (err) {
-      toast.error(t('stationEditorSaveFailed'), {
-        description: err instanceof Error ? err.message : undefined,
-      });
+      setSaveError(err instanceof Error && err.message ? err.message : t('stationEditorSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -609,7 +630,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
             icon={isPanorama ? <Orbit className="w-6 h-6" /> : <MapPinPlus className="w-6 h-6" />}
           />
 
-          <form onSubmit={handleSave} className="space-y-5" noValidate>
+          <form ref={formRef} onSubmit={handleSave} className="space-y-5" noValidate>
             {/* Pfad + Punkte */}
             <FormSection title={t('stationEditorSectionBasics')}>
               <div>
@@ -772,7 +793,104 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                   </label>
                   <FieldError message={errors.panorama} />
                 </FormSection>
+              </>
+            )}
 
+            {/* Bildfolge (bei 360°-Stationen optional, vor dem Quiz) */}
+            <FormSection
+              title={isPanorama ? t('stationEditorSectionPanoramaSlides') : t('stationEditorSectionSlides')}
+              description={isPanorama ? t('stationEditorPanoramaSlidesIntro', { max: MAX_SLIDES }) : t('stationEditorSlidesIntro', { max: MAX_SLIDES })}
+            >
+              {form.slides.length > 0 && (
+                <>
+                  {languageTabs}
+                  <ol className="space-y-4">
+                    {form.slides.map((slide, index) => {
+                      const missingText = !!errors.slides && !isEn && !slide.textDe.trim();
+                      return (
+                        <li key={slide.image.url} className="rounded-2xl border border-border p-3 space-y-3">
+                          <div className="flex gap-3">
+                            <img src={slide.image.url} alt="" className="w-28 aspect-[4/3] rounded-xl object-cover bg-muted flex-shrink-0" />
+                            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                              <span className="font-bold tabular-nums">{t('stationEditorSlideLabel', { n: index + 1 })}</span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => moveSlide(index, -1)}
+                                  disabled={index === 0}
+                                  aria-label={t('stationEditorMoveSlideUp')}
+                                  className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <ArrowUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveSlide(index, 1)}
+                                  disabled={index === form.slides.length - 1}
+                                  aria-label={t('stationEditorMoveSlideDown')}
+                                  className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <ArrowDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSlide(index)}
+                                  aria-label={t('stationEditorRemoveImage')}
+                                  className="w-11 h-11 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors ml-auto"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel htmlFor={`slide-text-${index}`}>
+                              {t('stationEditorSlideText', { n: index + 1 })}{optional}
+                            </FieldLabel>
+                            <Textarea
+                              id={`slide-text-${index}`}
+                              value={isEn ? slide.textEn : slide.textDe}
+                              onChange={(e) => setSlideText(index, e.target.value)}
+                              placeholder={isEn ? slide.textDe : t('stationEditorSlideTextPlaceholder')}
+                              maxLength={1000}
+                              rows={3}
+                              className={`px-4 py-3 rounded-2xl bg-card min-h-24 ${missingText ? 'border-destructive' : ''}`}
+                              aria-invalid={missingText}
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </>
+              )}
+
+              {form.slides.length < MAX_SLIDES && (
+                <label
+                  className={`flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.slides && form.slides.length === 0 ? 'border-destructive' : 'border-border-strong'}`}
+                >
+                  <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
+                    <ImagePlus className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-bold">{t('stationEditorAddSlides')}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    JPG, PNG, WebP · {form.slides.length} / {MAX_SLIDES}
+                  </span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => void handleAddSlides(e.target.files)}
+                  />
+                </label>
+              )}
+              <FieldError message={errors.slides} />
+            </FormSection>
+
+            {isPanorama && (
+              <>
                 {/* Quiz über dem 360°-Bild */}
                 <FormSection title={t('stationEditorSectionPanoramaQuiz')} description={t('stationEditorPanoramaQuizIntro')}>
                   {languageTabs}
@@ -785,98 +903,6 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                   <FieldError message={errors.panoramaQuiz} />
                 </FormSection>
               </>
-            )}
-
-            {/* Bildfolge */}
-            {!isPanorama && (
-              <FormSection title={t('stationEditorSectionSlides')} description={t('stationEditorSlidesIntro', { max: MAX_SLIDES })}>
-                {form.slides.length > 0 && (
-                  <>
-                    {languageTabs}
-                    <ol className="space-y-4">
-                      {form.slides.map((slide, index) => {
-                        const missingText = !!errors.slides && !isEn && !slide.textDe.trim();
-                        return (
-                          <li key={slide.image.url} className="rounded-2xl border border-border p-3 space-y-3">
-                            <div className="flex gap-3">
-                              <img src={slide.image.url} alt="" className="w-28 aspect-[4/3] rounded-xl object-cover bg-muted flex-shrink-0" />
-                              <div className="flex-1 min-w-0 flex flex-col justify-between">
-                                <span className="font-bold tabular-nums">{t('stationEditorSlideLabel', { n: index + 1 })}</span>
-                                <div className="flex gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => moveSlide(index, -1)}
-                                    disabled={index === 0}
-                                    aria-label={t('stationEditorMoveSlideUp')}
-                                    className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    <ArrowUp className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => moveSlide(index, 1)}
-                                    disabled={index === form.slides.length - 1}
-                                    aria-label={t('stationEditorMoveSlideDown')}
-                                    className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    <ArrowDown className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeSlide(index)}
-                                    aria-label={t('stationEditorRemoveImage')}
-                                    className="w-11 h-11 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/8 flex items-center justify-center transition-colors ml-auto"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <FieldLabel htmlFor={`slide-text-${index}`}>
-                                {t('stationEditorSlideText', { n: index + 1 })}{optional}
-                              </FieldLabel>
-                              <Textarea
-                                id={`slide-text-${index}`}
-                                value={isEn ? slide.textEn : slide.textDe}
-                                onChange={(e) => setSlideText(index, e.target.value)}
-                                placeholder={isEn ? slide.textDe : t('stationEditorSlideTextPlaceholder')}
-                                maxLength={1000}
-                                rows={3}
-                                className={`px-4 py-3 rounded-2xl bg-card min-h-24 ${missingText ? 'border-destructive' : ''}`}
-                                aria-invalid={missingText}
-                              />
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </>
-                )}
-
-                {form.slides.length < MAX_SLIDES && (
-                  <label
-                    className={`flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.slides && form.slides.length === 0 ? 'border-destructive' : 'border-border-strong'}`}
-                  >
-                    <span className="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
-                      <ImagePlus className="w-5 h-5" />
-                    </span>
-                    <span className="text-sm font-bold">{t('stationEditorAddSlides')}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      JPG, PNG, WebP · {form.slides.length} / {MAX_SLIDES}
-                    </span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      className="sr-only"
-                      onChange={(e) => void handleAddSlides(e.target.files)}
-                    />
-                  </label>
-                )}
-                <FieldError message={errors.slides} />
-              </FormSection>
             )}
 
             {/* Standort */}
@@ -1013,6 +1039,20 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                   </>
                 )}
               </FormSection>
+            )}
+
+            {saveError ? (
+              <SubmitFeedback title={`${t('stationEditorSaveFailed')}: ${saveError}`} />
+            ) : (
+              <SubmitFeedback
+                title={Object.values(errors).some(Boolean) ? t('stationEditorFixErrors') : null}
+                items={[...new Set(
+                  // Reihenfolge wie im Formular (ERROR_FIELD_LABELS ist danach sortiert)
+                  (Object.keys(ERROR_FIELD_LABELS) as (keyof FormErrors)[])
+                    .filter((key) => errors[key])
+                    .map((key) => t(ERROR_FIELD_LABELS[key]))
+                )]}
+              />
             )}
 
             <Button

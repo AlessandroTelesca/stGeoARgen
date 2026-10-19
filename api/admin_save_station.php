@@ -8,9 +8,10 @@
  *       long_description_de, long_description_en?, points, latitude, longitude,
  *       station_type: "image_sequence" (Standard) | "panorama_quiz",
  *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover"),
- *       – nur image_sequence:
  *       slides: [{ image: vorhandener Dateiname | "new:N" (N-te Datei aus "slide_images[]"),
- *                  text_de, text_en? }]   – 1 bis 10 Bilder der Bildfolge, Reihenfolge zählt
+ *                  text_de, text_en? }]   – Bildfolge, Reihenfolge zählt; image_sequence: 1 bis 10,
+ *                                          panorama_quiz: 0 bis 10 (wird vor dem Quiz gezeigt)
+ *       – nur image_sequence:
  *       quiz: null | { question_de, question_en?, options_de: [], options_en?: [], correct_answer }
  *       – nur panorama_quiz:
  *       panorama_image: vorhandener Dateiname | "new" (Datei im Feld "panorama") – 360°-Bild (equirektangular)
@@ -96,9 +97,9 @@ if ($coverRef === 'new' ? $newCoverCount !== 1 : ($coverRef === '' || $newCoverC
     fail('Bitte ein Profilbild auswählen.');
 }
 
-// Bildfolge (nur image_sequence)
-$slidesInput = $isPanorama ? [] : ($input['slides'] ?? null);
-if (!$isPanorama && (!is_array($slidesInput) || count($slidesInput) < 1)) {
+// Bildfolge: Pflicht bei image_sequence, optional bei panorama_quiz
+$slidesInput = $input['slides'] ?? ($isPanorama ? [] : null);
+if (!is_array($slidesInput) || (!$isPanorama && count($slidesInput) < 1)) {
     fail('Die Bildfolge braucht mindestens ein Bild.');
 }
 if (count($slidesInput) > STATION_MAX_SLIDES) {
