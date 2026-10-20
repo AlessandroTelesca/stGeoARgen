@@ -152,6 +152,8 @@
   "completedPaths": "Completed paths",
   "yourJourney": "Your journey",
   "explorationsStats": "{completed} of {total} stations explored",
+  "showOtherPaths": "Show other paths",
+  "hideOtherPaths": "Hide other paths",
 
   "_PATHS": "THEMED PATHS",
   "themenPaths": "Themed paths",

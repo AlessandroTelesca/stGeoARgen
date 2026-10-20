@@ -152,6 +152,8 @@
   "completedPaths": "Abgeschlossene Pfade",
   "yourJourney": "Deine Reise",
   "explorationsStats": "{completed} von {total} Stationen erkundet",
+  "showOtherPaths": "Weitere Pfade anzeigen",
+  "hideOtherPaths": "Weitere Pfade ausblenden",
 
   "_PATHS": "THEMENPFADE",
   "themenPaths": "Themenpfade",

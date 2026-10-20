@@ -121,6 +121,8 @@ export default function App() {
   const [allowGuestStationStart, setAllowGuestStationStart] = useState(false);
   // Verfolgt welche Pfade bereits als abgeschlossen / Bonus-Status markiert wurden
   const [claimedPathBonuses, setClaimedPathBonuses] = useState<Record<string, boolean>>({});
+  // Pfad, in dem zuletzt eine Station abgeschlossen wurde (Dashboard „Deine Reise")
+  const [lastProgressPathId, setLastProgressPathId] = useState<string | null>(null);
   const [treasurePoints, setTreasurePoints] = useState(0);
   const [serverPoints, setServerPoints] = useState<number | null>(null);
 
@@ -255,11 +257,20 @@ export default function App() {
   const refreshUserProgress = useCallback(async () => {
     if (!user) {
       setTreasurePoints(0);
+      setLastProgressPathId(null);
       return;
     }
 
     try {
       const progressEntries = await getUserProgress(user.id);
+      // Einträge kommen nach completed_at aufsteigend; der letzte Stations-Eintrag bestimmt den aktuellen Pfad
+      let lastStationEntry: (typeof progressEntries)[number] | undefined;
+      for (const entry of progressEntries) {
+        if (entry.station_id !== 0 && (!lastStationEntry || entry.completed_at >= lastStationEntry.completed_at)) {
+          lastStationEntry = entry;
+        }
+      }
+      setLastProgressPathId(lastStationEntry?.path_id ?? null);
       if (progressEntries.length > 0) {
         // station_id === 0 = Pfad-Abschluss-Bonus
         const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
@@ -333,6 +344,7 @@ export default function App() {
       }))
     );
     setClaimedPathBonuses({});
+    setLastProgressPathId(null);
     setRewardClaimed(false);
     setTreasurePoints(0);
     setServerPoints(0);
@@ -782,6 +794,9 @@ export default function App() {
       return; // Exit without saving to DB or awarding points
     }
 
+    const progressedPathId = paths.find((p) => p.stations.some((s) => s.id === stationId))?.id ?? null;
+    setLastProgressPathId(progressedPathId);
+
     // Lokal aktualisieren
     setPaths((prev) => {
       const updated = prev.map((path) => {
@@ -1173,7 +1188,7 @@ export default function App() {
         <Dashboard
           paths={pathsWithProgress}
           totalPoints={totalPoints}
-          totalCompletedStations={totalCompletedStations}
+          lastProgressPathId={lastProgressPathId}
           onPathSelect={handlePathSelect}
           onNavigateToPaths={handleNavigateToPaths}
           onOpenQRScanner={handleOpenQRScanner}
@@ -1308,6 +1323,7 @@ export default function App() {
       {currentView === 'progress' && (
         <ProgressView
           paths={pathsWithProgress}
+          onPathSelect={handlePathSelect}
           totalPoints={totalPoints}
           earnedPoints={earnedPoints}
           maxPossiblePoints={maxPossiblePoints}

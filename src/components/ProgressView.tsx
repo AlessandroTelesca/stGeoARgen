@@ -23,9 +23,10 @@ interface ProgressViewProps {
   maxPossiblePoints: number;
   totalCompletedStations: number;
   onBack: () => void;
+  onPathSelect: (pathId: string) => void;
 }
 
-export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoints, totalCompletedStations, onBack }: ProgressViewProps) {
+export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoints, totalCompletedStations, onBack, onPathSelect }: ProgressViewProps) {
   const { t } = useLanguage();
   const totalStations = paths.reduce((sum, path) => sum + path.totalStations, 0);
   const completionPercentage = totalStations > 0 ? (totalCompletedStations / totalStations) * 100 : 0;
@@ -201,9 +202,11 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
           <h3 className="text-lg font-bold tracking-tight mb-4">{t('progressByPath')}</h3>
           <div className="space-y-4">
             {pathCompletionRates.map((path, index) => (
-              <motion.div
+              <motion.button
                 key={path.id}
-                className="surface-card p-5"
+                type="button"
+                onClick={() => onPathSelect(path.id)}
+                className="surface-card block w-full p-5 text-left pressable hover:shadow-md"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.8 + index * 0.1 }}
@@ -258,7 +261,7 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
                     {path.difficulty}
                   </span>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </motion.div>
