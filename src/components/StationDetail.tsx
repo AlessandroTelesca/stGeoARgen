@@ -87,8 +87,10 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
   const handleStartARExperience = () => {
     // Navigate to AR view - proximity check happens there
     if (arRoute) {
+      // XR availability decides between the XR and non-XR Klosterweiher experience
+      const xrAvailable = 'xr' in navigator;
       navigate(arRoute, {
-        state: allowGuestARStart ? { allowGuestStart: true } : undefined,
+        state: allowGuestARStart ? { allowGuestStart: true, xrAvailable } : { xrAvailable },
       });
     } else if (imageSequence.length > 0) {
       setImageSequenceOpen(true);

@@ -38,7 +38,7 @@ interface ARViewProps {
   isGuestMode?: boolean;
 }
 
-class IOSKlosterweiherARSession extends ARVisualizer {
+class NonXRKlosterweiherARSession extends ARVisualizer {
   public onReadyCallback?: () => void;
   public onModelsLoadedCallback?: () => void;
 
@@ -269,7 +269,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
         this.checkAllModelsLoaded();
       })
       .catch((err) => {
-        console.error("[IOSKlosterweiher] Rod model failed to load:", err);
+        console.error("[NonXRKlosterweiher] Rod model failed to load:", err);
         this.rodLoaded = true;
         this.checkAllModelsLoaded();
       });
@@ -319,7 +319,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
             );
 
             console.log(
-              `[IOSKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
+              `[NonXRKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
             if (index === 0) {
               this.fish = fishModel; // Set first fish as current
@@ -344,7 +344,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
         })
         .catch((err) => {
           console.error(
-            `[IOSKlosterweiher] Fish model ${index} failed to load:`,
+            `[NonXRKlosterweiher] Fish model ${index} failed to load:`,
             err,
           );
           // Still mark as loaded to avoid infinite waiting
@@ -362,7 +362,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
       .then((model) => {
         this.water = model || null;
         if (this.water) {
-          console.log("[IOSKlosterweiher] Water loaded successfully");
+          console.log("[NonXRKlosterweiher] Water loaded successfully");
           this.water.visible = false;
           this.water.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -396,7 +396,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
         this.checkAllModelsLoaded();
       })
       .catch((err) => {
-        console.error("[IOSKlosterweiher] Glocke model failed to load", err);
+        console.error("[NonXRKlosterweiher] Glocke model failed to load", err);
         this.bellLoaded = true;
         this.checkAllModelsLoaded();
       });
@@ -496,7 +496,7 @@ class IOSKlosterweiherARSession extends ARVisualizer {
   }
 }
 
-export const IOSKlosterweiherView = ({
+export const NonXRKlosterweiherView = ({
   onNavigateHome,
   username,
   onLogin,
@@ -517,7 +517,7 @@ export const IOSKlosterweiherView = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
-  const sessionRef = useRef<IOSKlosterweiherARSession | null>(null);
+  const sessionRef = useRef<NonXRKlosterweiherARSession | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -570,8 +570,8 @@ export const IOSKlosterweiherView = ({
     setError(null);
 
     try {
-      console.log("[IOSKlosterweiherView] Initializing AR session...");
-      const session = new IOSKlosterweiherARSession(
+      console.log("[NonXRKlosterweiherView] Initializing AR session...");
+      const session = new NonXRKlosterweiherARSession(
         containerRef.current,
         videoRef.current,
         {
@@ -629,14 +629,14 @@ export const IOSKlosterweiherView = ({
       };
 
       await session.init();
-      console.log("[IOSKlosterweiherView] AR session initialized");
+      console.log("[NonXRKlosterweiherView] AR session initialized");
       sessionRef.current = session;
       setHasStarted(true);
       setWaitingForReady(true);
     } catch (e: any) {
       const msg = e?.message || "Failed to start AR";
       setError(msg);
-      console.error("[IOSKlosterweiherView] AR start failed", e);
+      console.error("[NonXRKlosterweiherView] AR start failed", e);
     } finally {
       setIsStarting(false);
     }
@@ -812,4 +812,4 @@ export const IOSKlosterweiherView = ({
   );
 };
 
-export default IOSKlosterweiherView;
+export default NonXRKlosterweiherView;

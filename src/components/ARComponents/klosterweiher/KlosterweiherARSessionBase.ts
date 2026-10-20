@@ -9,7 +9,7 @@ export interface CaughtObjectPayload {
 export const DEFAULT_TREASURE_SPAWN_CHANCE = 0.03;
 
 /**
- * Base class containing shared logic for both Android and iOS Klosterweiher AR sessions.
+ * Base class containing shared logic for both XR and non-XR Klosterweiher AR sessions.
  * Handles fish models, rod animations, catching/releasing mechanics.
  */
 export abstract class KlosterweiherARSessionBase {

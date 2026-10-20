@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { ARComponentBase } from "../../ARComponentBase";
 import { ARProximityGate } from "../../ARProximityGate";
 import { WebXRVisualizer } from "../../../../ARbackend/WebXRVisualizer";
-import { IOSKlosterweiherView } from "../IOS/IOSKlosterweiher";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
@@ -40,7 +39,7 @@ interface ARViewProps {
   isGuestMode?: boolean;
 }
 
-class AndroidKlosterweiherARSession extends WebXRVisualizer {
+class XRKlosterweiherARSession extends WebXRVisualizer {
   public onGroundDetectedCallback?: () => void;
   public onModelsLoadedCallback?: () => void;
 
@@ -205,7 +204,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
     // Guard against double initialization
     if (this.threeInitialized) {
       console.log(
-        "[AndroidKlosterweiher] initThree already called, skipping...",
+        "[XRKlosterweiher] initThree already called, skipping...",
       );
       return;
     }
@@ -318,7 +317,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
             }
 
             console.log(
-              `[AndroidKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
+              `[XRKlosterweiher] Fish ${index} loaded. Total fish loaded: ${this.fishes.filter(Boolean).length}`,
             );
             if (index === 0) {
               this.fish = fishModel; // Set first fish as current
@@ -388,7 +387,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
         this.checkAllModelsLoaded();
       })
       .catch((err) => {
-        console.error("[AndroidKlosterweiher] Glocke model failed to load", err);
+        console.error("[XRKlosterweiher] Glocke model failed to load", err);
         this.bellLoaded = true;
         this.checkAllModelsLoaded();
       });
@@ -471,7 +470,7 @@ class AndroidKlosterweiherARSession extends WebXRVisualizer {
   }
 }
 
-export const AndroidKlosterweiherView = ({
+export const XRKlosterweiherView = ({
   onNavigateHome,
   username,
   onLogin,
@@ -494,12 +493,11 @@ export const AndroidKlosterweiherView = ({
   const isNotMobile = !isIOS && !isAndroid;
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
-  const sessionRef = useRef<AndroidKlosterweiherARSession | null>(null);
+  const sessionRef = useRef<XRKlosterweiherARSession | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useIOSFallback, setUseIOSFallback] = useState(false);
   const [fishCaught, setFishCaught] = useState(false);
   const [caughtFishName, setCaughtFishName] = useState<string>("");
   const [isTreasureChestCaught, setIsTreasureChestCaught] = useState(false);
@@ -564,7 +562,7 @@ export const AndroidKlosterweiherView = ({
       console.log(
         "[KlosterweiherView] Pre-creating AR session to load models...",
       );
-      const session = new AndroidKlosterweiherARSession(containerRef.current, {
+      const session = new XRKlosterweiherARSession(containerRef.current, {
         useWebXR: true,
         domOverlayRoot: overlayRootRef.current,
         onError: (e) => console.error("AR init failed", e),
@@ -649,13 +647,7 @@ export const AndroidKlosterweiherView = ({
       setWaitingForGroundDetection(true);
     } catch (e: any) {
       const msg = e?.message || "Failed to start AR";
-      if (msg === "WebXR is required but not available") {
-        sessionRef.current?.stop();
-        sessionRef.current = null;
-        setUseIOSFallback(true);
-      } else {
-        setError(msg);
-      }
+      setError(msg);
       console.error("[KlosterweiherView] AR start failed", e);
     } finally {
       setIsStarting(false);
@@ -675,27 +667,6 @@ export const AndroidKlosterweiherView = ({
 
     sessionRef.current.releaseCurrentFish();
   };
-
-  if (useIOSFallback) {
-    return (
-      <IOSKlosterweiherView
-        onNavigateHome={onNavigateHome}
-        username={username}
-        onLogin={onLogin}
-        onLogout={onLogout}
-        onNavigateProfile={onNavigateProfile}
-        onRegister={onRegister}
-        completedStations={completedStations}
-        totalStations={totalStations}
-        totalPoints={totalPoints}
-        currentStationPoints={currentStationPoints}
-        onCompleteStation={onCompleteStation}
-        isCurrentStationCompleted={isCurrentStationCompleted}
-        onTreasureCollect={onTreasureCollect}
-        isGuestMode={isGuestMode}
-      />
-    );
-  }
 
   const arContent = (
     <>
