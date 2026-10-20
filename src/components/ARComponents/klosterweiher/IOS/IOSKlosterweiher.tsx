@@ -6,7 +6,6 @@ import { ARVisualizer } from "../../../../ARbackend/ARVisualizer";
 import { AR_VIEW_STATION_MAP } from "../../../../data/stationsConfig";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { getKlosterweiherTexts } from "../../../../i18n/stations/klosterweiher";
-import { MobileOnlyNotice } from "../../MobileOnlyNotice";
 import {
   CaughtObjectPayload,
   DEFAULT_TREASURE_SPAWN_CHANCE,
@@ -515,9 +514,6 @@ export const IOSKlosterweiherView = ({
 }: ARViewProps) => {
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
-  const isNotMobile = !isIOS && !isAndroid;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRootRef = useRef<HTMLDivElement>(null);
@@ -540,23 +536,12 @@ export const IOSKlosterweiherView = ({
   const [showDragInstruction, setShowDragInstruction] = useState(false);
   const [dragsSinceStart, setDragsSinceStart] = useState(0);
 
-  if (isNotMobile) {
-    return <MobileOnlyNotice />;
-  }
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       sessionRef.current?.stop();
     };
   }, []);
-
-  // Auto-start AR when authorized
-  useEffect(() => {
-    if (isAuthorized && !hasStarted && !isStarting) {
-      startAR();
-    }
-  }, [isAuthorized, hasStarted, isStarting]);
 
   // Timer to show tap instruction after 5 seconds of inactivity
   useEffect(() => {
@@ -693,6 +678,59 @@ export const IOSKlosterweiherView = ({
         onCompleteStation={onCompleteStation}
         isCurrentStationCompleted={isCurrentStationCompleted}
       />
+
+      {isAuthorized && !hasStarted && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.5)",
+            pointerEvents: "auto",
+          }}
+        >
+          <div
+            style={{
+              width: "calc(100% - 40px)",
+              maxWidth: "420px",
+              boxSizing: "border-box",
+              padding: "16px",
+              background: "#fff",
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ margin: "0 0 12px 0", fontWeight: 700 }}>
+              {klosterweiherTexts.arStartTitleReady}
+            </p>
+            {error && (
+              <p style={{ color: "#b00020", margin: "0 0 8px 0" }}>{error}</p>
+            )}
+            <button
+              onClick={startAR}
+              disabled={isStarting}
+              style={{
+                padding: "10px 16px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#0c690f",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: isStarting ? "not-allowed" : "pointer",
+                opacity: isStarting ? 0.6 : 1,
+              }}
+            >
+              {isStarting
+                ? klosterweiherTexts.arStartButtonStarting
+                : klosterweiherTexts.arStartButtonReady}
+            </button>
+          </div>
+        </div>
+      )}
 
       {waitingForReady && overlayRootRef.current && (
         <WaitingForReady

@@ -6,7 +6,7 @@ interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElemen
   fallbackSrc?: string;
 }
 
-export function ImageWithFallback({ src, alt, fallbackSrc, ...props }: ImageWithFallbackProps) {
+export function ImageWithFallback({ src, alt, fallbackSrc, fetchPriority, ...props }: ImageWithFallbackProps) {
   const [errored, setErrored] = useState(false);
 
   return (
@@ -15,6 +15,8 @@ export function ImageWithFallback({ src, alt, fallbackSrc, ...props }: ImageWith
       alt={alt}
       decoding="async"
       onError={() => setErrored(true)}
+      // React 18 kennt `fetchPriority` noch nicht als DOM-Prop; als HTML-Attribut klein geschrieben weiterreichen
+      {...(fetchPriority ? { fetchpriority: fetchPriority } : {})}
       {...props}
     />
   );

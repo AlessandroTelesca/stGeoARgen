@@ -43,14 +43,30 @@ if (!$stmt->fetch()) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
-// Bereits gespeichert? Dann nur idempotent antworten, keine Punkte erneut vergeben.
+// Punkte der Station laut DB: fest eingebaute Stationen aus builtin_stations, Custom-Stationen
+// (ID >= 1000) aus custom_stations. Unbekannte Stationen werden abgelehnt, sonst ließe sich mit
+// beliebigen path_id/station_id-Kombinationen Punkte sammeln.
 $stmt = $db->prepare(
-    'SELECT id FROM user_progress WHERE user_id = ? AND path_id = ? AND station_id = ? LIMIT 1'
+    $stationId >= 1000
+        ? 'SELECT points FROM custom_stations WHERE id = ? AND path_id = ?'
+        : 'SELECT points FROM builtin_stations WHERE station_id = ? AND path_id = ?'
+);
+$stmt->execute([$stationId, $pathId]);
+$station = $stmt->fetch();
+if (!$station) {
+    sendResponse(['success' => false, 'message' => 'Station nicht gefunden.'], 404);
+}
+$stationPoints = (int) $station['points'];
+
+// INSERT IGNORE + rowCount: bereits gespeichert (auch bei parallelen Requests) → keine Punkte erneut vergeben.
+$db->beginTransaction();
+$stmt = $db->prepare(
+    'INSERT IGNORE INTO user_progress (user_id, path_id, station_id, completed, completed_at)
+     VALUES (?, ?, ?, 1, NOW())'
 );
 $stmt->execute([$userId, $pathId, $stationId]);
-$existing = $stmt->fetch();
-
-if ($existing) {
+if ($stmt->rowCount() === 0) {
+    $db->rollBack();
     sendResponse([
         'success' => true,
         'message' => 'Fortschritt bereits gespeichert.',
@@ -58,14 +74,9 @@ if ($existing) {
     ]);
 }
 
-$stmt = $db->prepare(
-    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
-     VALUES (?, ?, ?, 1, NOW())'
-);
-$stmt->execute([$userId, $pathId, $stationId]);
-
 $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
-   ->execute([50, $userId]);
+   ->execute([$stationPoints, $userId]);
+$db->commit();
 
 $userPointsStmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');
 $userPointsStmt->execute([$userId]);
@@ -74,6 +85,6 @@ $userPoints = $userPointsStmt->fetch();
 sendResponse([
     'success' => true,
     'message' => 'Fortschritt gespeichert.',
-    'points_awarded' => 50,
+    'points_awarded' => $stationPoints,
     'total_points' => (int)($userPoints['total_points'] ?? 0),
 ]);

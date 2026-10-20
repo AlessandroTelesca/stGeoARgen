@@ -1,6 +1,8 @@
 <?php
 /**
  * reset_progress.php - Gesamten Fortschritt eines Users zuruecksetzen
+ * (abgeschlossene Stationen, Pfad-Boni, Sonderbelohnungen und Punktestand).
+ * Gekaufte Gutscheine (user_vouchers) bleiben erhalten.
  *
  * POST-Parameter (JSON body):
  *   user_id - ID des Users
@@ -32,8 +34,17 @@ if (!$stmt->fetch()) {
     sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
 }
 
-$deleteStmt = $db->prepare('DELETE FROM user_progress WHERE user_id = ?');
-$deleteStmt->execute([$userId]);
+$db->beginTransaction();
+try {
+    $deleteStmt = $db->prepare('DELETE FROM user_progress WHERE user_id = ?');
+    $deleteStmt->execute([$userId]);
+    $db->prepare('DELETE FROM user_rewards WHERE user_id = ?')->execute([$userId]);
+    $db->prepare('UPDATE users SET total_points = 0 WHERE id = ?')->execute([$userId]);
+    $db->commit();
+} catch (Throwable $e) {
+    $db->rollBack();
+    sendResponse(['success' => false, 'message' => 'Fortschritt konnte nicht zurueckgesetzt werden.'], 500);
+}
 
 sendResponse([
     'success' => true,

@@ -4,35 +4,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { VoucherRedeemPage } from './VoucherRedeemPage';
-import { apiRedeemVoucherFromShop } from '../services/api';
+import { apiRedeemVoucherFromShop, type AvailableVoucher } from '../services/api';
+import { usePointConfig } from '../contexts/PointConfigContext';
 import { BackLink } from './PageHeader';
 import { CopyCodeButton } from './CopyCodeButton';
-
-interface Voucher {
-  id: number;
-  code: string | null;
-  description: string;
-  partner_name?: string;
-  address?: string;
-  points_value: number;
-  expiry_date?: string;
-  quantity?: number;
-  imageUrl?: string;
-}
-
-const vouchers: Voucher[] = [
-  {
-    id: 1,
-    code: null,
-    description: 'Freier Eintritt ins Hallenbad St.Georgen für eine Person',
-    partner_name: 'Hallenbad St.Georgen',
-    address: 'Im Hochwald 6, 78112 St. Georgen',
-    points_value: 20,
-    quantity: 40,
-    imageUrl:
-      'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=Mnw3NzgwNjR8MHwxfHNlYXJjaHwxfHxiaXNvb3N8ZW58MHx8fHwxNjAwNjQ2Njk1&ixlib=rb-1.2.1&q=80&w=400',
-  },
-];
 
 interface RewardsViewProps {
   totalPoints: number;
@@ -45,17 +20,17 @@ interface RewardsViewProps {
 type TabType = 'rewards' | 'vouchers';
 
 export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNavigateToMyVouchers }: RewardsViewProps) {
+  const { shopVouchers: vouchers, reloadShopVouchers } = usePointConfig();
   const [redeemingVoucherId, setRedeemingVoucherId] = useState<number | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [createdVoucherCode, setCreatedVoucherCode] = useState<string | null>(null);
   const [createdVoucherTitle, setCreatedVoucherTitle] = useState<string | null>(null);
   const [createdVoucherDescription, setCreatedVoucherDescription] = useState<string | null>(null);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
-  const [confirmPurchase, setConfirmPurchase] = useState<Voucher | null>(null);
-  const [availableVouchers, setAvailableVouchers] = useState<Voucher[]>(vouchers);
+  const [confirmPurchase, setConfirmPurchase] = useState<AvailableVoucher | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('rewards');
 
-  const unlockedCount = availableVouchers.filter((v) => totalPoints >= v.points_value && (v.quantity ?? -1) !== 0).length;
+  const unlockedCount = vouchers.filter((v) => totalPoints >= v.points_value && (v.quantity ?? -1) !== 0).length;
 
   const resetDialogState = () => {
     setFeedbackOpen(false);
@@ -66,7 +41,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
   };
 
 
-  const handleRedeemVoucher = (voucher: Voucher) => {
+  const handleRedeemVoucher = (voucher: AvailableVoucher) => {
     if (!userId) {
       setDialogMessage('Bitte melde dich an, um einen Gutschein einzulösen.');
       setFeedbackOpen(true);
@@ -86,20 +61,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
     try {
       const data = await apiRedeemVoucherFromShop(userId, voucher.id);
 
-      await onPointsChange?.();
-      setAvailableVouchers((prev) =>
-        prev.map((item) =>
-          item.id === voucher.id
-            ? {
-                ...item,
-                quantity:
-                  typeof item.quantity === 'number' && item.quantity > 0
-                    ? item.quantity - 1
-                    : item.quantity,
-              }
-            : item
-        )
-      );
+      await Promise.all([onPointsChange?.(), reloadShopVouchers()]);
       setCreatedVoucherTitle(voucher.partner_name || voucher.description);
       setCreatedVoucherDescription(voucher.description);
       setCreatedVoucherCode(typeof data.code === 'string' && data.code.length > 0 ? data.code : 'Code wird in Meine Gutscheine angezeigt');

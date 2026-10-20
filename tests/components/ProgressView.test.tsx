@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('../../src/components/Georgi', () => ({
   Georgi: () => <div data-testid="georgi" />,
@@ -37,10 +38,18 @@ const paths = [
 
 describe('ProgressView', () => {
   it('shows overall progress and path breakdown', () => {
-    render(<ProgressView paths={paths} totalPoints={90} totalCompletedStations={3} onBack={vi.fn()} />);
+    render(<ProgressView paths={paths} totalPoints={90} totalCompletedStations={3} onBack={vi.fn()} onPathSelect={vi.fn()} />);
 
     expect(screen.getByText(/Gesamtfortschritt/i)).toBeInTheDocument();
     expect(screen.getByText('Pfad 1')).toBeInTheDocument();
     expect(screen.getByText('Pfad 2')).toBeInTheDocument();
+  });
+
+  it('opens the clicked path', async () => {
+    const onPathSelect = vi.fn();
+    render(<ProgressView paths={paths} totalPoints={90} totalCompletedStations={3} onBack={vi.fn()} onPathSelect={onPathSelect} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /pfad 1/i }));
+    expect(onPathSelect).toHaveBeenCalledWith('p1');
   });
 });

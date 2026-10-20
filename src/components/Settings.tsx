@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Bell, Globe, HelpCircle, Info, Shield, User, Maximize2, ChevronRight } from 'lucide-react';
+import { Bell, Globe, HelpCircle, Info, Shield, User, Maximize2, ChevronRight, MapPinPlus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,6 +15,7 @@ interface SettingsProps {
   onNavigateToInfo?: () => void;
   onNavigateToPrivacy?: () => void;
   onNavigateToHelp?: () => void;
+  onNavigateToStationEditor?: () => void;
 }
 
 export function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
@@ -92,6 +93,7 @@ export function Settings({
   onNavigateToInfo,
   onNavigateToPrivacy,
   onNavigateToHelp,
+  onNavigateToStationEditor,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
   const [notifications, setNotifications] = useState(true);
@@ -179,6 +181,17 @@ export function Settings({
               onClick={onNavigateToPrivacy}
             />
           </SettingsGroup>
+
+          {onNavigateToStationEditor && (
+            <SettingsGroup title={t('administration')}>
+              <SettingsRow
+                icon={<MapPinPlus className="w-5 h-5" />}
+                title={t('stationEditorTitle')}
+                description={t('stationEditorSettingsDesc')}
+                onClick={onNavigateToStationEditor}
+              />
+            </SettingsGroup>
+          )}
 
           <p className="mt-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <img src="/Logo.svg" alt="" className="w-4 h-4 opacity-50" />

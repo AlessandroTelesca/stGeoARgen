@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, RefObject } from 'react';
 import { ARTopBar } from './ARTopBar';
-import { ARProgressBar } from './ARProgressBar';
+import { ARProgressBar, buildARProgress } from './ARProgressBar';
 import { ARProfileMenu } from './ARProfileMenu';
 import { ARStationCompletionDialog } from './ARStationCompletionDialog';
 import { STATIONS_COORDINATES } from '../../data/stationsConfig';
@@ -168,18 +168,7 @@ export const ARComponentBase = ({
   const [remainingAtCompletion, setRemainingAtCompletion] = useState(0);
 
   // Echter Progress aus Props
-  const progress = {
-    current: completedStations + 1 > totalStations ? totalStations : completedStations + 1,
-    total: totalStations || 1,
-    points: totalPoints,
-  };
-
-  // Station status: completed, current, locked
-  const stations = Array.from({ length: Math.max(progress.total, 1) }, (_, i) => {
-    if (i < completedStations) return 'completed';
-    if (i === completedStations && completedStations < progress.total) return 'current';
-    return 'locked';
-  });
+  const { progress, stations } = buildARProgress(completedStations, totalStations, totalPoints);
 
   const handleNavigateHome = () => {
     if (onNavigateHome) {

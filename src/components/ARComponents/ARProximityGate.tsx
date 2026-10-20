@@ -7,6 +7,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ARProximityGateProps {
   stationId: number;
+  /** Koordinaten, falls die Station nicht in stationsConfig steht (Stationen aus der Stationsverwaltung) */
+  coordinates?: { lat: number; lng: number };
   stationName: string;
   children: React.ReactNode;
   onNavigateBack?: () => void;
@@ -17,13 +19,13 @@ interface ARProximityGateProps {
  * Proximity Gate für AR-Views
  * Prüft ob Nutzer innerhalb 100m der Station ist, bevor AR-Erlebnis gestartet wird
  */
-export const ARProximityGate = ({ stationId, stationName, children, onNavigateBack, onAccessGranted }: ARProximityGateProps) => {
+export const ARProximityGate = ({ stationId, coordinates, stationName, children, onNavigateBack, onAccessGranted }: ARProximityGateProps) => {
   const { t } = useLanguage();
   const [allowAccess, setAllowAccess] = useState(false);
   const [nearestStation, setNearestStation] = useState<{ id: number; name: string; distance: number } | null>(null);
   
   // Get coordinates from central config
-  const stationCoords = getStationCoordinates(stationId);
+  const stationCoords = coordinates ?? getStationCoordinates(stationId);
   
   const RADIUS_METERS = 100;
   const { distance, isWithinRadius, locationError, userLocation } = useStationProximity(

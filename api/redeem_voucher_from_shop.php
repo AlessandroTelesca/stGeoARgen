@@ -62,8 +62,14 @@ if ($voucherId > 0) {
     try {
         $db->beginTransaction();
 
-        $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ?');
-        $stmt->execute([(int) $voucher['points_value'], $userId]);
+        // Atomar abbuchen: nur wenn der Kontostand zum Zeitpunkt des UPDATE reicht.
+        // Die Prüfung oben allein ist bei parallelen Requests (Doppelklick) nicht sicher.
+        $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ? AND total_points >= ?');
+        $stmt->execute([(int) $voucher['points_value'], $userId, (int) $voucher['points_value']]);
+        if ($stmt->rowCount() === 0) {
+            $db->rollBack();
+            sendResponse(['success' => false, 'message' => 'Nicht genügend Punkte.'], 400);
+        }
 
         $code = generateVoucherCode();
         $remainingUses = 1;
@@ -147,8 +153,12 @@ $fullDescription = $description !== '' ? $title . ' - ' . $description : $title;
 try {
     $db->beginTransaction();
 
-    $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ?');
-    $stmt->execute([$requiredPoints, $userId]);
+    $stmt = $db->prepare('UPDATE users SET total_points = total_points - ? WHERE id = ? AND total_points >= ?');
+    $stmt->execute([$requiredPoints, $userId, $requiredPoints]);
+    if ($stmt->rowCount() === 0) {
+        $db->rollBack();
+        sendResponse(['success' => false, 'message' => 'Nicht genügend Punkte.'], 400);
+    }
 
     $insertUserVoucher = $db->prepare(
         'INSERT INTO user_vouchers (user_id, code, description, partner_id, points_value, expiry_date, remaining_uses)

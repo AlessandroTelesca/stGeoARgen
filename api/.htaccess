@@ -1,0 +1,17 @@
+<IfModule mod_authz_core.c>
+  <Files "credentials.txt">
+    Require all denied
+  </Files>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+  <Files "credentials.txt">
+    Order allow,deny
+    Deny from all
+  </Files>
+</IfModule>
+
+# Authorization-Header an PHP (CGI/FPM) durchreichen – benötigt für die Stationsverwaltung
+<IfModule mod_setenvif.c>
+  SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
