@@ -24,7 +24,7 @@ export function createScrollLockController(documentRef: Document = document): Sc
       if (!isLocked) return;
 
       documentRef.body.style.overflow = previousOverflow;
-      documentRef.removeEventListener('touchmove', handleTouchMove, { passive: false });
+      documentRef.removeEventListener('touchmove', handleTouchMove);
       isLocked = false;
     },
   };

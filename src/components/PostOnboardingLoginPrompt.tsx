@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Bookmark, Gift, LogIn, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { asset } from '../lib/asset';
 
 interface PostOnboardingLoginPromptProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export function PostOnboardingLoginPrompt({
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 16 }}
               >
-                <img src="/Logo.svg" alt="" className="w-10 h-10 object-contain" />
+                <img src={asset('/Logo.svg')} alt="" className="w-10 h-10 object-contain" />
               </motion.span>
               <h2 id="post-onboarding-title" className="relative text-2xl font-extrabold tracking-tight">
                 {t('postOnboardingTitle')}

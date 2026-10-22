@@ -2,6 +2,7 @@ import { Menu, X, Home, Map, QrCode, Settings, Gift, User, ChevronDown, LogIn, U
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { asset } from '../lib/asset';
 
 interface HeaderProps {
   title: string;
@@ -66,7 +67,7 @@ export function Header({ title, onNavigate, currentView, username, onLogin, onLo
             <span className="brand-gradient w-10 h-10 rounded-full flex items-center justify-center shadow-primary flex-shrink-0">
               {/* Georgi neigt neugierig den Kopf (Hover) und hüpft beim Antippen */}
               <motion.img
-                src="/Logo.svg"
+                src={asset('/Logo.svg')}
                 alt=""
                 className="w-6 h-6 object-contain"
                 style={{ filter: 'brightness(0) invert(1)' }}

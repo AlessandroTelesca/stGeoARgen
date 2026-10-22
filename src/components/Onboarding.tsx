@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, ChevronLeft, Trophy, Map, ScanLine, Gift } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { asset } from '../lib/asset';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -94,12 +95,12 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                   {StepIcon ? (
                     <StepIcon className="w-12 h-12 text-primary" strokeWidth={1.75} />
                   ) : (
-                    <img src="/Logo.svg" alt="" className="w-16 h-16 object-contain" />
+                    <img src={asset('/Logo.svg')} alt="" className="w-16 h-16 object-contain" />
                   )}
                 </span>
                 {StepIcon && (
                   <span className="absolute -right-2 -bottom-1 w-11 h-11 rounded-full bg-primary border-[3px] border-white flex items-center justify-center shadow-md">
-                    <img src="/Logo.svg" alt="" className="w-6 h-6 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                    <img src={asset('/Logo.svg')} alt="" className="w-6 h-6 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
                   </span>
                 )}
               </motion.div>
@@ -128,7 +129,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               {/* Georgi */}
               <div className="mt-6 flex items-start gap-3 text-left rounded-2xl bg-secondary px-4 py-3.5 max-w-sm mx-auto">
                 <span className="w-9 h-9 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <img src="/Logo.svg" alt="" className="w-5 h-5 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                  <img src={asset('/Logo.svg')} alt="" className="w-5 h-5 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
                 </span>
                 <p className="text-sm leading-snug text-foreground pt-0.5">
                   <span className="block text-xs font-bold text-primary mb-0.5">Georgi</span>

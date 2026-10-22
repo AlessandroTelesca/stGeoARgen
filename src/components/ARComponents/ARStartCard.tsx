@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { AlertCircle, Play } from 'lucide-react';
+import { asset } from '../../lib/asset';
 
 interface ARStartCardProps {
   title?: string;
@@ -47,7 +48,7 @@ export function ARStartCard({
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
         <span className="mx-auto mb-4 flex w-16 h-16 items-center justify-center rounded-full bg-white shadow-lg">
-          {icon ?? <img src="/Logo.svg" alt="" className="w-10 h-10 object-contain" />}
+          {icon ?? <img src={asset('/Logo.svg')} alt="" className="w-10 h-10 object-contain" />}
         </span>
         {title && <h2 className="text-xl font-extrabold tracking-tight">{title}</h2>}
         <p className={`text-[15px] leading-relaxed text-white/80 ${title ? 'mt-2' : ''}`}>{description}</p>

@@ -2,6 +2,13 @@
   "stationName": "Glockenspiel",
   "description": "Experience the 'glockenspiel' in AR",
   "longDescription": "The glockenspiel is a fascinating historical instrument. Discover in the AR experience how the mechanics work and listen to the traditional melodies.",
+  "arStartTitle": "Start the glockenspiel AR",
+  "arPermissionDescription": "This app needs access to motion and orientation so the gyroscope controls work.",
+  "arPermissionButton": "Allow",
+  "arStartDescription": "Tap OK to start the glockenspiel AR experience.",
+  "arStartButton": "OK",
+  "arStartingButton": "Starting AR...",
+  "arStartErrorFallback": "The AR view could not be started.",
   "quizQuestion": "How many bells does the glockenspiel have?",
   "quizOptions": ["12 bells", "18 bells", "24 bells", "30 bells"]
 }

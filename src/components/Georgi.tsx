@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { asset } from '../lib/asset';
 
 interface GeorgiProps {
   message: string;
@@ -55,7 +56,7 @@ export function Georgi({ message, show, onClose, position = 'bottom-right', auto
                 transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }}
               >
                 <div className="brand-gradient w-12 h-12 rounded-full flex items-center justify-center shadow-primary">
-                  <img src="/Logo.svg" alt="Georgi" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                  <img src={asset('/Logo.svg')} alt="Georgi" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
                 </div>
               </motion.div>
 
@@ -95,7 +96,7 @@ export function GeorgiAvatar({ size = 'md', animated = true }: GeorgiAvatarProps
         ease: 'easeInOut',
       }}
     >
-      <img src="/Logo.svg" alt="Georgi" style={{ width: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', height: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+      <img src={asset('/Logo.svg')} alt="Georgi" style={{ width: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', height: size === 'sm' ? '20px' : size === 'md' ? '28px' : '38px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
     </motion.div>
   );
 }

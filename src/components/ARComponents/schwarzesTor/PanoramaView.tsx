@@ -6,6 +6,7 @@ import { ARComponentBase } from '../ARComponentBase';
 import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
+import { asset } from '../../../lib/asset';
 
 // ─── Inline 3D Model Viewer (aus Phonomuseum übernommen) ──────────────────────
 interface ModelViewerProps {
@@ -156,7 +157,7 @@ const ActiveModelViewer: React.FC<ActiveModelViewerProps> = ({ url, dragHint }) 
           transition: 'opacity 0.4s ease',
         }}>
           <img
-            src="/dragAnimation.gif"
+            src={asset('/dragAnimation.gif')}
             alt={dragHint}
             style={{ width: '100px', height: '90px', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))' }}
           />

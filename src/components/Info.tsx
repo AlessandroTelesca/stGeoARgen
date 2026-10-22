@@ -2,6 +2,7 @@ import { BookOpen, Layers, MapPin, QrCode, Sparkles, Smartphone, Trophy } from '
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackLink } from './PageHeader';
+import { asset } from '../lib/asset';
 
 interface InfoProps {
   onBack: () => void;
@@ -58,7 +59,7 @@ export function Info({ onBack }: InfoProps) {
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <section className="brand-gradient relative overflow-hidden rounded-[28px] p-6 text-white shadow-lg">
           <div className="topo-texture absolute inset-0" aria-hidden="true" />
-          <img src="/Logo.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-8 -bottom-10 w-44 h-44 opacity-[0.08]" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src={asset('/Logo.svg')} alt="" aria-hidden="true" className="pointer-events-none absolute -right-8 -bottom-10 w-44 h-44 opacity-[0.08]" style={{ filter: 'brightness(0) invert(1)' }} />
           <div className="relative">
             <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center mb-4">
               <Sparkles className="w-6 h-6" />
