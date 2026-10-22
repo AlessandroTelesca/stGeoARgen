@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Check, Gift, MapPin, X } from 'lucide-react';
 import { CopyCodeButton } from './CopyCodeButton';
 import { apiGetUserVouchers } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface VoucherListItem {
   id: number;
@@ -24,10 +25,13 @@ interface UserVouchersResponse {
 }
 
 export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded = false }: { userId: number; userPoints: number; onPointsChange?: () => void; embedded?: boolean }) {
+  const { t, language } = useLanguage();
+  const pts = (n: number) => t(n === 1 ? 'rewardsPointsOne' : 'rewardsPointsOther', { points: n });
   const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
   const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
   const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showCodePopup, setShowCodePopup] = useState(false);
   const [popupCode, setPopupCode] = useState<string | null>(null);
   const [popupDescription, setPopupDescription] = useState<string | null>(null);
@@ -37,9 +41,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
   }, [userId]);
 
   const fetchData = async () => {
-    console.log('fetchData called with userId:', userId);
     if (userId <= 0) {
-      console.log('userId <= 0, setting empty arrays');
       setRedeemableVouchers([]);
       setRedeemedVouchers([]);
       setLoading(false);
@@ -47,22 +49,20 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     }
 
     setLoading(true);
+    setLoadError(false);
     try {
-      console.log('Fetching vouchers from API...');
       const data = await apiGetUserVouchers(userId);
-      console.log('API data:', data);
       if (data.success) {
         setRedeemableVouchers(Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : []);
         setRedeemedVouchers(Array.isArray(data.redeemed_vouchers) ? data.redeemed_vouchers : []);
       } else {
-        console.log('API returned success: false');
         setRedeemableVouchers([]);
         setRedeemedVouchers([]);
       }
     } catch (error) {
+      // Bisherige Liste behalten und Fehler anzeigen – nicht „Keine Gutscheine“ vortäuschen
       console.error('Error fetching vouchers:', error);
-      setRedeemableVouchers([]);
-      setRedeemedVouchers([]);
+      setLoadError(true);
     }
     setLoading(false);
   };
@@ -84,7 +84,8 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
   const formatDate = (value: string, withTime = false) => {
     const date = new Date(value.replace(' ', 'T'));
     if (Number.isNaN(date.getTime())) return value;
-    return withTime ? date.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : date.toLocaleDateString('de-DE', { dateStyle: 'medium' });
+    const locale = language === 'en' ? 'en-GB' : 'de-DE';
+    return withTime ? date.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) : date.toLocaleDateString(locale, { dateStyle: 'medium' });
   };
 
   const emptyState = (text: string) => (
@@ -106,18 +107,18 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
       >
         <div className="flex items-end justify-between gap-4 mb-5">
           <div>
-            <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">Meine Gutscheine</h1>
-            <p className="text-muted-foreground text-sm mt-1.5">Hier findest du einlösbare und bereits eingelöste Gutscheine.</p>
+            <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">{t('rewardsMyVouchers')}</h1>
+            <p className="text-muted-foreground text-sm mt-1.5">{t('voucherPageSubtitle')}</p>
           </div>
           <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1.5 text-sm font-bold text-gold-foreground tabular-nums">
-            {userPoints} Punkte
+            {pts(userPoints)}
           </span>
         </div>
 
         <div className="flex gap-2 mb-5">
           {([
-            ['redeemable', `Einlösbar (${redeemableVouchers.length})`],
-            ['redeemed', `Eingelöst (${redeemedVouchers.length})`],
+            ['redeemable', t('vouchersTabRedeemable', { count: redeemableVouchers.length })],
+            ['redeemed', t('voucherTabRedeemed', { count: redeemedVouchers.length })],
           ] as const).map(([tab, label]) => (
             <button
               key={tab}
@@ -135,7 +136,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
             {[0, 1].map((i) => <div key={i} className="h-28 rounded-[24px] bg-muted animate-pulse" />)}
           </div>
         ) : activeTab === 'redeemable' ? (
-          redeemableVouchers.length === 0 ? emptyState('Keine einlösbaren Gutscheine vorhanden.') : (
+          redeemableVouchers.length === 0 ? emptyState(loadError ? t('voucherLoadFailed') : t('vouchersNoneRedeemable')) : (
             <div className="space-y-3">
               {redeemableVouchers.map((voucher) => (
                 <motion.article
@@ -152,8 +153,8 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                       <h3 className="font-bold leading-snug">{voucher.description}</h3>
                       {voucher.partner_name && <p className="text-sm text-muted-foreground mt-0.5">{voucher.partner_name}</p>}
                       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                        {voucher.purchased_at && <p>Erworben am {formatDate(voucher.purchased_at, true)}</p>}
-                        <p>{voucher.expiry_date ? `Gültig bis ${formatDate(voucher.expiry_date)}` : 'Kein Ablaufdatum'}</p>
+                        {voucher.purchased_at && <p>{t('voucherPurchasedOn', { date: formatDate(voucher.purchased_at, true) })}</p>}
+                        <p>{voucher.expiry_date ? t('voucherValidUntilDate', { date: formatDate(voucher.expiry_date) }) : t('vouchersNoExpiry')}</p>
                         {voucher.address && (
                           <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{voucher.address}</p>
                         )}
@@ -165,17 +166,17 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                       onClick={() => openCodePopup(voucher.code, voucher.description)}
                       className="mt-4 w-full h-11 rounded-2xl font-bold"
                     >
-                      Code anzeigen
+                      {t('vouchersShowCode')}
                     </Button>
                   ) : (
-                    <p className="mt-4 rounded-2xl bg-muted px-4 py-2.5 text-center text-sm text-muted-foreground">Kein Code verfügbar</p>
+                    <p className="mt-4 rounded-2xl bg-muted px-4 py-2.5 text-center text-sm text-muted-foreground">{t('voucherNoCode')}</p>
                   )}
                 </motion.article>
               ))}
             </div>
           )
         ) : (
-          redeemedVouchers.length === 0 ? emptyState('Noch keine eingelösten Gutscheine vorhanden.') : (
+          redeemedVouchers.length === 0 ? emptyState(loadError ? t('voucherLoadFailed') : t('voucherNoneRedeemedYet')) : (
             <div className="space-y-3">
               {redeemedVouchers.map((voucher) => (
                 <motion.article
@@ -190,13 +191,13 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                       {voucher.partner_name && <p className="text-sm text-muted-foreground mt-0.5">{voucher.partner_name}</p>}
                       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
                         {voucher.address && <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{voucher.address}</p>}
-                        {voucher.redeemed_at && <p>Eingelöst am {formatDate(voucher.redeemed_at, true)}</p>}
-                        <p className="font-semibold text-foreground">Kosten: {voucher.points_value} Punkte</p>
+                        {voucher.redeemed_at && <p>{t('voucherRedeemedOn', { date: formatDate(voucher.redeemed_at, true) })}</p>}
+                        <p className="font-semibold text-foreground">{t('voucherBuyCost', { points: pts(voucher.points_value) })}</p>
                       </div>
                     </div>
                     <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary-dark">
                       <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                      Verwendet
+                      {t('vouchersUsedLabel')}
                     </span>
                   </div>
                 </motion.article>
@@ -229,7 +230,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                   type="button"
                   onClick={closeCodePopup}
                   className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                  aria-label="Fenster schließen"
+                  aria-label={t('rewardsCloseDialog')}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -237,21 +238,21 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-extrabold tracking-tight">Gutschein-Code</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">{t('voucherCodeHeading')}</h2>
                   <p className="mt-2 text-sm text-white/85">{popupDescription}</p>
                 </div>
               </div>
 
               <div className="space-y-5 px-6 py-6">
                 <div className="rounded-2xl border border-border bg-muted/30 p-4">
-                  <p className="text-sm text-muted-foreground">Dein Code</p>
+                  <p className="text-sm text-muted-foreground">{t('voucherCodeLabel')}</p>
                   <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
                     <span className="text-xl font-bold tracking-[0.2em] text-primary font-mono break-all">{popupCode}</span>
                     {popupCode && <CopyCodeButton code={popupCode} />}
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={closeCodePopup}>Schließen</Button>
+                  <Button onClick={closeCodePopup}>{t('voucherClose')}</Button>
                 </div>
               </div>
             </motion.div>

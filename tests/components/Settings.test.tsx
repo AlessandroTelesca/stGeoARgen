@@ -13,7 +13,7 @@ describe('Settings', () => {
     expect(screen.getByText('Allgemein')).toBeInTheDocument();
   });
 
-  it('toggles notifications and changes language', async () => {
+  it('disables fullscreen when unavailable and changes language', async () => {
     render(
       <LanguageProvider>
         <Settings fullscreenActive={false} fullscreenAvailable={false} isIOS={false} onToggleFullscreen={function (enabled: boolean): void {
@@ -22,12 +22,8 @@ describe('Settings', () => {
       </LanguageProvider>
     );
 
-    const toggle = screen.getAllByRole('switch')[0] as HTMLButtonElement;
-
-    expect(toggle).toBeDefined();
-    const before = toggle.getAttribute('aria-checked');
-    await userEvent.click(toggle);
-    expect(toggle.getAttribute('aria-checked')).not.toBe(before);
+    const fullscreenToggle = screen.getByRole('switch') as HTMLButtonElement;
+    expect(fullscreenToggle).toBeDisabled();
 
     // Language is now a <select> dropdown
     const languageSelect = screen.getByRole('combobox');

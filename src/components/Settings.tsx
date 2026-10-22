@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { Bell, Globe, HelpCircle, Info, Shield, User, Maximize2, ChevronRight, MapPinPlus } from 'lucide-react';
+import { Globe, HelpCircle, Info, Shield, User, Maximize2, ChevronRight, MapPinPlus } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackLink } from './PageHeader';
+import { asset } from '../lib/asset';
 
 interface SettingsProps {
   fullscreenActive: boolean;
@@ -96,7 +96,6 @@ export function Settings({
   onNavigateToStationEditor,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
-  const [notifications, setNotifications] = useState(true);
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,12 +120,6 @@ export function Settings({
           </SettingsGroup>
 
           <SettingsGroup title={t('general')}>
-            <SettingsRow
-              icon={<Bell className="w-5 h-5" />}
-              title={t('notifications')}
-              description={t('notificationsDesc')}
-              trailing={<Switch checked={notifications} onChange={() => setNotifications(!notifications)} label={t('notifications')} />}
-            />
             <SettingsRow
               icon={<Globe className="w-5 h-5" />}
               title={t('language')}
@@ -194,7 +187,7 @@ export function Settings({
           )}
 
           <p className="mt-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <img src="/Logo.svg" alt="" className="w-4 h-4 opacity-50" />
+            <img src={asset('/Logo.svg')} alt="" className="w-4 h-4 opacity-50" />
             Made in St.Georgen
           </p>
         </motion.div>

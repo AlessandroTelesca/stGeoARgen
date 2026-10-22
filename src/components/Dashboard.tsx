@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { usePointConfig } from '../contexts/PointConfigContext';
 import { PathCard } from './PathCard';
 import { CountUp } from './CountUp';
+import { asset } from '../lib/asset';
 
 interface Path {
   id: string;
@@ -141,7 +142,7 @@ export function Dashboard({ paths, totalPoints, lastProgressPathId, onPathSelect
         >
           <div className="topo-texture pointer-events-none absolute inset-0" aria-hidden="true" />
           <img
-            src="/Logo.svg"
+            src={asset('/Logo.svg')}
             alt=""
             aria-hidden="true"
             className="pointer-events-none absolute -right-6 -bottom-8 w-40 h-40 opacity-[0.08]"
@@ -231,7 +232,7 @@ export function Dashboard({ paths, totalPoints, lastProgressPathId, onPathSelect
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18, duration: 0.5, ease }}
           >
-            <span className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${isLoggedIn ? 'bg-gold-soft text-gold' : 'bg-muted text-muted-foreground'}`}>
+            <span className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${isLoggedIn ? 'bg-primary-soft text-primary' : 'bg-muted text-muted-foreground'}`}>
               {isLoggedIn ? <Trophy className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </span>
             <span className="min-w-0">
@@ -275,6 +276,7 @@ export function Dashboard({ paths, totalPoints, lastProgressPathId, onPathSelect
             {paths.map((path, index) => (
               <motion.div
                 key={path.id}
+                className="h-full"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.08, duration: 0.55, ease }}
