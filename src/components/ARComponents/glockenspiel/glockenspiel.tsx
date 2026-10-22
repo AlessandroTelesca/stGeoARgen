@@ -15,7 +15,7 @@ import { withTimeout } from './loading';
 import { ARStartCard } from '../ARStartCard';
 import { Bell } from 'lucide-react';
 import { asset } from '../../../lib/asset';
-import { API_BASE_URL } from '../../../services/api';
+import { API_BASE_URL, getAuthToken } from '../../../services/api';
 
 // TODO: Replace with your own glockenturm.glb model
 // Place the GLB file in: src/components/ARComponents/glockenspiel/models/glockenturm.glb
@@ -1382,7 +1382,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
     try {
       const response = await fetch(`${API_BASE_URL}/save_glockenspiel_melody.php`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() ?? ''}` },
         body: JSON.stringify(payload),
       });
 
@@ -1845,7 +1845,10 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
                       </div>
                     )}
                     <div className="mt-3 flex flex-col gap-2">
-                      {pendingRecordedMelody.length > 0 && (
+                      {pendingRecordedMelody.length > 0 && (isGuestMode || !getAuthToken()) && (
+                        <p className="text-xs text-white/80">{glockenspielTexts.saveLoginRequired}</p>
+                      )}
+                      {pendingRecordedMelody.length > 0 && !isGuestMode && !!getAuthToken() && (
                         <button
                           type="button"
                           onClick={() => void handleSavePendingMelody()}

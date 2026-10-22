@@ -68,6 +68,12 @@ $stmt = $db->prepare(
 $stmt->execute([$userId, $rewardKey, $points]);
 $awarded = $stmt->rowCount() === 1;
 if ($awarded) {
+    // Punkte pro Belohnung nur einmal je Konto – auch nach "Fortschritt zurücksetzen"
+    $stmt = $db->prepare('INSERT IGNORE INTO user_point_awards (user_id, award_key) VALUES (?, ?)');
+    $stmt->execute([$userId, 'reward:' . $rewardKey]);
+    $awarded = $stmt->rowCount() === 1;
+}
+if ($awarded) {
     $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
        ->execute([$points, $userId]);
 }

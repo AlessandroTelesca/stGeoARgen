@@ -152,6 +152,8 @@ export interface UserVouchersResponse {
     success: boolean;
     redeemable_vouchers: AvailableVoucher[];
     redeemed_vouchers: AvailableVoucher[];
+    /** Abgelaufene, nicht eingelöste Gutscheine (optional: ältere Backends liefern das Feld nicht) */
+    expired_vouchers?: AvailableVoucher[];
 }
 
 export interface PartnerVoucherValidateResponse {

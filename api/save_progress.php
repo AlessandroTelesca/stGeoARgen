@@ -80,8 +80,15 @@ if ($stmt->rowCount() === 0) {
     ]);
 }
 
-$db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
-   ->execute([$stationPoints, $userId]);
+// Punkte gibt es pro Station nur einmal je Konto – auch nach "Fortschritt zurücksetzen".
+$stmt = $db->prepare('INSERT IGNORE INTO user_point_awards (user_id, award_key) VALUES (?, ?)');
+$stmt->execute([$userId, 'station:' . $stationId]);
+if ($stmt->rowCount() === 0) {
+    $stationPoints = 0;
+} else {
+    $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
+       ->execute([$stationPoints, $userId]);
+}
 $db->commit();
 
 $userPointsStmt = $db->prepare('SELECT total_points FROM users WHERE id = ?');

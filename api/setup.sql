@@ -70,6 +70,22 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabelle: user_point_awards
+-- Merkt sich jede Punkte-Auszahlung (award_key "station:<id>" bzw. "reward:<key>"). Bleibt bei
+-- "Fortschritt zurücksetzen" erhalten, damit Stationen nicht erneut Punkte geben.
+-- Bestehende DB: einmalig api/migrate_point_awards.sql ausführen.
+CREATE TABLE IF NOT EXISTS `user_point_awards` (
+  `id`          INT NOT NULL AUTO_INCREMENT,
+  `user_id`     INT NOT NULL,
+  `award_key`   VARCHAR(140) NOT NULL,
+  `awarded_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_point_award` (`user_id`, `award_key`),
+  CONSTRAINT `fk_user_point_awards_user`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabelle: user_rewards
 -- Speichert einmalige Sonderbelohnungen (z.B. Schatzkiste)
 CREATE TABLE IF NOT EXISTS `user_rewards` (

@@ -47,6 +47,33 @@ if ($stmt->fetch()) {
     ]);
 }
 
+// Pfad muss existieren: Stationen des Pfads aus fest eingebauten und eigenen Stationen zählen
+$totalStmt = $db->prepare(
+    'SELECT (SELECT COUNT(*) FROM builtin_stations WHERE path_id = ?)
+          + (SELECT COUNT(*) FROM custom_stations WHERE path_id = ?) AS total'
+);
+$totalStmt->execute([$pathId, $pathId]);
+$totalStations = (int) $totalStmt->fetchColumn();
+
+if ($totalStations === 0) {
+    sendResponse(['success' => false, 'message' => 'Pfad nicht gefunden.'], 404);
+}
+
+// Alle Stationen des Pfads müssen vom User abgeschlossen sein
+$doneStmt = $db->prepare(
+    'SELECT COUNT(DISTINCT up.station_id) FROM user_progress up
+     WHERE up.user_id = ? AND up.completed = 1 AND up.station_id <> 0
+       AND (up.station_id IN (SELECT station_id FROM builtin_stations WHERE path_id = ?)
+            OR up.station_id IN (SELECT id FROM custom_stations WHERE path_id = ?))'
+);
+$doneStmt->execute([$userId, $pathId, $pathId]);
+if ((int) $doneStmt->fetchColumn() < $totalStations) {
+    sendResponse([
+        'success' => false,
+        'message' => 'Der Pfad ist noch nicht abgeschlossen. Bitte schließe zuerst alle Stationen ab.',
+    ], 409);
+}
+
 // Bonus als Sondereintrag speichern (station_id = 0 = Pfad-Abschluss-Bonus)
 // INSERT IGNORE: bei parallelen Requests (Doppelklick) würde ein normales INSERT am
 // Unique-Key (user_id, path_id, station_id) mit einem Serverfehler scheitern.

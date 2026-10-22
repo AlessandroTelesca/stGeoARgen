@@ -40,6 +40,16 @@ if (!$user) {
     sendResponse(['success' => true, 'message' => $genericMessage]);
 }
 
+// Rate-Limit: höchstens 3 Reset-Anfragen pro E-Mail und Stunde. Bei Überschreitung dieselbe
+// neutrale Antwort wie bei unbekannter E-Mail, aber ohne neuen Token/Mailversand.
+$rateStmt = $db->prepare(
+    'SELECT COUNT(*) FROM password_resets WHERE email = ? AND created_at > (NOW() - INTERVAL 1 HOUR)'
+);
+$rateStmt->execute([$user['email']]);
+if ((int) $rateStmt->fetchColumn() >= 3) {
+    sendResponse(['success' => true, 'message' => $genericMessage]);
+}
+
 // Alte, ungenutzte Tokens des Users ungueltig machen.
 $invalidateStmt = $db->prepare('UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL');
 $invalidateStmt->execute([(int)$user['id']]);

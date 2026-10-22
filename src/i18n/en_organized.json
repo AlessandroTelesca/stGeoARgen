@@ -140,8 +140,8 @@
   "infoFooterNote": "Student project created as part of studies at IIIUS Institut of HFU",
   "dangerZone": "Danger Zone",
   "resetProgress": "Reset Progress",
-  "resetProgressDesc": "Delete all points and completed stations",
-  "resetProgressConfirm": "Do you really want to reset all your progress?",
+  "resetProgressDesc": "Replay stations, your points and vouchers stay",
+  "resetProgressConfirm": "All stations will be marked as open again. Your points and vouchers stay, but each station only awards points once. Continue?",
 
   "_DASHBOARD": "DASHBOARD HOME PAGE",
   "dashboard": "Dashboard",
@@ -648,5 +648,8 @@
   "partnerServerError": "Server error while validating.",
   "partnerChecking": "Checking …",
   "partnerValidate": "Validate voucher",
-  "partnerNote": "Once validated, the voucher code is marked as redeemed and can no longer be used."
+  "partnerNote": "Once validated, the voucher code is marked as redeemed and can no longer be used.",
+  "voucherExpiredHeading": "Expired ({count})",
+  "voucherExpiredOn": "Expired on {date}",
+  "voucherExpiredLabel": "Expired"
 }

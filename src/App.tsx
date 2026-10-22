@@ -7,7 +7,6 @@ import { getUserProgress, saveStationProgress, resetUserProgress, deleteAccount 
 import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints, apiGetCustomStations, apiGetCustomPaths, customStationImageUrl, TREASURE_REWARD_KEY, AR_PATH_ID, type CustomPath, type CustomStation } from './services/api';
 import { usePointConfig } from './contexts/PointConfigContext';
 import { Header } from './components/Header';
-import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
 import { PathView } from './components/PathView';
@@ -19,14 +18,10 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
-import { Info } from './components/Info';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
-import { Impressum } from './components/Impressum';
-import { Datenschutz } from './components/Datenschutz';
 import type { StationImageSlide } from './components/StationAdminPanel/StationImageSequence';
-import { StationAdminPanel } from './components/StationAdminPanel/StationAdminPanel';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
@@ -50,6 +45,13 @@ const BahnhofView = lazy(() => import('./components/ARComponents/bahnhof/bahnhof
 const QRScanner = lazy(() => import('./components/QRScanner').then((m) => ({ default: m.QRScanner })));
 const CustomPanoramaQuizView = lazy(() => import('./components/ARComponents/customPanorama/CustomPanoramaQuizView').then((m) => ({ default: m.CustomPanoramaQuizView })));
 const SchwarzesTorView = lazy(() => import('./components/ARComponents/schwarzesTor/schwarzesTor.tsx').then((m) => ({ default: m.SchwarzesTorView })));
+
+// Selten genutzte Ansichten ebenfalls erst bei Bedarf laden
+const PartnerVoucherValidation = lazy(() => import('./components/PartnerVoucherValidation').then((m) => ({ default: m.PartnerVoucherValidation })));
+const Impressum = lazy(() => import('./components/Impressum').then((m) => ({ default: m.Impressum })));
+const Datenschutz = lazy(() => import('./components/Datenschutz').then((m) => ({ default: m.Datenschutz })));
+const Info = lazy(() => import('./components/Info').then((m) => ({ default: m.Info })));
+const StationAdminPanel = lazy(() => import('./components/StationAdminPanel/StationAdminPanel').then((m) => ({ default: m.StationAdminPanel })));
 
 // IDs der über die Stationsverwaltung angelegten Stationen beginnen hier (siehe api/setup.sql, custom_stations)
 const CUSTOM_STATION_MIN_ID = 1000;
@@ -332,6 +334,20 @@ export default function App() {
         restoredBonuses[entry.path_id] = true;
       });
       setClaimedPathBonuses(restoredBonuses);
+
+      // Vollständig abgeschlossene Pfade, deren Abschluss beim letzten Mal nicht gespeichert
+      // werden konnte (z. B. Netzwerkfehler), still nachtragen
+      pathsRef.current
+        .filter((path) =>
+          path.stations.length > 0 &&
+          !restoredBonuses[path.id] &&
+          path.stations.every((station) => completedIds.has(station.id))
+        )
+        .forEach((path) => {
+          apiSavePathBonus(user.id, path.id)
+            .then(() => setClaimedPathBonuses((prev) => ({ ...prev, [path.id]: true })))
+            .catch(() => { /* beim nächsten Laden erneut versuchen */ });
+        });
     } catch {
       /* Progress konnte nicht geladen werden – bisherigen Stand behalten */
     }
@@ -380,7 +396,7 @@ export default function App() {
     setLastProgressPathId(null);
     setRewardClaimed(false);
     setTreasurePoints(0);
-    setServerPoints(0);
+    // Kontostand bleibt serverseitig erhalten (Punkte gibt es pro Station nur einmal)
     toast.success(language === 'de' ? 'Fortschritt wurde zurückgesetzt.' : 'Progress has been reset.', {
       duration: 3000,
     });
@@ -558,6 +574,11 @@ export default function App() {
       ],
     },
   ]);
+  // Aktueller Stand für Callbacks, die nicht bei jeder Pfad-Änderung neu entstehen sollen
+  const pathsRef = useRef(paths);
+  useEffect(() => {
+    pathsRef.current = paths;
+  }, [paths]);
 
   // Calculate progress
   const getPathProgress = (path: Path) => {
@@ -855,8 +876,14 @@ export default function App() {
       );
       if (currentPath) {
         try {
-          await saveStationProgress(user.id, currentPath.id, stationId);
+          const saveRes = await saveStationProgress(user.id, currentPath.id, stationId);
           await refreshUserProgress();
+          if (saveRes.points_awarded === 0) {
+            // Nach "Fortschritt zurücksetzen" erneut gespielt: Punkte gab es für diese Station schon
+            toast.info(language === 'de' ? 'Die Punkte für diese Station hast du bereits erhalten.' : 'You already received the points for this station.', {
+              duration: 3500,
+            });
+          }
 
           // Pfad-Abschluss speichern (Bonus-Punkte, falls vorhanden, liefert der Server)
           // Da setState async ist, berechnen wir hier direkt
@@ -886,8 +913,8 @@ export default function App() {
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
               }
             } catch {
-              // Bonus-Speichern fehlgeschlagen – lokal trotzdem gutschreiben
-              setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+              // Speichern des Pfad-Abschlusses fehlgeschlagen: trotzdem feiern, aber nicht als
+              // gespeichert markieren – refreshUserProgress holt es beim nächsten Laden nach
               const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
               const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
               setCelebrationData({
@@ -1393,31 +1420,41 @@ export default function App() {
         />
       )}
 
-      {currentView === 'partner' && (
-        <PartnerVoucherValidation />
-      )}
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center px-6" role="status" aria-live="polite">
+            <p className="text-base font-semibold text-muted-foreground">
+              {language === 'de' ? 'Wird geladen...' : 'Loading...'}
+            </p>
+          </div>
+        }
+      >
+        {currentView === 'partner' && (
+          <PartnerVoucherValidation />
+        )}
 
-      {currentView === 'impressum' && (
-        <Impressum onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'impressum' && (
+          <Impressum onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'datenschutz' && (
-        <Datenschutz onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'datenschutz' && (
+          <Datenschutz onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'info' && (
-        <Info onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'info' && (
+          <Info onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'admin-stations' && (
-        <StationAdminPanel
-          paths={customPaths}
-          pathTitles={Object.fromEntries(paths.map((path) => [path.id, path.title]))}
-          stations={customStations}
-          onDataChanged={loadCustomContent}
-          onBack={() => handleNavigate('settings')}
-        />
-      )}
+        {currentView === 'admin-stations' && (
+          <StationAdminPanel
+            paths={customPaths}
+            pathTitles={Object.fromEntries(paths.map((path) => [path.id, path.title]))}
+            stations={customStations}
+            onDataChanged={loadCustomContent}
+            onBack={() => handleNavigate('settings')}
+          />
+        )}
+      </Suspense>
 
       <AnimatePresence>
         {currentView === 'station' && selectedStation && (

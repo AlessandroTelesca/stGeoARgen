@@ -22,6 +22,7 @@ interface UserVouchersResponse {
   success: boolean;
   redeemable_vouchers: VoucherListItem[];
   redeemed_vouchers: VoucherListItem[];
+  expired_vouchers?: VoucherListItem[];
 }
 
 export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded = false }: { userId: number; userPoints: number; onPointsChange?: () => void; embedded?: boolean }) {
@@ -30,6 +31,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
   const [activeTab, setActiveTab] = useState<'redeemable' | 'redeemed'>('redeemable');
   const [redeemableVouchers, setRedeemableVouchers] = useState<VoucherListItem[]>([]);
   const [redeemedVouchers, setRedeemedVouchers] = useState<VoucherListItem[]>([]);
+  const [expiredVouchers, setExpiredVouchers] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [showCodePopup, setShowCodePopup] = useState(false);
@@ -44,6 +46,7 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
     if (userId <= 0) {
       setRedeemableVouchers([]);
       setRedeemedVouchers([]);
+      setExpiredVouchers([]);
       setLoading(false);
       return;
     }
@@ -55,9 +58,11 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
       if (data.success) {
         setRedeemableVouchers(Array.isArray(data.redeemable_vouchers) ? data.redeemable_vouchers : []);
         setRedeemedVouchers(Array.isArray(data.redeemed_vouchers) ? data.redeemed_vouchers : []);
+        setExpiredVouchers(Array.isArray(data.expired_vouchers) ? data.expired_vouchers : []);
       } else {
         setRedeemableVouchers([]);
         setRedeemedVouchers([]);
+        setExpiredVouchers([]);
       }
     } catch (error) {
       // Bisherige Liste behalten und Fehler anzeigen – nicht „Keine Gutscheine“ vortäuschen
@@ -176,8 +181,9 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
             </div>
           )
         ) : (
-          redeemedVouchers.length === 0 ? emptyState(loadError ? t('voucherLoadFailed') : t('voucherNoneRedeemedYet')) : (
+          redeemedVouchers.length === 0 && expiredVouchers.length === 0 ? emptyState(loadError ? t('voucherLoadFailed') : t('voucherNoneRedeemedYet')) : (
             <div className="space-y-3">
+              {redeemedVouchers.length === 0 && emptyState(t('voucherNoneRedeemedYet'))}
               {redeemedVouchers.map((voucher) => (
                 <motion.article
                   key={voucher.id}
@@ -202,6 +208,37 @@ export function VoucherRedeemPage({ userId, userPoints, onPointsChange, embedded
                   </div>
                 </motion.article>
               ))}
+
+              {expiredVouchers.length > 0 && (
+                <>
+                  <h2 className="pt-5 text-lg font-bold tracking-tight">
+                    {t('voucherExpiredHeading', { count: expiredVouchers.length })}
+                  </h2>
+                  {expiredVouchers.map((voucher) => (
+                    <motion.article
+                      key={`expired-${voucher.id}`}
+                      className="surface-card p-4 opacity-60"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 0.6, y: 0 }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-bold leading-snug">{voucher.description}</h3>
+                          {voucher.partner_name && <p className="text-sm text-muted-foreground mt-0.5">{voucher.partner_name}</p>}
+                          <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                            {voucher.address && <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{voucher.address}</p>}
+                            {voucher.expiry_date && <p>{t('voucherExpiredOn', { date: formatDate(voucher.expiry_date) })}</p>}
+                            <p className="font-semibold text-foreground">{t('voucherBuyCost', { points: pts(voucher.points_value) })}</p>
+                          </div>
+                        </div>
+                        <span className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
+                          {t('voucherExpiredLabel')}
+                        </span>
+                      </div>
+                    </motion.article>
+                  ))}
+                </>
+              )}
             </div>
           )
         )}

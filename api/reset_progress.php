@@ -1,8 +1,9 @@
 <?php
 /**
  * reset_progress.php - Gesamten Fortschritt eines Users zuruecksetzen
- * (abgeschlossene Stationen, Pfad-Boni, Sonderbelohnungen und Punktestand).
- * Gekaufte Gutscheine (user_vouchers) bleiben erhalten.
+ * (abgeschlossene Stationen, Pfad-Abschlüsse, Sonderbelohnungen), damit alles erneut spielbar ist.
+ * Punktestand, gekaufte Gutscheine und bereits ausgezahlte Punkte (user_point_awards) bleiben
+ * erhalten – sonst ließen sich durch Zurücksetzen beliebig viele Gutscheine erspielen.
  *
  * POST-Parameter (JSON body):
  *   user_id - (optional) ID des Users, muss zum Session-Token passen
@@ -28,7 +29,6 @@ try {
     $deleteStmt = $db->prepare('DELETE FROM user_progress WHERE user_id = ?');
     $deleteStmt->execute([$userId]);
     $db->prepare('DELETE FROM user_rewards WHERE user_id = ?')->execute([$userId]);
-    $db->prepare('UPDATE users SET total_points = 0 WHERE id = ?')->execute([$userId]);
     $db->commit();
 } catch (Throwable $e) {
     $db->rollBack();

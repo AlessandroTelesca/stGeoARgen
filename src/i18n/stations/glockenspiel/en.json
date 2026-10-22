@@ -9,6 +9,7 @@
   "arStartButton": "OK",
   "arStartingButton": "Starting AR...",
   "arStartErrorFallback": "The AR view could not be started.",
+  "saveLoginRequired": "Melodies can only be saved with an account. Please log in.",
   "quizQuestion": "How many bells does the glockenspiel have?",
   "quizOptions": ["12 bells", "18 bells", "24 bells", "30 bells"]
 }

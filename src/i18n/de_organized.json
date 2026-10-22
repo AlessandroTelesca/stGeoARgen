@@ -140,8 +140,8 @@
   "infoFooterNote": "Studentisches Projekt im Rahmen des Studiums am IIIUS Institut der HFU",
   "dangerZone": "Gefahrenzone",
   "resetProgress": "Fortschritt zurücksetzen",
-  "resetProgressDesc": "Alle Punkte und abgeschlossenen Stationen löschen",
-  "resetProgressConfirm": "Möchtest du wirklich deinen gesamten Fortschritt zurücksetzen?",
+  "resetProgressDesc": "Stationen erneut spielen, Punkte und Gutscheine bleiben",
+  "resetProgressConfirm": "Alle Stationen werden wieder als offen markiert. Deine Punkte und Gutscheine bleiben erhalten, Punkte gibt es pro Station aber nur einmal. Fortfahren?",
 
   "_DASHBOARD": "DASHBOARD STARTSEITE",
   "dashboard": "Dashboard",
@@ -648,5 +648,8 @@
   "partnerServerError": "Serverfehler beim Validieren.",
   "partnerChecking": "Wird geprüft …",
   "partnerValidate": "Gutschein validieren",
-  "partnerNote": "Nach erfolgreicher Validierung wird der Gutschein-Code als eingelöst markiert und kann nicht mehr verwendet werden."
+  "partnerNote": "Nach erfolgreicher Validierung wird der Gutschein-Code als eingelöst markiert und kann nicht mehr verwendet werden.",
+  "voucherExpiredHeading": "Abgelaufen ({count})",
+  "voucherExpiredOn": "Abgelaufen am {date}",
+  "voucherExpiredLabel": "Abgelaufen"
 }
