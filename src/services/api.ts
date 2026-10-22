@@ -12,12 +12,58 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
+ * Fehler eines API-Aufrufs. `status` ist der HTTP-Status der Antwort;
+ * undefined, wenn der Server gar nicht erreichbar war (offline, CORS, DNS).
+ */
+export class ApiError extends Error {
+    status?: number;
+
+    constructor(message: string, status?: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
+
+// ─── Session-Token ───────────────────────────────────────────────────────────
+// login.php/register.php liefern ein Session-Token. Nutzerbezogene Endpunkte leiten die
+// user_id serverseitig daraus ab ("Authorization: Bearer <token>").
+
+const AUTH_TOKEN_KEY = 'st-geoargen-session-token';
+
+/** Wird ausgelöst, wenn der Server das Session-Token ablehnt (abgelaufen/ungültig). */
+export const AUTH_EXPIRED_EVENT = 'st-geoargen-auth-expired';
+
+export function getAuthToken(): string | null {
+    try {
+        return localStorage.getItem(AUTH_TOKEN_KEY);
+    } catch {
+        return null;
+    }
+}
+
+export function setAuthToken(token: string | null): void {
+    try {
+        if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+        else localStorage.removeItem(AUTH_TOKEN_KEY);
+    } catch {
+        /* Speicher nicht verfügbar (z. B. privater Modus) */
+    }
+}
+
+interface ApiFetchConfig {
+    /** Session-Token mitsenden (nutzerbezogene Endpunkte) */
+    auth?: boolean;
+}
+
+/**
  * Generische Fetch-Funktion für die API.
- * Wirft einen Error mit der Server-Fehlermeldung wenn success: false.
+ * Wirft einen ApiError mit der Server-Fehlermeldung wenn success: false.
  */
 async function apiFetch<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    config: ApiFetchConfig = {}
 ): Promise<T> {
     const url = `${API_BASE_URL}/${endpoint}`;
     const headers = new Headers(options.headers);
@@ -25,12 +71,16 @@ async function apiFetch<T>(
     if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
     }
+    if (config.auth) {
+        const token = getAuthToken();
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+    }
 
     let response: Response;
     try {
         response = await fetch(url, { ...options, headers });
     } catch {
-        throw new Error(`API nicht erreichbar (${url}).`);
+        throw new ApiError(`API nicht erreichbar (${url}).`);
     }
 
     const contentType = response.headers.get('content-type') || '';
@@ -39,13 +89,17 @@ async function apiFetch<T>(
     try {
         data = (await response.json()) as ApiResponse;
     } catch {
-        throw new Error(
-            `Ungueltige API-Antwort (${url}) - HTTP ${response.status}, Content-Type: ${contentType || 'unbekannt'}.`
+        throw new ApiError(
+            `Ungueltige API-Antwort (${url}) - HTTP ${response.status}, Content-Type: ${contentType || 'unbekannt'}.`,
+            response.status
         );
     }
 
     if (!data.success) {
-        throw new Error(data.message || `API-Fehler bei ${url}`);
+        if (config.auth && response.status === 401 && typeof window !== 'undefined') {
+            window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+        }
+        throw new ApiError(data.message || `API-Fehler bei ${url}`, response.status);
     }
 
     return data as T;
@@ -63,6 +117,8 @@ export interface UserData {
 export interface AuthResponse {
     success: boolean;
     user: UserData;
+    /** Session-Token (nur login.php/register.php) */
+    token?: string;
 }
 
 export interface AvailableVoucher {
@@ -135,8 +191,17 @@ export async function apiLogin(
     });
 }
 
+/** Beendet die Session serverseitig (Fehler werden ignoriert – lokal wird ohnehin abgemeldet). */
+export async function apiLogout(token: string): Promise<void> {
+    try {
+        await apiFetch('logout.php', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    } catch {
+        /* egal – Token wird lokal verworfen */
+    }
+}
+
 export async function apiGetUser(userId: number): Promise<AuthResponse> {
-    return apiFetch<AuthResponse>(`get_user.php?user_id=${userId}`);
+    return apiFetch<AuthResponse>(`get_user.php?user_id=${userId}`, {}, { auth: true });
 }
 
 export async function apiGetAvailableVouchers(): Promise<AvailableVouchersResponse> {
@@ -150,11 +215,11 @@ export async function apiRedeemVoucherFromShop(
     return apiFetch<RedeemVoucherResponse>('redeem_voucher_from_shop.php', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId, voucher_id: voucherId }),
-    });
+    }, { auth: true });
 }
 
 export async function apiGetUserVouchers(userId: number): Promise<UserVouchersResponse> {
-    return apiFetch<UserVouchersResponse>(`get_user_vouchers.php?user_id=${userId}`);
+    return apiFetch<UserVouchersResponse>(`get_user_vouchers.php?user_id=${userId}`, {}, { auth: true });
 }
 
 export async function apiValidatePartnerVoucher(
@@ -201,7 +266,7 @@ export interface ProgressResponse {
 }
 
 export async function apiGetProgress(userId: number): Promise<ProgressResponse> {
-    return apiFetch<ProgressResponse>(`get_progress.php?user_id=${userId}`);
+    return apiFetch<ProgressResponse>(`get_progress.php?user_id=${userId}`, {}, { auth: true });
 }
 
 export async function apiSaveProgress(
@@ -212,7 +277,15 @@ export async function apiSaveProgress(
     return apiFetch(`save_progress.php`, {
         method: 'POST',
         body: JSON.stringify({ user_id: userId, path_id: pathId, station_id: stationId }),
-    });
+    }, { auth: true });
+}
+
+/** Löscht das eigene Konto inkl. aller Daten (Passwort zur Bestätigung). */
+export async function apiDeleteAccount(password: string): Promise<{ success: boolean; message: string }> {
+    return apiFetch('delete_account.php', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+    }, { auth: true });
 }
 
 export async function apiResetProgress(
@@ -221,7 +294,7 @@ export async function apiResetProgress(
     return apiFetch('reset_progress.php', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId }),
-    });
+    }, { auth: true });
 }
 
 export interface PathBonusResponse {
@@ -257,7 +330,7 @@ export async function apiSavePathBonus(
     return apiFetch<PathBonusResponse>('save_path_bonus.php', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId, path_id: pathId }),
-    });
+    }, { auth: true });
 }
 
 /** Punkte vergibt der Server laut reward_definitions. */
@@ -268,7 +341,7 @@ export async function apiSaveTreasureReward(
     return apiFetch<TreasureRewardSaveResponse>('save_treasure_reward.php', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId, reward_key: rewardKey }),
-    });
+    }, { auth: true });
 }
 
 export async function apiGetTreasureReward(
@@ -277,11 +350,13 @@ export async function apiGetTreasureReward(
 ): Promise<TreasureRewardStatusResponse> {
     return apiFetch<TreasureRewardStatusResponse>(
         `get_treasure_reward.php?user_id=${userId}&reward_key=${encodeURIComponent(rewardKey)}`,
+        {},
+        { auth: true },
     );
 }
 
 export async function apiGetUserPoints(userId: number): Promise<UserPointsResponse> {
-    return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`);
+    return apiFetch<UserPointsResponse>(`get_user_points.php?user_id=${userId}`, {}, { auth: true });
 }
 
 // ─── Punkte-Konfiguration ────────────────────────────────────────────────────

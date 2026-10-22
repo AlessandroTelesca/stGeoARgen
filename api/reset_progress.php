@@ -5,7 +5,8 @@
  * Gekaufte Gutscheine (user_vouchers) bleiben erhalten.
  *
  * POST-Parameter (JSON body):
- *   user_id - ID des Users
+ *   user_id - (optional) ID des Users, muss zum Session-Token passen
+ *   Header: Authorization: Bearer <Session-Token>
  *
  * Response (JSON):
  *   success: true  -> { success, message, deleted_rows }
@@ -19,20 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $body = json_decode(file_get_contents('php://input'), true);
-$userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
-
-if (!$userId || $userId <= 0) {
-    sendResponse(['success' => false, 'message' => 'Ungueltige user_id.'], 400);
-}
-
 $db = getDB();
-
-// Sicherstellen, dass der User existiert
-$stmt = $db->prepare('SELECT id FROM users WHERE id = ?');
-$stmt->execute([$userId]);
-if (!$stmt->fetch()) {
-    sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
-}
+$userId = requireUser($db, is_array($body) ? ($body['user_id'] ?? null) : null);
 
 $db->beginTransaction();
 try {

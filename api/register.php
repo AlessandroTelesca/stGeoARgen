@@ -8,7 +8,7 @@
  *   password  – Passwort (mind. 6 Zeichen)
  *
  * Response (JSON):
- *   success: true  → { success, user: { id, username, email, created_at } }
+ *   success: true  → { success, user: { id, username, email, created_at }, token }
  *   success: false → { success, message }
  */
 
@@ -50,16 +50,26 @@ if ($stmt->fetch()) {
 $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
 // User einfügen
-$stmt = $db->prepare('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)');
-$stmt->execute([$username, $email, $passwordHash]);
+// Unique-Key auf email fängt auch parallele Registrierungen mit derselben Adresse ab
+try {
+    $stmt = $db->prepare('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)');
+    $stmt->execute([$username, $email, $passwordHash]);
+} catch (PDOException $e) {
+    if ($e->getCode() === '23000') {
+        sendResponse(['success' => false, 'message' => 'Diese E-Mail-Adresse ist bereits registriert.'], 409);
+    }
+    throw $e;
+}
 $userId = (int) $db->lastInsertId();
 
 // Neu erstellten User abrufen
 $stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
+$user['id'] = (int) $user['id'];
 
 sendResponse([
     'success' => true,
     'user'    => $user,
+    'token'   => createUserSession($db, $userId),
 ]);

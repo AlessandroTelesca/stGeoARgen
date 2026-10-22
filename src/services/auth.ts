@@ -2,7 +2,8 @@
  * auth.ts – Authentifizierungs-Service
  * 
  * Kapselt Login/Register API-Calls und persistiert die Session
- * via localStorage (user_id + user-Objekt werden gespeichert).
+ * via localStorage (user-Objekt + Session-Token werden gespeichert).
+ * Der Server leitet die user_id ausschließlich aus dem Session-Token ab.
  */
 
 import {
@@ -14,6 +15,11 @@ import {
     apiGetProgress,
     apiSaveProgress,
     apiResetProgress,
+    apiDeleteAccount,
+    apiLogout,
+    getAuthToken,
+    setAuthToken,
+    ApiError,
     UserData,
     ProgressEntry,
 } from './api';
@@ -22,25 +28,44 @@ const STORAGE_KEY = 'st-geoargen-user';
 
 // ─── Session ──────────────────────────────────────────────────────────────────
 
-/** Speichert den eingeloggten User in localStorage */
-export function saveSession(user: UserData): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+/** Speichert den eingeloggten User (und ggf. ein neues Session-Token) in localStorage */
+export function saveSession(user: UserData, token?: string): void {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    } catch {
+        /* Speicher nicht verfügbar – Session gilt nur bis zum Reload */
+    }
+    if (token) setAuthToken(token);
 }
 
-/** Lädt den gespeicherten User aus localStorage (oder null) */
+/** Lädt den gespeicherten User aus localStorage (oder null, auch wenn kein Session-Token vorliegt) */
 export function loadSession(): UserData | null {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return null;
-        return JSON.parse(raw) as UserData;
+        if (!raw || !getAuthToken()) return null;
+        const user = JSON.parse(raw) as UserData;
+        return user && typeof user.id === 'number' ? user : null;
     } catch {
         return null;
     }
 }
 
-/** Löscht die Session aus localStorage */
+/** Löscht die Session (User + Token) aus localStorage */
 export function clearSession(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        /* ignorieren */
+    }
+    setAuthToken(null);
+}
+
+/** Server hat keine Session erhalten (Token fehlt im Response) */
+function requireToken(token: string | undefined): string {
+    if (!token) {
+        throw new Error('Anmeldung fehlgeschlagen: Server hat keine Sitzung erstellt.');
+    }
+    return token;
 }
 
 // ─── Auth-Aktionen ────────────────────────────────────────────────────────────
@@ -55,7 +80,7 @@ export async function registerUser(
     password: string
 ): Promise<UserData> {
     const res = await apiRegister(username, email, password);
-    saveSession(res.user);
+    saveSession(res.user, requireToken(res.token));
     return res.user;
 }
 
@@ -68,15 +93,17 @@ export async function loginUser(
     password: string
 ): Promise<UserData> {
     const res = await apiLogin(email, password);
-    saveSession(res.user);
+    saveSession(res.user, requireToken(res.token));
     return res.user;
 }
 
 /**
- * Loggt den User aus und löscht die Session.
+ * Loggt den User aus und löscht die Session (serverseitig best effort).
  */
 export function logoutUser(): void {
+    const token = getAuthToken();
     clearSession();
+    if (token) void apiLogout(token);
 }
 
 /**
@@ -85,15 +112,25 @@ export function logoutUser(): void {
  */
 export async function restoreSession(): Promise<UserData | null> {
     const stored = loadSession();
-    if (!stored) return null;
+    if (!stored) {
+        // Alte Sessions ohne Token (vor Einführung der Session-Tokens) → neu anmelden
+        clearSession();
+        return null;
+    }
 
     try {
         const res = await apiGetUser(stored.id);
         saveSession(res.user); // aktualisierte Daten speichern
         return res.user;
-    } catch {
-        clearSession();
-        return null;
+    } catch (error) {
+        // Nur abmelden, wenn der Server die Session wirklich ablehnt. Bei Netzwerk- oder
+        // Serverfehlern (offline, 5xx) bleibt man mit den gespeicherten Daten eingeloggt.
+        const status = error instanceof ApiError ? error.status : undefined;
+        if (status === 401 || status === 403 || status === 404) {
+            clearSession();
+            return null;
+        }
+        return stored;
     }
 }
 
@@ -143,4 +180,13 @@ export async function saveStationProgress(
  */
 export async function resetUserProgress(userId: number): Promise<void> {
     await apiResetProgress(userId);
+}
+
+/**
+ * Löscht das Konto serverseitig und meldet lokal ab.
+ * Wirft bei falschem Passwort, damit die Oberfläche die Meldung anzeigen kann.
+ */
+export async function deleteAccount(password: string): Promise<void> {
+    await apiDeleteAccount(password);
+    clearSession();
 }

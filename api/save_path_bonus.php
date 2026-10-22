@@ -3,7 +3,8 @@
  * save_path_bonus.php – Speichert den Pfad‑Abschluss (kein Punkte-Bonus mehr)
  *
  * POST-Parameter (JSON body):
- *   user_id  – ID des Users
+ *   user_id  – (optional) ID des Users, muss zum Session-Token passen
+ *   Header: Authorization: Bearer <Session-Token>
  *   path_id  – ID des Pfades (z.B. "tourist")
  *
  * Response (JSON):
@@ -19,18 +20,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = json_decode(file_get_contents('php://input'), true);
 
-$userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $pathId = trim($body['path_id'] ?? '');
 #$bonus  = 500; // server-side constant – not accepted from client
 
-if (!$userId || $userId <= 0) {
-    sendResponse(['success' => false, 'message' => 'Ungültige user_id.'], 400);
-}
 if (empty($pathId)) {
     sendResponse(['success' => false, 'message' => 'path_id fehlt.'], 400);
 }
 
 $db = getDB();
+$userId = requireUser($db, $body['user_id'] ?? null);
 
 // Prüfen ob der Bonus für diesen Pfad bereits vergeben wurde
 // station_id = 0 ist der Konvention nach der "Pfad-Abschluss-Bonus"
@@ -50,11 +48,20 @@ if ($stmt->fetch()) {
 }
 
 // Bonus als Sondereintrag speichern (station_id = 0 = Pfad-Abschluss-Bonus)
+// INSERT IGNORE: bei parallelen Requests (Doppelklick) würde ein normales INSERT am
+// Unique-Key (user_id, path_id, station_id) mit einem Serverfehler scheitern.
 $stmt = $db->prepare(
-    'INSERT INTO user_progress (user_id, path_id, station_id, completed, completed_at)
+    'INSERT IGNORE INTO user_progress (user_id, path_id, station_id, completed, completed_at)
      VALUES (?, ?, 0, 1, NOW())'
 );
 $stmt->execute([$userId, $pathId]);
+if ($stmt->rowCount() === 0) {
+    sendResponse([
+        'success'         => true,
+        'message'         => 'Bonus bereits vergeben.',
+        'already_claimed' => true,
+    ]);
+}
 
 // Pfadabschluss wird jetzt nur noch als Fortschritt gespeichert.
 // Es werden keine Punkte mehr serverseitig addiert.

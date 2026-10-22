@@ -106,6 +106,12 @@ Neue API-Endpunkte:
 - `api/request_password_reset.php`
 - `api/reset_password.php`
 
+### Deployment-Checkliste
+
+1. **Einmalig vor dem ersten Deploy mit Session-Tokens:** [api/migrate_user_sessions.sql](api/migrate_user_sessions.sql) in phpMyAdmin ausführen. Ohne die Tabelle `user_sessions` schlagen Login und alle nutzerbezogenen Endpunkte fehl. Backend (`api/`) und Frontend immer zusammen ausliefern; alle Nutzer:innen müssen sich danach einmal neu anmelden.
+2. `npm run typecheck`, `npm test -- --run` und `npm run build` müssen fehlerfrei durchlaufen (der GitHub-Workflow prüft das ebenfalls).
+3. Geofencing ist in Produktion immer aktiv (100 m um die Station). Zum Testen am Schreibtisch lässt es sich nur im Dev-Server abschalten: `VITE_DISABLE_GEO=true` in `.env.local`.
+
 ### Adding New Stations
 
 **Ohne Code (Stationsverwaltung):** Unter *Einstellungen → Verwaltung → Stationen verwalten* (`/admin/stations`) lassen sich Stationen anlegen, bearbeiten und löschen: Profilbild, Texte (DE Pflicht, EN optional), Themenpfad, Koordinaten, Punkte, eine **Bildfolge** aus 1–10 Bildern mit je einem kurzen Text und ein optionales Quiz. Sie werden in der Tabelle `custom_stations` gespeichert (IDs ab 1000) und erscheinen sofort für alle Nutzer:innen. Vor Ort startet man die Station, klickt sich durch die Bildfolge und schließt sie danach ab (mit Quiz nach richtiger Antwort). Solche Stationen haben kein AR-Erlebnis.

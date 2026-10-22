@@ -1,9 +1,11 @@
-﻿<?php
+<?php
 /**
  * get_user_vouchers.php – Gekaufte und bereits eingelöste Gutscheine abrufen
  *
  * GET-Parameter:
- *   user_id – ID des Users
+ *   user_id – (optional) ID des Users, muss zum Session-Token passen
+ *
+ * Header: Authorization: Bearer <Session-Token>
  *
  * Response (JSON):
  *   success: true  → {
@@ -20,12 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     sendResponse(['success' => false, 'message' => 'Methode nicht erlaubt.'], 405);
 }
 
-$userId = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
-if (!$userId || $userId <= 0) {
-    sendResponse(['success' => false, 'message' => 'Ungültige user_id.'], 400);
-}
-
 $db = getDB();
+// user_id kommt aus dem Session-Token; ein mitgeschickter user_id-Parameter muss dazu passen.
+$userId = requireUser($db, $_GET['user_id'] ?? null);
 
 $redeemableStmt = $db->prepare(
     'SELECT uv.id, uv.code, uv.description, p.name AS partner_name, p.address, uv.points_value, uv.remaining_uses, uv.purchased_at, uv.expiry_date

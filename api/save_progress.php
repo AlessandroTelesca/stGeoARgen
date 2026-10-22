@@ -1,9 +1,10 @@
-﻿<?php
+<?php
 /**
  * save_progress.php – Stations-Abschluss eines Users speichern
  *
  * POST-Parameter (JSON body):
- *   user_id    – ID des Users
+ *   user_id    – (optional) ID des Users, muss zum Session-Token passen
+ *   Header: Authorization: Bearer <Session-Token>
  *   path_id    – ID des Pfades (z.B. "tourist")
  *   station_id – ID der Station (Zahl)
  *
@@ -20,13 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = json_decode(file_get_contents('php://input'), true);
 
-$userId    = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $pathId    = trim($body['path_id'] ?? '');
 $stationId = filter_var($body['station_id'] ?? 0, FILTER_VALIDATE_INT);
 
-if (!$userId || $userId <= 0) {
-    sendResponse(['success' => false, 'message' => 'Ungültige user_id.'], 400);
-}
 if (empty($pathId)) {
     sendResponse(['success' => false, 'message' => 'path_id fehlt.'], 400);
 }
@@ -35,13 +32,7 @@ if (!$stationId || $stationId <= 0) {
 }
 
 $db = getDB();
-
-// Prüfen ob der User existiert
-$stmt = $db->prepare('SELECT id FROM users WHERE id = ?');
-$stmt->execute([$userId]);
-if (!$stmt->fetch()) {
-    sendResponse(['success' => false, 'message' => 'User nicht gefunden.'], 404);
-}
+$userId = requireUser($db, $body['user_id'] ?? null);
 
 // Punkte der Station laut DB: fest eingebaute Stationen aus builtin_stations, Custom-Stationen
 // (ID >= 1000) aus custom_stations. Unbekannte Stationen werden abgelehnt, sonst ließe sich mit
@@ -58,8 +49,23 @@ if (!$station) {
 }
 $stationPoints = (int) $station['points'];
 
-// INSERT IGNORE + rowCount: bereits gespeichert (auch bei parallelen Requests) → keine Punkte erneut vergeben.
+// Stations-IDs sind pfadübergreifend eindeutig. Wurde eine Custom-Station in der Stationsverwaltung
+// in einen anderen Pfad verschoben, greift der Unique-Key (user_id, path_id, station_id) nicht –
+// daher pro User sperren und nach station_id in allen Pfaden prüfen.
 $db->beginTransaction();
+$db->prepare('SELECT id FROM users WHERE id = ? FOR UPDATE')->execute([$userId]);
+$stmt = $db->prepare('SELECT 1 FROM user_progress WHERE user_id = ? AND station_id = ? LIMIT 1');
+$stmt->execute([$userId, $stationId]);
+if ($stmt->fetch()) {
+    $db->rollBack();
+    sendResponse([
+        'success' => true,
+        'message' => 'Fortschritt bereits gespeichert.',
+        'points_awarded' => 0,
+    ]);
+}
+
+// INSERT IGNORE + rowCount: bereits gespeichert (auch bei parallelen Requests) → keine Punkte erneut vergeben.
 $stmt = $db->prepare(
     'INSERT IGNORE INTO user_progress (user_id, path_id, station_id, completed, completed_at)
      VALUES (?, ?, ?, 1, NOW())'
