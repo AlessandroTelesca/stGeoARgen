@@ -30,7 +30,7 @@
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`;
   }
 
-  export default defineConfig(() => {
+  export default defineConfig(({ command }) => {
     const localApiTarget = process.env.VITE_LOCAL_API_TARGET || 'http://127.0.0.1:8000';
 
     return {
@@ -105,6 +105,8 @@
       target: 'esnext',
       outDir: 'build',
     },
+    // Debug-Logs nicht ausliefern; console.warn/error bleiben für die Fehlersuche erhalten
+    esbuild: command === 'build' ? { pure: ['console.log', 'console.debug', 'console.info'] } : undefined,
     server: {
       port: 3000,
       open: true,
