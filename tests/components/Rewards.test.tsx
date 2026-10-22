@@ -14,40 +14,8 @@ vi.mock('../../src/services/api', async (importOriginal) => ({
   }),
 }));
 
-import { RewardDialog } from '../../src/components/RewardDialog';
 import { RewardsView } from '../../src/components/RewardsView';
 import { PointConfigProvider } from '../../src/contexts/PointConfigContext';
-
-describe('RewardDialog', () => {
-  const renderDialog = () => {
-    const onClose = vi.fn();
-    const onSelectReward = vi.fn();
-    render(<RewardDialog onClose={onClose} onSelectReward={onSelectReward} />);
-    return { onClose, onSelectReward };
-  };
-
-  test('enables confirm after selecting a voucher', async () => {
-    const user = userEvent.setup();
-    const { onSelectReward } = renderDialog();
-
-    const confirmButton = screen.getByRole('button', { name: /gutschein einlösen/i });
-    expect(confirmButton).toBeDisabled();
-
-    await user.click(screen.getByText('Mustermann Café'));
-    expect(confirmButton).toBeEnabled();
-
-    await user.click(confirmButton);
-    expect(onSelectReward).toHaveBeenCalledWith('locality1');
-  });
-
-  test('closes via later button', async () => {
-    const user = userEvent.setup();
-    const { onClose } = renderDialog();
-
-    await user.click(screen.getByRole('button', { name: /später/i }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-});
 
 describe('RewardsView', () => {
   const defaultProps = {

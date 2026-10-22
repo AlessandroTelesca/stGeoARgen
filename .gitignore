@@ -41,3 +41,7 @@ coverage/
 
 # Database credentials
 api/credentials.txt
+
+# Lokale Tool-Dateien
+.claude/settings.local.json
+.impeccable/

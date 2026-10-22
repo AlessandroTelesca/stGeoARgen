@@ -1,7 +1,7 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const loader = new GLTFLoader();
-const url = new URL('./src/components/ARComponents/glockenspiel/models/glockenturm.glb', import.meta.url).href;
+const url = new URL('../src/components/ARComponents/glockenspiel/models/glockenturm.glb', import.meta.url).href;
 
 loader.load(url, (gltf) => {
   const names = [];
