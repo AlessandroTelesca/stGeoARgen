@@ -40,6 +40,7 @@ Options -Indexes
 <IfModule mod_mime.c>
   AddType application/manifest+json .webmanifest
   AddType image/svg+xml .svg
+  AddType image/webp .webp
   AddType model/gltf-binary .glb
   AddType model/gltf+json .gltf
 </IfModule>

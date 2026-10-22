@@ -165,10 +165,10 @@ export const ZeitreiseView = ({
     const texts = getSchwarzesTorTexts(language);
 
     const rooms = [
-        { id: 'kueche',       label: texts.roomKueche,       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.png', position3D: new THREE.Vector3(-1.75,  0.75, -5) },
-        { id: 'wohnraum',     label: texts.roomWohnraum,     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.png', position3D: new THREE.Vector3( 1.75,  0.75, -5) },
-        { id: 'scheune',      label: texts.roomScheune,      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.png', position3D: new THREE.Vector3(-1.75, -1.25, -5) },
-        { id: 'arbeitsstube', label: texts.roomArbeitsstube, image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.png', position3D: new THREE.Vector3( 1.75, -1.25, -5) },
+        { id: 'kueche',       label: texts.roomKueche,       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.webp', position3D: new THREE.Vector3(-1.75,  0.75, -5) },
+        { id: 'wohnraum',     label: texts.roomWohnraum,     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.webp', position3D: new THREE.Vector3( 1.75,  0.75, -5) },
+        { id: 'scheune',      label: texts.roomScheune,      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.webp', position3D: new THREE.Vector3(-1.75, -1.25, -5) },
+        { id: 'arbeitsstube', label: texts.roomArbeitsstube, image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.webp', position3D: new THREE.Vector3( 1.75, -1.25, -5) },
     ];
 
     const containerRef = useRef<HTMLDivElement>(null);
