@@ -74,14 +74,14 @@ export const ARStationCompletionDialog = ({
             {isOpen && (
                 <>
                     <motion.div
-                        className="ar-completion-backdrop fixed inset-0 z-[200] bg-gray-900/70 backdrop-blur-sm"
+                        className="ar-completion-backdrop fixed inset-0 z-[11100] bg-gray-900/70 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     />
 
                     <motion.div
-                        className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 z-[11110] flex items-end sm:items-center justify-center p-4"
                         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}

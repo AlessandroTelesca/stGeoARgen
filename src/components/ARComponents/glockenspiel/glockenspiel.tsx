@@ -1656,7 +1656,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
-        {isRecordingMenuClosed && !showRecordingOptions && !showNameDialog && !showOtherUserMelodyList && hasStarted &&
+        {isRecordingMenuClosed && !showRecordingOptions && !showNameDialog && !showOtherUserMelodyList && hasStarted && !isCompletionDialogOpen &&
           createPortal(
             <div
               className="flex flex-col items-start gap-2"
@@ -1728,9 +1728,12 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
-        {hasStarted && (
+        {/* Liegt über dem AR-Container und damit auch über dem Abschluss-Dialog */}
+        {hasStarted && !isCompletionDialogOpen && (
           <div className="glockenspiel-local-overlay absolute inset-0">
-            <div className="pointer-events-auto absolute inset-0 z-[90]">
+            {/* Durchlässig: Drehen/Zoomen hört auf window, und die AR-Bedienelemente darunter
+                („Station abschließen“, Home, Profil) müssen klickbar bleiben */}
+            <div className="pointer-events-none absolute inset-0 z-[90]">
               {showInteractionHints && (
                 <div className="pointer-events-none absolute left-1/2 top-[6rem] z-[90] flex w-[min(92vw,460px)] -translate-x-1/2 justify-center px-3 sm:px-4" style={{ top: 'calc(6rem + env(safe-area-inset-top))' }}>
                   <div className="w-full rounded-2xl border border-border bg-white px-4 py-3 shadow-sm text-foreground">
