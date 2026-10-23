@@ -9,13 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($body['username']) || !isset($body['password']) || !isset($body['code'])) {
+if (!is_array($body) || !isset($body['username']) || !isset($body['password']) || !isset($body['code'])) {
     sendResponse(['success' => false, 'message' => 'Benutzername, Passwort und Gutscheincode erforderlich.'], 400);
 }
 
-$username = $body['username'];
-$password = $body['password'];
-$code     = $body['code'];
+$username = (string) $body['username'];
+$password = (string) $body['password'];
+$code     = strtoupper(trim((string) $body['code']));
 
 $pdo = getDB();
 
@@ -24,12 +24,14 @@ $stmt->execute([$username]);
 $partner = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$partner) {
+    usleep(500000); // bremst Brute-Force-Versuche
     sendResponse(['success' => false, 'message' => 'Ungültige Zugangsdaten.'], 401);
 }
 
 $storedHash = $partner['password_hash'] ?? null;
 
 if ($storedHash === null || !password_verify($password, $storedHash)) {
+    usleep(500000); // bremst Brute-Force-Versuche
     sendResponse(['success' => false, 'message' => 'Ungültige Zugangsdaten.'], 401);
 }
 
@@ -68,8 +70,16 @@ try {
         sendResponse(['success' => false, 'message' => 'Dieser Gutschein kann nicht mehr eingelöst werden.'], 409);
     }
 
-    $pdo->prepare('UPDATE user_vouchers SET is_redeemed = 1, redeemed_at = NOW(), remaining_uses = 0 WHERE id = ?')
-        ->execute([$voucher['id']]);
+    // Atomar entwerten: nur wenn der Gutschein zu diesem Zeitpunkt noch offen ist. Die Prüfungen
+    // oben allein sind bei zwei gleichzeitigen Validierungen (Doppelklick, zwei Kassen) nicht sicher.
+    $redeemStmt = $pdo->prepare(
+        'UPDATE user_vouchers SET is_redeemed = 1, redeemed_at = NOW(), remaining_uses = 0
+         WHERE id = ? AND is_redeemed = 0 AND remaining_uses > 0'
+    );
+    $redeemStmt->execute([$voucher['id']]);
+    if ($redeemStmt->rowCount() === 0) {
+        sendResponse(['success' => false, 'message' => 'Gutschein wurde schon validiert / eingelöst.'], 409);
+    }
 
     sendResponse([
         'success' => true,
@@ -84,6 +94,7 @@ try {
             'name' => $partner['name'],
         ],
     ]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
+    error_log('partner_voucher_validate.php: ' . $e->getMessage());
     sendResponse(['success' => false, 'message' => 'Serverfehler.'], 500);
 }

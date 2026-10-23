@@ -3,11 +3,10 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
-import { getUserProgress, saveStationProgress, resetUserProgress } from './services/auth';
+import { getUserProgress, saveStationProgress, resetUserProgress, deleteAccount } from './services/auth';
 import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints, apiGetCustomStations, apiGetCustomPaths, customStationImageUrl, TREASURE_REWARD_KEY, AR_PATH_ID, type CustomPath, type CustomStation } from './services/api';
 import { usePointConfig } from './contexts/PointConfigContext';
 import { Header } from './components/Header';
-import { PartnerVoucherValidation } from './components/PartnerVoucherValidation';
 import { Dashboard } from './components/Dashboard';
 import { PathSelection } from './components/PathSelection';
 import { PathView } from './components/PathView';
@@ -19,14 +18,10 @@ import { PointsView } from './components/PointsView';
 import { StationsView } from './components/StationsView';
 import { ProgressView } from './components/ProgressView';
 import { RewardsView } from './components/RewardsView';
-import { Info } from './components/Info';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
-import { Impressum } from './components/Impressum';
-import { Datenschutz } from './components/Datenschutz';
 import type { StationImageSlide } from './components/StationAdminPanel/StationImageSequence';
-import { StationAdminPanel } from './components/StationAdminPanel/StationAdminPanel';
 import { getStationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
@@ -40,6 +35,7 @@ import { getGlockenspielTexts } from './i18n/stations/glockenspiel';
 import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 import { getBahnhofTexts } from './i18n/stations/bahnhof';
 import { getSchwarzesTorTexts } from './i18n/stations/schwarzesTor';
+import { asset } from './lib/asset';
 
 // AR-Ansichten (three.js, tone) und QR-Scanner (jsQR) erst bei Bedarf laden, damit die Startseite schnell bleibt
 const KlosterweiherView = lazy(() => import('./components/ARComponents/klosterweiher/klosterweiher.tsx').then((m) => ({ default: m.KlosterweiherView })));
@@ -50,6 +46,13 @@ const QRScanner = lazy(() => import('./components/QRScanner').then((m) => ({ def
 const CustomPanoramaQuizView = lazy(() => import('./components/ARComponents/customPanorama/CustomPanoramaQuizView').then((m) => ({ default: m.CustomPanoramaQuizView })));
 const SchwarzesTorView = lazy(() => import('./components/ARComponents/schwarzesTor/schwarzesTor.tsx').then((m) => ({ default: m.SchwarzesTorView })));
 
+// Selten genutzte Ansichten ebenfalls erst bei Bedarf laden
+const PartnerVoucherValidation = lazy(() => import('./components/PartnerVoucherValidation').then((m) => ({ default: m.PartnerVoucherValidation })));
+const Impressum = lazy(() => import('./components/Impressum').then((m) => ({ default: m.Impressum })));
+const Datenschutz = lazy(() => import('./components/Datenschutz').then((m) => ({ default: m.Datenschutz })));
+const Info = lazy(() => import('./components/Info').then((m) => ({ default: m.Info })));
+const StationAdminPanel = lazy(() => import('./components/StationAdminPanel/StationAdminPanel').then((m) => ({ default: m.StationAdminPanel })));
+
 // IDs der über die Stationsverwaltung angelegten Stationen beginnen hier (siehe api/setup.sql, custom_stations)
 const CUSTOM_STATION_MIN_ID = 1000;
 // AR-Route der 360°-Quiz-Stationen aus der Stationsverwaltung: /ar/station/<id>
@@ -59,7 +62,7 @@ const customArStationIdFromPath = (pathname: string): number | null => {
   return match ? Number(match[1]) : null;
 };
 // Bild für Custom-Pfade ohne eigenes Pfadbild
-const DEFAULT_PATH_IMAGE = '/images/stgeorgen.jpg';
+const DEFAULT_PATH_IMAGE = asset('/images/stgeorgen.jpg');
 
 
 interface Station {
@@ -107,7 +110,7 @@ export default function App() {
   const fullscreenAttemptRef = useRef(0);
   const isMobile = useIsMobile();
   const { isSupported, isFullscreen, enterFullscreen, exitFullscreen } = useSiteFullscreen(appRootRef);
-  const { user, isInitializing, login, register, logout } = useAuth();
+  const { user, setUser, isInitializing, login, register, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'paths' | 'path' | 'station' | 'settings' | 'profile' | 'points' | 'stations' | 'progress' | 'rewards' | 'login' | 'register' | 'forgot-password' | 'ar-klosterweiher' | 'ar-phonomuseum' | 'ar-glockenspiel' | 'ar-bahnhof' | 'ar-schwarzes-tor' | 'impressum' | 'datenschutz' | 'info' | 'partner' | 'admin-stations' | 'ar-custom'>('home');
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
@@ -156,12 +159,9 @@ export default function App() {
     });
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    logout();
-    setCurrentView('home');
-    navigate('/');
-    // Stationen zurücksetzen damit kein fremder Fortschritt angezeigt wird
+  // Nutzerbezogenen Zustand verwerfen (Logout oder vom Server abgelehnte Session),
+  // damit beim nächsten Login kein fremder Fortschritt/Bonus-Status übernommen wird
+  const resetUserState = () => {
     setPaths((prev) =>
       prev.map((path) => ({
         ...path,
@@ -173,9 +173,44 @@ export default function App() {
     );
     setRewardClaimed(false);
     setTreasurePoints(0);
+    setServerPoints(null);
+    setClaimedPathBonuses({});
+    setLastProgressPathId(null);
+  };
+
+  // Session abgelaufen/ungültig (useAuth setzt user auf null, ohne dass handleLogout lief)
+  const previousUserIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    const previousUserId = previousUserIdRef.current;
+    previousUserIdRef.current = user?.id ?? null;
+    if (previousUserId !== null && previousUserId !== (user?.id ?? null)) {
+      resetUserState();
+    }
+  }, [user]);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    setCurrentView('home');
+    navigate('/');
+    // Stationen zurücksetzen damit kein fremder Fortschritt angezeigt wird
+    resetUserState();
     toast.success(t('logoutSuccessTitle'), {
       description: t('seeYouSoon'),
       duration: 3000,
+    });
+  };
+
+  // Konto löschen – wirft bei falschem Passwort, Profile.tsx zeigt die Meldung an
+  const handleDeleteAccount = async (password: string): Promise<void> => {
+    await deleteAccount(password);
+    setUser(null);
+    resetUserState();
+    setCurrentView('home');
+    navigate('/');
+    toast.success(t('accountDeletedTitle'), {
+      description: t('accountDeletedDesc'),
+      duration: 4000,
     });
   };
 
@@ -271,43 +306,57 @@ export default function App() {
         }
       }
       setLastProgressPathId(lastStationEntry?.path_id ?? null);
-      if (progressEntries.length > 0) {
-        // station_id === 0 = Pfad-Abschluss-Bonus
-        const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
-        const completedIds = new Set(
-          progressEntries.filter((p) => p.station_id !== 0).map((p) => p.station_id)
-        );
+      // station_id === 0 = Pfad-Abschluss-Bonus
+      const bonusEntries = progressEntries.filter((p) => p.station_id === 0);
+      const completedIds = new Set(
+        progressEntries.filter((p) => p.station_id !== 0).map((p) => p.station_id)
+      );
 
-        // Stations-Fortschritt wiederherstellen
-        setPaths((prev) =>
-          prev.map((path) => ({
-            ...path,
-            stations: path.stations.map((station) =>
-              completedIds.has(station.id)
-                ? { ...station, status: 'completed' as const }
+      // Stations-Fortschritt mit dem Server abgleichen: Nur dort gespeicherte Stationen gelten als
+      // abgeschlossen. Lokal (z. B. im Gastmodus vor dem Login) abgeschlossene Stationen werden
+      // wieder freigegeben, sonst ließen sie sich nach dem Login nie mehr mit Punkten abschließen.
+      setPaths((prev) =>
+        prev.map((path) => ({
+          ...path,
+          stations: path.stations.map((station) =>
+            completedIds.has(station.id)
+              ? { ...station, status: 'completed' as const }
+              : station.status === 'completed'
+                ? { ...station, status: 'available' as const }
                 : station
-            ),
-          }))
-        );
+          ),
+        }))
+      );
 
-        // Pfad-Bonus-Status wiederherstellen
-        if (bonusEntries.length > 0) {
-          const restoredBonuses: Record<string, boolean> = {};
-          bonusEntries.forEach((entry) => {
-            restoredBonuses[entry.path_id] = true;
-          });
-          setClaimedPathBonuses(restoredBonuses);
-        }
-      }
+      // Pfad-Bonus-Status wiederherstellen (auch leer, damit kein Status eines anderen Users bleibt)
+      const restoredBonuses: Record<string, boolean> = {};
+      bonusEntries.forEach((entry) => {
+        restoredBonuses[entry.path_id] = true;
+      });
+      setClaimedPathBonuses(restoredBonuses);
+
+      // Vollständig abgeschlossene Pfade, deren Abschluss beim letzten Mal nicht gespeichert
+      // werden konnte (z. B. Netzwerkfehler), still nachtragen
+      pathsRef.current
+        .filter((path) =>
+          path.stations.length > 0 &&
+          !restoredBonuses[path.id] &&
+          path.stations.every((station) => completedIds.has(station.id))
+        )
+        .forEach((path) => {
+          apiSavePathBonus(user.id, path.id)
+            .then(() => setClaimedPathBonuses((prev) => ({ ...prev, [path.id]: true })))
+            .catch(() => { /* beim nächsten Laden erneut versuchen */ });
+        });
     } catch {
-      /* Progress konnte nicht geladen werden */
+      /* Progress konnte nicht geladen werden – bisherigen Stand behalten */
     }
 
     try {
       const rewardStatus = await apiGetTreasureReward(user.id);
       setTreasurePoints(rewardStatus.claimed ? rewardStatus.points : 0);
     } catch {
-      setTreasurePoints(0);
+      /* Netzwerkfehler – bisherigen Stand behalten statt 0 anzuzeigen */
     }
 
     // Load server-side total points for the user
@@ -315,7 +364,7 @@ export default function App() {
       const pts = await apiGetUserPoints(user.id);
       setServerPoints(pts.total_points ?? 0);
     } catch {
-      setServerPoints(0);
+      /* Netzwerkfehler – bisherigen Kontostand behalten statt 0 anzuzeigen */
     }
   }, [user]);
 
@@ -347,7 +396,7 @@ export default function App() {
     setLastProgressPathId(null);
     setRewardClaimed(false);
     setTreasurePoints(0);
-    setServerPoints(0);
+    // Kontostand bleibt serverseitig erhalten (Punkte gibt es pro Station nur einmal)
     toast.success(language === 'de' ? 'Fortschritt wurde zurückgesetzt.' : 'Progress has been reset.', {
       duration: 3000,
     });
@@ -442,7 +491,7 @@ export default function App() {
       id: AR_PATH_ID,
       title: t('touristPathTitle'),
       description: t('touristPathDescription'),
-      imageUrl: '/images/stgeorgen.jpg',
+      imageUrl: asset('/images/stgeorgen.jpg'),
       difficulty: 'Einfach',
       estimatedTime: '2-3 Std',
       stations: [
@@ -451,7 +500,7 @@ export default function App() {
           title: glockenspielTexts.stationName,
           description: glockenspielTexts.description,
           longDescription: glockenspielTexts.longDescription,
-          imageUrl: '/images/glockenspiel.jpg',
+          imageUrl: asset('/images/glockenspiel.jpg'),
           status: 'available',
           // Punkte der fest eingebauten Stationen kommen aus der DB (builtin_stations)
           points: 0,
@@ -468,7 +517,7 @@ export default function App() {
           title: bahnhofTexts.stationName,
           description: bahnhofTexts.description,
           longDescription: bahnhofTexts.longDescription,
-          imageUrl: '/images/bahnhof.jpg',
+          imageUrl: asset('/images/bahnhof.jpg'),
           status: 'available',
           points: 0,
           latitude: getStationCoordinates(2)?.lat || 48.1241,
@@ -484,7 +533,7 @@ export default function App() {
           title: phonomuseumTexts.stationName,
           description: phonomuseumTexts.description,
           longDescription: phonomuseumTexts.longDescription,
-          imageUrl: '/images/phonomuseum.jpg',
+          imageUrl: asset('/images/phonomuseum.jpg'),
           status: 'available',
           points: 0,
           latitude: getStationCoordinates(3)?.lat || 48.1245,
@@ -500,7 +549,7 @@ export default function App() {
           title: schwarzesTorTexts.stationName,
           description: schwarzesTorTexts.description,
           longDescription: schwarzesTorTexts.longDescription,
-          imageUrl: '/images/schwarzesTor.jpg',
+          imageUrl: asset('/images/schwarzesTor.jpg'),
           status: 'available',
           points: 0,
           latitude: getStationCoordinates(4)?.lat || 48.1263,
@@ -511,7 +560,7 @@ export default function App() {
           title: klosterweiherTexts.stationName,
           description: klosterweiherTexts.description,
           longDescription: klosterweiherTexts.longDescription,
-          imageUrl: '/images/klosterweiher.jpg',
+          imageUrl: asset('/images/klosterweiher.jpg'),
           status: 'available',
           points: 0,
           latitude: getStationCoordinates(5)?.lat || 48.1260,
@@ -525,6 +574,11 @@ export default function App() {
       ],
     },
   ]);
+  // Aktueller Stand für Callbacks, die nicht bei jeder Pfad-Änderung neu entstehen sollen
+  const pathsRef = useRef(paths);
+  useEffect(() => {
+    pathsRef.current = paths;
+  }, [paths]);
 
   // Calculate progress
   const getPathProgress = (path: Path) => {
@@ -717,7 +771,7 @@ export default function App() {
         description: (isEn && p.description_en) || p.description_de,
         imageUrl: p.cover_image ? customStationImageUrl(p.cover_image) : DEFAULT_PATH_IMAGE,
         difficulty: p.difficulty,
-        estimatedTime: p.estimated_time,
+        estimatedTime: p.estimated_time || '–',
         stations: customStationsOf(p.id),
       }));
       return [...arPaths, ...adminPaths];
@@ -775,8 +829,9 @@ export default function App() {
       return;
     }
 
-    // Guest mode: mark as completed but don't award points or bonuses
-    if (allowGuestStationStart) {
+    // Guest mode: mark as completed but don't award points or bonuses.
+    // Nur ohne Login – ein eingeloggter User im Gast-Ablauf soll seinen Fortschritt nicht verlieren.
+    if (allowGuestStationStart && !user) {
       setPaths((prev) => {
         const updated = prev.map((path) => {
           const updatedPath = {
@@ -795,6 +850,7 @@ export default function App() {
     }
 
     const progressedPathId = paths.find((p) => p.stations.some((s) => s.id === stationId))?.id ?? null;
+    const previousStatus = paths.flatMap((p) => p.stations).find((s) => s.id === stationId)?.status ?? 'available';
     setLastProgressPathId(progressedPathId);
 
     // Lokal aktualisieren
@@ -820,8 +876,14 @@ export default function App() {
       );
       if (currentPath) {
         try {
-          await saveStationProgress(user.id, currentPath.id, stationId);
+          const saveRes = await saveStationProgress(user.id, currentPath.id, stationId);
           await refreshUserProgress();
+          if (saveRes.points_awarded === 0) {
+            // Nach "Fortschritt zurücksetzen" erneut gespielt: Punkte gab es für diese Station schon
+            toast.info(language === 'de' ? 'Die Punkte für diese Station hast du bereits erhalten.' : 'You already received the points for this station.', {
+              duration: 3500,
+            });
+          }
 
           // Pfad-Abschluss speichern (Bonus-Punkte, falls vorhanden, liefert der Server)
           // Da setState async ist, berechnen wir hier direkt
@@ -851,8 +913,8 @@ export default function App() {
                 setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
               }
             } catch {
-              // Bonus-Speichern fehlgeschlagen – lokal trotzdem gutschreiben
-              setClaimedPathBonuses((prev) => ({ ...prev, [currentPath.id]: true }));
+              // Speichern des Pfad-Abschlusses fehlgeschlagen: trotzdem feiern, aber nicht als
+              // gespeichert markieren – refreshUserProgress holt es beim nächsten Laden nach
               const completedStationsList = currentPath.stations.map((s) => ({ title: s.title, points: s.points }));
               const earnedStationPts = completedStationsList.reduce((sum, s) => sum + s.points, 0);
               setCelebrationData({
@@ -866,7 +928,22 @@ export default function App() {
             }
           }
         } catch {
-          // Speichern fehlgeschlagen – Fortschritt ist lokal trotzdem sichtbar
+          // Speichern fehlgeschlagen: lokalen Abschluss zurücknehmen, sonst gilt die Station als
+          // erledigt und lässt sich nie mehr mit Punkten abschließen
+          setPaths((prev) =>
+            prev.map((path) => ({
+              ...path,
+              stations: path.stations.map((station) =>
+                station.id === stationId ? { ...station, status: previousStatus } : station
+              ),
+            }))
+          );
+          toast.error(
+            language === 'de'
+              ? 'Fortschritt konnte nicht gespeichert werden. Bitte Verbindung prüfen und die Station erneut abschließen.'
+              : 'Progress could not be saved. Please check your connection and complete the station again.',
+            { duration: 4500 }
+          );
         }
       }
     }
@@ -1088,7 +1165,8 @@ export default function App() {
       description: path.description,
       imageUrl: path.imageUrl,
       difficulty: path.difficulty,
-      estimatedTime: path.estimatedTime,
+      // Zeitangaben sind auf Deutsch gepflegt („2-3 Std“) – im Englischen die Einheit tauschen
+      estimatedTime: language === 'en' ? path.estimatedTime.replace(/\bStd\.?$/, 'h') : path.estimatedTime,
       totalStations: progress.totalStations,
       completedStations: progress.completedStations,
       totalPoints: progress.totalPoints,
@@ -1291,6 +1369,7 @@ export default function App() {
             navigate('/datenschutz');
           }}
           onResetProgress={user ? handleResetProgress : undefined}
+          onDeleteAccount={user ? handleDeleteAccount : undefined}
         />
       )}
 
@@ -1341,31 +1420,41 @@ export default function App() {
         />
       )}
 
-      {currentView === 'partner' && (
-        <PartnerVoucherValidation />
-      )}
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center px-6" role="status" aria-live="polite">
+            <p className="text-base font-semibold text-muted-foreground">
+              {language === 'de' ? 'Wird geladen...' : 'Loading...'}
+            </p>
+          </div>
+        }
+      >
+        {currentView === 'partner' && (
+          <PartnerVoucherValidation />
+        )}
 
-      {currentView === 'impressum' && (
-        <Impressum onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'impressum' && (
+          <Impressum onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'datenschutz' && (
-        <Datenschutz onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'datenschutz' && (
+          <Datenschutz onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'info' && (
-        <Info onBack={handleBackToDashboard} />
-      )}
+        {currentView === 'info' && (
+          <Info onBack={handleBackToDashboard} />
+        )}
 
-      {currentView === 'admin-stations' && (
-        <StationAdminPanel
-          paths={customPaths}
-          pathTitles={Object.fromEntries(paths.map((path) => [path.id, path.title]))}
-          stations={customStations}
-          onDataChanged={loadCustomContent}
-          onBack={() => handleNavigate('settings')}
-        />
-      )}
+        {currentView === 'admin-stations' && (
+          <StationAdminPanel
+            paths={customPaths}
+            pathTitles={Object.fromEntries(paths.map((path) => [path.id, path.title]))}
+            stations={customStations}
+            onDataChanged={loadCustomContent}
+            onBack={() => handleNavigate('settings')}
+          />
+        )}
+      </Suspense>
 
       <AnimatePresence>
         {currentView === 'station' && selectedStation && (

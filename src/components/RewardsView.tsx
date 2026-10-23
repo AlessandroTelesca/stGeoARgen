@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Gift, Lock, MapPin, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './ui/button';
@@ -8,6 +8,7 @@ import { apiRedeemVoucherFromShop, type AvailableVoucher } from '../services/api
 import { usePointConfig } from '../contexts/PointConfigContext';
 import { BackLink } from './PageHeader';
 import { CopyCodeButton } from './CopyCodeButton';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface RewardsViewProps {
   totalPoints: number;
@@ -21,6 +22,8 @@ type TabType = 'rewards' | 'vouchers';
 
 export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNavigateToMyVouchers }: RewardsViewProps) {
   const { shopVouchers: vouchers, reloadShopVouchers } = usePointConfig();
+  const { t } = useLanguage();
+  const pts = (n: number) => t(n === 1 ? 'rewardsPointsOne' : 'rewardsPointsOther', { points: n });
   const [redeemingVoucherId, setRedeemingVoucherId] = useState<number | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [createdVoucherCode, setCreatedVoucherCode] = useState<string | null>(null);
@@ -29,6 +32,9 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
   const [confirmPurchase, setConfirmPurchase] = useState<AvailableVoucher | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('rewards');
+  // Synchrone Sperre gegen Doppelklick: State-Updates greifen erst nach dem nächsten Render,
+  // ein zweiter Klick davor würde sonst einen zweiten Gutschein kaufen
+  const purchaseInFlightRef = useRef(false);
 
   const unlockedCount = vouchers.filter((v) => totalPoints >= v.points_value && (v.quantity ?? -1) !== 0).length;
 
@@ -43,7 +49,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
 
   const handleRedeemVoucher = (voucher: AvailableVoucher) => {
     if (!userId) {
-      setDialogMessage('Bitte melde dich an, um einen Gutschein einzulösen.');
+      setDialogMessage(t('voucherLoginRequired'));
       setFeedbackOpen(true);
       return;
     }
@@ -52,8 +58,9 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
   };
 
   const confirmRedeemVoucher = async () => {
-    if (!confirmPurchase || !userId) return;
+    if (!confirmPurchase || !userId || purchaseInFlightRef.current) return;
 
+    purchaseInFlightRef.current = true;
     const voucher = confirmPurchase;
     setConfirmPurchase(null);
     setRedeemingVoucherId(voucher.id);
@@ -61,16 +68,18 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
     try {
       const data = await apiRedeemVoucherFromShop(userId, voucher.id);
 
-      await Promise.all([onPointsChange?.(), reloadShopVouchers()]);
+      // Kauf ist erfolgt – ein Fehler beim Nachladen darf nicht als Kauffehler erscheinen
+      await Promise.allSettled([onPointsChange?.(), reloadShopVouchers()]);
       setCreatedVoucherTitle(voucher.partner_name || voucher.description);
       setCreatedVoucherDescription(voucher.description);
-      setCreatedVoucherCode(typeof data.code === 'string' && data.code.length > 0 ? data.code : 'Code wird in Meine Gutscheine angezeigt');
+      setCreatedVoucherCode(typeof data.code === 'string' && data.code.length > 0 ? data.code : t('voucherCodePending'));
       setDialogMessage(null);
       setFeedbackOpen(true);
     } catch (error) {
-      setDialogMessage(error instanceof Error ? error.message : 'Fehler beim Einlösen des Gutscheins.');
+      setDialogMessage(error instanceof Error ? error.message : t('voucherRedeemError'));
       setFeedbackOpen(true);
     } finally {
+      purchaseInFlightRef.current = false;
       setRedeemingVoucherId(null);
     }
   };
@@ -99,7 +108,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   type="button"
                   onClick={() => setConfirmPurchase(null)}
                   className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                  aria-label="Fenster schließen"
+                  aria-label={t('rewardsCloseDialog')}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -107,22 +116,22 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-extrabold tracking-tight">Gutschein kaufen</h2>
-                  <p className="mt-2 text-sm text-white/85">Möchtest du diesen Gutschein wirklich kaufen?</p>
+                  <h2 className="text-2xl font-extrabold tracking-tight">{t('voucherBuyTitle')}</h2>
+                  <p className="mt-2 text-sm text-white/85">{t('voucherBuyPrompt')}</p>
                 </div>
               </div>
 
               <div className="space-y-5 px-6 py-6">
                 <div className="rounded-2xl border border-border bg-muted/30 p-4">
                   <p className="text-lg font-semibold text-foreground">{confirmPurchase.description}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{confirmPurchase.partner_name ?? 'Gutschein'}</p>
-                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-sm font-bold text-gold-foreground"><Trophy className="w-3.5 h-3.5 text-gold" />Kosten: {confirmPurchase.points_value} Punkte</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Verbleibende Punkte: {totalPoints - confirmPurchase.points_value}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{confirmPurchase.partner_name ?? t('voucherFallbackName')}</p>
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-sm font-bold text-gold-foreground"><Trophy className="w-3.5 h-3.5 text-gold" />{t('voucherBuyCost', { points: pts(confirmPurchase.points_value) })}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t('voucherBuyRemaining', { points: totalPoints - confirmPurchase.points_value })}</p>
                 </div>
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-                  <Button variant="outline" onClick={() => setConfirmPurchase(null)}>Abbrechen</Button>
+                  <Button variant="outline" onClick={() => setConfirmPurchase(null)}>{t('rewardsCancel')}</Button>
                   <Button onClick={confirmRedeemVoucher} disabled={redeemingVoucherId === confirmPurchase.id}>
-                    {redeemingVoucherId === confirmPurchase.id ? 'Wird gekauft...' : 'Kaufen'}
+                    {redeemingVoucherId === confirmPurchase.id ? t('voucherBuying') : t('voucherBuy')}
                   </Button>
                 </div>
               </div>
@@ -151,7 +160,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   type="button"
                   onClick={resetDialogState}
                   className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                  aria-label="Fenster schließen"
+                  aria-label={t('rewardsCloseDialog')}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -159,9 +168,9 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                   <Gift className="h-8 w-8" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-extrabold tracking-tight">{createdVoucherCode ? 'Gutschein erstellt' : 'Hinweis'}</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">{createdVoucherCode ? t('voucherCreatedTitle') : t('voucherNoticeTitle')}</h2>
                   <p className="mt-2 text-sm text-white/85">
-                    {createdVoucherCode ? 'Dein Gutschein ist jetzt unter Meine Gutscheine verfügbar.' : dialogMessage}
+                    {createdVoucherCode ? t('voucherCreatedMessage') : dialogMessage}
                   </p>
                 </div>
               </div>
@@ -174,14 +183,14 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                       {createdVoucherDescription ? (
                         <p className="mt-1 text-sm text-muted-foreground">{createdVoucherDescription}</p>
                       ) : null}
-                      <p className="mt-4 text-sm text-muted-foreground">Dein Code</p>
+                      <p className="mt-4 text-sm text-muted-foreground">{t('voucherCodeLabel')}</p>
                       <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-background px-4 py-3 shadow-sm">
                         <span className="text-lg font-bold tracking-[0.2em] text-primary font-mono break-all">{createdVoucherCode}</span>
                         <CopyCodeButton code={createdVoucherCode} />
                       </div>
                     </div>
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-                      <Button variant="outline" onClick={resetDialogState}>Später</Button>
+                      <Button variant="outline" onClick={resetDialogState}>{t('rewardsLater')}</Button>
                       <Button
                         onClick={() => {
                           resetDialogState();
@@ -189,13 +198,13 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                           else setActiveTab('vouchers');
                         }}
                       >
-                        Meine Gutscheine
+                        {t('rewardsMyVouchers')}
                       </Button>
                     </div>
                   </>
                 ) : (
                   <div className="flex justify-end">
-                    <Button onClick={resetDialogState}>OK</Button>
+                    <Button onClick={resetDialogState}>{t('rewardsOk')}</Button>
                   </div>
                 )}
               </div>
@@ -210,8 +219,8 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
         {/* Segment-Umschalter */}
         <div className="mt-5 grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1" role="tablist">
           {([
-            ['rewards', 'Belohnungen'],
-            ['vouchers', 'Meine Gutscheine'],
+            ['rewards', t('rewardsTabRewards')],
+            ['vouchers', t('rewardsMyVouchers')],
           ] as const).map(([tab, label]) => (
             <button
               key={tab}
@@ -228,31 +237,31 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
         {activeTab === 'rewards' ? (
           <>
             <motion.div className="mt-6 mb-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-              <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">Belohnungen</h1>
+              <h1 className="text-[28px] leading-[1.15] font-extrabold tracking-tight">{t('rewardsTitle')}</h1>
               <p className="text-muted-foreground mt-1.5">
-                {unlockedCount} von {vouchers.length} Gutscheinen freigeschaltet
+                {t('rewardsUnlockedCount', { unlocked: unlockedCount, total: vouchers.length })}
               </p>
 
               <div className="brand-gradient relative mt-5 overflow-hidden rounded-[28px] p-6 text-white shadow-lg">
                 <div className="topo-texture absolute inset-0" aria-hidden="true" />
                 <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-white/75">Deine Punkte</p>
+                    <p className="text-sm font-semibold text-white/75">{t('rewardsYourPoints')}</p>
                     <p className="text-5xl font-extrabold tracking-tight tabular-nums mt-1">{totalPoints}</p>
                   </div>
-                  <span className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-bright to-gold flex items-center justify-center shadow-lg ring-4 ring-white/15">
-                    <Trophy className="w-8 h-8 text-white" />
+                  <span className="w-16 h-16 rounded-full bg-white/15 border border-white/25 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Trophy className="w-8 h-8 text-gold-bright" />
                   </span>
                 </div>
                 <p className="relative mt-4 text-sm text-white/80">
-                  Sammle mehr Punkte, um weitere Gutscheine freizuschalten!
+                  {unlockedCount === vouchers.length && vouchers.length > 0 ? t('rewardsAllUnlocked') : t('rewardsKeepCollecting')}
                 </p>
               </div>
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-4">
               {vouchers.length === 0 ? (
-                <div className="col-span-2 rounded-[24px] border border-dashed border-border-strong p-8 text-center text-muted-foreground">Keine verfügbaren Gutscheine gefunden.</div>
+                <div className="col-span-2 rounded-[24px] border border-dashed border-border-strong p-8 text-center text-muted-foreground">{t('rewardsNoVouchers')}</div>
               ) : (
                 vouchers.map((voucher, index) => {
                   const unlocked = totalPoints >= voucher.points_value;
@@ -274,7 +283,7 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                           </span>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-bold leading-snug">{voucher.description}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">{voucher.partner_name ?? 'Gutschein'}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{voucher.partner_name ?? t('voucherFallbackName')}</p>
                             {voucher.address && (
                               <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                                 <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
@@ -294,8 +303,8 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                           {!unlocked && (
                             <div className="mb-4">
                               <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                                <span>Fortschritt</span>
-                                <span className="tabular-nums font-semibold">{totalPoints} / {voucher.points_value} Punkte</span>
+                                <span>{t('rewardsProgress')}</span>
+                                <span className="tabular-nums font-semibold">{t('rewardsProgressOf', { current: totalPoints, points: pts(voucher.points_value) })}</span>
                               </div>
                               <Progress value={progressToUnlock} className="h-2" />
                             </div>
@@ -309,12 +318,12 @@ export function RewardsView({ totalPoints, userId, onBack, onPointsChange, onNav
                             {unlocked ? (
                               <>
                                 <Gift className="w-4 h-4" />
-                                {redeemingVoucherId === voucher.id ? 'Wird erstellt...' : `Gutschein einlösen (${voucher.points_value} Punkte)`}
+                                {redeemingVoucherId === voucher.id ? t('rewardsCreating') : t('rewardsRedeemWithCost', { points: pts(voucher.points_value) })}
                               </>
                             ) : (
                               <>
                                 <Lock className="w-4 h-4" />
-                                {voucher.points_value} Punkte nötig
+                                {t('rewardsPointsNeeded', { points: pts(voucher.points_value) })}
                               </>
                             )}
                           </Button>

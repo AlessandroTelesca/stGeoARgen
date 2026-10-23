@@ -14,12 +14,14 @@ import { clampMelodyLength, getRecentOtherUserMelodies, getLatestOtherUserMelody
 import { withTimeout } from './loading';
 import { ARStartCard } from '../ARStartCard';
 import { Bell } from 'lucide-react';
+import { asset } from '../../../lib/asset';
+import { API_BASE_URL, getAuthToken } from '../../../services/api';
 
 // TODO: Replace with your own glockenturm.glb model
 // Place the GLB file in: src/components/ARComponents/glockenspiel/models/glockenturm.glb
 const GLOCKENTURM_MODEL_URL = new URL('./models/glockenturm.glb', import.meta.url).href;
-const GLOCKENSPIEL_PANORAMA_URL = '/images/360/glockenspiel.jpg';
-const GLOCKENSPIEL_PANORAMA_FALLBACK_URL = '/images/360/bahnhof.jpg';
+const GLOCKENSPIEL_PANORAMA_URL = asset('/images/360/glockenspiel.jpg');
+const GLOCKENSPIEL_PANORAMA_FALLBACK_URL = asset('/images/360/bahnhof.jpg');
 
 function loadPanoramaTexture(url: string): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
@@ -1351,7 +1353,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
 
   const loadSavedMelodies = async () => {
     try {
-      const response = await fetch(`/api/get_glockenspiel_melodies.php?station_id=${AR_VIEW_STATION_MAP['glockenspiel']}`);
+      const response = await fetch(`${API_BASE_URL}/get_glockenspiel_melodies.php?station_id=${AR_VIEW_STATION_MAP['glockenspiel']}`);
       if (!response.ok) throw new Error('Failed to fetch melodies');
       const payload = await response.json();
       if (payload?.success && Array.isArray(payload.melodies)) {
@@ -1378,9 +1380,9 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
     };
 
     try {
-      const response = await fetch('/api/save_glockenspiel_melody.php', {
+      const response = await fetch(`${API_BASE_URL}/save_glockenspiel_melody.php`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() ?? ''}` },
         body: JSON.stringify(payload),
       });
 
@@ -1630,7 +1632,6 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           isCurrentStationCompleted={isCurrentStationCompleted}
           onCompletionDialogChange={handleCompletionDialogChange}
           isGuestMode={isGuestMode}
-          elevateOverlay
         />
 
         {isLoading && (
@@ -1655,7 +1656,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
-        {isRecordingMenuClosed && !showRecordingOptions && !showNameDialog && !showOtherUserMelodyList && hasStarted &&
+        {isRecordingMenuClosed && !showRecordingOptions && !showNameDialog && !showOtherUserMelodyList && hasStarted && !isCompletionDialogOpen &&
           createPortal(
             <div
               className="flex flex-col items-start gap-2"
@@ -1727,16 +1728,19 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
           </div>
         )}
 
-        {hasStarted && (
+        {/* Liegt über dem AR-Container und damit auch über dem Abschluss-Dialog */}
+        {hasStarted && !isCompletionDialogOpen && (
           <div className="glockenspiel-local-overlay absolute inset-0">
-            <div className="pointer-events-auto absolute inset-0 z-[90]">
+            {/* Durchlässig: Drehen/Zoomen hört auf window, und die AR-Bedienelemente darunter
+                („Station abschließen“, Home, Profil) müssen klickbar bleiben */}
+            <div className="pointer-events-none absolute inset-0 z-[90]">
               {showInteractionHints && (
                 <div className="pointer-events-none absolute left-1/2 top-[6rem] z-[90] flex w-[min(92vw,460px)] -translate-x-1/2 justify-center px-3 sm:px-4" style={{ top: 'calc(6rem + env(safe-area-inset-top))' }}>
                   <div className="w-full rounded-2xl border border-border bg-white px-4 py-3 shadow-sm text-foreground">
                     <div className="flex items-stretch justify-between gap-3 text-sm">
                       <div className="flex flex-1 items-center justify-center gap-2">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">
-                          <img src="/zoomAnimation.gif" alt="Zoom" className="h-8 w-8 object-contain" />
+                          <img src={asset('/zoomAnimation.gif')} alt="Zoom" className="h-8 w-8 object-contain" />
                         </div>
                         <div className="flex min-h-[2.25rem] flex-col justify-center text-center sm:text-left">
                           <div className="font-semibold text-foreground">Zoomen</div>
@@ -1745,7 +1749,7 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
                       </div>
                       <div className="flex flex-1 items-center justify-center gap-2">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/10">
-                          <img src="/dragAnimation.gif" alt="Drehen" className="h-14 w-14 object-contain" />
+                          <img src={asset('/dragAnimation.gif')} alt="Drehen" className="h-14 w-14 object-contain" />
                         </div>
                         <div className="flex min-h-[2.25rem] flex-col justify-center text-center sm:text-left">
                           <div className="font-semibold text-foreground">Drehen</div>
@@ -1844,7 +1848,10 @@ export const GlockenspielView: React.FC<ARViewProps> = (props) => {
                       </div>
                     )}
                     <div className="mt-3 flex flex-col gap-2">
-                      {pendingRecordedMelody.length > 0 && (
+                      {pendingRecordedMelody.length > 0 && (isGuestMode || !getAuthToken()) && (
+                        <p className="text-xs text-white/80">{glockenspielTexts.saveLoginRequired}</p>
+                      )}
+                      {pendingRecordedMelody.length > 0 && !isGuestMode && !!getAuthToken() && (
                         <button
                           type="button"
                           onClick={() => void handleSavePendingMelody()}

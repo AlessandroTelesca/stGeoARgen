@@ -3,7 +3,8 @@
  * save_treasure_reward.php - Speichert einmalige Schatzkisten-Belohnung pro User.
  *
  * POST-Parameter (JSON body):
- *   user_id    - ID des Users
+ *   user_id    - (optional) ID des Users, muss zum Session-Token passen
+ *   Header: Authorization: Bearer <Session-Token>
  *   reward_key - Eindeutiger Reward-Key (z.B. klosterweiher_treasure_chest)
  *
  * Response (JSON):
@@ -19,14 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = json_decode(file_get_contents('php://input'), true);
 
-$userId = filter_var($body['user_id'] ?? 0, FILTER_VALIDATE_INT);
 $rewardKey = trim((string)($body['reward_key'] ?? 'klosterweiher_treasure_chest'));
 
-if (!$userId || $userId <= 0) {
-    sendResponse(['success' => false, 'message' => 'Ungueltige user_id.'], 400);
-}
-
 $db = getDB();
+$userId = requireUser($db, $body['user_id'] ?? null);
 
 // Nur in reward_definitions bekannte Belohnungen, Punkte laut DB – sonst ließe sich mit
 // beliebigen reward_keys jeweils erneut Punkte holen.
@@ -70,6 +67,12 @@ $stmt = $db->prepare(
 );
 $stmt->execute([$userId, $rewardKey, $points]);
 $awarded = $stmt->rowCount() === 1;
+if ($awarded) {
+    // Punkte pro Belohnung nur einmal je Konto – auch nach "Fortschritt zurücksetzen"
+    $stmt = $db->prepare('INSERT IGNORE INTO user_point_awards (user_id, award_key) VALUES (?, ?)');
+    $stmt->execute([$userId, 'reward:' . $rewardKey]);
+    $awarded = $stmt->rowCount() === 1;
+}
 if ($awarded) {
     $db->prepare('UPDATE users SET total_points = total_points + ? WHERE id = ?')
        ->execute([$points, $userId]);

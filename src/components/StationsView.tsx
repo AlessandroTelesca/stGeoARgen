@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { BackLink } from './PageHeader';
+import { asset } from '../lib/asset';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -84,7 +85,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
           <div className="topo-texture absolute inset-0" aria-hidden="true" />
           <div className="relative flex items-center gap-4">
             <span className="w-12 h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md">
-              <img src="/Logo.svg" alt="" className="w-7 h-7 object-contain" />
+              <img src={asset('/Logo.svg')} alt="" className="w-7 h-7 object-contain" />
             </span>
             <p className="text-[15px] font-semibold leading-snug">
               {completedStations === totalStations

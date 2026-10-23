@@ -29,7 +29,7 @@ export function ForgotPassword({ onNavigateBack, onNavigateToLogin, onNavigateTo
   const emailJsServiceId = (import.meta.env.VITE_EMAILJS_SERVICE_ID || '').trim();
   const emailJsTemplateId = (import.meta.env.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET || '').trim();
   const emailJsPublicKey = (import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '').trim();
-  const supportEmail = (import.meta.env.VITE_SUPPORT_EMAIL || 'support@stgeoargen.de').trim();
+  const supportEmail = (import.meta.env.VITE_SUPPORT_EMAIL || 'info@iiius.de').trim();
 
   const isEmailJsConfigured = !!emailJsServiceId && !!emailJsTemplateId && !!emailJsPublicKey;
 

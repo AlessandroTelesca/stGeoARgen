@@ -43,11 +43,11 @@ export function PathCard({
   return (
     <motion.button
       onClick={onClick}
-      className="group w-full surface-card text-left overflow-hidden pressable hover:shadow-md"
+      className="group w-full h-full flex flex-col surface-card text-left overflow-hidden pressable hover:shadow-md"
       whileTap={{ scale: 0.985 }}
     >
       {/* Bild */}
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-48 flex-shrink-0 overflow-hidden">
         <ImageWithFallback
           src={imageUrl}
           alt={title}
@@ -57,7 +57,7 @@ export function PathCard({
 
         <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1.5 text-xs font-semibold text-white">
           <span className={`w-2 h-2 rounded-full ${difficultyDot[difficulty]}`} />
-          {difficulty}
+          {t(`pathEditorDifficulty${difficulty}`)}
         </div>
 
         {isCompleted && (
@@ -87,8 +87,9 @@ export function PathCard({
       </div>
 
       {/* Inhalt */}
-      <div className="p-4 pt-3.5">
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+      <div className="flex flex-1 flex-col p-4 pt-3.5">
+        {/* Immer zwei Zeilen reservieren, damit Karten nebeneinander gleich hoch sind */}
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[2lh]">
           {description}
         </p>
 
@@ -96,7 +97,7 @@ export function PathCard({
           <div className="px-2 text-center">
             <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
               <MapPin className="w-3.5 h-3.5" />
-              {t('stations')}
+              <span className="capitalize">{t('stations')}</span>
             </dt>
             <dd className="mt-0.5 text-sm font-bold tabular-nums">{completedStations}/{totalStations}</dd>
           </div>
@@ -112,13 +113,15 @@ export function PathCard({
               <Clock className="w-3.5 h-3.5" />
               {t('time')}
             </dt>
-            <dd className="mt-0.5 text-sm font-bold">{estimatedTime}</dd>
+            <dd className="mt-0.5 text-sm font-bold">{estimatedTime || '–'}</dd>
           </div>
         </dl>
 
-        <div className="mt-4 flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-white transition-colors group-hover:bg-primary-dark">
-          <span className="text-sm font-bold">{t('start')}</span>
-          <ArrowRight className="w-5 h-5 flex-shrink-0 nudge-x" />
+        <div className="mt-auto pt-4">
+          <div className="flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-white transition-colors group-hover:bg-primary-dark">
+            <span className="text-sm font-bold">{t('start')}</span>
+            <ArrowRight className="w-5 h-5 flex-shrink-0 nudge-x" />
+          </div>
         </div>
       </div>
     </motion.button>

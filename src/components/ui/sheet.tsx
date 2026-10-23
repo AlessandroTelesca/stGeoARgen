@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import * as SheetPrimitive from "@radix-ui/react-dialog@1.1.6";
-import { XIcon } from "lucide-react@0.487.0";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { XIcon } from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -22,13 +22,9 @@ function SheetClose({
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
-const SheetPortal = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Portal>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Portal>
->(({ ...props }, ref) => (
-  <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
-));
-SheetPortal.displayName = "SheetPortal";
+function SheetPortal(props: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
+}
 
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,

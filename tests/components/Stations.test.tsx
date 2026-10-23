@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -64,6 +64,21 @@ const samplePaths = [
 ];
 
 describe('StationDetail', () => {
+  // Geofencing ist aktiv: Nutzer steht direkt an der Station
+  beforeAll(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        watchPosition: (success: PositionCallback) => {
+          success({ coords: { latitude: sampleStation.latitude, longitude: sampleStation.longitude, accuracy: 5 } } as GeolocationPosition);
+          return 1;
+        },
+        clearWatch: () => {},
+        getCurrentPosition: () => {},
+      },
+    });
+  });
+
   test('starts AR experience from detail button', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

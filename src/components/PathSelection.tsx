@@ -50,6 +50,7 @@ export function PathSelection({ paths, onPathSelect, onBack }: PathSelectionProp
           {paths.map((path, index) => (
             <motion.div
               key={path.id}
+              className="h-full"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 + index * 0.06, duration: 0.5, ease }}

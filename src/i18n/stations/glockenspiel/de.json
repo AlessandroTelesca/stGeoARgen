@@ -9,6 +9,7 @@
   "arStartButton": "OK",
   "arStartingButton": "AR wird gestartet...",
   "arStartErrorFallback": "Die AR-Ansicht konnte nicht gestartet werden.",
+  "saveLoginRequired": "Melodien können nur mit Konto gespeichert werden. Bitte melde dich an.",
   "quizQuestion": "Wie viele Glocken hat das Glockenspiel?",
   "quizOptions": ["12 Glocken", "18 Glocken", "24 Glocken", "30 Glocken"]
 }

@@ -13,6 +13,7 @@ export interface StationTexts {
   arStartButton: string;
   arStartingButton: string;
   arStartErrorFallback: string;
+  saveLoginRequired: string;
   quizQuestion: string;
   quizOptions: string[];
 }

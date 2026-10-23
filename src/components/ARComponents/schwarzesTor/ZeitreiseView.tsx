@@ -5,6 +5,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getSchwarzesTorTexts } from '../../../i18n/stations/schwarzesTor';
 import * as THREE from 'three';
 import { ARStartCard } from '../ARStartCard';
+import { asset } from '../../../lib/asset';
 
 class PanoramaPlaneVisualizer extends GyroARVisualizer {
     private xMin = 0;
@@ -165,10 +166,10 @@ export const ZeitreiseView = ({
     const texts = getSchwarzesTorTexts(language);
 
     const rooms = [
-        { id: 'kueche',       label: texts.roomKueche,       image: '/images/360/schwarzesTor/küche.jpg',       thumb: '/images/schwarzesTor/image2.webp', position3D: new THREE.Vector3(-1.75,  0.75, -5) },
-        { id: 'wohnraum',     label: texts.roomWohnraum,     image: '/images/360/schwarzesTor/wohnraum.jpg',     thumb: '/images/schwarzesTor/image4.webp', position3D: new THREE.Vector3( 1.75,  0.75, -5) },
-        { id: 'scheune',      label: texts.roomScheune,      image: '/images/360/schwarzesTor/scheune.jpg',      thumb: '/images/schwarzesTor/image1.webp', position3D: new THREE.Vector3(-1.75, -1.25, -5) },
-        { id: 'arbeitsstube', label: texts.roomArbeitsstube, image: '/images/360/schwarzesTor/arbeitsstube.jpg', thumb: '/images/schwarzesTor/image3.webp', position3D: new THREE.Vector3( 1.75, -1.25, -5) },
+        { id: 'kueche',       label: texts.roomKueche,       image: asset('/images/360/schwarzesTor/küche.jpg'),       thumb: asset('/images/schwarzesTor/image2.webp'), position3D: new THREE.Vector3(-1.75,  0.75, -5) },
+        { id: 'wohnraum',     label: texts.roomWohnraum,     image: asset('/images/360/schwarzesTor/wohnraum.jpg'),     thumb: asset('/images/schwarzesTor/image4.webp'), position3D: new THREE.Vector3( 1.75,  0.75, -5) },
+        { id: 'scheune',      label: texts.roomScheune,      image: asset('/images/360/schwarzesTor/scheune.jpg'),      thumb: asset('/images/schwarzesTor/image1.webp'), position3D: new THREE.Vector3(-1.75, -1.25, -5) },
+        { id: 'arbeitsstube', label: texts.roomArbeitsstube, image: asset('/images/360/schwarzesTor/arbeitsstube.jpg'), thumb: asset('/images/schwarzesTor/image3.webp'), position3D: new THREE.Vector3( 1.75, -1.25, -5) },
     ];
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -275,7 +276,7 @@ export const ZeitreiseView = ({
                     helpers.forEach((h) => (session['scene'] as THREE.Scene).remove(h));
                 }
                 const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-                    new THREE.TextureLoader().load('/images/schwarzesTor/schwarzesTor2.JPG', (tex) => {
+                    new THREE.TextureLoader().load(asset('/images/schwarzesTor/schwarzesTor2.JPG'), (tex) => {
                         tex.colorSpace = THREE.SRGBColorSpace;
                         tex.minFilter = THREE.LinearFilter;
                         tex.magFilter = THREE.LinearFilter;

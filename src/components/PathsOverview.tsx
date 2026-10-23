@@ -161,7 +161,7 @@ export function PathsOverview({ paths, onPathSelect }: PathsOverviewProps) {
                     )}
 
                     <div className={`absolute bottom-4 left-4 ${colors.bg} ${colors.text} rounded-full px-4 py-2 text-sm font-semibold border ${colors.border}`}>
-                      {path.difficulty}
+                      {t(`pathEditorDifficulty${path.difficulty}`)}
                     </div>
                   </div>
 

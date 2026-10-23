@@ -86,7 +86,7 @@ export const ARProximityGate = ({ stationId, coordinates, stationName, children,
     if (onNavigateBack) {
       onNavigateBack();
     } else {
-      window.location.href = '/';
+      window.location.href = import.meta.env.BASE_URL;
     }
   };
 

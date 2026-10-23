@@ -6,12 +6,13 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { UserData } from '../services/api';
+import { UserData, AUTH_EXPIRED_EVENT } from '../services/api';
 import {
     loginUser,
     registerUser,
     logoutUser,
     restoreSession,
+    clearSession,
 } from '../services/auth';
 
 interface UseAuthReturn {
@@ -54,6 +55,16 @@ export function useAuth(): UseAuthReturn {
             });
 
         return () => { cancelled = true; };
+    }, []);
+
+    // Server lehnt das Session-Token ab (abgelaufen, Passwort zurückgesetzt) → lokal abmelden
+    useEffect(() => {
+        const handleExpired = () => {
+            clearSession();
+            setUser(null);
+        };
+        window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+        return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);
     }, []);
 
     const login = useCallback(async (email: string, password: string) => {

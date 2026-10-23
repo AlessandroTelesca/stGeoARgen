@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, MapPin, Zap, Home, Gift, X } from 'lucide-react';
+import { asset } from '../lib/asset';
 
 interface StationSummary {
     title: string;
@@ -124,7 +125,7 @@ export function PathCompletionCelebration({
                                 transition={{ delay: 0.15, type: 'spring', damping: 12, stiffness: 200 }}
                             >
                                 <span className="absolute -inset-3 rounded-full border-2 border-white/25" aria-hidden="true" />
-                                <img src="/Logo.svg" alt="" className="w-14 h-14 object-contain" />
+                                <img src={asset('/Logo.svg')} alt="" className="w-14 h-14 object-contain" />
                             </motion.span>
                             <motion.div
                                 initial={{ opacity: 0, y: 16 }}

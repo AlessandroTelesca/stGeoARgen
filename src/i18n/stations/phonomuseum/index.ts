@@ -77,8 +77,9 @@ export interface StationTexts {
   }>;
 }
 
-const de: StationTexts = deJson;
-const en: StationTexts = enJson;
+// JSON-Imports liefern string statt der Literal-Typen ('phonograph' | …)
+const de = deJson as StationTexts;
+const en = enJson as StationTexts;
 
 const textsByLanguage: Record<Language, StationTexts> = {
   de,

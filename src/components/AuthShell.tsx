@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { BackLink } from './PageHeader';
+import { asset } from '../lib/asset';
 
 interface AuthShellProps {
   title: string;
@@ -29,7 +30,7 @@ export function AuthShell({ title, subtitle, onBack, children, footer }: AuthShe
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <span className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-              <img src="/Logo.svg" alt="St.GeoARgen" className="w-10 h-10 object-contain" />
+              <img src={asset('/Logo.svg')} alt="St.GeoARgen" className="w-10 h-10 object-contain" />
             </span>
             <div className="min-w-0">
               <h1 className="text-[28px] leading-[1.1] font-extrabold tracking-tight">{title}</h1>

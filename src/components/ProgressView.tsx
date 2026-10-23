@@ -1,4 +1,4 @@
-import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Calendar } from 'lucide-react';
+import { TrendingUp, Target, Clock, Award, MapPin, Trophy, CheckCircle2, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GeorgiAvatar } from './Georgi';
@@ -33,10 +33,6 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
 
   const completedPaths = paths.filter(p => p.completedStations === p.totalStations && p.totalStations > 0).length;
   const inProgressPaths = paths.filter(p => p.completedStations > 0 && p.completedStations < p.totalStations).length;
-
-  // Mock statistics - in a real app, these would be tracked
-  const daysActive = 1;
-  const currentStreak = 1;
 
   // Calculate average completion per path
   const pathCompletionRates = paths.map(path => ({
@@ -159,11 +155,11 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-primary" />
+                <MapPin className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{currentStreak}</p>
-            <p className="text-sm text-muted-foreground">{t('streakDays')}</p>
+            <p className="text-2xl font-extrabold tabular-nums mb-0.5">{totalCompletedStations}/{totalStations}</p>
+            <p className="text-sm text-muted-foreground">{t('stationsExplored')}</p>
           </motion.div>
         </div>
 
@@ -213,7 +209,7 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h4 className="mb-1">{path.title}</h4>
+                    <h4 className="font-bold mb-1">{path.title}</h4>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
@@ -226,9 +222,9 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl">{Math.round(path.completionRate)}%</p>
+                    <p className="text-2xl font-extrabold tabular-nums">{Math.round(path.completionRate)}%</p>
                     {path.completionRate === 100 && (
-                      <span className="text-xs text-success">✓ {t('done')}</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-success"><Check className="w-3.5 h-3.5" strokeWidth={3} />{t('done')}</span>
                     )}
                   </div>
                 </div>
@@ -258,7 +254,7 @@ export function ProgressView({ paths, totalPoints, earnedPoints, maxPossiblePoin
                       ? 'bg-warning/10 text-warning-foreground'
                       : 'bg-destructive/10 text-destructive'
                   }`}>
-                    {path.difficulty}
+                    {t(`pathEditorDifficulty${path.difficulty}`)}
                   </span>
                 </div>
               </motion.button>

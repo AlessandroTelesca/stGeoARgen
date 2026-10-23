@@ -8,10 +8,11 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getBahnhofTexts } from '../../../i18n/stations/bahnhof';
 import { MobileOnlyNotice } from '../MobileOnlyNotice';
 import { ARStartCard } from '../ARStartCard';
+import { asset } from '../../../lib/asset';
 
 const BAHNHOF_LOCOMOTIVE_MODEL_URL = new URL('./models/german_steam_locomotive.glb', import.meta.url).href;
-const BAHNHOF_PANORAMA_URL = '/images/360/bahnhof.jpg';
-const BAHNHOF_PARALLAX_URL = '/images/parallax/2203_w026_n002_1520b_p1_1520.jpg';
+const BAHNHOF_PANORAMA_URL = asset('/images/360/bahnhof.jpg');
+const BAHNHOF_PARALLAX_URL = asset('/images/parallax/2203_w026_n002_1520b_p1_1520.jpg');
 const SHOW_DEBUG_CAMERA_UI = import.meta.env.DEV;
 
 interface InfoMarkerDef {
@@ -483,13 +484,13 @@ export const BahnhofView = ({ onNavigateHome, username, onLogin, onLogout, onNav
 	};
 
 	useEffect(() => {
-		const audio = new Audio('/sounds/steam-locomotive.mp3');
+		const audio = new Audio(asset('/sounds/steam-locomotive.mp3'));
 		audio.loop = true;
 		audio.preload = 'auto';
 		audio.volume = 0.35;
 		locomotiveAudioRef.current = audio;
 
-		const hornAudio = new Audio('/sounds/steam-locomotive-horn.mp3');
+		const hornAudio = new Audio(asset('/sounds/steam-locomotive-horn.mp3'));
 		hornAudio.preload = 'auto';
 		hornAudio.volume = 0.65;
 		hornAudioRef.current = hornAudio;

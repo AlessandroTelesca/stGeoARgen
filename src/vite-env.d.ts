@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET?: string;
   readonly VITE_EMAILJS_PUBLIC_KEY?: string;
   readonly VITE_SUPPORT_EMAIL?: string;
+  /** Nur im Dev-Server: 'true' schaltet das Geofencing für Tests ab */
+  readonly VITE_DISABLE_GEO?: string;
 }
 
 interface ImportMeta {

@@ -52,6 +52,9 @@ try {
     $markUsedStmt = $db->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = ?');
     $markUsedStmt->execute([(int)$resetEntry['id']]);
 
+    // Alle bestehenden Logins beenden (z. B. falls das alte Passwort kompromittiert war)
+    $db->prepare('DELETE FROM user_sessions WHERE user_id = ?')->execute([(int)$resetEntry['user_id']]);
+
     $db->commit();
 
     sendResponse(['success' => true, 'message' => 'Passwort erfolgreich geaendert.']);

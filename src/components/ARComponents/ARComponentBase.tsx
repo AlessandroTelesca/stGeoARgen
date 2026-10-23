@@ -55,8 +55,9 @@ interface ARComponentBaseProps {
 // Export Stations aus zentraler Config
 export const STATIONS = STATIONS_COORDINATES;
 
-// Globales Flag zum kompletten Abschalten von Geolocation
-const DISABLE_GEO = true;
+// Geofencing ist in Produktion immer aktiv. Nur im Dev-Server lässt es sich
+// für Tests am Schreibtisch abschalten: VITE_DISABLE_GEO=true in .env.local
+const DISABLE_GEO = import.meta.env.DEV && import.meta.env.VITE_DISABLE_GEO === 'true';
 const MOCK_LOCATION = { lat: 48.0, lng: 11.0 };
 const MIN_SECONDS_BEFORE_COMPLETE = 30;
 
@@ -75,52 +76,87 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
   return R * c; // Distanz in Metern
 };
 
-// Custom Hook für Station Proximity Check (50m Radius)
+// Eine gemeinsame GPS-Überwachung für alle Komponenten. Listen wie die Stationsübersicht
+// rufen den Hook pro Karte auf; ohne Bündelung liefe für jede Karte ein eigener Watcher.
+type GeoState = {
+  position: { lat: number; lng: number } | null;
+  error: 'denied' | 'unavailable' | 'unsupported' | null;
+};
+
+let geoState: GeoState = { position: null, error: null };
+let geoWatchId: number | null = null;
+const geoListeners = new Set<() => void>();
+
+const setGeoState = (next: GeoState) => {
+  geoState = next;
+  geoListeners.forEach((listener) => listener());
+};
+
+const subscribeGeo = (listener: () => void) => {
+  geoListeners.add(listener);
+
+  if (geoWatchId === null && typeof navigator !== 'undefined') {
+    if (!navigator.geolocation) {
+      setGeoState({ position: null, error: 'unsupported' });
+    } else {
+      geoWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setGeoState({
+            position: { lat: position.coords.latitude, lng: position.coords.longitude },
+            error: null,
+          });
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            setGeoState({ position: null, error: 'denied' });
+            return;
+          }
+          // Timeout/kein Signal: Die Überwachung läuft weiter. Eine bereits bekannte
+          // Position bleibt gültig, statt den Nutzer mit einer Fehlermeldung auszusperren.
+          if (!geoState.position) setGeoState({ position: null, error: 'unavailable' });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 5000, // Alle 5 Sekunden neue Position anfordern
+        }
+      );
+    }
+  }
+
+  return () => {
+    geoListeners.delete(listener);
+    if (geoListeners.size === 0 && geoWatchId !== null) {
+      navigator.geolocation.clearWatch(geoWatchId);
+      geoWatchId = null;
+    }
+  };
+};
+
+const GEO_ERROR_KEYS = {
+  denied: 'locationDenied',
+  unavailable: 'locationUnavailable',
+  unsupported: 'locationUnsupported',
+} as const;
+
+// Custom Hook für Station Proximity Check
 export const useStationProximity = (stationLat: number, stationLng: number, radiusMeters: number = 50) => {
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const { t } = useLanguage();
+  const [state, setState] = useState<GeoState>(() => (DISABLE_GEO ? { position: MOCK_LOCATION, error: null } : geoState));
 
   useEffect(() => {
-    if (DISABLE_GEO) {
-      setUserLocation(MOCK_LOCATION);
-      setDistance(0);
-      setLocationError(null);
-      return;
-    }
+    if (DISABLE_GEO) return;
+    setState(geoState);
+    return subscribeGeo(() => setState(geoState));
+  }, []);
 
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation wird von deinem Browser nicht unterstützt.');
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-        setUserLocation({ lat: userLat, lng: userLng });
-
-        // Calculate distance to station
-        const dist = calculateDistance(userLat, userLng, stationLat, stationLng);
-        setDistance(dist);
-        setLocationError(null);
-
-        console.log(`[Proximity] Distanz zur Station: ${Math.round(dist)}m (Genauigkeit: ±${Math.round(position.coords.accuracy)}m)`);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setLocationError('Standortzugriff verweigert. Bitte erlaube den Standortzugriff in den Einstellungen.');
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000, // Alle 5 Sekunden neue Position anfordern
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [stationLat, stationLng]);
-
+  const userLocation = state.position;
+  const distance = DISABLE_GEO
+    ? 0
+    : userLocation
+      ? calculateDistance(userLocation.lat, userLocation.lng, stationLat, stationLng)
+      : null;
+  const locationError = state.error ? t(GEO_ERROR_KEYS[state.error]) : null;
   const isWithinRadius = distance !== null && distance <= radiusMeters;
 
   return { userLocation, distance, locationError, isWithinRadius };

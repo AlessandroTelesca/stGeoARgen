@@ -12,6 +12,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getPhonomuseumTexts } from '../../../i18n/stations/phonomuseum';
 import { MobileOnlyNotice } from '../MobileOnlyNotice';
 import { ARStartCard } from '../ARStartCard';
+import { asset } from '../../../lib/asset';
 
 const PHONOGRAPH_MODEL_URL = new URL('./models/Phono_1_Object.glb', import.meta.url).href;
 const GRAMOPHONE_MODEL_URL = new URL('./models/gramophone.glb', import.meta.url).href;
@@ -189,7 +190,7 @@ interface ARViewProps {
 }
 
 class PhonomuseumARSession extends GyroARVisualizer {
-  private readonly panoramaUrl = '/images/360/phonomuseum.jpg';
+  private readonly panoramaUrl = asset('/images/360/phonomuseum.jpg');
 
   private loadPanoramaTexture(url: string): Promise<THREE.Texture> {
     return new Promise((resolve, reject) => {
@@ -1534,7 +1535,7 @@ export const PhonomuseumView = ({ onNavigateHome, username, onLogin, onLogout, o
                         }}
                       >
                         <img
-                          src="/dragAnimation.gif"
+                          src={asset('/dragAnimation.gif')}
                           alt={phonomuseumTexts.dragInstruction}
                           style={{ width: '200px', height: '200px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}
                         />

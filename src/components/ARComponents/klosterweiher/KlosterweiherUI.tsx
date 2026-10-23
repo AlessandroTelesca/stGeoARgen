@@ -8,6 +8,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getKlosterweiherTexts } from '../../../i18n/stations/klosterweiher';
 import { usePointConfig } from '../../../contexts/PointConfigContext';
 import { TREASURE_REWARD_KEY } from '../../../services/api';
+import { asset } from '../../../lib/asset';
 
 /** "du erhältst {points} punkte." mit den Schatzkisten-Punkten aus der DB; leer, solange unbekannt. */
 function useTreasureFoundPointsText(template: string): string {
@@ -72,7 +73,7 @@ export const TapInstructionGIF = ({ overlayRoot }: TapInstructionGIFProps) => {
       }}
     >
       <img
-        src="/TapOnScreen.gif"
+        src={asset('/TapOnScreen.gif')}
         alt={klosterweiherTexts.tapInstruction}
         style={{
           width: '80px',
@@ -119,7 +120,7 @@ export const DragInstructionGIF = ({ overlayRoot }: DragInstructionGIFProps) => 
       }}
     >
       <img
-        src="/dragAnimation.gif"
+        src={asset('/dragAnimation.gif')}
         alt={klosterweiherTexts.dragInstruction}
         style={{
           width: '240px',
@@ -239,7 +240,7 @@ export const FishingInstructions = ({ overlayRoot, onStart }: FishingInstruction
   return createPortal(
     <div className="fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10003] w-[calc(100%-32px)] max-w-[420px] ar-glass rounded-[24px] px-6 py-5 text-center shadow-2xl pointer-events-auto flex flex-col gap-4" style={{ top: '50%' }}>
       <span className="mx-auto w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg">
-        <img src="/Logo.svg" alt="" className="w-8 h-8 object-contain" />
+        <img src={asset('/Logo.svg')} alt="" className="w-8 h-8 object-contain" />
       </span>
       <p className="m-0 font-semibold text-[15px] leading-relaxed">{klosterweiherTexts.fishingInstruction}</p>
       <button
@@ -362,7 +363,7 @@ export const FishInfoPopup = ({ overlayRoot, fishName, onClose, isChest = false 
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const treasureFoundPoints = useTreasureFoundPointsText(klosterweiherTexts.treasureFoundPoints);
-  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
+  const fishInfoBasePath = language === 'en' ? asset('/fish_information_en') : asset('/fish_Information');
   const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -617,7 +618,7 @@ export const FishInfoPopupWebXR = ({ overlayRoot, fishName, onClose, isChest = f
   const { language } = useLanguage();
   const klosterweiherTexts = getKlosterweiherTexts(language);
   const treasureFoundPoints = useTreasureFoundPointsText(klosterweiherTexts.treasureFoundPoints);
-  const fishInfoBasePath = language === 'en' ? '/fish_information_en' : '/fish_Information';
+  const fishInfoBasePath = language === 'en' ? asset('/fish_information_en') : asset('/fish_Information');
   const fishInfoFileName = getFishInfoFileName(fishName, language);
   const [fishInfo, setFishInfo] = useState<FishInfo | null>(null);
   const [loading, setLoading] = useState(true);

@@ -30,6 +30,8 @@ if ($name === '') {
 
 try {
     $pdo = getDB();
+    // Nur eingeloggte User dürfen Melodien speichern (Gäste haben kein Session-Token).
+    requireUser($pdo);
     $pdo->beginTransaction();
 
     $sql = 'INSERT INTO glockenspiel_melodies (station_id, melody, name, created_at) VALUES (:station_id, :melody, :name, NOW())';
