@@ -116,11 +116,15 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 	protected animate = (): void => {
 		this.animationId = requestAnimationFrame(this.animate);
 		this.updateCameraFromGyro();
+		this.beforeRender();
 
 		if (this.renderer && this.scene && this.camera) {
 			this.renderer.render(this.scene, this.camera);
 		}
 	};
+
+	/** Wird jedes Frame nach der Kamera-Aktualisierung und vor dem Rendern aufgerufen. */
+	protected beforeRender(): void {}
 
 	private addDebugGrid(): void {
 		if (!this.scene || this.gridHelper) return;

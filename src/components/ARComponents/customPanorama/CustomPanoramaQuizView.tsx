@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import * as THREE from 'three';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARStartCard } from '../ARStartCard';
@@ -15,6 +15,19 @@ const COMPLETE_BUTTON_SAFE_GAP = 110;
 const QUIZ_PANEL_GLASS_BACKGROUND = 'rgba(228, 232, 236, 0.24)';
 const QUIZ_PANEL_INNER_PADDING = '14px';
 const TEXT_SHADOW = '0 2px 8px rgba(0,0,0,0.8)';
+
+/**
+ * Die 10 festen Plätze rund um die Kamera, als Drehwinkel in Grad im Uhrzeigersinn ab der
+ * Blickrichtung beim Start (alle auf Augenhöhe). Die Bilder belegen sie der Reihe nach, das Quiz
+ * den Platz direkt nach dem letzten Bild – daher höchstens 9 Bilder (PANORAMA_MAX_SLIDES in der
+ * Stationsverwaltung bzw. STATION_MAX_PANORAMA_SLIDES im Backend).
+ */
+const PANEL_YAWS_DEG = [0, 36, 72, 108, 144, 180, 216, 252, 288, 324] as const;
+/** Halbe Breite eines Panels als Blickwinkel; bei 36° Abstand bleiben ~4° Lücke zum Nachbarn */
+const PANEL_HALF_ANGLE_DEG = 16;
+const PANEL_MIN_WIDTH = 260;
+const PANEL_MAX_WIDTH = 440;
+const PANEL_WIDTH_VAR = '--panorama-panel-width';
 
 export interface PanoramaQuizQuestion {
   question: string;
@@ -32,7 +45,7 @@ export interface PanoramaQuizStation {
   latitude: number;
   longitude: number;
   panoramaUrl: string;
-  /** Optionale Bildfolge, die vor dem Quiz im selben Glas-Panel gezeigt wird */
+  /** Optionale Bilder mit Text; hängen zusammen mit dem Quiz rundum im 360°-Bild */
   slides: { imageUrl: string; text: string }[];
   questions: PanoramaQuizQuestion[];
 }
@@ -54,10 +67,37 @@ interface CustomPanoramaQuizViewProps {
   isGuestMode?: boolean;
 }
 
-/** 360°-Bild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession) */
+/** DOM-Panel, das an einer festen Richtung im Raum hängt */
+interface PanelAnchor {
+  element: HTMLElement;
+  direction: THREE.Vector3;
+}
+
+function directionForYaw(yawDeg: number): THREE.Vector3 {
+  const yaw = THREE.MathUtils.degToRad(yawDeg);
+  return new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).multiplyScalar(10);
+}
+
+/**
+ * 360°-Bild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession). Die Panels
+ * (Bilder + Quiz) sind normale DOM-Elemente; jedes Frame wird ihre Richtung auf den Bildschirm
+ * projiziert, sodass sie fest im Raum stehen und man sich zu ihnen umdrehen muss.
+ */
 class CustomPanoramaARSession extends GyroARVisualizer {
+  private panelLayer: HTMLElement | null = null;
+  private anchors: PanelAnchor[] = [];
+  private panelWidthKey = '';
+  private readonly projected = new THREE.Vector3();
+  private readonly viewSpace = new THREE.Vector3();
+
   constructor(container: HTMLDivElement, videoElement: HTMLVideoElement, private readonly panoramaUrl: string, options: ARInitOptions = {}) {
     super(container, videoElement, options);
+  }
+
+  setPanelAnchors(layer: HTMLElement | null, anchors: PanelAnchor[]): void {
+    this.panelLayer = layer;
+    this.anchors = anchors;
+    this.panelWidthKey = '';
   }
 
   private async loadPanoramaTexture(): Promise<THREE.Texture> {
@@ -87,13 +127,50 @@ class CustomPanoramaARSession extends GyroARVisualizer {
       debugHelpers.forEach((helper) => this.scene?.remove(helper));
     }
   }
+
+  protected beforeRender(): void {
+    const camera = this.camera;
+    if (!camera || !this.panelLayer) return;
+    camera.updateMatrixWorld();
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Panelbreite aus dem Blickwinkel, damit benachbarte Panels sich nicht überdecken
+    const widthKey = `${width}x${height}@${camera.fov}`;
+    if (widthKey !== this.panelWidthKey) {
+      this.panelWidthKey = widthKey;
+      const focal = height / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const angular = 2 * focal * Math.tan(THREE.MathUtils.degToRad(PANEL_HALF_ANGLE_DEG));
+      const panelWidth = Math.min(width - 40, PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, angular));
+      this.panelLayer.style.setProperty(PANEL_WIDTH_VAR, `${Math.round(panelWidth)}px`);
+    }
+
+    for (const { element, direction } of this.anchors) {
+      this.viewSpace.copy(direction).applyMatrix4(camera.matrixWorldInverse);
+      this.projected.copy(direction).project(camera);
+      // Hinter der Kamera oder weit außerhalb des Bildschirms → ausblenden (nicht klickbar)
+      if (this.viewSpace.z >= 0 || Math.abs(this.projected.x) > 3 || Math.abs(this.projected.y) > 3) {
+        element.style.visibility = 'hidden';
+        continue;
+      }
+      const x = ((this.projected.x + 1) / 2) * width;
+      const y = ((1 - this.projected.y) / 2) * height;
+      element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
+      element.style.visibility = 'visible';
+    }
+  }
+
+  stop(): void {
+    this.setPanelAnchors(null, []);
+    super.stop();
+  }
 }
 
-type Phase = 'intro' | 'slides' | 'question' | 'feedback' | 'summary';
+type QuizPhase = 'question' | 'feedback' | 'summary';
 
 const panelStyle = {
   pointerEvents: 'auto' as const,
-  width: 'min(560px, 100%)',
+  width: '100%',
   overflowY: 'auto' as const,
   overflowX: 'hidden' as const,
   overscrollBehavior: 'contain' as const,
@@ -104,6 +181,32 @@ const panelStyle = {
   backdropFilter: 'blur(6px) grayscale(16%)',
   WebkitBackdropFilter: 'blur(6px) grayscale(16%)',
   color: 'var(--color-gray-900)',
+};
+
+/** Wrapper eines Panels; Position setzt CustomPanoramaARSession.beforeRender */
+const anchorStyle = {
+  position: 'absolute' as const,
+  left: 0,
+  top: 0,
+  width: `var(${PANEL_WIDTH_VAR}, min(340px, calc(100vw - 40px)))`,
+  visibility: 'hidden' as const,
+  willChange: 'transform',
+};
+
+const textBoxStyle = {
+  borderRadius: '12px',
+  padding: '14px 14px 12px',
+  background: 'rgba(10, 14, 22, 0.52)',
+  border: '1px solid rgba(255,255,255,0.32)',
+};
+
+const panelImageStyle = {
+  display: 'block',
+  width: '100%',
+  objectFit: 'contain' as const,
+  marginBottom: '14px',
+  borderRadius: '12px',
+  background: 'rgba(10, 14, 22, 0.35)',
 };
 
 const primaryButtonStyle = {
@@ -119,8 +222,9 @@ const primaryButtonStyle = {
 };
 
 /**
- * AR-Ansicht einer 360°-Quiz-Station aus der Stationsverwaltung: 360°-Bild (GyroARVisualizer)
- * mit Quiz darüber, gleiche Oberfläche und Abläufe wie das Phonomuseum.
+ * AR-Ansicht einer 360°-Quiz-Station aus der Stationsverwaltung: 360°-Bild (GyroARVisualizer),
+ * darin rundum verteilt die Bilder der Station und das Quiz als Glas-Panels (Optik wie im
+ * Phonomuseum). Alle Panels sind von Anfang an da; man dreht das Handy, um sie anzuschauen.
  */
 export const CustomPanoramaQuizView = ({
   station,
@@ -144,6 +248,8 @@ export const CustomPanoramaQuizView = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<CustomPanoramaARSession | null>(null);
+  const panelLayerRef = useRef<HTMLDivElement>(null);
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -151,21 +257,20 @@ export const CustomPanoramaQuizView = ({
 
   const questions = station.questions;
   const totalQuestions = questions.length;
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<QuizPhase>('question');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [wrongSelections, setWrongSelections] = useState<number[][]>(() => questions.map(() => []));
   const [correctSelection, setCorrectSelection] = useState<number | null>(null);
   const [hideQuizSummary, setHideQuizSummary] = useState(false);
   const currentQuestion = questions[questionIndex];
-  const slides = station.slides;
-  const [slideIndex, setSlideIndex] = useState(0);
-  const currentSlide = slides[slideIndex];
+  // Ein Platz bleibt fürs Quiz; ältere Stationen mit mehr Bildern zeigen nur die ersten 9
+  const slides = station.slides.slice(0, PANEL_YAWS_DEG.length - 1);
+  const quizSlot = slides.length;
 
-  // Beim Sprachwechsel bzw. geänderten Inhalten von vorn beginnen (Inhalt vergleichen, nicht die Array-Identität)
-  const questionsKey = JSON.stringify([questions, slides]);
+  // Beim Sprachwechsel bzw. geänderten Inhalten das Quiz neu beginnen (Inhalt vergleichen, nicht die Array-Identität)
+  const questionsKey = JSON.stringify(questions);
   useEffect(() => {
-    setPhase('intro');
-    setSlideIndex(0);
+    setPhase('question');
     setQuestionIndex(0);
     setWrongSelections(questions.map(() => []));
     setCorrectSelection(null);
@@ -174,21 +279,23 @@ export const CustomPanoramaQuizView = ({
 
   useEffect(() => () => sessionRef.current?.stop(), []);
 
-  // Bilder der Bildfolge und der Fragen vorladen, damit sie beim Weiterklicken sofort da sind
+  // Panels (Bilder + Quiz) an ihren festen Plätzen im Raum verankern
   useEffect(() => {
-    if (!hasStarted) return;
-    slides.forEach((slide) => {
-      new Image().src = slide.imageUrl;
-    });
-    questions.forEach((q) => {
-      if (q.imageUrl) new Image().src = q.imageUrl;
-    });
-  }, [hasStarted, slides, questions]);
+    const session = sessionRef.current;
+    if (!hasStarted || !session) return;
+    const anchors: PanelAnchor[] = [];
+    for (let slot = 0; slot <= quizSlot; slot++) {
+      const element = panelRefs.current[slot];
+      if (element) anchors.push({ element, direction: directionForYaw(PANEL_YAWS_DEG[slot]) });
+    }
+    session.setPanelAnchors(panelLayerRef.current, anchors);
+  }, [hasStarted, quizSlot]);
 
   // Beim ersten Versuch richtig beantwortete Fragen
   const firstTryCorrect = useMemo(() => wrongSelections.filter((wrong) => wrong.length === 0).length, [wrongSelections]);
   const showStationCompleteButton = phase === 'summary' && !hideQuizSummary;
   const quizPanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2 + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px)`;
+  const slidePanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2}px)`;
 
   const startARSession = async () => {
     if (!isAuthorized || !containerRef.current || !videoRef.current || isStarting || hasStarted) return;
@@ -284,236 +391,139 @@ export const CustomPanoramaQuizView = ({
           />
         )}
 
-        {hasStarted && !hideQuizSummary && (
+        {hasStarted && (
           <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 10003,
-              pointerEvents: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingTop: `${QUIZ_UI_SAFE_VERTICAL_GAP}px`,
-              paddingBottom: `${QUIZ_UI_SAFE_VERTICAL_GAP + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px`,
-              paddingLeft: '20px',
-              paddingRight: '20px',
-            }}
+            ref={panelLayerRef}
+            style={{ position: 'fixed', inset: 0, zIndex: 10003, pointerEvents: 'none', overflow: 'hidden' }}
           >
-            {phase === 'intro' && (
-              <div style={{ ...panelStyle, width: 'min(520px, 100%)', maxHeight: quizPanelMaxHeight, textAlign: 'center' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  {station.title}
-                </h2>
-                <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  {slides.length > 0
-                    ? t('customPanoramaIntroWithSlides', { slides: slides.length, count: totalQuestions })
-                    : t('customPanoramaIntro', { count: totalQuestions })}
-                </p>
-                <button type="button" onClick={() => setPhase(slides.length > 0 ? 'slides' : 'question')} style={primaryButtonStyle}>
-                  {slides.length > 0 ? t('customPanoramaSlidesStart') : t('customPanoramaQuizStart')}
-                </button>
-              </div>
-            )}
-
-            {/* Bildfolge im selben Glas-Panel wie das Quiz */}
-            {phase === 'slides' && currentSlide && (
-              <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  <span className="tabular-nums">{t('stationImageSequenceProgress', { current: slideIndex + 1, total: slides.length })}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} aria-hidden="true">
-                    {slides.map((_, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          width: i === slideIndex ? '18px' : '8px',
-                          height: '8px',
-                          borderRadius: '999px',
-                          background: i <= slideIndex ? 'var(--color-white)' : 'rgba(255,255,255,0.35)',
-                          boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-                          transition: 'width 0.2s ease',
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <img
-                  key={currentSlide.imageUrl}
-                  src={currentSlide.imageUrl}
-                  alt=""
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    maxHeight: '34vh',
-                    objectFit: 'contain',
-                    marginBottom: '14px',
-                    borderRadius: '12px',
-                    background: 'rgba(10, 14, 22, 0.35)',
-                  }}
-                />
-
-                <div
-                  style={{
-                    borderRadius: '12px',
-                    padding: '14px 14px 12px',
-                    background: 'rgba(10, 14, 22, 0.52)',
-                    border: '1px solid rgba(255,255,255,0.32)',
-                  }}
-                >
-                  <p aria-live="polite" style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, whiteSpace: 'pre-line', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                    {currentSlide.text}
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSlideIndex((i) => i - 1)}
-                    disabled={slideIndex === 0}
-                    aria-label={t('back')}
-                    style={{
-                      width: '52px',
-                      flexShrink: 0,
-                      border: '1px solid rgba(255,255,255,0.35)',
-                      borderRadius: '12px',
-                      background: 'rgba(255,255,255,0.18)',
-                      color: 'var(--color-white)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: slideIndex === 0 ? 'default' : 'pointer',
-                      opacity: slideIndex === 0 ? 0.35 : 1,
-                    }}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => (slideIndex >= slides.length - 1 ? setPhase('question') : setSlideIndex((i) => i + 1))}
-                    style={{ ...primaryButtonStyle, marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                  >
-                    {slideIndex >= slides.length - 1 ? t('customPanoramaQuizStart') : t('stationImageSequenceNext')}
-                    {slideIndex < slides.length - 1 && <ChevronRight size={18} />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {(phase === 'question' || phase === 'feedback') && currentQuestion && (
-              <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  <span className="tabular-nums">{`${questionIndex + 1}/${totalQuestions}`}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} aria-hidden="true">
-                    {questions.map((_, i) => {
-                      const done = i < questionIndex || (i === questionIndex && phase === 'feedback');
-                      return (
+            {slides.map((slide, index) => (
+              <div key={index} ref={(el) => { panelRefs.current[index] = el; }} style={anchorStyle}>
+                <div style={{ ...panelStyle, maxHeight: slidePanelMaxHeight }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                    <span className="tabular-nums">{t('stationImageSequenceProgress', { current: index + 1, total: slides.length })}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} aria-hidden="true">
+                      {slides.map((_, i) => (
                         <span
                           key={i}
                           style={{
-                            width: '22px',
-                            height: '22px',
-                            borderRadius: '50%',
-                            background: done ? 'var(--color-primary)' : 'var(--color-gray-400)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                            width: i === index ? '18px' : '8px',
+                            height: '8px',
+                            borderRadius: '999px',
+                            background: i <= index ? 'var(--color-white)' : 'rgba(255,255,255,0.35)',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <img src={slide.imageUrl} alt="" style={{ ...panelImageStyle, maxHeight: '34vh' }} />
+
+                  <div style={textBoxStyle}>
+                    <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, whiteSpace: 'pre-line', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                      {slide.text}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Quiz: ein weiteres Panel direkt nach dem letzten Bild */}
+            <div ref={(el) => { panelRefs.current[quizSlot] = el; }} style={anchorStyle}>
+              {(phase === 'question' || phase === 'feedback') && currentQuestion && (
+                <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.86rem', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                    <span className="tabular-nums">{`${questionIndex + 1}/${totalQuestions}`}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} aria-hidden="true">
+                      {questions.map((_, i) => {
+                        const done = i < questionIndex || (i === questionIndex && phase === 'feedback');
+                        return (
+                          <span
+                            key={i}
+                            style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '50%',
+                              background: done ? 'var(--color-primary)' : 'var(--color-gray-400)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            {done && <Check size={14} color="var(--color-white)" strokeWidth={3} />}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {currentQuestion.imageUrl && (
+                    <img key={currentQuestion.imageUrl} src={currentQuestion.imageUrl} alt="" style={{ ...panelImageStyle, maxHeight: '28vh' }} />
+                  )}
+
+                  <div style={{ ...textBoxStyle, marginBottom: '14px' }}>
+                    <h3 style={{ fontWeight: 800, marginBottom: 0, color: 'var(--color-white)', textShadow: TEXT_SHADOW, fontSize: '1.02rem' }}>
+                      {currentQuestion.question}
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {currentQuestion.options.map((option, index) => {
+                      const isWrong = wrongSelections[questionIndex].includes(index);
+                      const isCorrect = correctSelection === index;
+                      return (
+                        <button
+                          key={`${questionIndex}-${index}`}
+                          type="button"
+                          onClick={() => handleAnswer(index)}
+                          disabled={isWrong || phase === 'feedback'}
+                          className={isWrong ? 'mi-shake' : isCorrect ? 'mi-pop' : undefined}
+                          style={{
+                            border: isWrong ? '1px solid var(--color-danger)' : isCorrect ? '1px solid var(--color-primary)' : '1px solid var(--color-gray-200)',
+                            borderRadius: '12px',
+                            background: isWrong ? '#ffe8e8' : isCorrect ? 'var(--color-primary-light)' : 'var(--color-white)',
+                            color: isWrong ? 'var(--color-danger)' : 'var(--color-gray-900)',
+                            padding: '10px 12px',
+                            textAlign: 'left',
+                            fontWeight: 600,
+                            cursor: isWrong || phase === 'feedback' ? 'default' : 'pointer',
+                            opacity: phase === 'feedback' && !isCorrect ? 0.6 : 1,
                           }}
                         >
-                          {done && <Check size={14} color="var(--color-white)" strokeWidth={3} />}
-                        </span>
+                          {option}
+                        </button>
                       );
                     })}
                   </div>
-                </div>
 
-                {currentQuestion.imageUrl && (
-                  <img
-                    key={currentQuestion.imageUrl}
-                    src={currentQuestion.imageUrl}
-                    alt=""
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      maxHeight: '28vh',
-                      objectFit: 'contain',
-                      marginBottom: '14px',
-                      borderRadius: '12px',
-                      background: 'rgba(10, 14, 22, 0.35)',
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    marginBottom: '14px',
-                    borderRadius: '12px',
-                    padding: '14px 14px 12px',
-                    background: 'rgba(10, 14, 22, 0.52)',
-                    border: '1px solid rgba(255,255,255,0.32)',
-                  }}
-                >
-                  <h3 style={{ fontWeight: 800, marginBottom: 0, color: 'var(--color-white)', textShadow: TEXT_SHADOW, fontSize: '1.02rem' }}>
-                    {currentQuestion.question}
-                  </h3>
-                </div>
-
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {currentQuestion.options.map((option, index) => {
-                    const isWrong = wrongSelections[questionIndex].includes(index);
-                    const isCorrect = correctSelection === index;
-                    return (
-                      <button
-                        key={`${questionIndex}-${index}`}
-                        type="button"
-                        onClick={() => handleAnswer(index)}
-                        disabled={isWrong || phase === 'feedback'}
-                        className={isWrong ? 'mi-shake' : isCorrect ? 'mi-pop' : undefined}
-                        style={{
-                          border: isWrong ? '1px solid var(--color-danger)' : isCorrect ? '1px solid var(--color-primary)' : '1px solid var(--color-gray-200)',
-                          borderRadius: '12px',
-                          background: isWrong ? '#ffe8e8' : isCorrect ? 'var(--color-primary-light)' : 'var(--color-white)',
-                          color: isWrong ? 'var(--color-danger)' : 'var(--color-gray-900)',
-                          padding: '10px 12px',
-                          textAlign: 'left',
-                          fontWeight: 600,
-                          cursor: isWrong || phase === 'feedback' ? 'default' : 'pointer',
-                          opacity: phase === 'feedback' && !isCorrect ? 0.6 : 1,
-                        }}
-                      >
-                        {option}
+                  {phase === 'feedback' && (
+                    <>
+                      <p style={{ marginTop: '14px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-green-200)', textShadow: TEXT_SHADOW }}>
+                        {t('customPanoramaCorrect')}
+                      </p>
+                      <button type="button" onClick={handleContinue} style={primaryButtonStyle}>
+                        {questionIndex >= totalQuestions - 1 ? t('customPanoramaToSummary') : t('customPanoramaNext')}
                       </button>
-                    );
-                  })}
+                    </>
+                  )}
                 </div>
+              )}
 
-                {phase === 'feedback' && (
-                  <>
-                    <p style={{ marginTop: '14px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-green-200)', textShadow: TEXT_SHADOW }}>
-                      {t('customPanoramaCorrect')}
-                    </p>
-                    <button type="button" onClick={handleContinue} style={primaryButtonStyle}>
-                      {questionIndex >= totalQuestions - 1 ? t('customPanoramaToSummary') : t('customPanoramaNext')}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {phase === 'summary' && (
-              <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  {t('customPanoramaFinishTitle')}
-                </h3>
-                <p style={{ marginBottom: '8px', color: 'var(--color-green-200)', textShadow: TEXT_SHADOW }}>
-                  {isGuestMode ? t('stationGuestNoCompletion') : t('customPanoramaFinishBody')}
-                </p>
-                <p className="tabular-nums" style={{ marginBottom: 0, color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
-                  {t('customPanoramaScore', { correct: firstTryCorrect, total: totalQuestions })}
-                </p>
-              </div>
-            )}
+              {phase === 'summary' && !hideQuizSummary && (
+                <div style={{ ...panelStyle, maxHeight: quizPanelMaxHeight }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                    {t('customPanoramaFinishTitle')}
+                  </h3>
+                  <p style={{ marginBottom: '8px', color: 'var(--color-green-200)', textShadow: TEXT_SHADOW }}>
+                    {isGuestMode ? t('stationGuestNoCompletion') : t('customPanoramaFinishBody')}
+                  </p>
+                  <p className="tabular-nums" style={{ marginBottom: 0, color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
+                    {t('customPanoramaScore', { correct: firstTryCorrect, total: totalQuestions })}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </>

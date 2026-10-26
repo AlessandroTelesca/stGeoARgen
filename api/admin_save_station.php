@@ -102,8 +102,9 @@ $slidesInput = $input['slides'] ?? ($isPanorama ? [] : null);
 if (!is_array($slidesInput) || (!$isPanorama && count($slidesInput) < 1)) {
     fail('Die Bildfolge braucht mindestens ein Bild.');
 }
-if (count($slidesInput) > STATION_MAX_SLIDES) {
-    fail('Maximal ' . STATION_MAX_SLIDES . ' Bilder in der Bildfolge.');
+$maxSlides = $isPanorama ? STATION_MAX_PANORAMA_SLIDES : STATION_MAX_SLIDES;
+if (count($slidesInput) > $maxSlides) {
+    fail('Maximal ' . $maxSlides . ' Bilder in der Bildfolge.');
 }
 
 $newSlideCount = count(uploadedFiles('slide_images'));

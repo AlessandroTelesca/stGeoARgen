@@ -51,6 +51,8 @@ import { PathAdminForm } from './PathAdminForm';
 
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
 const MAX_SLIDES = 10;
+/** 360°-Stationen: 10 feste Plätze rund um die Kamera (CustomPanoramaQuizView), einer davon fürs Quiz */
+const PANORAMA_MAX_SLIDES = 9;
 const MIN_QUIZ_OPTIONS = 2;
 const MAX_QUIZ_OPTIONS = 6;
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -117,6 +119,10 @@ interface StationAdminPanelProps {
   /** Lädt Pfade und Stationen neu, nachdem gespeichert/gelöscht wurde */
   onDataChanged: () => Promise<void>;
   onBack: () => void;
+}
+
+function maxSlidesFor(stationType: CustomStationType): number {
+  return stationType === 'panorama_quiz' ? PANORAMA_MAX_SLIDES : MAX_SLIDES;
 }
 
 /** defaultPoints: point_settings.default_station_points aus der DB (unbekannt → leeres Feld) */
@@ -219,6 +225,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
   const panoramaInputRef = useRef<HTMLInputElement>(null);
   /** Index der Quizfrage mit Fehler (360°-Station) */
   const [panoramaQuizErrorIndex, setPanoramaQuizErrorIndex] = useState<number | undefined>(undefined);
+  const maxSlides = maxSlidesFor(form?.stationType ?? 'image_sequence');
 
   // Gespeichertes Passwort beim Öffnen prüfen (z. B. nach Passwortänderung auf dem Server)
   useEffect(() => {
@@ -304,7 +311,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     if (!fileList) return [];
     const files = Array.from(fileList).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type));
     if (files.length < fileList.length) toast.error(t('stationEditorImageFormat'));
-    if (files.length > limit) toast.error(t('stationEditorImageLimit', { max: MAX_SLIDES }));
+    if (files.length > limit) toast.error(t('stationEditorImageLimit', { max: maxSlides }));
     const prepared = await Promise.all(files.slice(0, Math.max(0, limit)).map((file) => prepareImage(file, maxEdge)));
     return prepared.map((file) => {
       const url = URL.createObjectURL(file);
@@ -331,7 +338,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
 
   const handleAddSlides = async (fileList: FileList | null) => {
     if (!form) return;
-    const items = await prepareImageItems(fileList, MAX_SLIDES - form.slides.length);
+    const items = await prepareImageItems(fileList, maxSlides - form.slides.length);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (items.length === 0) return;
     const slides = items.map((image) => ({ image, textDe: '', textEn: '' }));
@@ -398,6 +405,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     // Bildfolge: Pflicht bei Bildfolge-Stationen, optional bei 360°-Stationen; jedes Bild braucht einen deutschen Text
     if (state.slides.length === 0 && state.stationType === 'image_sequence') next.slides = t('stationEditorErrorSlides');
     else if (state.slides.some((slide) => !slide.textDe.trim())) next.slides = t('stationEditorErrorSlideTexts');
+    else if (state.slides.length > maxSlidesFor(state.stationType)) next.slides = t('stationEditorErrorTooManySlides', { max: maxSlidesFor(state.stationType) });
     if (state.stationType === 'panorama_quiz') {
       if (!state.panorama) next.panorama = t('stationEditorErrorPanorama');
       const quizError = findQuizQuestionError(state.panoramaQuestions);
@@ -813,10 +821,10 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
               </>
             )}
 
-            {/* Bildfolge (bei 360°-Stationen optional, vor dem Quiz) */}
+            {/* Bildfolge (bei 360°-Stationen optional, rundum im 360°-Bild) */}
             <FormSection
               title={isPanorama ? t('stationEditorSectionPanoramaSlides') : t('stationEditorSectionSlides')}
-              description={isPanorama ? t('stationEditorPanoramaSlidesIntro', { max: MAX_SLIDES }) : t('stationEditorSlidesIntro', { max: MAX_SLIDES })}
+              description={isPanorama ? t('stationEditorPanoramaSlidesIntro', { max: maxSlides }) : t('stationEditorSlidesIntro', { max: maxSlides })}
             >
               {form.slides.length > 0 && (
                 <>
@@ -882,7 +890,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                 </>
               )}
 
-              {form.slides.length < MAX_SLIDES && (
+              {form.slides.length < maxSlides && (
                 <label
                   className={`flex min-h-[96px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition-colors hover:border-primary hover:bg-primary-soft/40 focus-within:ring-4 focus-within:ring-primary/15 ${errors.slides && form.slides.length === 0 ? 'border-destructive' : 'border-border-strong'}`}
                 >
@@ -891,7 +899,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
                   </span>
                   <span className="text-sm font-bold">{t('stationEditorAddSlides')}</span>
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    JPG, PNG, WebP · {form.slides.length} / {MAX_SLIDES}
+                    JPG, PNG, WebP · {form.slides.length} / {maxSlides}
                   </span>
                   <input
                     ref={fileInputRef}

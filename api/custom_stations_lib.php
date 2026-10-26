@@ -8,6 +8,8 @@ require_once __DIR__ . '/config.php';
 
 const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
 const STATION_MAX_SLIDES = 10;
+// 360°-Stationen: 10 feste Plätze rund um die Kamera, einer davon fürs Quiz (CustomPanoramaQuizView.tsx)
+const STATION_MAX_PANORAMA_SLIDES = 9;
 const STATION_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const STATION_IMAGE_TYPES = [
     'image/jpeg' => 'jpg',
