@@ -437,8 +437,9 @@ export interface CustomStationSlide {
  */
 export type CustomStationInput = Omit<CustomStation, 'id' | 'created_at' | 'updated_at'> & { id?: number };
 
+/** Bild über station_image.php (setzt CORS-Header; nginx liefert uploads/ ohne sie aus). */
 export function customStationImageUrl(filename: string): string {
-    return `${API_BASE_URL}/uploads/stations/${encodeURIComponent(filename)}`;
+    return `${API_BASE_URL}/station_image.php?file=${encodeURIComponent(filename)}`;
 }
 
 function adminHeaders(adminPassword: string): HeadersInit {

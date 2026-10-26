@@ -54,6 +54,27 @@ npm run dev
 
 The development server will start at `http://localhost:3000`.
 
+### Lokale API mit Testdaten
+
+Ohne `VITE_API_BASE_URL` spricht der Dev-Server mit der **Produktions-API**. Zum gefahrlosen Testen gibt es eine komplett lokale API (benötigt `php` mit `pdo_mysql` sowie MariaDB-Binaries, aber keinen laufenden MariaDB-Dienst und kein root):
+
+```bash
+npm run localdev        # MariaDB (.local-dev/) + PHP-API + Frontend auf http://localhost:3001; Ctrl+C beendet alles
+npm run localdev:reset  # dasselbe, aber Datenbank vorher verwerfen und mit frischen Testdaten neu anlegen
+```
+
+Beim ersten Start werden [api/setup.sql](api/setup.sql) und [scripts/local-dev-seed.sql](scripts/local-dev-seed.sql) eingespielt. Hochgeladene Stationsbilder landen in `api/uploads/stations/` (nicht im Git), das API-Log in `.local-dev/php.log`.
+
+| Zugang | Login | Passwort | Zustand |
+|---|---|---|---|
+| Stationsverwaltung (`/admin/stations`) | – | `admin` | Admin-Passwort, kein Benutzerkonto |
+| Nutzer:in | `neu@test.local` | `test1234` | 0 Punkte, kein Fortschritt |
+| Nutzer:in | `aktiv@test.local` | `test1234` | 150 Punkte, 2/5 AR-Stationen, Schatzkiste |
+| Nutzer:in | `profi@test.local` | `test1234` | 1000 Punkte, AR-Pfad komplett, ein offener Gutschein `TEST-KAFFEE-0001` |
+| Partner (`/partner`) | `partner` | `test1234` | „Testcafé“ mit zwei Shop-Angeboten |
+
+Nur `localhost:3001` (`localdev`) nutzt die lokale API; `npm run dev` auf Port 3000 spricht weiter mit der Produktions-API, dort funktionieren die Testkonten nicht. Die Datenbank ist zusätzlich unter `127.0.0.1:3307` erreichbar (Benutzer/Passwort/DB `stgeoargen`). Ports lassen sich über `LOCAL_DB_PORT`, `LOCAL_API_PORT` und `LOCAL_WEB_PORT` ändern.
+
 ### Build for Production
 
 ```bash
@@ -116,7 +137,7 @@ Neue API-Endpunkte:
 
 **Ohne Code (Stationsverwaltung):** Unter *Einstellungen → Verwaltung → Stationen verwalten* (`/admin/stations`) lassen sich Stationen anlegen, bearbeiten und löschen: Profilbild, Texte (DE Pflicht, EN optional), Themenpfad, Koordinaten, Punkte, eine **Bildfolge** aus 1–10 Bildern mit je einem kurzen Text und ein optionales Quiz. Sie werden in der Tabelle `custom_stations` gespeichert (IDs ab 1000) und erscheinen sofort für alle Nutzer:innen. Vor Ort startet man die Station, klickt sich durch die Bildfolge und schließt sie danach ab (mit Quiz nach richtiger Antwort). Solche Stationen haben kein AR-Erlebnis.
 
-Zweiter Stationstyp **360°-Quiz** („Neue 360°-Quiz-Station anlegen“): statt der Bildfolge ein 360°-Bild (equirektangular, 2:1) und ein Quiz mit 1–10 Fragen, jede optional mit eigenem Bild; optional davor eine Bildfolge (wie bei Bildfolge-Stationen), die im selben Fenster wie das Quiz gezeigt wird. Vor Ort öffnet „AR-Erlebnis starten“ die Route `/ar/station/<id>`: das 360°-Bild wird mit dem `GyroARVisualizer` angezeigt (Umschauen per Handy-Drehung), das Quiz liegt darüber – Ablauf, AR-Top-Bar, Fortschrittsleiste und Login-Regeln wie im Phonomuseum. Bestehende Datenbank: einmalig [api/migrate_panorama_stations.sql](api/migrate_panorama_stations.sql) ausführen.
+Zweiter Stationstyp **360°-Quiz** (Standard: „Neue Station anlegen“ öffnet das Formular als 360°-Quiz, oben unter *Stationstyp* lässt sich auf „Bildfolge + Quiz“ umstellen): statt der Bildfolge ein 360°-Bild (equirektangular, 2:1) und ein Quiz mit 1–10 Fragen, jede optional mit eigenem Bild; optional davor eine Bildfolge (wie bei Bildfolge-Stationen), die im selben Fenster wie das Quiz gezeigt wird. Vor Ort öffnet „AR-Erlebnis starten“ die Route `/ar/station/<id>`: das 360°-Bild wird mit dem `GyroARVisualizer` angezeigt (Umschauen per Handy-Drehung), das Quiz liegt darüber – Ablauf, AR-Top-Bar, Fortschrittsleiste und Login-Regeln wie im Phonomuseum. Bestehende Datenbank: einmalig [api/migrate_panorama_stations.sql](api/migrate_panorama_stations.sql) ausführen.
 
 Im Reiter *Themenpfade* lassen sich eigene Pfade anlegen, bearbeiten und – wenn sie leer sind – löschen; jede Station gehört zu einem dieser Pfade. Der AR-Pfad (`tourist`) ist fest eingebaut und weder bearbeitbar noch für neue Stationen wählbar. Pfade liegen in der Tabelle `custom_paths`; ihre ID wird beim Anlegen aus dem Namen erzeugt und ändert sich danach nicht (Fortschritt und Pfad-Bonus hängen daran). Pfade ohne Stationen sind für Nutzer:innen ausgeblendet.
 

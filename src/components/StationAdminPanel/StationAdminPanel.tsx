@@ -6,7 +6,6 @@ import {
   ArrowUp,
   Orbit,
   ExternalLink,
-  GalleryHorizontal,
   ImagePlus,
   LocateFixed,
   LockKeyhole,
@@ -625,7 +624,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
           <BackLink onBack={() => setForm(null)} label={t('cancel')} />
           <PageIntro
             className="mt-5 mb-6"
-            title={form.id ? t('stationEditorEditTitle') : isPanorama ? t('stationEditorNewPanoramaTitle') : t('stationEditorNewTitle')}
+            title={form.id ? t('stationEditorEditTitle') : t('stationEditorNewTitle')}
             description={isPanorama ? t('stationEditorPanoramaFormIntro') : t('stationEditorFormIntro')}
             icon={isPanorama ? <Orbit className="w-6 h-6" /> : <MapPinPlus className="w-6 h-6" />}
           />
@@ -633,6 +632,24 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
           <form ref={formRef} onSubmit={handleSave} className="space-y-5" noValidate>
             {/* Pfad + Punkte */}
             <FormSection title={t('stationEditorSectionBasics')}>
+              {!form.id && (
+                <div>
+                  <FieldLabel htmlFor="station-type">{t('stationEditorType')}</FieldLabel>
+                  <select
+                    id="station-type"
+                    value={form.stationType}
+                    onChange={(e) => {
+                      update('stationType', e.target.value as CustomStationType);
+                      setErrors({});
+                      setPanoramaQuizErrorIndex(undefined);
+                    }}
+                    className="w-full h-14 px-4 rounded-2xl border border-input bg-card font-semibold focus:outline-none focus:ring-4 focus:ring-primary/15 focus:border-primary"
+                  >
+                    <option value="panorama_quiz">{t('stationEditorTypePanorama')}</option>
+                    <option value="image_sequence">{t('stationEditorTypeSlideshow')}</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <FieldLabel htmlFor="station-path">{t('stationEditorPath')}</FieldLabel>
                 <select
@@ -1217,21 +1234,12 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
             )}
             <button
               type="button"
-              onClick={() => openForm(emptyForm('image_sequence', paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
+              onClick={() => openForm(emptyForm('panorama_quiz', paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
               disabled={paths.length === 0}
               className="w-full min-h-[52px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <GalleryHorizontal className="w-5 h-5" />
-              {t('stationEditorNewSlideshowStation')}
-            </button>
-            <button
-              type="button"
-              onClick={() => openForm(emptyForm('panorama_quiz', paths[0]?.id ?? '', pointConfig?.settings.default_station_points))}
-              disabled={paths.length === 0}
-              className="mt-2.5 w-full min-h-[52px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Orbit className="w-5 h-5" />
-              {t('stationEditorNewPanoramaStation')}
+              <Plus className="w-5 h-5" />
+              {t('stationEditorNewStation')}
             </button>
 
             <h3 className="mt-8 mb-3 px-1 text-lg font-bold tracking-tight">{t('stationEditorExisting')}</h3>

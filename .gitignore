@@ -10,6 +10,7 @@ out/
 # Env files
 .env
 .env.*.local
+.env.local
 
 # Logs
 npm-debug.log*
@@ -41,6 +42,10 @@ coverage/
 
 # Database credentials
 api/credentials.txt
+
+# Lokale Umgebung (npm run localdev): Datenbank und hochgeladene Stationsbilder
+.local-dev/
+api/uploads/stations/
 
 # Lokale Tool-Dateien
 .claude/settings.local.json
