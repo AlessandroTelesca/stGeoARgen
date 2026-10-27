@@ -28,6 +28,10 @@ const PANEL_HALF_ANGLE_DEG = 16;
 const PANEL_MIN_WIDTH = 260;
 const PANEL_MAX_WIDTH = 440;
 const PANEL_WIDTH_VAR = '--panorama-panel-width';
+/** Nur im Dev-Build: Leiste zum Drehen der Kamera ohne Gyroskop (Prüfen der Panel-Plätze) */
+const SHOW_DEBUG_CAMERA_UI = import.meta.env.DEV;
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+const LOCAL_X = new THREE.Vector3(1, 0, 0);
 
 export interface PanoramaQuizQuestion {
   question: string;
@@ -78,6 +82,20 @@ function directionForYaw(yawDeg: number): THREE.Vector3 {
   return new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).multiplyScalar(10);
 }
 
+/** Winkel auf [0, 360) */
+function normalizeYaw(deg: number): number {
+  return ((deg % 360) + 360) % 360;
+}
+
+/** Platz, dessen Panel gerade in der Bildmitte liegt (innerhalb der halben Panelbreite), sonst null */
+function slotAtYaw(yawDeg: number): number | null {
+  for (let slot = 0; slot < PANEL_YAWS_DEG.length; slot++) {
+    const diff = Math.abs(((yawDeg - PANEL_YAWS_DEG[slot] + 540) % 360) - 180);
+    if (diff <= PANEL_HALF_ANGLE_DEG) return slot;
+  }
+  return null;
+}
+
 /**
  * 360°-Bild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession). Die Panels
  * (Bilder + Quiz) sind normale DOM-Elemente; jedes Frame wird ihre Richtung auf den Bildschirm
@@ -89,6 +107,8 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   private panelWidthKey = '';
   private readonly projected = new THREE.Vector3();
   private readonly viewSpace = new THREE.Vector3();
+  private readonly debugQuaternion = new THREE.Quaternion();
+  private readonly forward = new THREE.Vector3();
 
   constructor(container: HTMLDivElement, videoElement: HTMLVideoElement, private readonly panoramaUrl: string, options: ARInitOptions = {}) {
     super(container, videoElement, options);
@@ -98,6 +118,30 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     this.panelLayer = layer;
     this.anchors = anchors;
     this.panelWidthKey = '';
+  }
+
+  /** Debug: Blick um yawDeg im Uhrzeigersinn und pitchDeg nach oben drehen (wie das Gyroskop: Yaw um Welt-Y, Pitch um lokales X) */
+  debugRotate(yawDeg: number, pitchDeg = 0): void {
+    if (!this.camera) return;
+    this.debugQuaternion.setFromAxisAngle(WORLD_UP, THREE.MathUtils.degToRad(-yawDeg));
+    this.camera.quaternion.premultiply(this.debugQuaternion);
+    this.debugQuaternion.setFromAxisAngle(LOCAL_X, THREE.MathUtils.degToRad(pitchDeg));
+    this.camera.quaternion.multiply(this.debugQuaternion).normalize();
+  }
+
+  /** Debug: waagerecht in Richtung yawDeg schauen (gleiche Winkel wie PANEL_YAWS_DEG) */
+  debugLookAt(yawDeg: number): void {
+    this.camera?.quaternion.setFromAxisAngle(WORLD_UP, THREE.MathUtils.degToRad(-yawDeg));
+  }
+
+  /** Aktuelle Blickrichtung: yaw im Uhrzeigersinn ab Startrichtung [0, 360), pitch nach oben */
+  getViewAngles(): { yaw: number; pitch: number } | null {
+    if (!this.camera) return null;
+    const f = this.forward.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+    return {
+      yaw: normalizeYaw(THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z))),
+      pitch: THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1))),
+    };
   }
 
   private async loadPanoramaTexture(): Promise<THREE.Texture> {
@@ -221,6 +265,18 @@ const primaryButtonStyle = {
   cursor: 'pointer',
 };
 
+const debugButtonStyle = {
+  border: 'none',
+  borderRadius: '8px',
+  padding: '6px 4px',
+  background: 'rgba(255,255,255,0.16)',
+  color: 'var(--color-white)',
+  fontWeight: 700,
+  fontSize: '0.75rem',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap' as const,
+};
+
 /**
  * AR-Ansicht einer 360°-Quiz-Station aus der Stationsverwaltung: 360°-Bild (GyroARVisualizer),
  * darin rundum verteilt die Bilder der Station und das Quiz als Glas-Panels (Optik wie im
@@ -290,6 +346,33 @@ export const CustomPanoramaQuizView = ({
     }
     session.setPanelAnchors(panelLayerRef.current, anchors);
   }, [hasStarted, quizSlot]);
+
+  // Debug-Kamera (nur Dev-Build): aktuelle Blickrichtung anzeigen, Pfeiltasten drehen
+  const [debugView, setDebugView] = useState<{ yaw: number; pitch: number } | null>(null);
+  useEffect(() => {
+    if (!SHOW_DEBUG_CAMERA_UI || !hasStarted) return;
+    const poll = window.setInterval(() => setDebugView(sessionRef.current?.getViewAngles() ?? null), 100);
+    const onKey = (event: KeyboardEvent) => {
+      const step = event.shiftKey ? 360 / PANEL_YAWS_DEG.length : 5;
+      const turns: Record<string, [number, number]> = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, 5],
+        ArrowDown: [0, -5],
+      };
+      const turn = turns[event.key];
+      if (!turn) return;
+      event.preventDefault();
+      sessionRef.current?.debugRotate(turn[0], turn[1]);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.clearInterval(poll);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [hasStarted]);
+  const debugSlot = debugView ? slotAtYaw(debugView.yaw) : null;
+  const slotLabel = (slot: number) => (slot < quizSlot ? `Bild ${slot + 1}` : slot === quizSlot ? 'Quiz' : 'leer');
 
   // Beim ersten Versuch richtig beantwortete Fragen
   const firstTryCorrect = useMemo(() => wrongSelections.filter((wrong) => wrong.length === 0).length, [wrongSelections]);
@@ -523,6 +606,61 @@ export const CustomPanoramaQuizView = ({
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {hasStarted && SHOW_DEBUG_CAMERA_UI && (
+          <div
+            style={{
+              position: 'fixed',
+              left: '50%',
+              bottom: '12px',
+              transform: 'translateX(-50%)',
+              zIndex: 10006,
+              width: 'min(380px, calc(100vw - 24px))',
+              padding: '10px',
+              borderRadius: '12px',
+              background: 'rgba(0, 0, 0, 0.64)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: 'var(--color-white)',
+              backdropFilter: 'blur(4px)',
+              fontSize: '0.8rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '8px', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+              <span style={{ fontWeight: 700 }}>Debug</span>
+              <span className="tabular-nums" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Yaw {debugView ? debugView.yaw.toFixed(0) : '–'}° | Pitch {debugView ? debugView.pitch.toFixed(0) : '–'}° |{' '}
+                {debugSlot === null ? 'zwischen Plätzen' : `Platz ${debugSlot + 1}: ${slotLabel(debugSlot)}`}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', marginBottom: '6px' }}>
+              {([
+                ['◀ 36°', -36, 0],
+                ['◀ 5°', -5, 0],
+                ['▲ 5°', 0, 5],
+                ['▼ 5°', 0, -5],
+                ['5° ▶', 5, 0],
+                ['36° ▶', 36, 0],
+              ] as const).map(([label, yaw, pitch]) => (
+                <button key={label} type="button" onClick={() => sessionRef.current?.debugRotate(yaw, pitch)} style={debugButtonStyle}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+              {PANEL_YAWS_DEG.map((yaw, slot) => (
+                <button
+                  key={yaw}
+                  type="button"
+                  title={`${yaw}°`}
+                  onClick={() => sessionRef.current?.debugLookAt(yaw)}
+                  style={{ ...debugButtonStyle, outline: debugSlot === slot ? '2px solid var(--color-primary)' : 'none' }}
+                >
+                  {slot + 1}: {slotLabel(slot)}
+                </button>
+              ))}
             </div>
           </div>
         )}
