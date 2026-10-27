@@ -1125,7 +1125,7 @@ export default function App() {
   // 360°-Quiz-Station aus der Stationsverwaltung für /ar/station/<id> (Texte in der aktuellen Sprache)
   const customArStationId = currentView === 'ar-custom' ? customArStationIdFromPath(location.pathname) : null;
   const customArRaw = customArStationId !== null
-    ? customStations.find((c) => c.id === customArStationId && c.station_type === 'panorama_quiz' && c.panorama_image)
+    ? customStations.find((c) => c.id === customArStationId && c.station_type === 'panorama_quiz' && (c.live_camera || c.panorama_image))
     : undefined;
   const customArStation = customArRaw ? getStationById(customArRaw.id) : null;
   const customArStationData = useMemo(() => {
@@ -1137,7 +1137,8 @@ export default function App() {
       description: (isEn && customArRaw.description_en) || customArRaw.description_de,
       latitude: customArRaw.latitude,
       longitude: customArRaw.longitude,
-      panoramaUrl: customStationImageUrl(customArRaw.panorama_image!),
+      // null → Live-Kamerabild als Hintergrund
+      panoramaUrl: !customArRaw.live_camera && customArRaw.panorama_image ? customStationImageUrl(customArRaw.panorama_image) : null,
       slides: customArRaw.slides.map((slide) => ({
         imageUrl: customStationImageUrl(slide.image),
         text: (isEn && slide.text_en) || slide.text_de,

@@ -86,8 +86,9 @@ interface FormState {
   quizOptionsDe: string[];
   quizOptionsEn: string[];
   quizCorrect: number | null;
-  /** nur panorama_quiz: 360°-Bild und Quizfragen */
+  /** nur panorama_quiz: 360°-Bild (bei liveCamera optional), Live-Kamera statt 360°-Bild, Quizfragen */
   panorama: ImageItem | null;
+  liveCamera: boolean;
   panoramaQuestions: QuizQuestionDraft[];
 }
 
@@ -148,6 +149,7 @@ function emptyForm(stationType: CustomStationType, pathId: string, defaultPoints
     quizOptionsEn: ['', '', '', ''],
     quizCorrect: null,
     panorama: null,
+    liveCamera: false,
     panoramaQuestions: [emptyQuizQuestion()],
   };
 }
@@ -184,6 +186,7 @@ function formFromStation(station: CustomStation): FormState {
     panorama: station.panorama_image
       ? { kind: 'existing', filename: station.panorama_image, url: customStationImageUrl(station.panorama_image) }
       : null,
+    liveCamera: station.live_camera,
     panoramaQuestions: station.quiz_questions.length > 0
       ? station.quiz_questions.map(quizQuestionFromApi)
       : [emptyQuizQuestion()],
@@ -407,7 +410,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     else if (state.slides.some((slide) => !slide.textDe.trim())) next.slides = t('stationEditorErrorSlideTexts');
     else if (state.slides.length > maxSlidesFor(state.stationType)) next.slides = t('stationEditorErrorTooManySlides', { max: maxSlidesFor(state.stationType) });
     if (state.stationType === 'panorama_quiz') {
-      if (!state.panorama) next.panorama = t('stationEditorErrorPanorama');
+      if (!state.panorama && !state.liveCamera) next.panorama = t('stationEditorErrorPanorama');
       const quizError = findQuizQuestionError(state.panoramaQuestions);
       setPanoramaQuizErrorIndex(quizError?.index);
       if (state.panoramaQuestions.length === 0) next.panoramaQuiz = t('stationEditorErrorPanoramaQuiz');
@@ -455,7 +458,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
     });
     const cover = form.cover!;
     const isPanorama = form.stationType === 'panorama_quiz';
-    const panorama = isPanorama ? form.panorama! : null;
+    const panorama = isPanorama ? form.panorama : null;
     const questionImageFiles: File[] = [];
     const quizQuestions = isPanorama
       ? form.panoramaQuestions.map((q) => {
@@ -480,6 +483,7 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
       cover_image: cover.kind === 'existing' ? cover.filename : 'new',
       slides,
       panorama_image: panorama ? (panorama.kind === 'existing' ? panorama.filename : 'new') : null,
+      live_camera: isPanorama && form.liveCamera,
       quiz_questions: quizQuestions,
       points: Number(form.points),
       latitude: parseCoordinate(form.latitude)!,
@@ -784,6 +788,20 @@ export function StationAdminPanel({ paths, pathTitles, stations, onDataChanged, 
               <>
                 {/* 360°-Bild */}
                 <FormSection title={t('stationEditorSectionPanorama')} description={t('stationEditorPanoramaIntro')}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="font-semibold">{t('stationEditorLiveCamera')}</span>
+                      <p className="text-xs text-muted-foreground">{t('stationEditorLiveCameraHint')}</p>
+                    </div>
+                    <Switch
+                      checked={form.liveCamera}
+                      onChange={() => {
+                        update('liveCamera', !form.liveCamera);
+                        setErrors((prev) => ({ ...prev, panorama: undefined }));
+                      }}
+                      label={t('stationEditorLiveCamera')}
+                    />
+                  </div>
                   {form.panorama && (
                     <div className="rounded-2xl overflow-hidden bg-muted aspect-[2/1]">
                       <img src={form.panorama.url} alt="" className="w-full h-full object-cover" />

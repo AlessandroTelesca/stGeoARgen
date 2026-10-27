@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import * as THREE from 'three';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { ARComponentBase } from '../ARComponentBase';
 import { ARProximityGate } from '../ARProximityGate';
 import { ARStartCard } from '../ARStartCard';
@@ -48,8 +48,9 @@ export interface PanoramaQuizStation {
   description: string;
   latitude: number;
   longitude: number;
-  panoramaUrl: string;
-  /** Optionale Bilder mit Text; hängen zusammen mit dem Quiz rundum im 360°-Bild */
+  /** 360°-Bild als Hintergrund; null → Live-Kamerabild (Einstellung in der Stationsverwaltung) */
+  panoramaUrl: string | null;
+  /** Optionale Bilder mit Text; hängen zusammen mit dem Quiz rundum um die Kamera */
   slides: { imageUrl: string; text: string }[];
   questions: PanoramaQuizQuestion[];
 }
@@ -82,11 +83,6 @@ function directionForYaw(yawDeg: number): THREE.Vector3 {
   return new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).multiplyScalar(10);
 }
 
-/** Winkel auf [0, 360) */
-function normalizeYaw(deg: number): number {
-  return ((deg % 360) + 360) % 360;
-}
-
 /** Platz, dessen Panel gerade in der Bildmitte liegt (innerhalb der halben Panelbreite), sonst null */
 function slotAtYaw(yawDeg: number): number | null {
   for (let slot = 0; slot < PANEL_YAWS_DEG.length; slot++) {
@@ -97,9 +93,9 @@ function slotAtYaw(yawDeg: number): number | null {
 }
 
 /**
- * 360°-Bild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession). Die Panels
- * (Bilder + Quiz) sind normale DOM-Elemente; jedes Frame wird ihre Richtung auf den Bildschirm
- * projiziert, sodass sie fest im Raum stehen und man sich zu ihnen umdrehen muss.
+ * 360°-Bild oder Live-Kamerabild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession).
+ * Die Panels (Bilder + Quiz) sind normale DOM-Elemente; jedes Frame wird ihre Richtung auf den
+ * Bildschirm projiziert, sodass sie fest im Raum stehen und man sich zu ihnen umdrehen muss.
  */
 class CustomPanoramaARSession extends GyroARVisualizer {
   private panelLayer: HTMLElement | null = null;
@@ -109,9 +105,15 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   private readonly viewSpace = new THREE.Vector3();
   private readonly debugQuaternion = new THREE.Quaternion();
   private readonly forward = new THREE.Vector3();
+  private cameraStream: MediaStream | null = null;
 
-  constructor(container: HTMLDivElement, videoElement: HTMLVideoElement, private readonly panoramaUrl: string, options: ARInitOptions = {}) {
-    super(container, videoElement, options);
+  constructor(
+    container: HTMLDivElement,
+    private readonly video: HTMLVideoElement,
+    private readonly panoramaUrl: string | null,
+    options: ARInitOptions = {}
+  ) {
+    super(container, video, options);
   }
 
   setPanelAnchors(layer: HTMLElement | null, anchors: PanelAnchor[]): void {
@@ -139,15 +141,15 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     if (!this.camera) return null;
     const f = this.forward.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
     return {
-      yaw: normalizeYaw(THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z))),
+      yaw: (THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z)) + 360) % 360,
       pitch: THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1))),
     };
   }
 
-  private async loadPanoramaTexture(): Promise<THREE.Texture> {
+  private async loadPanoramaTexture(url: string): Promise<THREE.Texture> {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous'); // Bilder liegen auf dem API-Server
-    const texture = await loader.loadAsync(this.panoramaUrl);
+    const texture = await loader.loadAsync(url);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
@@ -155,11 +157,25 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     return texture;
   }
 
+  /** Rückkamera ins (von GyroARVisualizer ausgeblendete) Video-Element; die Szene bleibt transparent darüber */
+  private async startLiveCamera(): Promise<void> {
+    this.cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+    this.video.srcObject = this.cameraStream;
+    this.video.style.display = '';
+    await this.video.play();
+    if (this.scene) this.scene.background = null;
+  }
+
   async init(): Promise<void> {
+    // Zuerst die Bewegungsfreigabe (muss unter iOS direkt in der Tipp-Geste angefragt werden)
     await super.init();
 
-    // Ohne 360°-Bild ist die Station nicht nutzbar → Fehler an die Startkarte weitergeben
-    this.setPanoramaBackground(await this.loadPanoramaTexture());
+    // Ohne Hintergrund ist die Station nicht nutzbar → Fehler an die Startkarte weitergeben
+    if (this.panoramaUrl) this.setPanoramaBackground(await this.loadPanoramaTexture(this.panoramaUrl));
+    else await this.startLiveCamera();
 
     if (this.camera) {
       this.camera.position.set(0, 0, 0);
@@ -206,6 +222,9 @@ class CustomPanoramaARSession extends GyroARVisualizer {
 
   stop(): void {
     this.setPanelAnchors(null, []);
+    this.cameraStream?.getTracks().forEach((track) => track.stop());
+    this.cameraStream = null;
+    this.video.srcObject = null;
     super.stop();
   }
 }
@@ -335,6 +354,33 @@ export const CustomPanoramaQuizView = ({
 
   useEffect(() => () => sessionRef.current?.stop(), []);
 
+  // Angetipptes Bild groß zwischen Topbar und Fortschrittsleiste; Grenzen live messen (die Leiste wird kompakt)
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
+  const [zoomBounds, setZoomBounds] = useState({ top: QUIZ_UI_SAFE_VERTICAL_GAP, bottom: QUIZ_UI_SAFE_VERTICAL_GAP });
+  useEffect(() => {
+    if (!zoomedImageUrl) return;
+    const topBar = document.querySelector('.ar-top-bar');
+    const bottomBar = document.querySelector('.ar-bottom-bar');
+    const measure = () => setZoomBounds({
+      top: topBar ? topBar.getBoundingClientRect().bottom : QUIZ_UI_SAFE_VERTICAL_GAP,
+      bottom: bottomBar ? window.innerHeight - bottomBar.getBoundingClientRect().top : QUIZ_UI_SAFE_VERTICAL_GAP,
+    });
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (topBar) observer.observe(topBar);
+    if (bottomBar) observer.observe(bottomBar);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setZoomedImageUrl(null);
+    };
+    window.addEventListener('resize', measure);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [zoomedImageUrl]);
+
   // Panels (Bilder + Quiz) an ihren festen Plätzen im Raum verankern
   useEffect(() => {
     const session = sessionRef.current;
@@ -372,7 +418,7 @@ export const CustomPanoramaQuizView = ({
     };
   }, [hasStarted]);
   const debugSlot = debugView ? slotAtYaw(debugView.yaw) : null;
-  const slotLabel = (slot: number) => (slot < quizSlot ? `Bild ${slot + 1}` : slot === quizSlot ? 'Quiz' : 'leer');
+  const slotLabels = PANEL_YAWS_DEG.map((_, slot) => (slot < quizSlot ? `Bild ${slot + 1}` : slot === quizSlot ? 'Quiz' : 'leer'));
 
   // Beim ersten Versuch richtig beantwortete Fragen
   const firstTryCorrect = useMemo(() => wrongSelections.filter((wrong) => wrong.length === 0).length, [wrongSelections]);
@@ -384,8 +430,9 @@ export const CustomPanoramaQuizView = ({
     if (!isAuthorized || !containerRef.current || !videoRef.current || isStarting || hasStarted) return;
     setIsStarting(true);
     setStartError(null);
+    let session: CustomPanoramaARSession | null = null;
     try {
-      const session = new CustomPanoramaARSession(containerRef.current, videoRef.current, station.panoramaUrl, {
+      session = new CustomPanoramaARSession(containerRef.current, videoRef.current, station.panoramaUrl, {
         onError: (e) => console.error('[CustomPanoramaQuizView] AR init failed', e),
       });
       await session.init();
@@ -393,7 +440,10 @@ export const CustomPanoramaQuizView = ({
       setHasStarted(true);
     } catch (err) {
       console.error('[CustomPanoramaQuizView] AR init error:', err);
-      setStartError(err instanceof Error && err.message ? err.message : t('customPanoramaStartError'));
+      // Halb gestartete Session (Gyroskop, Render-Schleife, Kamera) wieder freigeben
+      session?.stop();
+      if (!station.panoramaUrl) setStartError(t('customPanoramaCameraError'));
+      else setStartError(err instanceof Error && err.message ? err.message : t('customPanoramaStartError'));
     } finally {
       setIsStarting(false);
     }
@@ -466,7 +516,7 @@ export const CustomPanoramaQuizView = ({
           <ARStartCard
             zIndex={30000}
             title={t('customPanoramaStartTitle')}
-            description={t('customPanoramaStartDescription')}
+            description={station.panoramaUrl ? t('customPanoramaStartDescription') : t('customPanoramaStartDescriptionCamera')}
             error={startError}
             loading={isStarting}
             buttonLabel={isStarting ? t('customPanoramaStarting') : t('customPanoramaStart')}
@@ -500,7 +550,12 @@ export const CustomPanoramaQuizView = ({
                     </div>
                   </div>
 
-                  <img src={slide.imageUrl} alt="" style={{ ...panelImageStyle, maxHeight: '34vh' }} />
+                  <img
+                    src={slide.imageUrl}
+                    alt=""
+                    onClick={() => setZoomedImageUrl(slide.imageUrl)}
+                    style={{ ...panelImageStyle, maxHeight: '34vh', cursor: 'zoom-in' }}
+                  />
 
                   <div style={textBoxStyle}>
                     <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, whiteSpace: 'pre-line', color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
@@ -542,7 +597,13 @@ export const CustomPanoramaQuizView = ({
                   </div>
 
                   {currentQuestion.imageUrl && (
-                    <img key={currentQuestion.imageUrl} src={currentQuestion.imageUrl} alt="" style={{ ...panelImageStyle, maxHeight: '28vh' }} />
+                    <img
+                      key={currentQuestion.imageUrl}
+                      src={currentQuestion.imageUrl}
+                      alt=""
+                      onClick={() => setZoomedImageUrl(currentQuestion.imageUrl!)}
+                      style={{ ...panelImageStyle, maxHeight: '28vh', cursor: 'zoom-in' }}
+                    />
                   )}
 
                   <div style={{ ...textBoxStyle, marginBottom: '14px' }}>
@@ -610,6 +671,56 @@ export const CustomPanoramaQuizView = ({
           </div>
         )}
 
+        {hasStarted && zoomedImageUrl && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setZoomedImageUrl(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 10010, background: 'rgba(0, 0, 0, 0.6)', cursor: 'zoom-out' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: zoomBounds.top,
+                bottom: zoomBounds.bottom,
+                left: '12px',
+                right: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <img
+                src={zoomedImageUrl}
+                alt=""
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+              />
+              <button
+                type="button"
+                aria-label={t('close')}
+                onClick={() => setZoomedImageUrl(null)}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '1px solid rgba(255,255,255,0.35)',
+                  background: 'rgba(10, 14, 22, 0.6)',
+                  color: 'var(--color-white)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {hasStarted && SHOW_DEBUG_CAMERA_UI && (
           <div
             style={{
@@ -632,7 +743,7 @@ export const CustomPanoramaQuizView = ({
               <span style={{ fontWeight: 700 }}>Debug</span>
               <span className="tabular-nums" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Yaw {debugView ? debugView.yaw.toFixed(0) : '–'}° | Pitch {debugView ? debugView.pitch.toFixed(0) : '–'}° |{' '}
-                {debugSlot === null ? 'zwischen Plätzen' : `Platz ${debugSlot + 1}: ${slotLabel(debugSlot)}`}
+                {debugSlot === null ? 'zwischen Plätzen' : `Platz ${debugSlot + 1}: ${slotLabels[debugSlot]}`}
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', marginBottom: '6px' }}>
@@ -658,7 +769,7 @@ export const CustomPanoramaQuizView = ({
                   onClick={() => sessionRef.current?.debugLookAt(yaw)}
                   style={{ ...debugButtonStyle, outline: debugSlot === slot ? '2px solid var(--color-primary)' : 'none' }}
                 >
-                  {slot + 1}: {slotLabel(slot)}
+                  {slot + 1}: {slotLabels[slot]}
                 </button>
               ))}
             </div>

@@ -216,6 +216,7 @@ function formatStationRow(array $row): array {
         'cover_image' => $row['cover_image'],
         'slides' => decodeStationSlides($row['slides']),
         'panorama_image' => isValidStationImageName($row['panorama_image'] ?? null) ? $row['panorama_image'] : null,
+        'live_camera' => (bool) ($row['live_camera'] ?? false),
         'quiz_questions' => decodeQuizQuestions($row['quiz_questions'] ?? null),
         'points' => (int) $row['points'],
         'latitude' => (float) $row['latitude'],

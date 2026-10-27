@@ -185,7 +185,8 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 -- quiz_options_*: JSON-Array mit Antwortoptionen
 -- station_type: 'image_sequence' = Bildfolge mit Texten (+ optional eine Quizfrage in quiz_*),
 --               'panorama_quiz'  = 360°-Bild (panorama_image) mit Quiz (quiz_questions, JSON-Array)
--- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql ausführen.
+-- live_camera: nur panorama_quiz – 1 = Live-Kamerabild statt 360°-Bild als Hintergrund (panorama_image dann optional)
+-- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql und api/migrate_live_camera.sql ausführen.
 CREATE TABLE IF NOT EXISTS `custom_stations` (
   `id`                   INT NOT NULL AUTO_INCREMENT,
   `path_id`              VARCHAR(100) NOT NULL,
@@ -199,6 +200,7 @@ CREATE TABLE IF NOT EXISTS `custom_stations` (
   `cover_image`          VARCHAR(64) NOT NULL,
   `slides`               MEDIUMTEXT NOT NULL,
   `panorama_image`       VARCHAR(64) DEFAULT NULL,
+  `live_camera`          TINYINT(1) NOT NULL DEFAULT 0,
   `quiz_questions`       MEDIUMTEXT DEFAULT NULL,
   `points`               INT NOT NULL DEFAULT 50,
   `latitude`             DOUBLE NOT NULL,

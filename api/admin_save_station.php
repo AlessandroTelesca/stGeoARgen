@@ -14,7 +14,9 @@
  *       – nur image_sequence:
  *       quiz: null | { question_de, question_en?, options_de: [], options_en?: [], correct_answer }
  *       – nur panorama_quiz:
- *       panorama_image: vorhandener Dateiname | "new" (Datei im Feld "panorama") – 360°-Bild (equirektangular)
+ *       live_camera: bool (Standard false) – Live-Kamerabild statt 360°-Bild als Hintergrund
+ *       panorama_image: null | vorhandener Dateiname | "new" (Datei im Feld "panorama") – 360°-Bild (equirektangular);
+ *                       Pflicht, außer bei live_camera (dann optional, für späteres Zurückschalten)
  *       quiz_questions: [{ question_de, question_en?, options_de: [], options_en?: [], correct_answer,
  *                          image?: null | vorhandener Dateiname | "new:N" (N-te Datei aus "question_images[]") }] – 1 bis 10 }
  *   cover          – neues Profilbild (JPG/PNG/WebP)
@@ -137,13 +139,16 @@ if (count($usedNewSlides) !== $newSlideCount) {
 
 // 360°-Bild + Quizfragen (nur panorama_quiz)
 $panoramaRef = null;
+$liveCamera = false;
 $quizQuestions = null;
 $newPanoramaCount = count(uploadedFiles('panorama'));
 $newQuestionImageCount = count(uploadedFiles('question_images'));
 $usedNewQuestionImages = [];
 if ($isPanorama) {
-    $panoramaRef = (string) ($input['panorama_image'] ?? '');
-    if ($newPanoramaCount > 1 || ($panoramaRef === 'new' ? $newPanoramaCount !== 1 : ($panoramaRef === '' || $newPanoramaCount !== 0))) {
+    $liveCamera = filter_var($input['live_camera'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $panoramaRef = isset($input['panorama_image']) && $input['panorama_image'] !== '' ? (string) $input['panorama_image'] : null;
+    $panoramaValid = $panoramaRef === 'new' ? $newPanoramaCount === 1 : ($newPanoramaCount === 0 && ($panoramaRef !== null || $liveCamera));
+    if (!$panoramaValid) {
         fail('Bitte ein 360°-Bild auswählen.');
     }
 
@@ -245,6 +250,7 @@ $params = [
     ':cover_image' => $coverImage,
     ':slides' => json_encode($slides, JSON_UNESCAPED_UNICODE),
     ':panorama_image' => $panoramaImage,
+    ':live_camera' => $liveCamera ? 1 : 0,
     ':quiz_questions' => $quizQuestions !== null ? json_encode($quizQuestions, JSON_UNESCAPED_UNICODE) : null,
     ':points' => $points,
     ':latitude' => $latitude,
@@ -261,11 +267,11 @@ try {
         $db->prepare(
             'INSERT INTO custom_stations
                (path_id, title_de, title_en, description_de, description_en, long_description_de, long_description_en,
-                station_type, cover_image, slides, panorama_image, quiz_questions,
+                station_type, cover_image, slides, panorama_image, live_camera, quiz_questions,
                 points, latitude, longitude, quiz_question_de, quiz_question_en, quiz_options_de, quiz_options_en, quiz_correct_answer)
              VALUES
                (:path_id, :title_de, :title_en, :description_de, :description_en, :long_description_de, :long_description_en,
-                :station_type, :cover_image, :slides, :panorama_image, :quiz_questions,
+                :station_type, :cover_image, :slides, :panorama_image, :live_camera, :quiz_questions,
                 :points, :latitude, :longitude, :quiz_question_de, :quiz_question_en, :quiz_options_de, :quiz_options_en, :quiz_correct_answer)'
         )->execute($params);
         $id = (int) $db->lastInsertId();
@@ -276,7 +282,7 @@ try {
                description_de = :description_de, description_en = :description_en,
                long_description_de = :long_description_de, long_description_en = :long_description_en,
                station_type = :station_type, cover_image = :cover_image, slides = :slides,
-               panorama_image = :panorama_image, quiz_questions = :quiz_questions,
+               panorama_image = :panorama_image, live_camera = :live_camera, quiz_questions = :quiz_questions,
                points = :points, latitude = :latitude, longitude = :longitude,
                quiz_question_de = :quiz_question_de, quiz_question_en = :quiz_question_en,
                quiz_options_de = :quiz_options_de, quiz_options_en = :quiz_options_en,

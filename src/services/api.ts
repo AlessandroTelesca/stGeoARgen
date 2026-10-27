@@ -401,6 +401,8 @@ export interface CustomStation {
     slides: CustomStationSlide[];
     /** 360°-Bild (equirektangular, Dateiname in api/uploads/stations/) – nur panorama_quiz */
     panorama_image: string | null;
+    /** Live-Kamerabild statt 360°-Bild als Hintergrund (panorama_image dann optional) – nur panorama_quiz */
+    live_camera: boolean;
     /** Quizfragen über dem 360°-Bild – nur panorama_quiz */
     quiz_questions: CustomQuizQuestion[];
     points: number;
@@ -456,6 +458,7 @@ export async function apiGetCustomStations(): Promise<CustomStation[]> {
         station_type: s.station_type === 'panorama_quiz' ? 'panorama_quiz' : 'image_sequence',
         slides: Array.isArray(s.slides) ? s.slides : [],
         panorama_image: typeof s.panorama_image === 'string' ? s.panorama_image : null,
+        live_camera: s.live_camera === true,
         quiz_questions: Array.isArray(s.quiz_questions) ? s.quiz_questions : [],
     }));
 }

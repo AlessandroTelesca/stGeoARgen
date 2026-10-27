@@ -68,6 +68,7 @@ export function SettingsRow({ icon, title, description, onClick, trailing, tone 
 export function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
