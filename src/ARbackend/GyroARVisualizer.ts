@@ -253,7 +253,7 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		this.hasGyroData = true;
 	};
 
-	private updateCameraFromGyro(): void {
+	protected updateCameraFromGyro(): void {
 		if (!this.gyroEnabled || !this.hasGyroData || !this.camera) return;
 		if (this.alphaDelta === 0 && this.betaDelta === 0) return;
 

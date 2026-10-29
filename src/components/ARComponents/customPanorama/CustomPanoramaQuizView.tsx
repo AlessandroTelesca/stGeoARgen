@@ -32,6 +32,7 @@ const PANEL_WIDTH_VAR = '--panorama-panel-width';
 const SHOW_DEBUG_CAMERA_UI = import.meta.env.DEV;
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const LOCAL_X = new THREE.Vector3(1, 0, 0);
+const LOCAL_Z = new THREE.Vector3(0, 0, 1);
 
 export interface PanoramaQuizQuestion {
   question: string;
@@ -72,40 +73,58 @@ interface CustomPanoramaQuizViewProps {
   isGuestMode?: boolean;
 }
 
-/** DOM-Panel, das an einer festen Richtung im Raum hängt */
+/** DOM-Panel, das an einer festen Richtung (Drehwinkel wie PANEL_YAWS_DEG) im Raum hängt */
 interface PanelAnchor {
   element: HTMLElement;
-  direction: THREE.Vector3;
+  yawDeg: number;
 }
 
-function directionForYaw(yawDeg: number): THREE.Vector3 {
-  const yaw = THREE.MathUtils.degToRad(yawDeg);
-  return new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).multiplyScalar(10);
+/** Winkel auf [-180, 180) normieren */
+function wrapDeg(deg: number): number {
+  return ((deg % 360) + 540) % 360 - 180;
+}
+
+/** Bildschirmdrehung (0, 90, 180, 270) – deviceorientation liefert Werte immer im Gerätesystem */
+function screenAngleDeg(): number {
+  if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.angle === 'number') {
+    return screen.orientation.angle;
+  }
+  return typeof window.orientation === 'number' ? window.orientation : 0;
 }
 
 /** Platz, dessen Panel gerade in der Bildmitte liegt (innerhalb der halben Panelbreite), sonst null */
 function slotAtYaw(yawDeg: number): number | null {
   for (let slot = 0; slot < PANEL_YAWS_DEG.length; slot++) {
-    const diff = Math.abs(((yawDeg - PANEL_YAWS_DEG[slot] + 540) % 360) - 180);
+    const diff = Math.abs(wrapDeg(yawDeg - PANEL_YAWS_DEG[slot]));
     if (diff <= PANEL_HALF_ANGLE_DEG) return slot;
   }
   return null;
 }
 
 /**
- * 360°-Bild oder Live-Kamerabild als Hintergrund, Blickrichtung per Gyroskop (wie PhonomuseumARSession).
- * Die Panels (Bilder + Quiz) sind normale DOM-Elemente; jedes Frame wird ihre Richtung auf den
- * Bildschirm projiziert, sodass sie fest im Raum stehen und man sich zu ihnen umdrehen muss.
+ * 360°-Bild oder Live-Kamerabild als Hintergrund, Blickrichtung aus der absoluten Lage des Handys
+ * (deviceorientation, inkl. Ausgleich der Bildschirmdrehung). Die Panels (Bilder + Quiz) sind
+ * normale DOM-Elemente; jedes Frame wird ihre Richtung waagerecht auf den Bildschirm projiziert,
+ * sodass sie fest im Raum stehen und man sich zu ihnen umdrehen muss. Senkrecht bleiben sie immer
+ * in der Bildschirmmitte – Neigen oder seitliches Kippen des Handys verschiebt sie nicht.
  */
 class CustomPanoramaARSession extends GyroARVisualizer {
   private panelLayer: HTMLElement | null = null;
   private anchors: PanelAnchor[] = [];
   private panelWidthKey = '';
-  private readonly projected = new THREE.Vector3();
-  private readonly viewSpace = new THREE.Vector3();
   private readonly debugQuaternion = new THREE.Quaternion();
   private readonly forward = new THREE.Vector3();
+  private readonly up = new THREE.Vector3();
   private cameraStream: MediaStream | null = null;
+  // Lage aus deviceorientation (null bis zum ersten Messwert)
+  private sensorQuaternion: THREE.Quaternion | null = null;
+  private readonly orientationEuler = new THREE.Euler();
+  private readonly screenQuaternion = new THREE.Quaternion();
+  /** Gerät flach liegend → Kamera schaut nach vorn statt nach unten (-90° um X) */
+  private readonly deviceToCamera = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+  /** Dreht die erste Blickrichtung auf yaw 0 (Platz des ersten Panels) */
+  private readonly startYawCorrection = new THREE.Quaternion();
+  private readonly orientationSmoothing = 0.2;
 
   constructor(
     container: HTMLDivElement,
@@ -139,11 +158,9 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   /** Aktuelle Blickrichtung: yaw im Uhrzeigersinn ab Startrichtung [0, 360), pitch nach oben */
   getViewAngles(): { yaw: number; pitch: number } | null {
     if (!this.camera) return null;
+    const yaw = this.yawOf(this.camera.quaternion);
     const f = this.forward.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
-    return {
-      yaw: (THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z)) + 360) % 360,
-      pitch: THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1))),
-    };
+    return { yaw, pitch: THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1))) };
   }
 
   private async loadPanoramaTexture(url: string): Promise<THREE.Texture> {
@@ -186,41 +203,82 @@ class CustomPanoramaARSession extends GyroARVisualizer {
       const debugHelpers = this.scene.children.filter((child) => child.type === 'GridHelper' || child.type === 'AxesHelper');
       debugHelpers.forEach((helper) => this.scene?.remove(helper));
     }
+
+    window.addEventListener('deviceorientation', this.handleOrientation, true);
+  }
+
+  /** Blickrichtung im Uhrzeigersinn [0, 360) einer Kameralage; unabhängig vom seitlichen Kippen */
+  private yawOf(quaternion: THREE.Quaternion): number {
+    const f = this.forward.set(0, 0, -1).applyQuaternion(quaternion);
+    const u = this.up.set(0, 1, 0).applyQuaternion(quaternion);
+    // Nur bei fast senkrechtem Blick (steiler als ~72°) hat die Blickrichtung kaum einen waagerechten
+    // Anteil; dann zeigt die Bildschirm-Oberkante nach vorn (Blick nach unten) bzw. hinten (nach oben)
+    const horizontal = Math.hypot(f.x, f.z);
+    const fallback = THREE.MathUtils.clamp((0.3 - horizontal) / 0.3, 0, 1) * Math.sign(f.y);
+    const hx = f.x - fallback * u.x;
+    const hz = f.z - fallback * u.z;
+    return (THREE.MathUtils.radToDeg(Math.atan2(hx, -hz)) + 360) % 360;
+  }
+
+  /**
+   * Absolute Lage statt aufsummierter Drehraten: unabhängig davon, wie das Handy gekippt oder ob
+   * es im Hoch- oder Querformat gehalten wird (Umrechnung wie three.js DeviceOrientationControls).
+   */
+  private readonly handleOrientation = (event: DeviceOrientationEvent): void => {
+    if (event.alpha == null || event.beta == null || event.gamma == null) return;
+    const d = THREE.MathUtils.DEG2RAD;
+    const q = this.sensorQuaternion ?? new THREE.Quaternion();
+    this.orientationEuler.set(event.beta * d, event.alpha * d, -event.gamma * d, 'YXZ');
+    q.setFromEuler(this.orientationEuler).multiply(this.deviceToCamera);
+    q.multiply(this.screenQuaternion.setFromAxisAngle(LOCAL_Z, -screenAngleDeg() * d));
+    if (!this.sensorQuaternion) {
+      // alpha hat keinen festen Bezug (Kompass bzw. Startlage) → erste Blickrichtung wird yaw 0
+      this.startYawCorrection.setFromAxisAngle(WORLD_UP, this.yawOf(q) * d);
+      this.sensorQuaternion = q;
+    }
+    q.premultiply(this.startYawCorrection);
+  };
+
+  protected updateCameraFromGyro(): void {
+    if (!this.camera || !this.sensorQuaternion) return;
+    this.camera.quaternion.slerp(this.sensorQuaternion, this.orientationSmoothing);
   }
 
   protected beforeRender(): void {
     const camera = this.camera;
     if (!camera || !this.panelLayer) return;
-    camera.updateMatrixWorld();
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const focal = height / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
 
     // Panelbreite aus dem Blickwinkel, damit benachbarte Panels sich nicht überdecken
     const widthKey = `${width}x${height}@${camera.fov}`;
     if (widthKey !== this.panelWidthKey) {
       this.panelWidthKey = widthKey;
-      const focal = height / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       const angular = 2 * focal * Math.tan(THREE.MathUtils.degToRad(PANEL_HALF_ANGLE_DEG));
       const panelWidth = Math.min(width - 40, PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, angular));
       this.panelLayer.style.setProperty(PANEL_WIDTH_VAR, `${Math.round(panelWidth)}px`);
     }
 
-    for (const { element, direction } of this.anchors) {
-      this.viewSpace.copy(direction).applyMatrix4(camera.matrixWorldInverse);
-      this.projected.copy(direction).project(camera);
-      // Hinter der Kamera oder weit außerhalb des Bildschirms → ausblenden (nicht klickbar)
-      if (this.viewSpace.z >= 0 || Math.abs(this.projected.x) > 3 || Math.abs(this.projected.y) > 3) {
+    // Nur die Drehung um die Hochachse verschiebt die Panels; senkrecht bleiben sie in der Mitte
+    const viewYaw = this.yawOf(camera.quaternion);
+    const y = height / 2;
+    for (const { element, yawDeg } of this.anchors) {
+      const offset = wrapDeg(yawDeg - viewYaw);
+      const x = width / 2 + focal * Math.tan(THREE.MathUtils.degToRad(offset));
+      // Seitlich hinter der Kamera oder weit außerhalb des Bildschirms → ausblenden (nicht klickbar)
+      if (Math.abs(offset) >= 80 || Math.abs(x - width / 2) > 1.5 * width) {
         element.style.visibility = 'hidden';
         continue;
       }
-      const x = ((this.projected.x + 1) / 2) * width;
-      const y = ((1 - this.projected.y) / 2) * height;
       element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
       element.style.visibility = 'visible';
     }
   }
 
   stop(): void {
+    window.removeEventListener('deviceorientation', this.handleOrientation, true);
+    this.sensorQuaternion = null;
     this.setPanelAnchors(null, []);
     this.cameraStream?.getTracks().forEach((track) => track.stop());
     this.cameraStream = null;
@@ -388,7 +446,7 @@ export const CustomPanoramaQuizView = ({
     const anchors: PanelAnchor[] = [];
     for (let slot = 0; slot <= quizSlot; slot++) {
       const element = panelRefs.current[slot];
-      if (element) anchors.push({ element, direction: directionForYaw(PANEL_YAWS_DEG[slot]) });
+      if (element) anchors.push({ element, yawDeg: PANEL_YAWS_DEG[slot] });
     }
     session.setPanelAnchors(panelLayerRef.current, anchors);
   }, [hasStarted, quizSlot]);
