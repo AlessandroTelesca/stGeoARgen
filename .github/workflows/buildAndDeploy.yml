@@ -91,30 +91,28 @@ jobs:
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
 
-      - name: Upload build to server root
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ vars.FTP_PORT || 21 }}
-          protocol: ${{ vars.FTP_PROTOCOL || 'ftp' }}
-          local-dir: ./build/
-          server-dir: ./
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Upload api to server api folder
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ vars.FTP_PORT || 21 }}
-          protocol: ${{ vars.FTP_PROTOCOL || 'ftp' }}
-          local-dir: ./api/
-          server-dir: ./api/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/*.sql
-            credentials.txt
-            uploads/stations/**
+      # lftp instead of SamKirkland/FTP-Deploy-Action: that action's FTPS data channel gets reset by
+      # ProFTPD (TLS session reuse). Nothing is ever deleted on the server; api goes first so a new
+      # frontend never talks to an old API, and index.html goes last so it never references missing assets.
+      - name: Upload api and build via FTPS
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ vars.FTP_PORT || 21 }}
+        run: |
+          lftp -c "
+            set cmd:fail-exit yes
+            set net:timeout 30
+            set net:max-retries 3
+            set ftp:ssl-force true
+            set ftp:ssl-protect-data true
+            set ssl:verify-certificate true
+            open --env-password -u \"$FTP_USERNAME\" -p $FTP_PORT \"$FTP_SERVER\"
+            mirror --reverse --verbose --parallel=4 --exclude-glob .git* --exclude-glob *.sql --exclude-glob credentials.txt --exclude-glob uploads/stations/ api/ api/
+            mirror --reverse --verbose --parallel=4 --exclude-glob index.html build/ ./
+            put build/index.html -o index.html
+          "
