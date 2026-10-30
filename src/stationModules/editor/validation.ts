@@ -13,8 +13,9 @@ export function countLabel(t: Translate, base: string, count: number): string {
 }
 
 /** Zahl für die Anzeige in Meldungen und Kurzangaben (leer/ungültig → Gedankenstrich) */
+/** Zahl wie im Player mit Tausenderpunkt (42.000), sonst Strich */
 export function formatNumber(value: number | null | undefined): string {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '–';
+  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('de-DE', { maximumFractionDigits: 6 }) : '–';
 }
 
 /** Pflichtangaben je Bild einer Bildfolge: `${prefix}.N.image`, `${prefix}.N.text_de` */

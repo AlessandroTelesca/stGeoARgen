@@ -12,7 +12,7 @@ export function SlideshowPlayer({ module, lang, continueLabel, onContinue }: Mod
   const { t } = useLanguage();
   const reduce = useReducedMotion();
   const slides = module.slides;
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleSlideshow');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const isLast = index === slides.length - 1;
@@ -85,7 +85,7 @@ export function SlideshowPlayer({ module, lang, continueLabel, onContinue }: Mod
             ))}
           </div>
           <div className="mt-3 min-w-0">
-            <p className="font-bold text-white truncate">{title}</p>
+            {title && <p className="font-bold text-white truncate">{title}</p>}
             <p className="text-xs text-white/70 tabular-nums">
               {t('stationImageSequenceProgress', { current: index + 1, total: slides.length })}
             </p>

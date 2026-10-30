@@ -14,7 +14,7 @@ export function HotspotsPlayer({ module, lang, continueLabel, onContinue }: Modu
   const [selected, setSelected] = useState<number | null>(null);
   const [visited, setVisited] = useState<number[]>([]);
 
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleHotspots');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const intro = pickLang(lang, module.intro_de, module.intro_en);
   const spots = module.spots;
   const spot = selected === null ? null : spots[selected];
@@ -31,6 +31,8 @@ export function HotspotsPlayer({ module, lang, continueLabel, onContinue }: Modu
       </div>
       {intro && <ModuleText className="mb-4">{intro}</ModuleText>}
 
+      {/* Seitlicher Abstand, damit Punkte am Bildrand (x = 0 / 1) mit voller Trefferfläche auf dem Bildschirm bleiben */}
+      <div className="px-2">
       <div className="relative mx-auto rounded-[20px] bg-white/5" style={aspectBoxStyle(aspect, 50)}>
         <img src={module.image} alt="" draggable={false} className="absolute inset-0 w-full h-full object-contain rounded-[20px] select-none" />
         {spots.map((s, i) => {
@@ -56,6 +58,7 @@ export function HotspotsPlayer({ module, lang, continueLabel, onContinue }: Modu
             </button>
           );
         })}
+      </div>
       </div>
 
       {spot ? (

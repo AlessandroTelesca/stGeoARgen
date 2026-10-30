@@ -53,5 +53,6 @@
   "stationPlayerArBackgroundPanorama": "Background: 360° photo",
   "stationPlayerArImages": "Pictures around you: {count}",
   "stationPlayerArQuestions": "Questions: {count}",
-  "stationPlayerArFinishBody": "Well done! Let's carry on."
+  "stationPlayerArFinishBody": "Well done! Let's carry on.",
+  "modulePlayerChooseAnswer": "Choose an answer"
 }

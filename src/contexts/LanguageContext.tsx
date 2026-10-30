@@ -85,6 +85,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Erzwingt für einen Teilbaum eine Sprache, ohne die App-Sprache zu ändern
+ * (z. B. Vorschau einer Station in der Sprache der gerade bearbeiteten Texte).
+ */
+export function LanguageOverride({ language, children }: { language: Language; children: ReactNode }) {
+  const parent = useContext(LanguageContext);
+  const t = useCallback(
+    (key: string, params?: Record<string, string | number>): string => translate(language, key, params),
+    [language]
+  );
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: parent.setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
 export function useLanguage(): LanguageContextType {
   return useContext(LanguageContext);
 }

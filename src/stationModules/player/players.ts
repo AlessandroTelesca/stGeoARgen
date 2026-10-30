@@ -10,6 +10,8 @@ import { TimelinePlayer } from './modules/TimelinePlayer';
 import { HotspotsPlayer } from './modules/HotspotsPlayer';
 import { OnsiteCodePlayer } from './modules/OnsiteCodePlayer';
 import { AudioPlayer } from './modules/AudioPlayer';
+import { SequencePlayer } from './modules/SequencePlayer';
+import { PhotoPlayer } from './modules/PhotoPlayer';
 
 /** Modultypen, die der Player selbst abspielt (ar_panorama behandelt die Bühne separat) */
 export type PlayableModuleType = Exclude<ModuleType, 'ar_panorama'>;
@@ -24,4 +26,6 @@ export const MODULE_PLAYERS: { [T in PlayableModuleType]: ComponentType<ModulePl
   hotspots: HotspotsPlayer,
   onsite_code: OnsiteCodePlayer,
   audio: AudioPlayer,
+  sequence: SequencePlayer,
+  photo: PhotoPlayer,
 };

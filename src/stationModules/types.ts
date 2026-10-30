@@ -26,7 +26,9 @@ export type ModuleType =
   | 'timeline'
   | 'hotspots'
   | 'onsite_code'
-  | 'audio';
+  | 'audio'
+  | 'sequence'
+  | 'photo';
 
 export const MODULE_TYPES: readonly ModuleType[] = [
   'story',
@@ -39,6 +41,8 @@ export const MODULE_TYPES: readonly ModuleType[] = [
   'hotspots',
   'onsite_code',
   'audio',
+  'sequence',
+  'photo',
 ];
 
 export const MAX_MODULES_PER_STATION = 12;
@@ -202,6 +206,44 @@ export interface AudioModule<M = string> extends ModuleBase {
   transcript_en: string | null;
 }
 
+export interface SequenceItem<M = string> {
+  text_de: string; // max. 200
+  text_en: string | null;
+  image: M | null;
+  /** Wird nach dem Lösen gezeigt, z. B. die Jahreszahl ("1890"); max. 20 */
+  label: string | null;
+}
+
+/**
+ * Reihenfolge: 3–6 Einträge in die richtige Reihenfolge bringen (Ereignisse, Arbeitsschritte).
+ * `items` steht in der RICHTIGEN Reihenfolge; der Player mischt sie.
+ */
+export interface SequenceModule<M = string> extends ModuleBase {
+  type: 'sequence';
+  task_de: string; // max. 255
+  task_en: string | null;
+  items: SequenceItem<M>[];
+  explanation_de: string | null; // max. 1000
+  explanation_en: string | null;
+}
+
+/**
+ * Fotomoment: Erinnerungsfoto mit Rahmen am Ort aufnehmen und speichern/teilen.
+ * Das Foto bleibt auf dem Gerät (kein Upload).
+ */
+export interface PhotoModule extends ModuleBase {
+  type: 'photo';
+  prompt_de: string; // max. 255, z. B. "Mach ein Foto vor dem Schwarzen Tor"
+  prompt_en: string | null;
+  /** badge: Georgi-Plakette + Beschriftung unten; polaroid: weißer Rahmen mit Beschriftung */
+  frame: 'badge' | 'polaroid';
+  /** Startkamera: Rückkamera (Ort) oder Frontkamera (Selfie) – umschaltbar im Player */
+  camera: 'environment' | 'user';
+  /** Beschriftung im Rahmen; null → Stationsname */
+  caption_de: string | null; // max. 60
+  caption_en: string | null;
+}
+
 export type StationModule<M = string> =
   | StoryModule<M>
   | SlideshowModule<M>
@@ -212,7 +254,9 @@ export type StationModule<M = string> =
   | TimelineModule<M>
   | HotspotsModule<M>
   | OnsiteCodeModule<M>
-  | AudioModule<M>;
+  | AudioModule<M>
+  | SequenceModule<M>
+  | PhotoModule;
 
 export type ModuleOfType<T extends ModuleType, M = string> = Extract<StationModule<M>, { type: T }>;
 
@@ -254,6 +298,10 @@ export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, k
       return { ...module, image: opt(module.image) };
     case 'audio':
       return { ...module, audio: map(module.audio, 'audio'), image: opt(module.image) };
+    case 'sequence':
+      return { ...module, items: module.items.map((item) => ({ ...item, image: opt(item.image) })) };
+    case 'photo':
+      return module;
   }
 }
 

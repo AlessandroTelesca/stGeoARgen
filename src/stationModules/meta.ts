@@ -7,6 +7,8 @@ import {
   Headphones,
   History,
   KeyRound,
+  Camera,
+  ListOrdered,
   Orbit,
   SquareSplitHorizontal,
   type LucideIcon,
@@ -315,6 +317,64 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
       }),
     })),
   },
+  sequence: {
+    type: 'sequence',
+    icon: ListOrdered,
+    labelKey: 'moduleSequence',
+    descriptionKey: 'moduleSequenceDesc',
+    category: 'play',
+    presets: [
+      {
+        id: 'chronology',
+        labelKey: 'presetSequenceChronology',
+        descriptionKey: 'presetSequenceChronologyDesc',
+        create: () => ({
+          ...base(),
+          type: 'sequence',
+          task_de: 'Bringe die Ereignisse in die richtige Reihenfolge.',
+          task_en: 'Put the events in the right order.',
+          items: Array.from({ length: 4 }, () => ({ text_de: '', text_en: null, image: null, label: '' })),
+          explanation_de: null,
+          explanation_en: null,
+        }),
+      },
+      {
+        id: 'steps',
+        labelKey: 'presetSequenceSteps',
+        descriptionKey: 'presetSequenceStepsDesc',
+        create: () => ({
+          ...base(),
+          type: 'sequence',
+          task_de: 'In welcher Reihenfolge geht es?',
+          task_en: 'In which order does it happen?',
+          items: Array.from({ length: 4 }, () => ({ text_de: '', text_en: null, image: null, label: null })),
+          explanation_de: null,
+          explanation_en: null,
+        }),
+      },
+    ],
+  },
+  photo: {
+    type: 'photo',
+    icon: Camera,
+    labelKey: 'modulePhoto',
+    descriptionKey: 'modulePhotoDesc',
+    category: 'discover',
+    presets: [
+      {
+        id: 'place',
+        labelKey: 'presetPhotoPlace',
+        descriptionKey: 'presetPhotoPlaceDesc',
+        create: () => ({ ...base(), type: 'photo', prompt_de: '', prompt_en: null, frame: 'badge', camera: 'environment', caption_de: null, caption_en: null }),
+      },
+      {
+        id: 'selfie',
+        labelKey: 'presetPhotoSelfie',
+        descriptionKey: 'presetPhotoSelfieDesc',
+        create: () => ({ ...base(), type: 'photo', prompt_de: '', prompt_en: null, frame: 'polaroid', camera: 'user', caption_de: null, caption_en: null }),
+      },
+    ],
+  },
 };
 
 /** Reihenfolge in der Modulbibliothek */
@@ -326,9 +386,11 @@ export const MODULE_ORDER: ModuleType[] = [
   'before_after',
   'ar_panorama',
   'hotspots',
+  'photo',
   'quiz',
   'estimate',
   'onsite_code',
+  'sequence',
 ];
 
 export function modulePreset<T extends ModuleType>(type: T, presetId?: string): ModulePreset<T> {

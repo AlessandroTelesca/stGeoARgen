@@ -29,7 +29,7 @@ export function EstimatePlayer({ module, lang, continueLabel, onContinue }: Modu
   const num = (v: number) => v.toLocaleString(locale, { maximumFractionDigits: decimals });
   const withUnit = (v: number) => (unit ? `${num(v)} ${unit}` : num(v));
 
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleEstimate');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const explanation = pickLang(lang, module.explanation_de, module.explanation_en);
 
   const range = max - min;
@@ -54,7 +54,7 @@ export function EstimatePlayer({ module, lang, continueLabel, onContinue }: Modu
       </GlassCard>
 
       <div className="text-center tabular-nums" aria-live="polite">
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">{t('modulePlayerEstimateValue')}</p>
+        <p className="text-sm font-semibold text-white/75">{t('modulePlayerEstimateValue')}</p>
         <p className="mt-1 text-white">
           <span className="text-[44px] leading-none font-extrabold">{num(value)}</span>
           {unit && <span className="ml-2 text-lg font-bold text-white/80">{unit}</span>}

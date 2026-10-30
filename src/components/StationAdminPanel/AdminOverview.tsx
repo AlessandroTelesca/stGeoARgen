@@ -20,32 +20,15 @@ interface AdminOverviewProps {
 /** Startseite der Stationsverwaltung: alle Themenpfade mit ihren Stationen auf einen Blick */
 export function AdminOverview({ paths, stationsByPath, orphanStations, arPath, onOpenPath, onNewPath, onOpenStation, onMovePath }: AdminOverviewProps) {
   const { t } = useLanguage();
-  const allStations = [...stationsByPath.values()].flat();
-  const draftCount = allStations.filter((s) => !s.published).length + paths.filter((p) => !p.published).length;
-
-  const stats = [
-    { label: t('adminStatPaths'), value: paths.length },
-    { label: t('adminStatStations'), value: allStations.length },
-    { label: t('adminStatDrafts'), value: draftCount },
-  ];
-
   return (
     <div>
       <PageIntro
-        className="mt-2 mb-6"
+        className="mt-2 mb-8"
         title={t('stationEditorTitle')}
         description={t('adminOverviewIntro')}
         icon={<MapPinPlus className="w-6 h-6" />}
       />
 
-      <dl className="grid grid-cols-3 gap-2.5 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="surface-card px-4 py-3.5">
-            <dd className="text-[26px] leading-none font-extrabold tabular-nums">{stat.value}</dd>
-            <dt className="mt-1.5 text-xs font-semibold text-muted-foreground">{stat.label}</dt>
-          </div>
-        ))}
-      </dl>
 
       <SectionHeader
         title={t('adminThemePaths')}
@@ -53,6 +36,7 @@ export function AdminOverview({ paths, stationsByPath, orphanStations, arPath, o
           <button
             type="button"
             onClick={onNewPath}
+            data-tour="overview-new-path"
             className="min-h-[44px] px-4 rounded-full bg-card border border-border shadow-xs text-sm font-bold text-primary flex items-center gap-1.5 hover:border-primary/40 transition-colors pressable"
           >
             <Plus className="w-4 h-4" />
@@ -61,7 +45,7 @@ export function AdminOverview({ paths, stationsByPath, orphanStations, arPath, o
         }
       />
 
-      <ul className="grid sm:grid-cols-2 gap-3">
+      <ul data-tour="overview-paths" className="grid sm:grid-cols-2 gap-3">
         {paths.map((path, index) => {
           const stations = stationsByPath.get(path.id) ?? [];
           const drafts = stations.filter((s) => !s.published).length;
@@ -118,7 +102,7 @@ export function AdminOverview({ paths, stationsByPath, orphanStations, arPath, o
           );
         })}
 
-        <li>
+        {paths.length === 0 && <li>
           <button
             type="button"
             onClick={onNewPath}
@@ -128,7 +112,7 @@ export function AdminOverview({ paths, stationsByPath, orphanStations, arPath, o
             <span className="font-bold">{t('pathEditorNewPath')}</span>
             <span className="text-sm text-muted-foreground max-w-[16rem]">{t('adminNewPathHint')}</span>
           </button>
-        </li>
+        </li>}
       </ul>
 
       {/* Fest eingebauter AR-Pfad */}

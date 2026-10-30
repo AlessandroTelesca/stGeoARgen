@@ -7,7 +7,7 @@ import { GlassCard, ModuleHeading, ModuleScreen, ModuleText, PrimaryButton, Stag
 /** Erzähltext: sachlich, von Georgi erzählt oder als Zitat */
 export function StoryPlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'story'>) {
   const { t } = useLanguage();
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleStory');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const text = pickLang(lang, module.text_de, module.text_en);
 
   return (

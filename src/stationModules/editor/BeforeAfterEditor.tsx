@@ -211,7 +211,9 @@ function BeforeAfterEditor({ module, onChange, lang, errors, prepareMedia }: Mod
         </div>
       </div>
 
-      <BeforeAfterPreview module={module} lang={lang} />
+      <div className="lg:hidden">
+        <BeforeAfterPreview module={module} lang={lang} />
+      </div>
 
       <LocalizedTextarea
         id={`${id}-text`}

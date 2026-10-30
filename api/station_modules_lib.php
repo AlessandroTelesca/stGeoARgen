@@ -14,6 +14,7 @@ const STATION_MAX_MODULE_QUESTIONS = 10;
 const STATION_MAX_TIMELINE_ENTRIES = 12;
 const STATION_MAX_HOTSPOTS = 8;
 const STATION_MAX_ONSITE_ANSWERS = 5;
+const STATION_MAX_SEQUENCE_ITEMS = 6;
 
 /** Modultyp → Name in Fehlermeldungen */
 const STATION_MODULE_TYPES = [
@@ -27,6 +28,8 @@ const STATION_MODULE_TYPES = [
     'hotspots'     => 'Bild mit Infopunkten',
     'onsite_code'  => 'Vor-Ort-Rätsel',
     'audio'        => 'Hörstück',
+    'sequence'     => 'Reihenfolge',
+    'photo'        => 'Fotomoment',
 ];
 
 /**
@@ -155,6 +158,10 @@ function mapStationModuleMedia(array $module, callable $map): array {
             ]);
         case 'hotspots':
             return array_merge($module, ['image' => $map($module['image'], 'image')]);
+        case 'sequence':
+            return array_merge($module, [
+                'items' => array_map(fn($i) => array_merge($i, ['image' => $opt($i['image'] ?? null)]), $module['items']),
+            ]);
         case 'audio':
             return array_merge($module, [
                 'audio' => $map($module['audio'], 'audio'),
@@ -430,6 +437,35 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'speaker' => stationModuleText($src, 'speaker', 150, $prefix, 'Sprecher'),
                 'transcript_de' => stationModuleText($src, 'transcript_de', 10000, $prefix, 'Text zum Mitlesen (DE)'),
                 'transcript_en' => stationModuleText($src, 'transcript_en', 10000, $prefix, 'Text zum Mitlesen (EN)'),
+            ];
+
+        case 'sequence':
+            $items = [];
+            foreach (stationModuleList($src, 'items', 3, STATION_MAX_SEQUENCE_ITEMS, $prefix, 'Einträge') as $i => $item) {
+                $label = "$prefix: Eintrag " . ($i + 1);
+                $items[] = [
+                    'text_de' => stationModuleText($item, 'text_de', 200, $label, 'Text (DE)', true),
+                    'text_en' => stationModuleText($item, 'text_en', 200, $label, 'Text (EN)'),
+                    'image' => stationModuleMediaValue($item, 'image', $label),
+                    'label' => stationModuleText($item, 'label', 20, $label, 'Beschriftung'),
+                ];
+            }
+            return [
+                'task_de' => stationModuleText($src, 'task_de', 255, $prefix, 'Aufgabe (DE)', true),
+                'task_en' => stationModuleText($src, 'task_en', 255, $prefix, 'Aufgabe (EN)'),
+                'items' => $items,
+                'explanation_de' => stationModuleText($src, 'explanation_de', 1000, $prefix, 'Erklärung (DE)'),
+                'explanation_en' => stationModuleText($src, 'explanation_en', 1000, $prefix, 'Erklärung (EN)'),
+            ];
+
+        case 'photo':
+            return [
+                'prompt_de' => stationModuleText($src, 'prompt_de', 255, $prefix, 'Aufforderung (DE)', true),
+                'prompt_en' => stationModuleText($src, 'prompt_en', 255, $prefix, 'Aufforderung (EN)'),
+                'frame' => stationModuleEnum($src, 'frame', ['badge', 'polaroid'], $prefix, 'Rahmen'),
+                'camera' => stationModuleEnum($src, 'camera', ['environment', 'user'], $prefix, 'Kamera'),
+                'caption_de' => stationModuleText($src, 'caption_de', 60, $prefix, 'Beschriftung (DE)'),
+                'caption_en' => stationModuleText($src, 'caption_en', 60, $prefix, 'Beschriftung (EN)'),
             ];
     }
 

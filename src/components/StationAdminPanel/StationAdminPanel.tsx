@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LockKeyhole, LogOut, RotateCw, Settings as SettingsIcon } from 'lucide-react';
+import { getUnsavedGuard } from '../../lib/unsavedChanges';
 import { BackLink, PageIntro } from '../PageHeader';
 import { FieldLabel } from '../AuthShell';
 import { Input } from '../ui/input';
@@ -22,8 +23,12 @@ import type { MediaKind } from '../../stationModules/types';
 import type { ARChromeProps } from '../../stationModules/player/contract';
 import { FieldError, MAX_PANORAMA_EDGE, prepareImage, type ImageItem } from './adminFormParts';
 import { Breadcrumbs, type Crumb } from './adminUi';
+import { LeaveDialog } from './LeaveDialog';
+import { clearPersistedDrafts, loadPersistedDrafts, persistDraft } from './draftPersistence';
+import { InterfaceLanguageSwitch } from './InterfaceLanguageSwitch';
 import { AdminOverview } from './AdminOverview';
 import { AdminSidebar } from './AdminSidebar';
+import { AdminTourButton, useAdminTour } from './AdminTour';
 import { PathAdminForm } from './PathAdminForm';
 import { PathStationsView } from './PathStationsView';
 import { StationEditor, draftFromStation, emptyStationDraft, type StationDraft } from './StationEditor';
@@ -32,6 +37,18 @@ import { StationTemplatePicker } from './StationTemplatePicker';
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
 const BASE = '/admin/stations';
 const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Ungespeicherte Stationsentwürfe und der Ausgangszustand neuer Stationen leben außerhalb der
+ * Komponente: Sie überstehen auch das Verlassen der Verwaltung (Zurück-Taste, App-Navigation)
+ * und sind beim nächsten Öffnen wieder da. Erst Speichern, Verwerfen oder Abmelden räumt sie weg.
+ */
+const draftStore: Record<string, StationDraft> = {};
+const newPristineStore: Record<string, StationDraft> = {};
+/** Vorschau-URLs neuer Dateien – erst beim Abmelden freigeben, weil Entwürfe sie weiter zeigen */
+const objectUrlStore: string[] = [];
+/** Gesicherte Entwürfe aus dem Browser nur einmal pro Seitenaufruf laden */
+let persistedDraftsLoaded = false;
 
 /** Seiten der Stationsverwaltung – jede hat eine eigene URL (Zurück-Taste, Lesezeichen, Breadcrumbs) */
 type AdminRoute =
@@ -94,13 +111,23 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
   const [content, setContent] = useState<{ paths: CustomPath[]; stations: CustomStation[] } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Ungespeicherte Stationsentwürfe je Seite – bleiben beim Wechseln innerhalb der Verwaltung erhalten */
-  const [drafts, setDrafts] = useState<Record<string, StationDraft>>({});
+  const [drafts, setDrafts] = useState<Record<string, StationDraft>>(() => ({ ...draftStore }));
+  /** Editoren erst zeigen, wenn gesicherte Entwürfe geladen sind (sie übernehmen den Entwurf nur beim Start) */
+  const [draftsReady, setDraftsReady] = useState(persistedDraftsLoaded);
   /** Ausgangszustand neuer Stationen je Vorlage (stabil, damit Modul-IDs gleich bleiben) */
-  const newPristineRef = useRef<Record<string, StationDraft>>({});
-  const objectUrlsRef = useRef<string[]>([]);
-  useEffect(() => () => objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
+  const newPristineRef = useRef<Record<string, StationDraft>>(newPristineStore);
+  /** Ausstehende Navigation, die auf die Entscheidung im Dialog „Ungespeicherte Änderungen“ wartet */
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
 
-  const go = useCallback((next: AdminRoute, replace = false) => navigate(routeUrl(next), { replace }), [navigate]);
+  /** Führt eine Navigation aus – mit ungespeicherten Änderungen erst nach Rückfrage */
+  const requestLeave = useCallback((action: () => void) => {
+    if (getUnsavedGuard()) setPendingLeave(() => action);
+    else action();
+  }, []);
+  /** Navigation durch Bedienung (fragt bei ungespeicherten Änderungen nach) */
+  const go = useCallback((next: AdminRoute) => requestLeave(() => navigate(routeUrl(next))), [navigate, requestLeave]);
+  /** Navigation nach Speichern/Löschen (ohne Rückfrage, ersetzt den Verlaufseintrag) */
+  const goNow = useCallback((next: AdminRoute) => navigate(routeUrl(next), { replace: true }), [navigate]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -137,8 +164,30 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
     setAdminPassword(null);
     setContent(null);
+    for (const store of [draftStore, newPristineStore]) Object.keys(store).forEach((key) => delete store[key]);
+    clearPersistedDrafts();
+    persistedDraftsLoaded = false;
+    objectUrlStore.splice(0).forEach((url) => URL.revokeObjectURL(url));
     setDrafts({});
   };
+
+  // Entwürfe, die ein Neuladen oder Schließen des Tabs überstanden haben, wiederherstellen
+  useEffect(() => {
+    if (!adminPassword) return;
+    if (persistedDraftsLoaded) {
+      setDraftsReady(true);
+      return;
+    }
+    persistedDraftsLoaded = true;
+    void loadPersistedDrafts((url) => objectUrlStore.push(url)).then((restored) => {
+      const fresh = Object.fromEntries(Object.entries(restored).filter(([key]) => !(key in draftStore)));
+      if (Object.keys(fresh).length > 0) {
+        Object.assign(draftStore, fresh);
+        setDrafts({ ...draftStore });
+      }
+      setDraftsReady(true);
+    });
+  }, [adminPassword]);
 
   // ─── Daten ────────────────────────────────────────────────────────────────
   const reload = useCallback(async () => {
@@ -192,7 +241,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
         return null;
       }
       const url = URL.createObjectURL(file);
-      objectUrlsRef.current.push(url);
+      objectUrlStore.push(url);
       return { kind: 'new', file, url };
     }
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
@@ -201,7 +250,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
     }
     const prepared = await prepareImage(file, kind === 'panorama' ? MAX_PANORAMA_EDGE : undefined);
     const url = URL.createObjectURL(prepared);
-    objectUrlsRef.current.push(url);
+    objectUrlStore.push(url);
     return { kind: 'new', file: prepared, url };
   }, [t]);
 
@@ -258,14 +307,18 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
       await apiAdminDeletePath(adminPassword, path.id);
       await refreshAll();
       toast.success(t('pathEditorDeleted'), { description: path.title_de });
-      go({ kind: 'overview' }, true);
+      goNow({ kind: 'overview' });
     } catch (err) {
       toast.error(t('pathEditorDeleteFailed'), { description: err instanceof Error ? err.message : undefined });
     }
   };
 
   const setDraft = useCallback((key: string, draft: StationDraft | null) => {
+    if (draft === null) delete draftStore[key];
+    else draftStore[key] = draft;
+    persistDraft(key, draft);
     setDrafts((prev) => {
+      if (prev[key] === draft) return prev;
       if (draft === null) {
         if (!(key in prev)) return prev;
         const next = { ...prev };
@@ -277,6 +330,15 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
   }, []);
 
   const openStation = (station: CustomStation) => go({ kind: 'station', pathId: station.path_id, stationId: station.id });
+
+  // Einführung: Willkommensdialog beim ersten Besuch, Hilfe-Knopf in der Kopfzeile
+  const tour = useAdminTour({
+    ready: !!adminPassword && content !== null,
+    paths,
+    stationsByPath,
+    route,
+    onNavigate: (next) => navigate(routeUrl(next)),
+  });
 
   // ─── Admin-Login ──────────────────────────────────────────────────────────
   if (!adminPassword) {
@@ -316,10 +378,11 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
   const routePathId = route.kind === 'overview' || route.kind === 'newPath' ? null : route.pathId;
   const currentPath = routePathId ? paths.find((p) => p.id === routePathId) ?? null : null;
   const pathTitle = currentPath?.title_de ?? (routePathId === 'tourist' ? arPath.title : t('adminOrphanStations'));
+  const isEditorRoute = route.kind === 'station' || route.kind === 'newStation';
   const currentStation = route.kind === 'station' ? content?.stations.find((s) => s.id === route.stationId) ?? null : null;
 
   const crumbs: Crumb[] = [
-    { label: t('settings'), onClick: onBack, icon: <SettingsIcon className="w-4 h-4 flex-shrink-0" /> },
+    { label: t('settings'), onClick: () => requestLeave(onBack), icon: <SettingsIcon className="w-4 h-4 flex-shrink-0" /> },
     { label: t('stationEditorTitle'), onClick: route.kind === 'overview' ? undefined : () => go({ kind: 'overview' }) },
   ];
   if (route.kind === 'newPath') crumbs.push({ label: t('pathEditorNewTitle') });
@@ -334,7 +397,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
   if (route.kind === 'station') crumbs.push({ label: currentStation?.title_de ?? '…' });
 
   let page: React.ReactNode;
-  if (!content) {
+  if (!content || (isEditorRoute && !draftsReady)) {
     page = loadError ? (
       <div className="mt-6 surface-card p-6 text-center">
         <p className="font-bold">{t('adminLoadFailed')}</p>
@@ -375,7 +438,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
         adminPassword={adminPassword}
         onSaved={async (saved) => {
           await refreshAll();
-          go({ kind: 'path', pathId: saved.id }, true);
+          goNow({ kind: 'path', pathId: saved.id });
         }}
         onCancel={() => (editing ? go({ kind: 'path', pathId: editing.id }) : go({ kind: 'overview' }))}
       />
@@ -419,7 +482,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
         onSaved={async (saved) => {
           delete newPristineRef.current[key];
           await refreshAll();
-          go({ kind: 'station', pathId: saved.path_id, stationId: saved.id }, true);
+          goNow({ kind: 'station', pathId: saved.path_id, stationId: saved.id });
         }}
         onDeleted={async () => undefined}
         onOpenStation={openStation}
@@ -441,11 +504,11 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
         prepareMedia={prepareMedia}
         onSaved={async (saved) => {
           await refreshAll();
-          if (saved.path_id !== route.pathId) go({ kind: 'station', pathId: saved.path_id, stationId: saved.id }, true);
+          if (saved.path_id !== route.pathId) goNow({ kind: 'station', pathId: saved.path_id, stationId: saved.id });
         }}
         onDeleted={async (deleted) => {
           await refreshAll();
-          go({ kind: 'path', pathId: deleted.path_id }, true);
+          goNow({ kind: 'path', pathId: deleted.path_id });
         }}
         onOpenStation={openStation}
         arChrome={arChrome}
@@ -458,17 +521,24 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
       <div className="max-w-7xl mx-auto px-4 pt-3 pb-12">
         <div className="flex items-center justify-between gap-2 mb-3 -ml-2">
           <Breadcrumbs items={crumbs} />
+          <div className="flex items-center gap-1 flex-shrink-0">
+          <InterfaceLanguageSwitch />
+          <AdminTourButton onClick={tour.start} />
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => requestLeave(handleLogout)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-full text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">{t('logout')}</span>
           </button>
+          </div>
         </div>
-        <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 lg:items-start">
-          <aside className="hidden lg:block">
+        <div className={isEditorRoute
+          ? 'xl:grid xl:grid-cols-[16rem_minmax(0,1fr)] xl:gap-8 xl:items-start'
+          : 'lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 lg:items-start'}
+        >
+          <aside className={isEditorRoute ? 'hidden xl:block' : 'hidden lg:block'} data-tour="sidebar">
             {content && (
               <AdminSidebar
                 paths={paths}
@@ -484,9 +554,26 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
               />
             )}
           </aside>
-          <main className="min-w-0 max-w-4xl">{page}</main>
+          <main className={`min-w-0 ${isEditorRoute ? 'max-w-5xl' : 'max-w-4xl'}`}>{page}</main>
         </div>
       </div>
+      <LeaveDialog
+        open={pendingLeave !== null}
+        onStay={() => setPendingLeave(null)}
+        onDiscard={() => {
+          getUnsavedGuard()?.discard();
+          const action = pendingLeave;
+          setPendingLeave(null);
+          action?.();
+        }}
+        onSave={async () => {
+          const ok = (await getUnsavedGuard()?.save()) ?? true;
+          const action = pendingLeave;
+          setPendingLeave(null);
+          if (ok) action?.();
+        }}
+      />
+      {tour.element}
     </div>
   );
 }
