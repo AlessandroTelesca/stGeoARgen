@@ -16,6 +16,7 @@ import type { StationModulePlayerProps } from './contract';
 import { ArPanoramaEmbedded, ArPanoramaPlaceholder, isArCapableDevice } from './ArPanoramaStage';
 import { MODULE_PLAYERS } from './players';
 import { PrimaryButton } from './ui';
+import { useDialogFocus } from '../../lib/useDialogFocus';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -31,6 +32,7 @@ type AnyModulePlayer = ComponentType<{
   preview: boolean;
   continueLabel: string;
   onContinue: () => void;
+  stationTitle?: string;
 }>;
 
 const stageButtonClass =
@@ -58,6 +60,7 @@ export function StationModulePlayer({
   const [direction, setDirection] = useState<1 | -1>(1);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isProgressCompact, setIsProgressCompact] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const { progress, stations } = buildARProgress(arChrome.completedStations, arChrome.totalStations, arChrome.totalPoints);
 
   const startedAtRef = useRef(Date.now());
@@ -68,6 +71,8 @@ export function StationModulePlayer({
     nextStation: StationCoordinates | null;
     distanceToNext: number | null;
   } | null>(null);
+  // Tab bleibt im Player (Escape regelt der Tastatur-Effekt unten); aus, solange der Abschlussdialog offen ist
+  useDialogFocus(dialogRef, completion === null);
 
   const safeIndex = Math.min(index, Math.max(modules.length - 1, 0));
   const current = modules[safeIndex];
@@ -204,7 +209,6 @@ export function StationModulePlayer({
     );
   }
 
-  const moduleName = current ? pickLang(lang, current.title_de, current.title_en) || t(MODULE_META[current.type].labelKey) : '';
   const Player = current && current.type !== 'ar_panorama' ? (MODULE_PLAYERS[current.type] as unknown as AnyModulePlayer) : null;
 
   const variants = {
@@ -216,6 +220,7 @@ export function StationModulePlayer({
   return (
     <>
       <motion.div
+        ref={dialogRef}
         className="fixed inset-0 z-[60] bg-black text-white flex flex-col"
         role="dialog"
         aria-modal="true"
@@ -247,8 +252,8 @@ export function StationModulePlayer({
               )}
               <p className="font-bold truncate">{station.title}</p>
               {current && (
-                <p className="text-xs text-white/70 tabular-nums truncate">
-                  {t('stationPlayerPart', { current: safeIndex + 1, total: modules.length })} · {moduleName}
+                <p className="text-sm text-white/80 tabular-nums truncate">
+                  {t('stationPlayerPart', { current: safeIndex + 1, total: modules.length })}
                 </p>
               )}
             </div>
@@ -282,7 +287,7 @@ export function StationModulePlayer({
                 {current.type === 'ar_panorama' ? (
                   <ArPanoramaPlaceholder module={current} lang={lang} continueLabel={continueLabel} onContinue={goNext} />
                 ) : (
-                  Player && <Player module={current} lang={lang} preview={preview} continueLabel={continueLabel} onContinue={goNext} />
+                  Player && <Player module={current} lang={lang} preview={preview} continueLabel={continueLabel} onContinue={goNext} stationTitle={station.title} />
                 )}
               </motion.div>
             </AnimatePresence>

@@ -2,7 +2,6 @@
   "moduleCategoryTell": "Storytelling",
   "moduleCategoryDiscover": "Discover & AR",
   "moduleCategoryPlay": "Puzzles",
-
   "moduleStory": "Story text",
   "moduleStoryDesc": "A text with an optional image – factual, told by Georgi or as a quote.",
   "moduleSlideshow": "Picture series",
@@ -23,43 +22,36 @@
   "moduleEstimateDesc": "Estimate a number with a slider, then see the answer.",
   "moduleOnsiteCode": "On-site riddle",
   "moduleOnsiteCodeDesc": "The answer can only be found on site – such as a year above the door.",
-
   "presetStoryText": "Introduction",
   "presetStoryTextDesc": "Factual text, optionally with a picture",
   "presetStoryGeorgi": "Georgi tells",
   "presetStoryGeorgiDesc": "The dragon talks directly to visitors",
   "presetStoryQuote": "Quote",
   "presetStoryQuoteDesc": "A saying with its source, e.g. from contemporary witnesses",
-
   "presetBeforeAfter_slider": "Slider",
   "presetBeforeAfter_sliderDesc": "Drag a divider across two pictures",
   "presetBeforeAfter_fade": "Cross-fade",
   "presetBeforeAfter_fadeDesc": "Fade smoothly from then to now",
   "presetBeforeAfter_camera": "Over the live camera",
   "presetBeforeAfter_cameraDesc": "Old photo laid semi-transparently over the real place",
-
   "presetArPanorama_camera": "Live camera",
   "presetArPanorama_cameraDesc": "Pictures float in the real camera view",
   "presetArPanorama_panorama": "360° photo",
   "presetArPanorama_panoramaDesc": "A panoramic photo as the background",
-
   "presetQuizSingle": "One question",
   "presetQuizSingleDesc": "One question with four answers",
   "presetQuizRound": "Quiz round",
   "presetQuizRoundDesc": "Three questions in a row",
   "presetQuizTrueFalse": "True or false",
   "presetQuizTrueFalseDesc": "Judge a statement",
-
   "presetEstimateYear": "Year",
   "presetEstimateYearDesc": "When did it happen?",
   "presetEstimateNumber": "Number with unit",
   "presetEstimateNumberDesc": "Height, count, weight …",
-
   "presetOnsiteCode_number": "Find a number",
   "presetOnsiteCode_numberDesc": "e.g. a year on the facade",
   "presetOnsiteCode_text": "Find a word",
   "presetOnsiteCode_textDesc": "e.g. an inscription or a name on a sign",
-
   "templateTimeTravel": "Time travel",
   "templateTimeTravelDesc": "Introduction, before/after comparison and a quiz question.",
   "templateArLookAround": "AR look-around",
@@ -73,5 +65,17 @@
   "templateDiscover": "Discover",
   "templateDiscoverDesc": "A picture with info points and a true-or-false question.",
   "templateBlank": "Blank station",
-  "templateBlankDesc": "Put the modules together yourself."
+  "templateBlankDesc": "Put the modules together yourself.",
+  "moduleSequence": "Order it",
+  "moduleSequenceDesc": "Tap events or steps into the right order.",
+  "presetSequenceChronology": "Chronology",
+  "presetSequenceChronologyDesc": "Events, with the year revealed at the end",
+  "presetSequenceSteps": "Process steps",
+  "presetSequenceStepsDesc": "e.g. how a clock was made",
+  "modulePhoto": "Photo moment",
+  "modulePhotoDesc": "A framed souvenir photo on site – stays on the phone and can be shared.",
+  "presetPhotoPlace": "Photo of the place",
+  "presetPhotoPlaceDesc": "Rear camera, Georgi badge",
+  "presetPhotoSelfie": "Selfie",
+  "presetPhotoSelfieDesc": "Front camera, polaroid frame"
 }

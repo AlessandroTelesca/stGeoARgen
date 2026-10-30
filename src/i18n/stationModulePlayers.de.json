@@ -53,5 +53,6 @@
   "stationPlayerArBackgroundPanorama": "Hintergrund: 360°-Foto",
   "stationPlayerArImages": "Bilder rundum: {count}",
   "stationPlayerArQuestions": "Fragen: {count}",
-  "stationPlayerArFinishBody": "Super gemacht! Weiter geht's."
+  "stationPlayerArFinishBody": "Super gemacht! Weiter geht's.",
+  "modulePlayerChooseAnswer": "Wähle eine Antwort"
 }

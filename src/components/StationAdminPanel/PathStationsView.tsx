@@ -37,6 +37,9 @@ export function PathStationsView({
 }: PathStationsViewProps) {
   const { t } = useLanguage();
   const [toggling, setToggling] = useState(false);
+  /** Pfad sichtbar machen bzw. verbergen wirkt sofort für alle – deshalb erst bestätigen */
+  const [confirmPublish, setConfirmPublish] = useState(false);
+  const draftStations = stations.filter((s) => !s.published).length;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -55,7 +58,7 @@ export function PathStationsView({
   };
 
   return (
-    <div>
+    <div data-tour="path-page">
       {/* Pfadkopf */}
       {path ? (
         <section className="surface-card overflow-hidden mt-2">
@@ -72,7 +75,7 @@ export function PathStationsView({
               <h1 className="text-[26px] leading-[1.15] font-extrabold tracking-tight">{path.title_de}</h1>
               <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground line-clamp-3">{path.description_de}</p>
               <ul className="mt-3 flex flex-wrap gap-1.5 text-xs font-semibold text-muted-foreground">
-                <li className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1"><MapPin className="w-3.5 h-3.5" /><span className="tabular-nums">{t('pathEditorStationCount', { count: stations.length })}</span></li>
+                <li className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1"><MapPin className="w-3.5 h-3.5" /><span className="tabular-nums">{t(stations.length === 1 ? 'adminStationCountOne' : 'adminStationCountOther', { count: stations.length })}</span></li>
                 <li className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1"><Gauge className="w-3.5 h-3.5" />{t(`pathEditorDifficulty${path.difficulty}`)}</li>
                 {path.estimated_time && <li className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1"><Clock className="w-3.5 h-3.5" />{path.estimated_time}</li>}
               </ul>
@@ -91,7 +94,7 @@ export function PathStationsView({
             </div>
           </div>
           {/* Sichtbarkeit */}
-          <div className={`flex items-center gap-3.5 px-5 py-4 border-t ${path.published ? 'border-border' : 'border-gold/25 bg-gold-soft'}`}>
+          <div data-tour="path-visibility" className={`flex items-center gap-3.5 px-5 py-4 border-t ${path.published ? 'border-border' : 'border-gold/25 bg-gold-soft'}`}>
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${path.published ? 'bg-primary-soft text-primary' : 'bg-gold/15 text-gold'}`}>
               {path.published ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
             </span>
@@ -101,7 +104,7 @@ export function PathStationsView({
                 {path.published ? t('adminPathPublishedHint') : t('adminPathDraftHint')}
               </p>
             </div>
-            <Switch checked={path.published} onChange={() => void togglePublished()} disabled={toggling} label={t('adminPublishedLabel')} />
+            <Switch checked={path.published} onChange={() => setConfirmPublish(true)} disabled={toggling} label={t('adminPublishedLabel')} />
           </div>
         </section>
       ) : (
@@ -130,7 +133,7 @@ export function PathStationsView({
           title={t('stations')}
           count={stations.length}
           action={path && stations.length > 0 ? (
-            <button type="button" onClick={onNewStation} className="min-h-[44px] px-4 rounded-full bg-primary text-white text-sm font-bold flex items-center gap-1.5 shadow-primary hover:bg-primary-dark transition-colors pressable">
+            <button type="button" onClick={onNewStation} data-tour="path-new-station" className="min-h-[44px] px-4 rounded-full bg-primary text-white text-sm font-bold flex items-center gap-1.5 shadow-primary hover:bg-primary-dark transition-colors pressable">
               <Plus className="w-4 h-4" />
               {t('stationEditorNewStation')}
             </button>
@@ -142,6 +145,7 @@ export function PathStationsView({
             type="button"
             onClick={onNewStation}
             disabled={!path}
+            data-tour="path-new-station"
             className="w-full flex flex-col items-center justify-center gap-2 rounded-[20px] border-2 border-dashed border-border-strong px-6 py-12 text-center hover:border-primary hover:bg-primary-soft/40 transition-colors"
           >
             <span className="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center"><Plus className="w-6 h-6" /></span>
@@ -149,7 +153,7 @@ export function PathStationsView({
             <span className="text-sm text-muted-foreground max-w-sm">{t('adminFirstStationHint')}</span>
           </button>
         ) : (
-          <ol className="relative">
+          <ol data-tour="path-stations" className="relative">
             {stations.map((station, index) => (
               <motion.li
                 key={station.id}
@@ -189,10 +193,10 @@ export function PathStationsView({
                   </button>
                   {stations.length > 1 && (
                     <div className="flex flex-col justify-center border-l border-border px-0.5">
-                      <button type="button" onClick={() => onMoveStation(index, -1)} disabled={index === 0} aria-label={t('adminMoveUp')} className="w-10 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                      <button type="button" onClick={() => onMoveStation(index, -1)} disabled={index === 0} aria-label={t('adminMoveUp')} className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
                         <ArrowUp className="w-4 h-4" />
                       </button>
-                      <button type="button" onClick={() => onMoveStation(index, 1)} disabled={index === stations.length - 1} aria-label={t('adminMoveDown')} className="w-10 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                      <button type="button" onClick={() => onMoveStation(index, 1)} disabled={index === stations.length - 1} aria-label={t('adminMoveDown')} className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
                         <ArrowDown className="w-4 h-4" />
                       </button>
                     </div>
@@ -203,6 +207,29 @@ export function PathStationsView({
           </ol>
         )}
       </div>
+
+      {path && (
+        <ConfirmDialog
+          open={confirmPublish}
+          tone="primary"
+          icon={path.published ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
+          title={path.published ? t('adminConfirmHideTitle') : t('adminConfirmPublishTitle')}
+          text={path.published
+            ? t('adminConfirmHideText')
+            : stations.length - draftStations === 0
+              ? t('adminConfirmPublishTextNone')
+              : draftStations > 0
+                ? t('adminConfirmPublishTextDrafts', { count: stations.length - draftStations, drafts: draftStations })
+                : t('adminConfirmPublishText', { count: stations.length })}
+          confirmLabel={path.published ? t('adminConfirmHide') : t('adminConfirmPublish')}
+          busy={toggling}
+          onCancel={() => setConfirmPublish(false)}
+          onConfirm={async () => {
+            await togglePublished();
+            setConfirmPublish(false);
+          }}
+        />
+      )}
 
       {path && (
         <ConfirmDialog

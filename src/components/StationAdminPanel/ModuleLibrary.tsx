@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Plus, X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -22,13 +22,40 @@ interface ModuleLibraryProps {
 export function ModuleLibrary({ open, disabledTypes, onClose, onAdd }: ModuleLibraryProps) {
   const { t } = useLanguage();
   const [category, setCategory] = useState(MODULE_CATEGORIES[0].id);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
+  // Fokus in den Dialog und beim Schließen zurück zum auslösenden Knopf
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+    const previous = document.activeElement as HTMLElement | null;
+    const timer = window.setTimeout(() => closeRef.current?.focus(), 50);
+    return () => {
+      window.clearTimeout(timer);
+      previous?.focus?.();
+    };
+  }, [open]);
+
+  /** Escape schließt, Tab bleibt im Dialog */
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onClose();
+      return;
+    }
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, select, textarea')];
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const types = MODULE_ORDER.filter((type) => MODULE_META[type].category === category);
 
@@ -43,6 +70,8 @@ export function ModuleLibrary({ open, disabledTypes, onClose, onAdd }: ModuleLib
         >
           <button type="button" aria-label={t('close')} className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
           <motion.div
+            ref={dialogRef}
+            onKeyDown={handleKeyDown}
             role="dialog"
             aria-modal="true"
             aria-labelledby="module-library-title"
@@ -58,6 +87,7 @@ export function ModuleLibrary({ open, disabledTypes, onClose, onAdd }: ModuleLib
                 <p className="mt-1 text-sm text-muted-foreground">{t('adminModuleLibraryIntro')}</p>
               </div>
               <button
+                ref={closeRef}
                 type="button"
                 onClick={onClose}
                 aria-label={t('close')}
@@ -68,13 +98,12 @@ export function ModuleLibrary({ open, disabledTypes, onClose, onAdd }: ModuleLib
             </div>
 
             <div className="px-5 sm:px-6">
-              <div className="grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1" role="tablist">
+              <div className="grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1" role="group" aria-label={t('adminModuleCategories')}>
                 {MODULE_CATEGORIES.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    role="tab"
-                    aria-selected={category === c.id}
+                    aria-pressed={category === c.id}
                     onClick={() => setCategory(c.id)}
                     className={`h-11 rounded-xl text-sm font-bold transition-colors ${category === c.id ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
                   >

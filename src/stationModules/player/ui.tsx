@@ -19,6 +19,8 @@ export interface ModulePlayerProps<T extends ModuleType> {
   onContinue: () => void;
   /** Vorschau in der Stationsverwaltung: nichts wird gespeichert, Kamera/Standort optional */
   preview: boolean;
+  /** Name der Station in der aktuellen Sprache (z. B. Beschriftung im Fotomoment) */
+  stationTitle?: string;
 }
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -30,7 +32,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 export function ModuleScreen({ children, footer, bleed = false }: { children: ReactNode; footer?: ReactNode; bleed?: boolean }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain ${bleed ? '' : 'px-5 pt-2 pb-6'}`}>
+      <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain ${bleed ? '' : 'px-5 pt-2 pb-6'}`}>
         <div className={bleed ? 'h-full' : 'max-w-md mx-auto'}>{children}</div>
       </div>
       {footer && (
@@ -45,12 +47,16 @@ export function ModuleScreen({ children, footer, bleed = false }: { children: Re
   );
 }
 
-/** Überschrift eines Moduls */
-export function ModuleHeading({ title, subtitle }: { title: string; subtitle?: string | null }) {
+/**
+ * Überschrift eines Moduls – nur, wenn die Redaktion eine gesetzt hat. Ohne Überschrift führt der
+ * Inhalt selbst (Frage, Text, Bild); interne Modulnamen wie „Schätzfrage“ sehen Besucher:innen nie.
+ */
+export function ModuleHeading({ title, subtitle }: { title: string | null; subtitle?: string | null }) {
+  if (!title && !subtitle) return null;
   return (
     <div className="mb-5">
-      <h2 className="text-[24px] leading-[1.2] font-extrabold tracking-tight text-white">{title}</h2>
-      {subtitle && <p className="mt-1.5 text-[15px] leading-relaxed text-white/75">{subtitle}</p>}
+      {title && <h2 className="text-[24px] leading-[1.2] font-extrabold tracking-tight text-white">{title}</h2>}
+      {subtitle && <p className={`text-[15px] leading-relaxed text-white/75 ${title ? 'mt-1.5' : ''}`}>{subtitle}</p>}
     </div>
   );
 }
@@ -85,7 +91,7 @@ export function PrimaryButton({ children, className = '', ...props }: ButtonProp
     <button
       type="button"
       {...props}
-      className={`flex-1 min-h-[52px] px-5 rounded-2xl bg-white text-primary font-extrabold flex items-center justify-center gap-2 shadow-lg pressable disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
+      className={`flex-1 min-h-[52px] px-5 rounded-2xl bg-white text-primary font-extrabold flex items-center justify-center gap-2 shadow-lg pressable disabled:bg-white/15 disabled:text-white/70 disabled:shadow-none disabled:cursor-not-allowed ${className}`}
     >
       {children}
     </button>

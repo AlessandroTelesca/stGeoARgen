@@ -12,6 +12,10 @@ import stationModulePlayersDeJson from './stationModulePlayers.de.json';
 import stationModulePlayersEnJson from './stationModulePlayers.en.json';
 import stationAdminDeJson from './stationAdmin.de.json';
 import stationAdminEnJson from './stationAdmin.en.json';
+import stationModulesExtraDeJson from './stationModulesExtra.de.json';
+import stationModulesExtraEnJson from './stationModulesExtra.en.json';
+import stationAdminTourDeJson from './stationAdminTour.de.json';
+import stationAdminTourEnJson from './stationAdminTour.en.json';
 
 export type Language = 'de' | 'en';
 
@@ -23,6 +27,8 @@ const de = {
 	...stationModuleEditorsDeJson,
 	...stationModulePlayersDeJson,
 	...stationAdminDeJson,
+	...stationModulesExtraDeJson,
+	...stationAdminTourDeJson,
 };
 
 export type TranslationDict = typeof de;
@@ -35,6 +41,8 @@ const en: TranslationDict = {
 	...stationModuleEditorsEnJson,
 	...stationModulePlayersEnJson,
 	...stationAdminEnJson,
+	...stationModulesExtraEnJson,
+	...stationAdminTourEnJson,
 };
 
 export const translations: Record<Language, TranslationDict> = { de, en };

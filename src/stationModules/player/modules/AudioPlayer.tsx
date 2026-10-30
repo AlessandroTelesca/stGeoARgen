@@ -25,7 +25,7 @@ export function AudioPlayer({ module, lang, continueLabel, onContinue }: ModuleP
   const [error, setError] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleAudio');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const transcript = pickLang(lang, module.transcript_de, module.transcript_en);
 
   // Beim Verlassen des Moduls nicht weiterspielen
@@ -100,7 +100,7 @@ export function AudioPlayer({ module, lang, continueLabel, onContinue }: ModuleP
           <div className="mt-4 flex items-center justify-center gap-6">
             <button type="button" onClick={() => seek(current - SKIP_SECONDS)} aria-label={t('modulePlayerAudioBack')} className={`${skipButton} ${FOCUS_RING}`}>
               <RotateCcw className="w-6 h-6" />
-              <span className="absolute text-[10px] font-extrabold tabular-nums pt-0.5">{SKIP_SECONDS}</span>
+              <span className="absolute text-[11px] font-extrabold tabular-nums pt-0.5">{SKIP_SECONDS}</span>
             </button>
             <button
               type="button"
@@ -112,7 +112,7 @@ export function AudioPlayer({ module, lang, continueLabel, onContinue }: ModuleP
             </button>
             <button type="button" onClick={() => seek(current + SKIP_SECONDS)} aria-label={t('modulePlayerAudioForward')} className={`${skipButton} ${FOCUS_RING}`}>
               <RotateCw className="w-6 h-6" />
-              <span className="absolute text-[10px] font-extrabold tabular-nums pt-0.5">{SKIP_SECONDS}</span>
+              <span className="absolute text-[11px] font-extrabold tabular-nums pt-0.5">{SKIP_SECONDS}</span>
             </button>
           </div>
         </div>

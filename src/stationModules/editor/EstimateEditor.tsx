@@ -9,6 +9,8 @@ type EstimateModule = DraftModuleOfType<'estimate'>;
 
 const finite = (n: number) => Number.isFinite(n);
 const MAX_STEPS = 10000;
+/** Betragsgrenze der Serverprüfung (station_modules_lib.php: stationModuleNumber) */
+const MAX_ABS = 1e12;
 
 /** Gerenderte Skala: Bereich, richtige Antwort als Marker, Toleranzband – live bei Eingabe */
 function EstimateScale({ module, lang }: { module: EstimateModule; lang: 'de' | 'en' }) {
@@ -27,7 +29,7 @@ function EstimateScale({ module, lang }: { module: EstimateModule; lang: 'de' | 
   return (
     <div className="space-y-2">
       <div className="rounded-2xl bg-muted px-5 pb-4 pt-10">
-        <div className="relative h-3 rounded-full bg-card shadow-xs" role="img" aria-label={t('moduleEditorEstimatePreview', { min, max, answer, tolerance: tol })}>
+        <div className="relative h-3 rounded-full bg-card shadow-xs" role="img" aria-label={t('moduleEditorEstimatePreview', { min: formatNumber(min), max: formatNumber(max), answer: formatNumber(answer), tolerance: formatNumber(tol) })}>
           {tol > 0 && (
             <span
               className="absolute inset-y-0 rounded-full bg-primary/30"
@@ -48,7 +50,7 @@ function EstimateScale({ module, lang }: { module: EstimateModule; lang: 'de' | 
         </div>
       </div>
       <p className="text-xs tabular-nums text-muted-foreground">
-        {t('moduleEditorEstimatePreview', { min, max, answer, tolerance: tol })}
+        {t('moduleEditorEstimatePreview', { min: formatNumber(min), max: formatNumber(max), answer: formatNumber(answer), tolerance: formatNumber(tol) })}
       </p>
     </div>
   );
@@ -62,8 +64,9 @@ function EstimateEditor({ module, onChange, lang, errors }: ModuleEditorProps<'e
 
   return (
     <div className="space-y-5">
-      <LocalizedInput
+      <LocalizedTextarea
         id={`${id}-question`}
+        rows={2}
         label={t('moduleEditorEstimateQuestion')}
         lang={lang}
         required
@@ -124,7 +127,7 @@ function validate(module: EstimateModule, t: Translate): ModuleErrors {
   const errors: ModuleErrors = {};
   if (isBlank(module.question_de)) errors.question_de = t('moduleErrorRequired');
   for (const key of ['min', 'max', 'step', 'answer', 'tolerance'] as const) {
-    if (!finite(module[key])) errors[key] = t('moduleErrorNumber');
+    if (!finite(module[key]) || Math.abs(module[key]) > MAX_ABS) errors[key] = t('moduleErrorNumber');
   }
   if (finite(module.min) && finite(module.max) && module.max <= module.min) errors.max = t('moduleErrorMaxAboveMin');
   if (finite(module.step)) {

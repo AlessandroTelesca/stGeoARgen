@@ -95,7 +95,7 @@ export function LocalizedTextarea(props: LocalizedFieldProps & { rows?: number }
         placeholder={f.placeholder}
         maxLength={props.maxLength}
         rows={rows}
-        className={`px-4 py-3 rounded-2xl bg-card ${rows >= 6 ? 'min-h-36' : 'min-h-24'} ${f.showError ? 'border-destructive' : ''}`}
+        className={`px-4 py-3 rounded-2xl bg-card ${rows >= 6 ? 'min-h-36' : rows <= 2 ? 'min-h-[76px]' : 'min-h-24'} ${f.showError ? 'border-destructive' : ''}`}
         aria-invalid={f.showError}
         aria-describedby={f.describedBy}
       />
@@ -499,9 +499,13 @@ export function InfoNote({ children }: { children: ReactNode }) {
 }
 
 /** Dunkle „Bühne“ für Vorschauen: so ähnlich sehen es die Besucher:innen */
-export function StagePreview({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Kleine Bühnen-Vorschau im Editor. Ab 1024 px steht die Live-Vorschau (echtes Handy) daneben –
+ * dort wäre sie doppelt, daher nur darunter sichtbar; `always` für Dinge, die die Live-Vorschau nicht zeigt.
+ */
+export function StagePreview({ title, children, always = false }: { title: string; children: ReactNode; always?: boolean }) {
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${always ? '' : 'lg:hidden'}`}>
       <p className="text-sm font-bold">{title}</p>
       <div className="rounded-2xl bg-foreground p-4 text-white">{children}</div>
     </div>

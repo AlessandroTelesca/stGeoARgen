@@ -38,6 +38,7 @@ import { getPhonomuseumTexts } from './i18n/stations/phonomuseum';
 import { getBahnhofTexts } from './i18n/stations/bahnhof';
 import { getSchwarzesTorTexts } from './i18n/stations/schwarzesTor';
 import { asset } from './lib/asset';
+import { getUnsavedGuard } from './lib/unsavedChanges';
 
 // AR-Ansichten (three.js, tone) und QR-Scanner (jsQR) erst bei Bedarf laden, damit die Startseite schnell bleibt
 const KlosterweiherView = lazy(() => import('./components/ARComponents/klosterweiher/klosterweiher.tsx').then((m) => ({ default: m.KlosterweiherView })));
@@ -975,6 +976,8 @@ export default function App() {
   };
 
   const handleNavigate = (view: string) => {
+    // Stationsverwaltung mit ungespeicherten Änderungen verlassen? Erst nachfragen (Entwurf bleibt bis zum Neuladen erhalten)
+    if (currentView === 'admin-stations' && view !== 'admin-stations' && getUnsavedGuard() && !window.confirm(t('adminLeaveConfirmApp'))) return;
     if (view === 'home') {
       navigate('/');
       setCurrentView('home');

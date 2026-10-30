@@ -1,4 +1,4 @@
-import { LayoutGrid, Lock, Plus } from 'lucide-react';
+import { EyeOff, LayoutGrid, Lock, Plus } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { customStationImageUrl, type CustomPath, type CustomStation } from '../../services/api';
 
@@ -61,9 +61,10 @@ export function AdminSidebar({
                 <span className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 brand-gradient">
                   {path.cover_image && <img src={customStationImageUrl(path.cover_image)} alt="" className="w-full h-full object-cover" />}
                 </span>
-                <span className={`flex-1 min-w-0 truncate text-sm font-semibold ${active ? 'text-primary-dark' : ''} ${path.published ? '' : 'italic'}`}>
+                <span className={`flex-1 min-w-0 truncate text-sm font-semibold ${active ? 'text-primary-dark' : ''}`}>
                   {path.title_de}
                 </span>
+                {!path.published && <EyeOff className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" aria-label={t('adminDraft')} />}
                 <span className={`min-w-7 h-6 px-1.5 rounded-full text-xs font-bold tabular-nums flex items-center justify-center ${active ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
                   {stations.length}
                 </span>
@@ -78,9 +79,9 @@ export function AdminSidebar({
                           type="button"
                           onClick={() => onOpenStation(station)}
                           aria-current={current ? 'page' : undefined}
-                          className={`w-full min-h-[40px] px-2 rounded-lg flex items-center gap-2 text-left text-sm transition-colors ${current ? 'bg-card shadow-xs font-bold text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                          className={`w-full min-h-[44px] px-2 rounded-lg flex items-center gap-2 text-left text-sm transition-colors ${current ? 'bg-card shadow-xs font-bold text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                         >
-                          <span className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold tabular-nums ${station.published ? 'bg-primary text-white' : 'border-[1.5px] border-dashed border-border-strong'}`}>
+                          <span className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold tabular-nums ${station.published ? 'bg-primary text-white' : 'border-[1.5px] border-dashed border-border-strong'}`}>
                             {index + 1}
                           </span>
                           <span className="flex-1 min-w-0 truncate">{station.title_de}</span>

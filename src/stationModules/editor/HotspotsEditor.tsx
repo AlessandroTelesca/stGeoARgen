@@ -184,6 +184,7 @@ function HotspotsEditor({ module, onChange, lang, errors, prepareMedia }: Module
                       onClick={() => {
                         setSelected(index);
                         setRepositioning(!(repositioning && isSelected));
+                        canvasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                       }}
                       aria-pressed={repositioning && isSelected}
                       className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${repositioning && isSelected ? 'bg-primary text-white' : 'bg-muted hover:bg-secondary'}`}

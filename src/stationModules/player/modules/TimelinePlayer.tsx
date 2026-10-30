@@ -7,7 +7,7 @@ import { ModuleHeading, ModuleScreen, PrimaryButton, StageImage, type ModulePlay
 export function TimelinePlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'timeline'>) {
   const { t } = useLanguage();
   const reduce = useReducedMotion();
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleTimeline');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const entries = module.entries;
 
   return (

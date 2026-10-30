@@ -17,6 +17,7 @@ import {
 } from '../../services/api';
 import { FieldError, FormSection, LanguageTabs, SubmitFeedback, inputClass, prepareImage, useScrollToFirstError, type ImageItem } from './adminFormParts';
 import { DraftChip } from './adminUi';
+import { setUnsavedGuard } from '../../lib/unsavedChanges';
 
 const DIFFICULTIES: PathDifficulty[] = ['Einfach', 'Mittel', 'Schwer'];
 
@@ -47,6 +48,8 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
     path?.cover_image ? { kind: 'existing', filename: path.cover_image, url: customStationImageUrl(path.cover_image) } : null
   );
   const [errors, setErrors] = useState<PathErrors>({});
+  /** Nach erfolgreichem Speichern nicht mehr als „ungespeichert“ melden */
+  const savedRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -57,6 +60,29 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
   useEffect(() => () => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
   }, []);
+
+  // Ungespeicherte Änderungen: Vergleich mit dem Ausgangszustand
+  const dirty = !savedRef.current && (
+    titleDe !== (path?.title_de ?? '') || titleEn !== (path?.title_en ?? '') ||
+    descriptionDe !== (path?.description_de ?? '') || descriptionEn !== (path?.description_en ?? '') ||
+    difficulty !== (path?.difficulty ?? 'Einfach') || estimatedTime !== (path?.estimated_time ?? '') ||
+    published !== (path?.published ?? false) ||
+    (cover?.kind === 'new') || (cover === null) !== !path?.cover_image
+  );
+  const saveRef = useRef<() => Promise<boolean>>(async () => false);
+  useEffect(() => {
+    if (!dirty) return;
+    setUnsavedGuard({ save: () => saveRef.current(), discard: () => undefined });
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      setUnsavedGuard(null);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [dirty]);
 
   const isEn = textLanguage === 'en';
   const optional = isEn ? ` (${t('stationEditorOptional')})` : '';
@@ -75,8 +101,8 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
     setCover({ kind: 'new', file: prepared, url: previewUrlRef.current });
   };
 
-  const handleSave = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: FormEvent): Promise<boolean> => {
+    e?.preventDefault();
     const nextErrors: PathErrors = {};
     if (!titleDe.trim()) nextErrors.titleDe = t('stationEditorErrorRequired');
     if (!descriptionDe.trim()) nextErrors.descriptionDe = t('stationEditorErrorRequired');
@@ -85,7 +111,7 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
       setTextLanguage('de');
       setSaveError(null);
       scrollToFirstError();
-      return;
+      return false;
     }
 
     const payload: CustomPathInput = {
@@ -103,14 +129,20 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
     setSaving(true);
     try {
       const saved = await apiAdminSavePath(adminPassword, payload, cover?.kind === 'new' ? cover.file : null);
+      savedRef.current = true;
+      setUnsavedGuard(null);
       await onSaved(saved);
       toast.success(path ? t('pathEditorUpdated') : t('pathEditorCreated'), { description: payload.title_de });
+      return true;
     } catch (err) {
       setSaveError(err instanceof Error && err.message ? err.message : t('pathEditorSaveFailed'));
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  saveRef.current = handleSave;
 
   return (
     <div>

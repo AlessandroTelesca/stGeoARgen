@@ -21,7 +21,7 @@ export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue }: Mo
   const [hintShown, setHintShown] = useState(false);
 
   const numeric = module.input === 'number';
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleOnsiteCode');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const hint = pickLang(lang, module.hint_de, module.hint_en);
   const solution = pickLang(lang, module.solution_de, module.solution_en);
   const done = status !== 'open';

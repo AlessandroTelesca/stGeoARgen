@@ -152,6 +152,9 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
       }
       return (
         <div className="w-full space-y-1">
+          {variant === 'round' && (
+            <div className="flex gap-0.5 mb-1">{[0, 1, 2].map((i) => <span key={i} className={`h-0.5 flex-1 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/30'}`} />)}</div>
+          )}
           <Lines count={1} className="mb-1.5" />
           {[0, 1, 2].map((i) => <span key={i} className={`block h-2.5 rounded ${i === 1 ? 'bg-primary border border-primary-lighter' : 'bg-white/12 border border-white/20'}`} />)}
         </div>
@@ -164,6 +167,29 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
             <span className="absolute inset-y-0 left-[48%] w-[14%] bg-gold/60 rounded-full" />
             <span className="absolute -top-1 left-[30%] w-3 h-3 rounded-full bg-white" />
           </div>
+        </div>
+      );
+    case 'sequence':
+      return (
+        <div className="w-full space-y-1">
+          {[['1', 'w-4/5'], ['2', 'w-3/5'], ['', 'w-2/3']].map(([n, w], i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className={`w-3.5 h-3.5 rounded-full flex-shrink-0 text-[8px] font-extrabold flex items-center justify-center ${n ? 'bg-primary text-white' : 'border border-dashed border-white/50'}`}>{n}</span>
+              <span className={`h-2.5 rounded ${w} ${n ? 'bg-white/30' : 'bg-white/12'}`} />
+            </div>
+          ))}
+        </div>
+      );
+    case 'photo':
+      return variant === 'selfie' ? (
+        <div className="w-14 mx-auto rounded-sm bg-white p-1 pb-3 rotate-[-4deg] shadow">
+          <div className={`h-10 ${photo}`} />
+        </div>
+      ) : (
+        <div className={`relative w-full h-12 rounded-md ${photo}`}>
+          <span className="absolute left-1.5 bottom-1.5 w-4 h-4 rounded-full bg-primary ring-2 ring-white" />
+          <span className="absolute left-7 bottom-2 h-1.5 w-1/2 rounded-full bg-white/80" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-white/80" />
         </div>
       );
     case 'onsite_code':

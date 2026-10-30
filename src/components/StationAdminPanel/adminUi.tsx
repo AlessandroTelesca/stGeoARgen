@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronRight, EyeOff, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, EyeOff, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { MODULE_META } from '../../stationModules/meta';
 import type { ModuleType } from '../../stationModules/types';
@@ -17,14 +17,25 @@ export interface Crumb {
 }
 
 /**
- * Brotkrumen-Navigation. Auf schmalen Bildschirmen werden mittlere Einträge gekürzt,
- * der aktuelle Eintrag bleibt immer lesbar.
+ * Brotkrumen-Navigation. Auf dem Handy reicht der Platz nicht für alle Ebenen –
+ * dort zeigt sie einen Zurück-Link zur Elternebene (die Seite nennt selbst, wo man ist).
  */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   const { t } = useLanguage();
+  const parent = [...items.slice(0, -1)].reverse().find((item) => item.onClick);
   return (
-    <nav aria-label={t('adminBreadcrumbLabel')} className="min-w-0">
-      <ol className="flex items-center gap-0.5 min-w-0 text-sm">
+    <nav aria-label={t('adminBreadcrumbLabel')} data-tour="breadcrumbs" className="min-w-0">
+      {parent && (
+        <button
+          type="button"
+          onClick={parent.onClick}
+          className="sm:hidden inline-flex items-center gap-1.5 h-10 pl-3 pr-4 max-w-full rounded-full text-sm font-semibold text-foreground bg-card border border-border shadow-xs transition-colors pressable"
+        >
+          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{parent.label}</span>
+        </button>
+      )}
+      <ol className="hidden sm:flex items-center gap-0.5 min-w-0 text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const isFirst = index === 0;
@@ -44,7 +55,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                     className="flex items-center gap-1.5 h-10 px-2 rounded-full font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors min-w-0 max-w-full"
                   >
                     {item.icon}
-                    <span className={`truncate ${isFirst && items.length > 2 ? 'sr-only sm:not-sr-only' : ''}`}>{item.label}</span>
+                    <span className={`truncate ${isFirst && items.length > 3 ? 'sr-only lg:not-sr-only' : ''}`}>{item.label}</span>
                   </button>
                 )}
               </li>
@@ -96,7 +107,7 @@ export function StationTrail({ stations, max = 10 }: { stations: { id: number; p
         <Fragment key={station.id}>
           {index > 0 && <span className="h-0.5 w-3 bg-primary/25 flex-shrink-0" />}
           <span
-            className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold tabular-nums ${station.published
+            className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold tabular-nums ${station.published
               ? 'bg-primary text-white'
               : 'border-[1.5px] border-dashed border-border-strong bg-card text-muted-foreground'}`}
           >
@@ -149,12 +160,15 @@ interface ConfirmDialogProps {
   text: string;
   confirmLabel: string;
   busy?: boolean;
+  /** danger: Löschen (rot, Mülleimer); primary: folgenreiche, aber harmlose Aktion wie Veröffentlichen */
+  tone?: 'danger' | 'primary';
+  icon?: ReactNode;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
 /** Bestätigung vor dem Löschen (Optik wie GuestWarningDialog) */
-export function ConfirmDialog({ open, title, text, confirmLabel, busy = false, onCancel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, text, confirmLabel, busy = false, tone = 'danger', icon, onCancel, onConfirm }: ConfirmDialogProps) {
   const { t } = useLanguage();
   return (
     <AnimatePresence>
@@ -179,8 +193,8 @@ export function ConfirmDialog({ open, title, text, confirmLabel, busy = false, o
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.3, ease }}
           >
-            <span className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
-              <Trash2 className="h-6 w-6" />
+            <span className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${tone === 'danger' ? 'bg-destructive/10 text-destructive' : 'bg-primary-soft text-primary'}`}>
+              {icon ?? <Trash2 className="h-6 w-6" />}
             </span>
             <h3 id="admin-confirm-title" className="text-xl font-bold">{title}</h3>
             <p id="admin-confirm-text" className="mt-2 mb-6 text-sm text-muted-foreground leading-relaxed">{text}</p>
@@ -198,9 +212,9 @@ export function ConfirmDialog({ open, title, text, confirmLabel, busy = false, o
                 type="button"
                 onClick={onConfirm}
                 disabled={busy}
-                className="flex-1 min-h-[52px] rounded-2xl bg-destructive px-6 font-bold text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60"
+                className={`flex-1 min-h-[52px] rounded-2xl px-6 font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${tone === 'danger' ? 'bg-destructive hover:opacity-90' : 'bg-primary hover:bg-primary-dark shadow-primary'}`}
               >
-                {busy ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {busy ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : tone === 'danger' && <Trash2 className="w-4 h-4" />}
                 {confirmLabel}
               </button>
             </div>

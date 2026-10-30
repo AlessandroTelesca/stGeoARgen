@@ -214,7 +214,7 @@ function CameraCompare({ before, afterLabel, beforeLabel, aspect }: { before: st
 /** Vorher/Nachher: Schieberegler, Überblenden oder altes Foto über der Live-Kamera */
 export function BeforeAfterPlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'before_after'>) {
   const { t } = useLanguage();
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleBeforeAfter');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const beforeLabel = pickLang(lang, module.before_label_de, module.before_label_en);
   const afterLabel = pickLang(lang, module.after_label_de, module.after_label_en);
   const text = pickLang(lang, module.text_de, module.text_en);

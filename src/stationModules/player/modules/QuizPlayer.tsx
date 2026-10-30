@@ -17,7 +17,7 @@ export function QuizPlayer({ module, lang, continueLabel, onContinue }: ModulePl
   const questions = module.questions;
   const question = questions[index];
   const isLast = index === questions.length - 1;
-  const title = pickLang(lang, module.title_de, module.title_en) ?? t('moduleQuiz');
+  const title = pickLang(lang, module.title_de, module.title_en);
   const options = lang === 'en' && question.options_en && question.options_en.length === question.options_de.length ? question.options_en : question.options_de;
   const explanation = pickLang(lang, question.explanation_de, question.explanation_en);
 
@@ -51,7 +51,7 @@ export function QuizPlayer({ module, lang, continueLabel, onContinue }: ModulePl
     <ModuleScreen
       footer={
         <PrimaryButton onClick={next} disabled={!solved}>
-          {isLast ? continueLabel : t('modulePlayerNextQuestion')}
+          {!solved ? t('modulePlayerChooseAnswer') : isLast ? continueLabel : t('modulePlayerNextQuestion')}
         </PrimaryButton>
       }
     >

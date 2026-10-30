@@ -2,7 +2,6 @@
   "moduleCategoryTell": "Erzählen",
   "moduleCategoryDiscover": "Entdecken & AR",
   "moduleCategoryPlay": "Rätseln",
-
   "moduleStory": "Erzähltext",
   "moduleStoryDesc": "Ein Text mit optionalem Bild – sachlich, von Georgi erzählt oder als Zitat.",
   "moduleSlideshow": "Bildfolge",
@@ -23,43 +22,36 @@
   "moduleEstimateDesc": "Eine Zahl per Schieberegler schätzen, danach kommt die Auflösung.",
   "moduleOnsiteCode": "Vor-Ort-Rätsel",
   "moduleOnsiteCodeDesc": "Die Antwort steht nur vor Ort – etwa eine Jahreszahl über der Tür.",
-
   "presetStoryText": "Einleitung",
   "presetStoryTextDesc": "Sachlicher Text, optional mit Bild",
   "presetStoryGeorgi": "Georgi erzählt",
   "presetStoryGeorgiDesc": "Der Drache spricht die Besucher:innen direkt an",
   "presetStoryQuote": "Zitat",
   "presetStoryQuoteDesc": "Ein Ausspruch mit Quelle, z. B. von Zeitzeug:innen",
-
   "presetBeforeAfter_slider": "Schieberegler",
   "presetBeforeAfter_sliderDesc": "Trennlinie über zwei Bilder ziehen",
   "presetBeforeAfter_fade": "Überblenden",
   "presetBeforeAfter_fadeDesc": "Stufenlos von damals nach heute blenden",
   "presetBeforeAfter_camera": "Über der Live-Kamera",
   "presetBeforeAfter_cameraDesc": "Altes Foto halbtransparent über dem echten Ort",
-
   "presetArPanorama_camera": "Live-Kamera",
   "presetArPanorama_cameraDesc": "Bilder hängen im echten Kamerabild",
   "presetArPanorama_panorama": "360°-Foto",
   "presetArPanorama_panoramaDesc": "Ein Rundum-Foto als Hintergrund",
-
   "presetQuizSingle": "Eine Frage",
   "presetQuizSingleDesc": "Eine Frage mit vier Antworten",
   "presetQuizRound": "Quizrunde",
   "presetQuizRoundDesc": "Drei Fragen hintereinander",
   "presetQuizTrueFalse": "Wahr oder falsch",
   "presetQuizTrueFalseDesc": "Eine Aussage bewerten",
-
   "presetEstimateYear": "Jahreszahl",
   "presetEstimateYearDesc": "Wann ist es passiert?",
   "presetEstimateNumber": "Zahl mit Einheit",
   "presetEstimateNumberDesc": "Höhe, Anzahl, Gewicht …",
-
   "presetOnsiteCode_number": "Zahl finden",
   "presetOnsiteCode_numberDesc": "z. B. Jahreszahl an der Fassade",
   "presetOnsiteCode_text": "Wort finden",
   "presetOnsiteCode_textDesc": "z. B. Inschrift oder Name auf einem Schild",
-
   "templateTimeTravel": "Zeitreise",
   "templateTimeTravelDesc": "Einleitung, Vorher/Nachher-Vergleich und eine Quizfrage.",
   "templateArLookAround": "AR-Rundumblick",
@@ -73,5 +65,17 @@
   "templateDiscover": "Entdecken",
   "templateDiscoverDesc": "Ein Bild mit Infopunkten und eine Wahr-oder-falsch-Frage.",
   "templateBlank": "Leere Station",
-  "templateBlankDesc": "Module selbst zusammenstellen."
+  "templateBlankDesc": "Module selbst zusammenstellen.",
+  "moduleSequence": "Reihenfolge",
+  "moduleSequenceDesc": "Ereignisse oder Arbeitsschritte in die richtige Reihenfolge tippen.",
+  "presetSequenceChronology": "Zeitliche Abfolge",
+  "presetSequenceChronologyDesc": "Ereignisse mit Jahreszahl als Auflösung",
+  "presetSequenceSteps": "Arbeitsschritte",
+  "presetSequenceStepsDesc": "z. B. wie eine Uhr gebaut wurde",
+  "modulePhoto": "Fotomoment",
+  "modulePhotoDesc": "Ein Erinnerungsfoto mit Rahmen am Ort – bleibt auf dem Handy und lässt sich teilen.",
+  "presetPhotoPlace": "Foto vom Ort",
+  "presetPhotoPlaceDesc": "Rückkamera, Georgi-Plakette",
+  "presetPhotoSelfie": "Selfie",
+  "presetPhotoSelfieDesc": "Frontkamera, Polaroid-Rahmen"
 }

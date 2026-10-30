@@ -63,7 +63,7 @@ function StoryEditor({ module, onChange, lang, errors, prepareMedia }: ModuleEdi
   const text = pickLang(lang, module.text_de, module.text_en);
 
   const setStyle = (style: Style) =>
-    onChange((prev) => ({ ...prev, style, quote_source: style === 'quote' ? (prev.quote_source ?? '') : null }));
+    onChange((prev) => ({ ...prev, style, quote_source: style === 'quote' ? (prev.quote_source ?? '') : prev.quote_source }));
 
   return (
     <div className="space-y-5">
