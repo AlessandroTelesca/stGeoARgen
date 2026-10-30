@@ -97,7 +97,7 @@ export function PathCard({
           <div className="px-2 text-center">
             <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
               <MapPin className="w-3.5 h-3.5" />
-              <span className="capitalize">{t('stations')}</span>
+              <span>{t('stations')}</span>
             </dt>
             <dd className="mt-0.5 text-sm font-bold tabular-nums">{completedStations}/{totalStations}</dd>
           </div>

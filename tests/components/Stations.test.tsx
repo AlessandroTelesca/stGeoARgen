@@ -103,6 +103,35 @@ describe('StationDetail', () => {
     openSpy.mockRestore();
   });
 
+  test('custom station without AR module starts with the station label', () => {
+    render(
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation, id: 1000, arRoute: '/ar/station/1000', hasArModule: false }}
+          onClose={vi.fn()}
+          onComplete={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('button', { name: /station starten/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ar-erlebnis starten/i })).not.toBeInTheDocument();
+  });
+
+  test('custom station with AR module keeps the AR label', () => {
+    render(
+      <MemoryRouter>
+        <StationDetail
+          station={{ ...sampleStation, id: 1000, arRoute: '/ar/station/1000', hasArModule: true }}
+          onClose={vi.fn()}
+          onComplete={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('button', { name: /ar-erlebnis starten/i })).toBeInTheDocument();
+  });
+
   test('closes when X button clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

@@ -35,11 +35,12 @@ $db = getDB();
 $userId = requireUser($db, $body['user_id'] ?? null);
 
 // Punkte der Station laut DB: fest eingebaute Stationen aus builtin_stations, Custom-Stationen
-// (ID >= 1000) aus custom_stations. Unbekannte Stationen werden abgelehnt, sonst ließe sich mit
-// beliebigen path_id/station_id-Kombinationen Punkte sammeln.
+// (ID >= 1000) aus custom_stations (nur veröffentlichte – Entwürfe vergeben keine Punkte).
+// Unbekannte Stationen werden abgelehnt, sonst ließe sich mit beliebigen path_id/station_id-Kombinationen
+// Punkte sammeln.
 $stmt = $db->prepare(
     $stationId >= 1000
-        ? 'SELECT points FROM custom_stations WHERE id = ? AND path_id = ?'
+        ? 'SELECT points FROM custom_stations WHERE id = ? AND path_id = ? AND published = 1'
         : 'SELECT points FROM builtin_stations WHERE station_id = ? AND path_id = ?'
 );
 $stmt->execute([$stationId, $pathId]);

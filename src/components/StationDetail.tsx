@@ -1,7 +1,6 @@
 import { X, CheckCircle2, Navigation, Play, AlertCircle, LogIn, AlertTriangle } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Georgi } from './Georgi';
 import { Trophy } from 'lucide-react';
@@ -10,13 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GuestWarningDialog } from './GuestWarningDialog';
-import { StationImageSequence, type ARChromeProps, type StationImageSlide } from './StationAdminPanel/StationImageSequence';
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswer: number;
-}
 
 interface StationDetailProps {
   station: {
@@ -27,14 +19,13 @@ interface StationDetailProps {
     longDescription: string;
     points: number;
     status: 'locked' | 'available' | 'completed';
-    quiz?: QuizQuestion;
     arContent?: string;
     latitude: number;
     longitude: number;
-    /** Bildfolge, die beim Start durchgeklickt wird (Stationen aus der Stationsverwaltung) */
-    imageSequence?: StationImageSlide[];
-    /** AR-Route für Stationen aus der Stationsverwaltung (360°-Quiz), sonst aus STATION_AR_ROUTES */
+    /** Route der Modul-Bühne für Stationen aus der Stationsverwaltung, sonst aus STATION_AR_ROUTES */
     arRoute?: string;
+    /** Station aus der Stationsverwaltung enthält das Modul „AR-Rundumblick“ */
+    hasArModule?: boolean;
   };
   onClose: () => void;
   onComplete: (stationId: number) => void;
@@ -44,8 +35,6 @@ interface StationDetailProps {
   onEnableGuestStart?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
-  /** AR-Oberfläche (Top-Bar, Fortschrittsleiste) für die Bildfolge – wie in den AR-Stationen */
-  arChrome: ARChromeProps;
 }
 
 // Station ID to AR Route mapping
@@ -57,7 +46,7 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister, arChrome }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const navigate = useNavigate();
@@ -71,7 +60,8 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
   // Gleiche Login-Regeln für alle Stationen (AR und Stationsverwaltung): ohne Login erst Login-Karte,
   // als Gast darf man die Station erleben, schließt sie aber nicht ab (wie der AR-Abschlussbutton)
   const needsLogin = requireLoginForAR && isLoggedIn === false;
-  const isGuest = isLoggedIn === false;
+  // Stationen aus der Stationsverwaltung ohne AR-Rundumblick sind kein „AR-Erlebnis“
+  const isModuleStation = station.arRoute !== undefined && !station.hasArModule;
   const { distance, isWithinRadius, locationError } = useStationProximity(
     station.latitude,
     station.longitude,
@@ -92,8 +82,6 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
       navigate(arRoute, {
         state: allowGuestARStart ? { allowGuestStart: true, xrAvailable } : { xrAvailable },
       });
-    } else if (imageSequence.length > 0) {
-      setImageSequenceOpen(true);
     } else {
       // Fallback: Mark as completed if no AR route
       onComplete(station.id);
@@ -101,30 +89,6 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
   };
 
   const navigateLabel = t('navigateToStation', { stationName: station.title });
-
-  // Stationen ohne AR werden vor Ort abgeschlossen: erst die Bildfolge, dann ggf. das Quiz
-  const canCompleteOnSite = !hasARRoute && !locationError && isWithinRadius;
-  const imageSequence = station.imageSequence ?? [];
-  const [imageSequenceOpen, setImageSequenceOpen] = useState(false);
-  const [imageSequenceDone, setImageSequenceDone] = useState(false);
-  const imageSequencePending = imageSequence.length > 0 && !imageSequenceDone;
-  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
-  const [quizWrong, setQuizWrong] = useState(false);
-
-  const handleCompleteInfoStation = () => {
-    if (station.quiz && quizAnswer !== station.quiz.correctAnswer) {
-      setQuizWrong(true);
-      return;
-    }
-    onComplete(station.id);
-  };
-
-  const handleImageSequenceFinish = () => {
-    setImageSequenceOpen(false);
-    if (isCompleted || isGuest) return;
-    setImageSequenceDone(true);
-    if (!station.quiz) onComplete(station.id);
-  };
 
   return (
     <motion.div
@@ -294,9 +258,9 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                   <CheckCircle2 className="w-4 h-4" />
                   <span className="text-sm font-semibold">{t('withinRange', { distance: Math.round(distance!) })}</span>
                 </div>
-                <h3 className="font-bold text-xl">{t('arExperienceAvailable')}</h3>
+                <h3 className="font-bold text-xl">{t(isModuleStation ? 'stationPlayerReady' : 'arExperienceAvailable')}</h3>
                 <p className="text-sm text-white/85 mt-1.5 mb-6 leading-relaxed">
-                  {t('closeEnoughDescription')}
+                  {t(isModuleStation ? 'stationPlayerReadyDescription' : 'closeEnoughDescription')}
                 </p>
                 <div className="space-y-2.5">
                   <button
@@ -304,7 +268,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                     className="w-full min-h-[56px] bg-white text-primary rounded-2xl font-extrabold flex items-center justify-center gap-2 shadow-lg pressable"
                   >
                     <Play className="w-5 h-5" fill="currentColor" />
-                    <span>{t('startARExperience')}</span>
+                    <span>{t(isModuleStation ? 'stationPlayerStart' : 'startARExperience')}</span>
                   </button>
                   <button
                     onClick={handleNavigateToStation}
@@ -314,96 +278,6 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
                     <span>{navigateLabel}</span>
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Ohne AR (z. B. Stationen aus der Stationsverwaltung): vor Ort abschließen, ggf. mit Quiz */}
-          {!needsLogin && !isCompleted && !hasARRoute && (
-            <motion.div
-              className="surface-card p-6"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h3 className="font-bold text-lg text-center">{t('informationStation')}</h3>
-              <p className="text-sm text-muted-foreground mt-1.5 mb-5 text-center">
-                {!canCompleteOnSite
-                  ? imageSequence.length > 0 ? t('stationImageSequenceGoThere') : t('noARExperience')
-                  : imageSequencePending
-                    ? t('stationImageSequenceIntro')
-                    : isGuest
-                      ? t('stationGuestNoCompletion')
-                      : station.quiz
-                        ? t('stationQuizIntro')
-                        : t('stationCompleteOnSite')}
-              </p>
-              {isGuest && canCompleteOnSite && imageSequencePending && (
-                <p className="-mt-3 mb-5 flex items-center justify-center gap-2 text-center text-sm text-gold-foreground">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0 text-gold" />
-                  {t('stationGuestNoCompletion')}
-                </p>
-              )}
-
-              {canCompleteOnSite && !imageSequencePending && !isGuest && station.quiz && (
-                <fieldset className="mb-5">
-                  <legend className="font-bold mb-3">{station.quiz.question}</legend>
-                  <div className="space-y-2">
-                    {station.quiz.options.map((option, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        aria-pressed={quizAnswer === index}
-                        onClick={() => {
-                          setQuizAnswer(index);
-                          setQuizWrong(false);
-                        }}
-                        className={`w-full min-h-[48px] px-4 py-2.5 rounded-2xl border-2 text-left font-semibold transition-colors ${quizAnswer === index
-                          ? 'border-primary bg-primary-soft text-primary-dark'
-                          : 'border-border bg-card hover:border-border-strong'
-                          }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                  {quizWrong && (
-                    <p role="alert" className="mt-3 flex items-center gap-2 text-sm font-semibold text-destructive">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      {t('stationQuizWrong')}
-                    </p>
-                  )}
-                </fieldset>
-              )}
-
-              <div className="space-y-2.5">
-                {canCompleteOnSite && imageSequencePending && (
-                  <button
-                    onClick={() => setImageSequenceOpen(true)}
-                    className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable"
-                  >
-                    <Play className="w-5 h-5" fill="currentColor" />
-                    <span>{t('stationImageSequenceStart')}</span>
-                  </button>
-                )}
-                {canCompleteOnSite && !imageSequencePending && !isGuest && (
-                  <button
-                    onClick={handleCompleteInfoStation}
-                    disabled={!!station.quiz && quizAnswer === null}
-                    className="w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-primary transition-colors pressable disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>{t('completeStation')}</span>
-                  </button>
-                )}
-                <button
-                  onClick={handleNavigateToStation}
-                  className={canCompleteOnSite
-                    ? 'w-full min-h-[48px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable'
-                    : 'w-full min-h-[52px] bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors pressable'}
-                >
-                  <Navigation className="w-5 h-5" />
-                  <span>{navigateLabel}</span>
-                </button>
               </div>
             </motion.div>
           )}
@@ -465,31 +339,14 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
         position="bottom-right"
       />
 
-      {createPortal(
-        <AnimatePresence>
-          {imageSequenceOpen && (
-            <StationImageSequence
-              title={station.title}
-              slides={imageSequence}
-              finishLabel={isCompleted || isGuest ? t('stationImageSequenceFinish') : station.quiz ? t('stationImageSequenceToQuiz') : t('completeStation')}
-              onFinish={handleImageSequenceFinish}
-              onClose={() => setImageSequenceOpen(false)}
-              arChrome={arChrome}
-            />
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-
       <GuestWarningDialog
         open={showGuestWarning}
         onCancel={() => setShowGuestWarning(false)}
         onContinue={() => {
           setShowGuestWarning(false);
           onEnableGuestStart?.();
-          // AR: Proximity prüft die AR-Ansicht; Bildfolge nur vor Ort direkt starten
+          // Proximity prüft die Route selbst
           if (hasARRoute) handleStartARExperience();
-          else if (canCompleteOnSite && imageSequence.length > 0) setImageSequenceOpen(true);
         }}
       />
     </motion.div>

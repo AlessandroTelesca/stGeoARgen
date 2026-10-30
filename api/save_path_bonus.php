@@ -47,10 +47,10 @@ if ($stmt->fetch()) {
     ]);
 }
 
-// Pfad muss existieren: Stationen des Pfads aus fest eingebauten und eigenen Stationen zählen
+// Pfad muss existieren: Stationen des Pfads aus fest eingebauten und eigenen (veröffentlichten) Stationen zählen
 $totalStmt = $db->prepare(
     'SELECT (SELECT COUNT(*) FROM builtin_stations WHERE path_id = ?)
-          + (SELECT COUNT(*) FROM custom_stations WHERE path_id = ?) AS total'
+          + (SELECT COUNT(*) FROM custom_stations WHERE path_id = ? AND published = 1) AS total'
 );
 $totalStmt->execute([$pathId, $pathId]);
 $totalStations = (int) $totalStmt->fetchColumn();
@@ -64,7 +64,7 @@ $doneStmt = $db->prepare(
     'SELECT COUNT(DISTINCT up.station_id) FROM user_progress up
      WHERE up.user_id = ? AND up.completed = 1 AND up.station_id <> 0
        AND (up.station_id IN (SELECT station_id FROM builtin_stations WHERE path_id = ?)
-            OR up.station_id IN (SELECT id FROM custom_stations WHERE path_id = ?))'
+            OR up.station_id IN (SELECT id FROM custom_stations WHERE path_id = ? AND published = 1))'
 );
 $doneStmt->execute([$userId, $pathId, $pathId]);
 if ((int) $doneStmt->fetchColumn() < $totalStations) {

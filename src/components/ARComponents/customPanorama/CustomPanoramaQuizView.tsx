@@ -71,6 +71,11 @@ interface CustomPanoramaQuizViewProps {
   onCompleteStation?: (stationId: number) => void;
   isCurrentStationCompleted?: boolean;
   isGuestMode?: boolean;
+  /**
+   * Eingebettet in die Modul-Bühne (StationModulePlayer): Standort prüft schon die Route, die Bühne
+   * schließt die Station ab. Nach dem Quiz erscheint stattdessen ein Weiter-Button.
+   */
+  embedded?: { continueLabel: string; onContinue: () => void };
 }
 
 /** DOM-Panel, das an einer festen Richtung (Drehwinkel wie PANEL_YAWS_DEG) im Raum hängt */
@@ -374,6 +379,7 @@ export const CustomPanoramaQuizView = ({
   onCompleteStation,
   isCurrentStationCompleted = false,
   isGuestMode = false,
+  embedded,
 }: CustomPanoramaQuizViewProps) => {
   const { t } = useLanguage();
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -383,7 +389,7 @@ export const CustomPanoramaQuizView = ({
   const sessionRef = useRef<CustomPanoramaARSession | null>(null);
   const panelLayerRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(!!embedded);
   const [hasStarted, setHasStarted] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -480,7 +486,7 @@ export const CustomPanoramaQuizView = ({
 
   // Beim ersten Versuch richtig beantwortete Fragen
   const firstTryCorrect = useMemo(() => wrongSelections.filter((wrong) => wrong.length === 0).length, [wrongSelections]);
-  const showStationCompleteButton = phase === 'summary' && !hideQuizSummary;
+  const showStationCompleteButton = !embedded && phase === 'summary' && !hideQuizSummary;
   const quizPanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2 + (showStationCompleteButton ? COMPLETE_BUTTON_SAFE_GAP : 0)}px)`;
   const slidePanelMaxHeight = `calc(100vh - ${QUIZ_UI_SAFE_VERTICAL_GAP * 2}px)`;
 
@@ -531,14 +537,7 @@ export const CustomPanoramaQuizView = ({
     return <MobileOnlyNotice />;
   }
 
-  return (
-    <ARProximityGate
-      stationId={station.id}
-      coordinates={{ lat: station.latitude, lng: station.longitude }}
-      stationName={station.title}
-      onNavigateBack={onNavigateHome}
-      onAccessGranted={() => setIsAuthorized(true)}
-    >
+  const content = (
       <>
         <style>{`
           .ar-ui-overlay    { z-index: 20000 !important; }
@@ -718,11 +717,16 @@ export const CustomPanoramaQuizView = ({
                     {t('customPanoramaFinishTitle')}
                   </h3>
                   <p style={{ marginBottom: '8px', color: 'var(--color-green-200)', textShadow: TEXT_SHADOW }}>
-                    {isGuestMode ? t('stationGuestNoCompletion') : t('customPanoramaFinishBody')}
+                    {isGuestMode ? t('stationGuestNoCompletion') : embedded ? t('stationPlayerArFinishBody') : t('customPanoramaFinishBody')}
                   </p>
                   <p className="tabular-nums" style={{ marginBottom: 0, color: 'var(--color-white)', textShadow: TEXT_SHADOW }}>
                     {t('customPanoramaScore', { correct: firstTryCorrect, total: totalQuestions })}
                   </p>
+                  {embedded && (
+                    <button type="button" onClick={embedded.onContinue} style={{ ...primaryButtonStyle, minHeight: '52px', fontSize: '1rem', fontWeight: 800 }}>
+                      {embedded.continueLabel}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -834,6 +838,19 @@ export const CustomPanoramaQuizView = ({
           </div>
         )}
       </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <ARProximityGate
+      stationId={station.id}
+      coordinates={{ lat: station.latitude, lng: station.longitude }}
+      stationName={station.title}
+      onNavigateBack={onNavigateHome}
+      onAccessGranted={() => setIsAuthorized(true)}
+    >
+      {content}
     </ARProximityGate>
   );
 };

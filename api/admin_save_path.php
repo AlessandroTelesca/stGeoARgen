@@ -5,11 +5,14 @@
  * POST (multipart/form-data):
  *   path  – JSON:
  *     { id?, title_de, title_en?, description_de, description_en?, difficulty, estimated_time,
- *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover") | null (kein Bild) }
+ *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover") | null (kein Bild),
+ *       published?: bool – fehlt der Wert, ist ein neuer Pfad ein Entwurf (false) und ein
+ *                          bestehender bleibt unverändert }
  *   cover – neues Pfadbild (JPG/PNG/WebP), nur bei cover_image = "new"
  *
  * Ohne id wird ein neuer Pfad angelegt; die ID wird aus title_de erzeugt und ändert sich danach nie
  * (Fortschritt und Stationen verweisen darauf). Der AR-Pfad ist nicht bearbeitbar.
+ * Neue Pfade landen am Ende der Pfadreihenfolge (sort_order).
  *
  * Response: { success, message, path }
  */
@@ -52,6 +55,15 @@ $coverRef = $coverRef === null || $coverRef === '' ? null : (string) $coverRef;
 $newCoverCount = count(uploadedFiles('cover'));
 if ($newCoverCount > 1 || ($coverRef === 'new') !== ($newCoverCount === 1)) {
     fail('Ungültiges Pfadbild.');
+}
+
+// Entwurf (false) oder veröffentlicht (true); null = nicht angegeben
+$published = null;
+if (isset($input['published'])) {
+    $published = filter_var($input['published'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($published === null) {
+        fail('Ungültiger Wert für „Veröffentlicht“.');
+    }
 }
 
 $isNew = $id === null;
@@ -113,17 +125,18 @@ $params = [
 
 try {
     if ($isNew) {
+        $sortOrder = (int) $db->query('SELECT COALESCE(MAX(sort_order), -1) + 1 FROM custom_paths')->fetchColumn();
         $db->prepare(
-            'INSERT INTO custom_paths (id, title_de, title_en, description_de, description_en, difficulty, estimated_time, cover_image)
-             VALUES (:id, :title_de, :title_en, :description_de, :description_en, :difficulty, :estimated_time, :cover_image)'
-        )->execute($params);
+            'INSERT INTO custom_paths (id, title_de, title_en, description_de, description_en, difficulty, estimated_time, cover_image, published, sort_order)
+             VALUES (:id, :title_de, :title_en, :description_de, :description_en, :difficulty, :estimated_time, :cover_image, :published, :sort_order)'
+        )->execute($params + [':published' => $published ? 1 : 0, ':sort_order' => $sortOrder]);
     } else {
         $db->prepare(
             'UPDATE custom_paths SET title_de = :title_de, title_en = :title_en, description_de = :description_de,
                description_en = :description_en, difficulty = :difficulty, estimated_time = :estimated_time,
-               cover_image = :cover_image
+               cover_image = :cover_image, published = COALESCE(:published, published)
              WHERE id = :id'
-        )->execute($params);
+        )->execute($params + [':published' => $published === null ? null : ($published ? 1 : 0)]);
     }
 
     if ($previousCover !== null && $previousCover !== $coverImage) {

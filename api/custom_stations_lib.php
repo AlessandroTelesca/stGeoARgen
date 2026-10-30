@@ -1,20 +1,33 @@
 <?php
 /**
  * Gemeinsame Helfer für die über die Stationsverwaltung angelegten Stationen und Pfade
- * (Tabellen custom_stations / custom_paths, Bilder in api/uploads/stations/).
+ * (Tabellen custom_stations / custom_paths, Bilder und Audiodateien in api/uploads/stations/).
  */
 
 require_once __DIR__ . '/config.php';
+// Modul-Validierung (benutzt fail(), requiredText() usw. aus dieser Datei erst zur Laufzeit –
+// station_modules_lib.php bindet deshalb nichts ein und wird nur über diese Datei geladen)
+require_once __DIR__ . '/station_modules_lib.php';
 
 const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
 const STATION_MAX_SLIDES = 10;
 // 360°-Stationen: 10 feste Plätze rund um die Kamera, einer davon fürs Quiz (CustomPanoramaQuizView.tsx)
 const STATION_MAX_PANORAMA_SLIDES = 9;
 const STATION_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const STATION_MAX_AUDIO_BYTES = 8 * 1024 * 1024;
 const STATION_IMAGE_TYPES = [
     'image/jpeg' => 'jpg',
     'image/png'  => 'png',
     'image/webp' => 'webp',
+];
+// video/mp4 nur, weil libmagic (finfo) M4A-Dateien oft so erkennt
+const STATION_AUDIO_TYPES = [
+    'audio/mpeg'  => 'mp3',
+    'audio/mp3'   => 'mp3',
+    'audio/mp4'   => 'm4a',
+    'audio/x-m4a' => 'm4a',
+    'audio/m4a'   => 'm4a',
+    'video/mp4'   => 'm4a',
 ];
 const PATH_DIFFICULTIES = ['Einfach', 'Mittel', 'Schwer'];
 /** image_sequence: Bildfolge mit Texten (+ optionales Quiz); panorama_quiz: 360°-Bild mit Quiz (GyroARVisualizer) */
@@ -65,6 +78,8 @@ function formatPathRow(array $row): array {
         'difficulty' => $row['difficulty'],
         'estimated_time' => $row['estimated_time'],
         'cover_image' => isValidStationImageName($row['cover_image']) ? $row['cover_image'] : null,
+        'published' => (bool) ($row['published'] ?? 1),
+        'sort_order' => (int) ($row['sort_order'] ?? 0),
         'created_at' => $row['created_at'],
         'updated_at' => $row['updated_at'],
     ];
@@ -103,23 +118,26 @@ function decodeStationSlides(?string $json): array {
 }
 
 /**
- * Alle Bilddateien einer Station (Profilbild, Bilder der Bildfolge, 360°-Bild, Bilder der Quizfragen).
+ * Alle Dateien einer Station (Profilbild, Bilder der Bildfolge, 360°-Bild, Bilder der Quizfragen
+ * der älteren Spalten sowie alle Medien aus den Modulen).
  */
 function stationImageFiles(array $row): array {
-    $files = array_column(decodeStationSlides($row['slides']), 'image');
+    $files = array_column(decodeStationSlides($row['slides'] ?? null), 'image');
     $questionImages = array_column(decodeQuizQuestions($row['quiz_questions'] ?? null), 'image');
     foreach ([$row['cover_image'], $row['panorama_image'] ?? null, ...$questionImages] as $file) {
         if (isValidStationImageName($file)) {
             $files[] = $file;
         }
     }
+    $files = array_merge($files, stationModuleMediaNames($row['modules'] ?? null));
     return array_values(array_unique($files));
 }
 
 /**
  * Prüft eine Quizfrage aus der Anfrage; bricht bei Fehlern mit 400 ab.
  * $label benennt die Frage in Fehlermeldungen (z. B. „Quizfrage 2“).
- * Rückgabe: { question_de, question_en, options_de, options_en, correct_answer }
+ * Rückgabe: { question_de, question_en, options_de, options_en, correct_answer, explanation_de, explanation_en }
+ * (das Bild der Frage prüft der Aufrufer)
  */
 function parseQuizQuestion($quiz, string $label): array {
     if (!is_array($quiz)) {
@@ -160,6 +178,8 @@ function parseQuizQuestion($quiz, string $label): array {
         'options_de' => $optionsDe,
         'options_en' => $optionsEn,
         'correct_answer' => $correct,
+        'explanation_de' => optionalText($quiz, 'explanation_de', 1000, "$label: Erklärung (DE)"),
+        'explanation_en' => optionalText($quiz, 'explanation_en', 1000, "$label: Erklärung (EN)"),
     ];
 }
 
@@ -203,6 +223,12 @@ function formatStationRow(array $row): array {
         ];
     }
 
+    // Module (JSON-Array, siehe src/stationModules/types.ts); null = ältere Station ohne Module
+    $modules = json_decode($row['modules'] ?? '', true);
+    if (!is_array($modules) || !array_is_list($modules)) {
+        $modules = null;
+    }
+
     return [
         'id' => (int) $row['id'],
         'path_id' => $row['path_id'],
@@ -222,6 +248,9 @@ function formatStationRow(array $row): array {
         'latitude' => (float) $row['latitude'],
         'longitude' => (float) $row['longitude'],
         'quiz' => $quiz,
+        'modules' => $modules,
+        'published' => (bool) ($row['published'] ?? 1),
+        'sort_order' => (int) ($row['sort_order'] ?? 0),
         'created_at' => $row['created_at'],
         'updated_at' => $row['updated_at'],
     ];
@@ -252,39 +281,53 @@ function uploadedFiles(string $field): array {
 
 /**
  * Prüft und speichert die hochgeladenen Dateien der angegebenen Formularfelder.
+ * $kindsByField: [feld => [Art je Datei in Upload-Reihenfolge: 'image' | 'audio']].
+ * Bilder: finfo + getimagesize (JPG, PNG, WebP); Audio: nur Audio-MIME-Typen (MP3, M4A) und Größenlimit.
  * Gibt [feld => [neue Dateinamen in Upload-Reihenfolge]] zurück. Bei einem Fehler
  * werden alle in diesem Request gespeicherten Dateien gelöscht und mit 400 abgebrochen.
  */
-function storeUploadedImages(array $fields): array {
+function storeUploads(array $kindsByField): array {
     if (!is_dir(STATION_UPLOAD_DIR) && !mkdir(STATION_UPLOAD_DIR, 0755, true)) {
         sendResponse(['success' => false, 'message' => 'Upload-Verzeichnis konnte nicht angelegt werden.'], 500);
     }
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $stored = array_fill_keys($fields, []);
+    $stored = array_fill_keys(array_keys($kindsByField), []);
 
-    foreach ($fields as $field) {
-        foreach (uploadedFiles($field) as $file) {
+    foreach ($kindsByField as $field => $kinds) {
+        foreach (array_values(uploadedFiles($field)) as $index => $file) {
+            $isAudio = ($kinds[$index] ?? 'image') === 'audio';
+            $noun = $isAudio ? 'Audiodatei' : 'Bild';
             $originalName = $file['name'];
+            $maxBytes = $isAudio ? STATION_MAX_AUDIO_BYTES : STATION_MAX_IMAGE_BYTES;
+            $extension = null;
             $fail = null;
-            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > STATION_MAX_IMAGE_BYTES) {
-                $fail = "Bild \"$originalName\" ist zu groß.";
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > $maxBytes) {
+                $fail = "$noun \"$originalName\" ist zu groß.";
             } elseif ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-                $fail = "Bild \"$originalName\" konnte nicht hochgeladen werden.";
+                $fail = "$noun \"$originalName\" konnte nicht hochgeladen werden.";
             } else {
                 $mime = $finfo->file($file['tmp_name']);
-                if (!isset(STATION_IMAGE_TYPES[$mime]) || @getimagesize($file['tmp_name']) === false) {
-                    $fail = "Bild \"$originalName\" hat kein unterstütztes Format (JPG, PNG, WebP).";
+                if ($isAudio) {
+                    $extension = STATION_AUDIO_TYPES[$mime] ?? null;
+                    if ($extension === null) {
+                        $fail = "Audiodatei \"$originalName\" hat kein unterstütztes Format (MP3, M4A).";
+                    }
+                } else {
+                    $extension = STATION_IMAGE_TYPES[$mime] ?? null;
+                    if ($extension === null || @getimagesize($file['tmp_name']) === false) {
+                        $fail = "Bild \"$originalName\" hat kein unterstütztes Format (JPG, PNG, WebP).";
+                    }
                 }
             }
 
             if ($fail === null) {
-                $filename = bin2hex(random_bytes(16)) . '.' . STATION_IMAGE_TYPES[$mime];
+                $filename = bin2hex(random_bytes(16)) . '.' . $extension;
                 if (move_uploaded_file($file['tmp_name'], STATION_UPLOAD_DIR . '/' . $filename)) {
                     $stored[$field][] = $filename;
                     continue;
                 }
-                $fail = "Bild \"$originalName\" konnte nicht gespeichert werden.";
+                $fail = "$noun \"$originalName\" konnte nicht gespeichert werden.";
             }
 
             deleteStationImages(array_merge(...array_values($stored)));
@@ -296,7 +339,27 @@ function storeUploadedImages(array $fields): array {
 }
 
 /**
- * Löscht Bilddateien aus dem Upload-Verzeichnis. Nur eigene, generierte
+ * Wie storeUploads für ein Feld; $kinds: Art je Datei ('image' | 'audio').
+ * Gibt die neuen Dateinamen in Upload-Reihenfolge zurück.
+ */
+function storeUploadedFiles(string $field, array $kinds): array {
+    return storeUploads([$field => $kinds])[$field];
+}
+
+/**
+ * Wie storeUploads, aber alle Dateien der angegebenen Felder sind Bilder (z. B. das Profilbild im Feld "cover").
+ * Gibt [feld => [neue Dateinamen in Upload-Reihenfolge]] zurück.
+ */
+function storeUploadedImages(array $fields): array {
+    $kindsByField = [];
+    foreach ($fields as $field) {
+        $kindsByField[$field] = array_fill(0, count(uploadedFiles($field)), 'image');
+    }
+    return storeUploads($kindsByField);
+}
+
+/**
+ * Löscht Bild- und Audiodateien aus dem Upload-Verzeichnis. Nur eigene, generierte
  * Dateinamen werden akzeptiert (kein Path-Traversal).
  */
 function deleteStationImages(array $filenames): void {
@@ -307,6 +370,7 @@ function deleteStationImages(array $filenames): void {
     }
 }
 
+/** Gültiger, selbst generierter Dateiname einer Bild- oder Audiodatei (Name bleibt aus Altlasten-Gründen). */
 function isValidStationImageName($filename): bool {
-    return is_string($filename) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $filename) === 1;
+    return is_string($filename) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp|mp3|m4a)$/', $filename) === 1;
 }

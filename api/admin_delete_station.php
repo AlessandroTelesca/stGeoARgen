@@ -1,6 +1,6 @@
 <?php
 /**
- * admin_delete_station.php – Löscht eine Custom-Station samt Bildern (nur Admin)
+ * admin_delete_station.php – Löscht eine Custom-Station samt Bildern und Audiodateien (nur Admin)
  *
  * POST (JSON body): { id }
  * Response: { success, message }
@@ -22,7 +22,7 @@ if (!$id || $id <= 0) {
 
 try {
     $db = getDB();
-    $stmt = $db->prepare('SELECT cover_image, slides, panorama_image, quiz_questions FROM custom_stations WHERE id = ?');
+    $stmt = $db->prepare('SELECT * FROM custom_stations WHERE id = ?');
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     if (!$row) {
