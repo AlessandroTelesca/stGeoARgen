@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ImagePlus, Route, Trash2 } from 'lucide-react';
-import { BackLink, PageIntro } from '../PageHeader';
+import { PageIntro } from '../PageHeader';
+import { Switch } from '../Settings';
 import { FieldLabel } from '../AuthShell';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -15,6 +16,7 @@ import {
   type PathDifficulty,
 } from '../../services/api';
 import { FieldError, FormSection, LanguageTabs, SubmitFeedback, inputClass, prepareImage, useScrollToFirstError, type ImageItem } from './adminFormParts';
+import { DraftChip } from './adminUi';
 
 const DIFFICULTIES: PathDifficulty[] = ['Einfach', 'Mittel', 'Schwer'];
 
@@ -22,8 +24,8 @@ interface PathAdminFormProps {
   /** Zu bearbeitender Pfad; null = neuen Pfad anlegen */
   path: CustomPath | null;
   adminPassword: string;
-  /** Lädt Pfade/Stationen neu, nachdem gespeichert wurde */
-  onSaved: () => Promise<void>;
+  /** Nach dem Speichern: Daten neu laden und zum Pfad wechseln */
+  onSaved: (path: CustomPath) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -39,6 +41,8 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
   const [descriptionEn, setDescriptionEn] = useState(path?.description_en ?? '');
   const [difficulty, setDifficulty] = useState<PathDifficulty>(path?.difficulty ?? 'Einfach');
   const [estimatedTime, setEstimatedTime] = useState(path?.estimated_time ?? '');
+  // Neue Pfade starten als Entwurf, damit sie erst mit Stationen sichtbar werden
+  const [published, setPublished] = useState(path?.published ?? false);
   const [cover, setCover] = useState<ImageItem | null>(
     path?.cover_image ? { kind: 'existing', filename: path.cover_image, url: customStationImageUrl(path.cover_image) } : null
   );
@@ -93,12 +97,13 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
       difficulty,
       estimated_time: estimatedTime.trim(),
       cover_image: cover === null ? null : cover.kind === 'existing' ? cover.filename : 'new',
+      published,
     };
 
     setSaving(true);
     try {
-      await apiAdminSavePath(adminPassword, payload, cover?.kind === 'new' ? cover.file : null);
-      await onSaved();
+      const saved = await apiAdminSavePath(adminPassword, payload, cover?.kind === 'new' ? cover.file : null);
+      await onSaved(saved);
       toast.success(path ? t('pathEditorUpdated') : t('pathEditorCreated'), { description: payload.title_de });
     } catch (err) {
       setSaveError(err instanceof Error && err.message ? err.message : t('pathEditorSaveFailed'));
@@ -108,17 +113,55 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 pt-5 pb-12">
-        <BackLink onBack={onCancel} label={t('cancel')} />
+    <div>
+      <div className="max-w-2xl">
         <PageIntro
-          className="mt-5 mb-6"
+          className="mt-2 mb-6"
           title={path ? t('pathEditorEditTitle') : t('pathEditorNewTitle')}
           description={t('pathEditorFormIntro')}
           icon={<Route className="w-6 h-6" />}
         />
 
         <form ref={formRef} onSubmit={handleSave} className="space-y-5" noValidate>
+          {/* Titelbild mit Live-Titel – so erscheint der Pfad in der App */}
+          <section className="surface-card overflow-hidden">
+            <div className="relative aspect-[16/7] brand-gradient">
+              {cover ? (
+                <img src={cover.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="topo-texture absolute inset-0" aria-hidden="true" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-black/0" aria-hidden="true" />
+              {!published && <span className="absolute top-3 left-3"><DraftChip onImage /></span>}
+              <div className="absolute top-3 right-3 flex gap-1.5">
+                {cover && (
+                  <button
+                    type="button"
+                    onClick={() => setCover(null)}
+                    aria-label={t('pathEditorRemoveCover')}
+                    className="w-10 h-10 rounded-full bg-black/45 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <label className="h-10 px-3.5 rounded-full bg-black/45 backdrop-blur-md text-white text-sm font-bold flex items-center gap-2 cursor-pointer hover:bg-black/60 transition-colors focus-within:ring-4 focus-within:ring-white/50">
+                  <ImagePlus className="w-4 h-4" />
+                  <span>{cover ? t('stationEditorChangeCover') : t('pathEditorChooseCover')}</span>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    onChange={(e) => void handleCoverChange(e.target.files)}
+                  />
+                </label>
+              </div>
+              <p className={`absolute bottom-3 left-4 right-4 text-[24px] leading-tight font-extrabold text-white drop-shadow-sm ${(isEn ? titleEn || titleDe : titleDe) ? '' : 'opacity-60'}`}>
+                {(isEn ? titleEn || titleDe : titleDe) || t('pathEditorNamePlaceholder')}
+              </p>
+            </div>
+          </section>
+
           <FormSection title={t('stationEditorSectionTexts')} description={t('stationEditorTextsIntro')}>
             <LanguageTabs value={textLanguage} onChange={setTextLanguage} />
             <div>
@@ -178,31 +221,15 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
             </div>
           </FormSection>
 
-          <FormSection title={t('pathEditorSectionCover')} description={t('pathEditorCoverIntro')}>
-            {cover && (
-              <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/3]">
-                <img src={cover.url} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setCover(null)}
-                  aria-label={t('pathEditorRemoveCover')}
-                  className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/45 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+
+          <FormSection title={t('adminSectionSettings')}>
+            <div className="flex items-center justify-between gap-4 rounded-2xl bg-muted/60 p-4">
+              <div className="min-w-0">
+                <span className="font-bold">{t('adminPublishedLabel')}</span>
+                <p className="text-sm text-muted-foreground leading-snug">{published ? t('adminPathPublishedHint') : t('adminPathDraftHint')}</p>
               </div>
-            )}
-            <label className="w-full min-h-[48px] bg-card text-primary border-2 border-primary/25 hover:border-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer focus-within:ring-4 focus-within:ring-primary/15">
-              <ImagePlus className="w-5 h-5" />
-              <span>{cover ? t('stationEditorChangeCover') : t('pathEditorChooseCover')}</span>
-              <input
-                ref={coverInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                onChange={(e) => void handleCoverChange(e.target.files)}
-              />
-            </label>
+              <Switch checked={published} onChange={() => setPublished((p) => !p)} label={t('adminPublishedLabel')} />
+            </div>
           </FormSection>
 
           {saveError ? (
@@ -229,6 +256,13 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
               </span>
             ) : path ? t('stationEditorSaveChanges') : t('pathEditorCreate')}
           </Button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full min-h-[48px] rounded-2xl font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {t('cancel')}
+          </button>
         </form>
       </div>
     </div>

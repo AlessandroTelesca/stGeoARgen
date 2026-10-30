@@ -3,6 +3,8 @@
  * 
  * API-URL kann ueber VITE_API_BASE_URL konfiguriert werden.
  */
+import type { QuizQuestion, StationModule } from '../stationModules/types';
+
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://stgeoargen.iiius.de/api').replace(/\/+$/, '');
 
 export interface ApiResponse<T = unknown> {
@@ -383,7 +385,10 @@ export async function apiGetPointConfig(): Promise<PointConfig> {
 
 // ─── Custom-Stationen (Stationsverwaltung) ──────────────────────────────────
 
-/** Station, wie sie von get_custom_stations.php / admin_save_station.php geliefert wird. */
+/**
+ * Station, wie sie von get_custom_stations.php / admin_get_content.php / admin_save_station.php
+ * geliefert wird. Der Inhalt steckt in `modules` (siehe src/stationModules/types.ts).
+ */
 export interface CustomStation {
     id: number;
     path_id: string;
@@ -395,51 +400,89 @@ export interface CustomStation {
     long_description_en: string | null;
     /** Profilbild (Dateiname in api/uploads/stations/) – Listen und Titelbild */
     cover_image: string;
-    /** 'image_sequence' = Bildfolge mit Texten; 'panorama_quiz' = 360°-Bild mit Quiz (GyroARVisualizer) */
-    station_type: CustomStationType;
-    /** Bildfolge, die beim Start der Station durchgeklickt wird (nur image_sequence) */
-    slides: CustomStationSlide[];
-    /** 360°-Bild (equirektangular, Dateiname in api/uploads/stations/) – nur panorama_quiz */
-    panorama_image: string | null;
-    /** Live-Kamerabild statt 360°-Bild als Hintergrund (panorama_image dann optional) – nur panorama_quiz */
-    live_camera: boolean;
-    /** Quizfragen über dem 360°-Bild – nur panorama_quiz */
-    quiz_questions: CustomQuizQuestion[];
+    /** Ablauf der Station, wird beim Start der Reihe nach abgespielt */
+    modules: StationModule[];
     points: number;
     latitude: number;
     longitude: number;
-    /** Optionale Quizfrage nach der Bildfolge (nur image_sequence) */
-    quiz: CustomQuizQuestion | null;
+    /** false = Entwurf, nur in der Stationsverwaltung sichtbar */
+    published: boolean;
+    /** Position innerhalb des Pfads (aufsteigend) */
+    sort_order: number;
     created_at: string;
     updated_at: string;
 }
 
-export type CustomStationType = 'image_sequence' | 'panorama_quiz';
+/**
+ * Daten zum Anlegen/Aktualisieren. Bildreferenzen sind vorhandene Dateinamen (werden behalten)
+ * oder neue Dateien: `cover_image: 'new'` → `newCover`, in `modules` jedes `'new:N'` → `files[N]`.
+ */
+export type CustomStationInput = Omit<CustomStation, 'id' | 'sort_order' | 'created_at' | 'updated_at'> & { id?: number };
 
-export interface CustomQuizQuestion {
+/** Felder älterer Stationen (vor den Modulen), aus denen `modules` abgeleitet wird */
+interface LegacyQuiz {
     question_de: string;
     question_en: string | null;
     options_de: string[];
     options_en: string[] | null;
     correct_answer: number;
-    /** Optionales Bild zur Frage (nur Fragen von 360°-Stationen) – Dateiname in api/uploads/stations/ */
     image?: string | null;
 }
-
-export interface CustomStationSlide {
-    image: string;
-    text_de: string;
-    text_en: string | null;
+interface LegacyStationFields {
+    station_type?: 'image_sequence' | 'panorama_quiz';
+    slides?: { image: string; text_de: string; text_en: string | null }[];
+    panorama_image?: string | null;
+    live_camera?: boolean;
+    quiz_questions?: LegacyQuiz[];
+    quiz?: LegacyQuiz | null;
 }
 
-/**
- * Daten zum Anlegen/Aktualisieren. Bildreferenzen sind vorhandene Dateinamen (werden behalten)
- * oder neue Dateien: `cover_image: 'new'` → `newCover`, `slides[i].image: 'new:N'` → `newSlideImages[N]`,
- * `panorama_image: 'new'` → `newPanorama`, `quiz_questions[i].image: 'new:N'` → `newQuestionImages[N]`.
- */
-export type CustomStationInput = Omit<CustomStation, 'id' | 'created_at' | 'updated_at'> & { id?: number };
+function legacyQuestion(q: LegacyQuiz): QuizQuestion {
+    return {
+        question_de: q.question_de,
+        question_en: q.question_en ?? null,
+        options_de: q.options_de,
+        options_en: q.options_en ?? null,
+        correct_answer: q.correct_answer,
+        image: q.image ?? null,
+        explanation_de: null,
+        explanation_en: null,
+    };
+}
 
-/** Bild über station_image.php (setzt CORS-Header; nginx liefert uploads/ ohne sie aus). */
+/** Stationen von vor den Modulen: Bildfolge (+ Quiz) bzw. 360°-Quiz als Module darstellen */
+function legacyModules(s: LegacyStationFields): StationModule[] {
+    const slides = Array.isArray(s.slides) ? s.slides : [];
+    const noTitle = { title_de: null, title_en: null };
+    if (s.station_type === 'panorama_quiz') {
+        return [{
+            id: 'legacy-0',
+            ...noTitle,
+            type: 'ar_panorama',
+            background: s.live_camera ? 'camera' : 'panorama',
+            panorama_image: s.panorama_image ?? null,
+            slides,
+            questions: (s.quiz_questions ?? []).map(legacyQuestion),
+        }];
+    }
+    const modules: StationModule[] = [];
+    if (slides.length > 0) modules.push({ id: 'legacy-0', ...noTitle, type: 'slideshow', slides });
+    if (s.quiz) modules.push({ id: 'legacy-1', ...noTitle, type: 'quiz', questions: [legacyQuestion(s.quiz)] });
+    return modules;
+}
+
+/** Serverdaten absichern: ein veralteter Server (ohne modules/published) darf die App nicht zum Absturz bringen. */
+function normalizeStation(s: Partial<CustomStation> & LegacyStationFields): CustomStation {
+    return {
+        ...(s as CustomStation),
+        cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
+        modules: Array.isArray(s.modules) ? s.modules : legacyModules(s),
+        published: s.published !== false,
+        sort_order: typeof s.sort_order === 'number' ? s.sort_order : 0,
+    };
+}
+
+/** Bild bzw. Audio über station_image.php (setzt CORS-Header; nginx liefert uploads/ ohne sie aus). */
 export function customStationImageUrl(filename: string): string {
     return `${API_BASE_URL}/station_image.php?file=${encodeURIComponent(filename)}`;
 }
@@ -448,45 +491,44 @@ function adminHeaders(adminPassword: string): HeadersInit {
     return { Authorization: `Bearer ${adminPassword}` };
 }
 
+/** Öffentliche Stationen (ohne Entwürfe und ohne Stationen in Entwurfs-Pfaden) */
 export async function apiGetCustomStations(): Promise<CustomStation[]> {
-    const res = await apiFetch<{ stations: Partial<CustomStation>[] }>('get_custom_stations.php');
-    // Serverdaten absichern: ein veralteter Server (z. B. noch ohne cover_image/slides)
-    // darf die App nicht zum Absturz bringen.
-    return (Array.isArray(res.stations) ? res.stations : []).map((s) => ({
-        ...(s as CustomStation),
-        cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
-        station_type: s.station_type === 'panorama_quiz' ? 'panorama_quiz' : 'image_sequence',
-        slides: Array.isArray(s.slides) ? s.slides : [],
-        panorama_image: typeof s.panorama_image === 'string' ? s.panorama_image : null,
-        live_camera: s.live_camera === true,
-        quiz_questions: Array.isArray(s.quiz_questions) ? s.quiz_questions : [],
-    }));
+    const res = await apiFetch<{ stations: (Partial<CustomStation> & LegacyStationFields)[] }>('get_custom_stations.php');
+    return (Array.isArray(res.stations) ? res.stations : []).map(normalizeStation);
 }
 
 export async function apiAdminVerify(adminPassword: string): Promise<void> {
     await apiFetch('admin_verify.php', { method: 'POST', headers: adminHeaders(adminPassword) });
 }
 
+/** Alle Pfade und Stationen inklusive Entwürfen (nur Admin) */
+export async function apiAdminGetContent(adminPassword: string): Promise<{ paths: CustomPath[]; stations: CustomStation[] }> {
+    const res = await apiFetch<{ paths: Partial<CustomPath>[]; stations: (Partial<CustomStation> & LegacyStationFields)[] }>(
+        'admin_get_content.php',
+        { method: 'POST', headers: adminHeaders(adminPassword) }
+    );
+    return {
+        paths: (Array.isArray(res.paths) ? res.paths : []).map(normalizePath),
+        stations: (Array.isArray(res.stations) ? res.stations : []).map(normalizeStation),
+    };
+}
+
 export async function apiAdminSaveStation(
     adminPassword: string,
     station: CustomStationInput,
     newCover: File | null,
-    newSlideImages: File[],
-    newPanorama: File | null = null,
-    newQuestionImages: File[] = []
+    files: File[]
 ): Promise<CustomStation> {
     const body = new FormData();
     body.append('station', JSON.stringify(station));
     if (newCover) body.append('cover', newCover, newCover.name);
-    newSlideImages.forEach((file) => body.append('slide_images[]', file, file.name));
-    if (newPanorama) body.append('panorama', newPanorama, newPanorama.name);
-    newQuestionImages.forEach((file) => body.append('question_images[]', file, file.name));
-    const res = await apiFetch<{ station: CustomStation }>('admin_save_station.php', {
+    files.forEach((file) => body.append('files[]', file, file.name));
+    const res = await apiFetch<{ station: Partial<CustomStation> & LegacyStationFields }>('admin_save_station.php', {
         method: 'POST',
         headers: adminHeaders(adminPassword),
         body,
     });
-    return res.station;
+    return normalizeStation(res.station);
 }
 
 export async function apiAdminDeleteStation(adminPassword: string, id: number): Promise<void> {
@@ -494,6 +536,24 @@ export async function apiAdminDeleteStation(adminPassword: string, id: number): 
         method: 'POST',
         headers: adminHeaders(adminPassword),
         body: JSON.stringify({ id }),
+    });
+}
+
+/** Neue Reihenfolge: `ids` in gewünschter Reihenfolge (Stationen eines Pfads bzw. alle Custom-Pfade) */
+export async function apiAdminReorder(adminPassword: string, kind: 'paths' | 'stations', ids: (string | number)[]): Promise<void> {
+    await apiFetch('admin_reorder.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body: JSON.stringify({ kind, ids }),
+    });
+}
+
+/** Pfad oder Station veröffentlichen bzw. zum Entwurf machen */
+export async function apiAdminSetPublished(adminPassword: string, kind: 'path' | 'station', id: string | number, published: boolean): Promise<void> {
+    await apiFetch('admin_set_published.php', {
+        method: 'POST',
+        headers: adminHeaders(adminPassword),
+        body: JSON.stringify({ kind, id, published }),
     });
 }
 
@@ -516,28 +576,40 @@ export interface CustomPath {
     estimated_time: string;
     /** Optionales Pfadbild (Dateiname in api/uploads/stations/) */
     cover_image: string | null;
+    /** false = Entwurf: Pfad und seine Stationen sind nur in der Stationsverwaltung sichtbar */
+    published: boolean;
+    /** Position in der Pfadliste (aufsteigend) */
+    sort_order: number;
     created_at: string;
     updated_at: string;
 }
 
 /** Ohne `id` wird ein Pfad angelegt. `cover_image: 'new'` → `newCover`, `null` → kein Bild. */
-export type CustomPathInput = Omit<CustomPath, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+export type CustomPathInput = Omit<CustomPath, 'id' | 'sort_order' | 'created_at' | 'updated_at'> & { id?: string };
+
+function normalizePath(p: Partial<CustomPath>): CustomPath {
+    return {
+        ...(p as CustomPath),
+        published: p.published !== false,
+        sort_order: typeof p.sort_order === 'number' ? p.sort_order : 0,
+    };
+}
 
 export async function apiGetCustomPaths(): Promise<CustomPath[]> {
-    const res = await apiFetch<{ paths: CustomPath[] }>('get_custom_paths.php');
-    return Array.isArray(res.paths) ? res.paths : [];
+    const res = await apiFetch<{ paths: Partial<CustomPath>[] }>('get_custom_paths.php');
+    return (Array.isArray(res.paths) ? res.paths : []).map(normalizePath);
 }
 
 export async function apiAdminSavePath(adminPassword: string, path: CustomPathInput, newCover: File | null): Promise<CustomPath> {
     const body = new FormData();
     body.append('path', JSON.stringify(path));
     if (newCover) body.append('cover', newCover, newCover.name);
-    const res = await apiFetch<{ path: CustomPath }>('admin_save_path.php', {
+    const res = await apiFetch<{ path: Partial<CustomPath> }>('admin_save_path.php', {
         method: 'POST',
         headers: adminHeaders(adminPassword),
         body,
     });
-    return res.path;
+    return normalizePath(res.path);
 }
 
 export async function apiAdminDeletePath(adminPassword: string, id: string): Promise<void> {
