@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X, Flag } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -17,6 +18,22 @@ interface ARStationCompletionDialogProps {
     onNavigateHome: () => void;
     onNavigateToNextStation: () => void;
     onClose?: () => void;
+    /** DOM-Overlay-Root der AR-Ansicht; nur während einer WebXR-Sitzung Portal-Ziel */
+    overlayRoot?: HTMLElement | null;
+}
+
+// Im Body liegt der Dialog über jeder Stations-UI, egal welchen Stapelkontext
+// die Station aufbaut. In einer WebXR-Sitzung ist aber nur der DOM-Overlay-Root
+// sichtbar, dann muss er dort bleiben.
+function resolvePortalTarget(overlayRoot?: HTMLElement | null): HTMLElement {
+    if (overlayRoot) {
+        try {
+            if (overlayRoot.matches(':xr-overlay')) return overlayRoot;
+        } catch {
+            // Browser ohne :xr-overlay-Unterstützung
+        }
+    }
+    return document.body;
 }
 
 function formatDuration(seconds: number): string {
@@ -44,6 +61,7 @@ export const ARStationCompletionDialog = ({
     onNavigateHome,
     onNavigateToNextStation,
     onClose,
+    overlayRoot,
 }: ARStationCompletionDialogProps) => {
     const { t } = useLanguage();
     const completedCount = totalStations - remainingStations;
@@ -69,19 +87,19 @@ export const ARStationCompletionDialog = ({
         },
     ];
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
                     <motion.div
-                        className="ar-completion-backdrop fixed inset-0 z-[11100] bg-gray-900/70 backdrop-blur-sm"
+                        className="ar-completion-backdrop fixed inset-0 z-[40000] bg-gray-900/70 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     />
 
                     <motion.div
-                        className="fixed inset-0 z-[11110] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 z-[40010] flex items-end sm:items-center justify-center p-4"
                         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -171,6 +189,7 @@ export const ARStationCompletionDialog = ({
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        resolvePortalTarget(overlayRoot)
     );
 };

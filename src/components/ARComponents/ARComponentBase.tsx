@@ -443,6 +443,7 @@ export const ARComponentBase = ({
         }}
         onNavigateToNextStation={handleNavigateToNextStation}
         onClose={() => setShowCompletionDialog(false)}
+        overlayRoot={overlayRootRef?.current}
       />
     </div>
   );
