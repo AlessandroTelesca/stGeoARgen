@@ -1,5 +1,7 @@
 An interactive **Augmented Reality (AR) educational platform** that combines geolocation-based exploration with immersive 3D experiences. Users can navigate through curated paths to discover stations, complete quizzes, view AR content, and earn rewards.
 
+St.GeoARgen is a **student project of Hochschule Furtwangen University (HFU)**, developed in collaboration with the **city of St. Georgen im Schwarzwald**.
+
 ## Features
 
 - 🗺️ **Geolocation-Based Discovery** - Navigate to real-world stations using GPS coordinates
