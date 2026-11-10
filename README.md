@@ -160,10 +160,15 @@ Einrichtung auf dem PHP-Server:
 - 🔳 [QR Code Information](QR_CODES.md)
 - 📋 [Design Guidelines](src/guidelines/Guidelines.md)
 
+## Credits
+
+- 3D model **"BR 01 german steam locomotive"** by [Tom Zimmermann (tomm8)](https://sketchfab.com/tomm8), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) – [source on Sketchfab](https://sketchfab.com/3d-models/br-01-german-steam-locomotive-cdf7e415aa75441897c0b5dfb384302f). Scaled and positioned for the Bahnhof station.
+- Further third-party material: [src/Attributions.md](src/Attributions.md)
+
 ## License
 
-Private project. All rights reserved.
+**All rights reserved – this project is not open source.** The source code is public for viewing only. Using, copying, modifying or redistributing it is not permitted without prior written permission. See [LICENSE](LICENSE).
 
 ## Contributing
 
-Contributions are not possible at this stage.
+Contributions are not accepted. Pull requests will not be reviewed or merged.
