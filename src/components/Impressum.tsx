@@ -1,4 +1,4 @@
-import { ExternalLink, Mail, MapPin, Globe, Phone } from 'lucide-react';
+import { ExternalLink, Github, Mail, MapPin, Globe, Phone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackLink } from './PageHeader';
 import GisslerBranding from './GisslerBranding';
@@ -135,7 +135,12 @@ export function Impressum({ onBack }: ImpressumProps) {
             </div>
 
             {[
-              { name: 'Alessandro Telesca', role: isDE ? 'Entwicklung' : 'Development', linkedin: 'https://www.linkedin.com/in/alessandro-telesca-086784256/' },
+              {
+                name: 'Alessandro Telesca',
+                role: 'Lead Developer & Architect',
+                linkedin: 'https://www.linkedin.com/in/alessandro-telesca-086784256/',
+                github: 'https://github.com/AlessandroTelesca',
+              },
               { name: 'Tobias Both', role: isDE ? 'Entwicklung & 3D-Modellierung' : 'Development & 3D Modelling', linkedin: 'https://www.linkedin.com/in/tobias-both-5b7838255/' },
               { name: 'Minh Khanh Nguyen', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
               { name: 'Mu-Hong Noah Basset', role: isDE ? 'Entwicklung' : 'Development', linkedin: null },
@@ -168,6 +173,19 @@ export function Impressum({ onBack }: ImpressumProps) {
                         LinkedIn
                       </a>
                     </div >
+                  )}
+                  {person.github && (
+                    <div className="flex items-center gap-1 pt-1">
+                      <Github className="w-4 h-4 text-primary flex-shrink-0" />
+                      <a
+                        href={person.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline cursor-pointer"
+                      >
+                        GitHub
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
