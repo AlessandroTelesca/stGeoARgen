@@ -2,6 +2,7 @@
       "name": "StGeoARgen",
       "version": "0.1.0",
       "private": true,
+      "license": "UNLICENSED",
       "dependencies": {
             "@emailjs/browser": "^4.4.1",
             "@radix-ui/react-accordion": "^1.2.3",
