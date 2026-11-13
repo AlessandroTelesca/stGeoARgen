@@ -3,7 +3,7 @@ name: Build and Deploy to GitHub Pages and Web Server
 on:
   push:
     branches:
-      - main
+      - release
   workflow_dispatch:
 
 permissions:

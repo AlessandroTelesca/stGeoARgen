@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPPORT_EMAIL?: string;
   /** Nur im Dev-Server: 'true' schaltet das Geofencing für Tests ab */
   readonly VITE_DISABLE_GEO?: string;
+  /** 'false' blendet das Adminpanel und dessen Pfade/Stationen aus (Release-Build) */
+  readonly VITE_ENABLE_ADMIN_PANEL?: string;
 }
 
 interface ImportMeta {

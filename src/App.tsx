@@ -4,6 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from './hooks/useAuth';
 import { getUserProgress, saveStationProgress, resetUserProgress, deleteAccount } from './services/auth';
+import { ADMIN_PANEL_ENABLED } from './lib/features';
 import { apiGetTreasureReward, apiSavePathBonus, apiSaveTreasureReward, apiGetUserPoints, apiGetCustomStations, apiGetCustomPaths, customStationImageUrl, TREASURE_REWARD_KEY, AR_PATH_ID, type CustomPath, type CustomStation } from './services/api';
 import { usePointConfig } from './contexts/PointConfigContext';
 import { Header } from './components/Header';
@@ -289,7 +290,10 @@ export default function App() {
     else if (path === '/datenschutz') setCurrentView('datenschutz');
     else if (path === '/info') setCurrentView('info');
     else if (path === '/partner') setCurrentView('partner');
-    else if (path === '/admin/stations' || path.startsWith('/admin/stations/')) setCurrentView('admin-stations');
+    else if (path === '/admin/stations' || path.startsWith('/admin/stations/')) {
+      if (ADMIN_PANEL_ENABLED) setCurrentView('admin-stations');
+      else navigate('/', { replace: true });
+    }
     else if (path === '/' || path === '/home') setCurrentView('home');
   }, [location.pathname]);
 
@@ -719,6 +723,10 @@ export default function App() {
   const [customContentLoaded, setCustomContentLoaded] = useState(false);
 
   const loadCustomContent = useCallback(async () => {
+    if (!ADMIN_PANEL_ENABLED) {
+      setCustomContentLoaded(true);
+      return;
+    }
     // Unabhängig laden: fällt eins aus (Server nicht erreichbar, Tabelle fehlt), bleibt der Rest nutzbar
     const [pathsResult, stationsResult] = await Promise.allSettled([apiGetCustomPaths(), apiGetCustomStations()]);
     if (pathsResult.status === 'fulfilled') setCustomPaths(pathsResult.value);
@@ -1022,7 +1030,7 @@ export default function App() {
     } else if (view === 'info') {
       navigate('/info');
       setCurrentView('info');
-    } else if (view === 'admin-stations') {
+    } else if (view === 'admin-stations' && ADMIN_PANEL_ENABLED) {
       navigate('/admin/stations');
       setCurrentView('admin-stations');
     }
@@ -1348,7 +1356,7 @@ export default function App() {
             setCurrentView('impressum');
             navigate('/impressum');
           }}
-          onNavigateToStationEditor={() => handleNavigate('admin-stations')}
+          onNavigateToStationEditor={ADMIN_PANEL_ENABLED ? () => handleNavigate('admin-stations') : undefined}
         />
       )}
 
@@ -1445,7 +1453,7 @@ export default function App() {
           <Info onBack={handleBackToDashboard} />
         )}
 
-        {currentView === 'admin-stations' && (
+        {ADMIN_PANEL_ENABLED && currentView === 'admin-stations' && (
           <StationAdminPanel
             onDataChanged={loadCustomContent}
             onBack={() => handleNavigate('settings')}
