@@ -72,9 +72,7 @@ define('ADMIN_PASSWORD', resolveDbSetting('ADMIN_PASSWORD', $fileCredentials, ''
 $prodOrigin = rtrim(getenv('FRONTEND_URL') ?: 'https://stgeoargen.iiius.de', '/');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $isLocalDev = (bool) preg_match('#^http://(localhost|127\.0\.0\.1)(:\d+)?$#', $requestOrigin);
-// GitHub-Pages-Build (Repo AlessandroTelesca/stGeoARgen, Pfad /stGeoARgen/) – der Origin enthält keinen Pfad.
-$isGithubPages = $requestOrigin === 'https://alessandrotelesca.github.io';
-$allowed_origin = ($isLocalDev || $isGithubPages) ? $requestOrigin : $prodOrigin;
+$allowed_origin = $isLocalDev ? $requestOrigin : $prodOrigin;
 header("Access-Control-Allow-Origin: $allowed_origin");
 header("Vary: Origin");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
