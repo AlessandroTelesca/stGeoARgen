@@ -30,7 +30,7 @@ import {
   type CustomStationInput,
 } from '../../services/api';
 import { MAX_MODULES_PER_STATION, mapModuleMedia, pickLang, type MediaKind, type StationModule } from '../../stationModules/types';
-import { MODULE_META, type DraftMedia, type DraftModule } from '../../stationModules/meta';
+import { MODULE_META, isArModuleType, type DraftMedia, type DraftModule } from '../../stationModules/meta';
 import { MODULE_EDITORS } from '../../stationModules/editor/registry';
 import type { ModuleEditorProps, ModuleErrors } from '../../stationModules/editor/types';
 import { LocalizedInput, LocalizedTextarea } from '../../stationModules/editor/fields';
@@ -303,7 +303,7 @@ export function StationEditor({
   const isEn = lang === 'en';
   const lat = parseCoordinate(draft.latitude);
   const lng = parseCoordinate(draft.longitude);
-  const hasArModule = draft.modules.some((m) => m.type === 'ar_panorama');
+  const hasArModule = draft.modules.some((m) => isArModuleType(m.type));
   const title = pickLang(lang, draft.titleDe, draft.titleEn);
 
   // Andere Stationen im gewählten Pfad als Kartenkontext, nummeriert in Pfadreihenfolge

@@ -10,6 +10,7 @@ import {
   Camera,
   ListOrdered,
   Orbit,
+  ScanEye,
   SquareSplitHorizontal,
   type LucideIcon,
 } from 'lucide-react';
@@ -55,6 +56,8 @@ export interface ModuleMeta<T extends ModuleType = ModuleType> {
   category: ModuleCategory;
   /** Darf höchstens einmal pro Station vorkommen */
   singleton?: boolean;
+  /** Füllt den Modulbereich der Bühne ganz aus (WebGL-Fläche): keine Slide-Animation, Vorschau baut nur bei Strukturänderung neu auf */
+  immersive?: true;
   presets: ModulePreset<T>[];
 }
 
@@ -195,6 +198,29 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
         panorama_image: null,
         slides: [],
         questions: [emptyQuestion()],
+      }),
+    })),
+  },
+  ar_discover: {
+    type: 'ar_discover',
+    icon: ScanEye,
+    labelKey: 'moduleArDiscover',
+    descriptionKey: 'moduleArDiscoverDesc',
+    category: 'discover',
+    immersive: true,
+    presets: (['panorama', 'camera'] as const).map((background) => ({
+      id: background,
+      labelKey: `presetArDiscover_${background}`,
+      descriptionKey: `presetArDiscover_${background}Desc`,
+      create: () => ({
+        ...base(),
+        type: 'ar_discover' as const,
+        background,
+        panorama_image: null,
+        intro_de: null,
+        intro_en: null,
+        require_all: false,
+        points: [],
       }),
     })),
   },
@@ -392,6 +418,7 @@ export const MODULE_ORDER: ModuleType[] = [
   'timeline',
   'before_after',
   'ar_panorama',
+  'ar_discover',
   'hotspots',
   'photo',
   'quiz',
@@ -399,6 +426,11 @@ export const MODULE_ORDER: ModuleType[] = [
   'onsite_code',
   'sequence',
 ];
+
+/** Module mit AR-Bühne (WebGL, Kamera/360°-Bild): ar_panorama und ar_discover */
+export function isArModuleType(type: ModuleType): boolean {
+  return type === 'ar_panorama' || type === 'ar_discover';
+}
 
 export function modulePreset<T extends ModuleType>(type: T, presetId?: string): ModulePreset<T> {
   const presets = MODULE_META[type].presets as ModulePreset<T>[];
@@ -448,7 +480,7 @@ export const STATION_TEMPLATES: StationTemplate[] = [
     id: 'discover',
     labelKey: 'templateDiscover',
     descriptionKey: 'templateDiscoverDesc',
-    modules: [{ type: 'hotspots' }, { type: 'quiz', preset: 'true_false' }],
+    modules: [{ type: 'ar_discover', preset: 'panorama' }, { type: 'quiz', preset: 'true_false' }],
   },
 ];
 

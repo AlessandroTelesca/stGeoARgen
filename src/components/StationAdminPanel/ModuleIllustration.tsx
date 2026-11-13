@@ -124,6 +124,28 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
           ))}
         </div>
       );
+    case 'ar_discover':
+      return (
+        <div className="relative w-full h-12 rounded-md overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+          {variant === 'camera' ? (
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">{Array.from({ length: 9 }, (_, i) => <span key={i} className="border border-white/10" />)}</div>
+          ) : (
+            <>
+              <span className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
+              {[0.25, 0.5, 0.75].map((u) => <span key={u} className="absolute inset-y-0 w-px bg-white/15" style={{ left: `${u * 100}%` }} />)}
+            </>
+          )}
+          {/* Punkte: einer entdeckt (Häkchen), zwei offen */}
+          <span className="absolute left-[14%] top-[28%] w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-1 ring-white flex items-center justify-center">
+            <span className="w-1.5 h-[3px] -mt-px -rotate-45 border-b border-l border-white" />
+          </span>
+          <span className="absolute left-[78%] top-[30%] w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+          <span className="absolute left-[62%] top-[72%] w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+          {/* Laser von unten zum Zielkreis mit halb gefülltem Ring */}
+          <span className="absolute left-1/2 bottom-0 w-0.5 h-[40%] -translate-x-1/2 bg-gradient-to-t from-transparent to-white" />
+          <span className="absolute left-1/2 top-[42%] w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/35 border-t-white border-r-white" />
+        </div>
+      );
     case 'hotspots':
       return (
         <div className={`relative w-full h-12 rounded-md ${photo}`}>

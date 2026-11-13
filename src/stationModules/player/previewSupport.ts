@@ -1,3 +1,4 @@
+import { MODULE_META } from '../meta';
 import type { StationModule } from '../types';
 import { stableHash } from '../../lib/stableHash';
 
@@ -10,6 +11,7 @@ export function moduleMissingContent(m: StationModule<string>): boolean {
     case 'audio': return m.audio === '';
     case 'hotspots': return m.image === '';
     case 'before_after': return m.before_image === '';
+    case 'ar_discover': return m.points.length === 0 || (m.background === 'panorama' && !m.panorama_image);
     default: return false;
   }
 }
@@ -20,8 +22,11 @@ const STRUCTURAL_KEYS = new Set(['type', 'mode', 'style', 'input', 'background',
 /**
  * Fingerabdruck der Modulstruktur ohne Freitexte: reine Textänderungen ergeben denselben Schlüssel
  * (der Player behält seinen Zustand), neue Fragen, andere richtige Antworten oder Grenzwerte einen
- * anderen (der Player baut sich neu auf).
+ * anderen (der Player baut sich neu auf). Bei Modulen mit `immersive`-Flag zählen nur Kennung,
+ * Typ und Hintergrund.
  */
 export function moduleStructureKey(m: StationModule<string>): string {
+  // Module mit WebGL-Bühne (immersive): Punktverschiebungen (Zahlen!) und Texte dürfen die Session nicht neu aufbauen
+  if ((MODULE_META as Record<string, { immersive?: true } | undefined>)[m.type]?.immersive) return stableHash(JSON.stringify({ id: m.id, type: m.type, background: (m as { background?: string }).background ?? null }));
   return stableHash(JSON.stringify(m, (key, value) => (typeof value === 'string' && !STRUCTURAL_KEYS.has(key) ? '' : value)));
 }

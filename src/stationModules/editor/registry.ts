@@ -1,3 +1,4 @@
+import { arDiscoverEditor } from './ArDiscoverEditor';
 import { arPanoramaEditor } from './ArPanoramaEditor';
 import { audioEditor } from './AudioEditor';
 import { beforeAfterEditor } from './BeforeAfterEditor';
@@ -18,6 +19,7 @@ export const MODULE_EDITORS: ModuleEditorRegistry = {
   slideshow: slideshowEditor,
   before_after: beforeAfterEditor,
   ar_panorama: arPanoramaEditor,
+  ar_discover: arDiscoverEditor,
   quiz: quizEditor,
   estimate: estimateEditor,
   timeline: timelineEditor,

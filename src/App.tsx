@@ -23,6 +23,7 @@ import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ARProximityGate } from './components/ARComponents/ARProximityGate';
 import type { ARChromeProps, PlayerStation } from './stationModules/player/contract';
+import { isArModuleType } from './stationModules/meta';
 import { mapModuleMedia } from './stationModules/types';
 import { getStationCoordinates, type StationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
@@ -748,7 +749,7 @@ export default function App() {
             longDescription: (isEn && c.long_description_en) || c.long_description_de,
             imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
             arRoute: `${CUSTOM_AR_ROUTE_PREFIX}${c.id}`,
-            hasArModule: c.modules.some((m) => m.type === 'ar_panorama'),
+            hasArModule: c.modules.some((m) => isArModuleType(m.type)),
             color: c.color,
             status: previousStatus.get(c.id) ?? 'available',
             points: c.points,

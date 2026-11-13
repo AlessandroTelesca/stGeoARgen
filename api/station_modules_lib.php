@@ -14,6 +14,7 @@ const STATION_MAX_MODULE_QUESTIONS = 10;
 const STATION_MAX_TIMELINE_ENTRIES = 12;
 const STATION_MAX_HOTSPOTS = 8;
 const STATION_MAX_ONSITE_ANSWERS = 5;
+const STATION_MAX_AR_POINTS = 12;
 const STATION_MAX_SEQUENCE_ITEMS = 6;
 
 /** Modultyp → Name in Fehlermeldungen */
@@ -22,6 +23,7 @@ const STATION_MODULE_TYPES = [
     'slideshow'    => 'Bildfolge',
     'before_after' => 'Vorher/Nachher',
     'ar_panorama'  => 'AR-Rundumblick',
+    'ar_discover'  => 'AR-Entdecken',
     'quiz'         => 'Quiz',
     'estimate'     => 'Schätzfrage',
     'timeline'     => 'Zeitstrahl',
@@ -171,6 +173,11 @@ function mapStationModuleMedia(array $module, callable $map): array {
                 'panorama_image' => $opt($module['panorama_image'] ?? null, 'panorama'),
                 'slides' => $slides($module['slides']),
                 'questions' => $questions($module['questions']),
+            ]);
+        case 'ar_discover':
+            return array_merge($module, [
+                'panorama_image' => $opt($module['panorama_image'] ?? null, 'panorama'),
+                'points' => array_map(fn($p) => array_merge($p, ['image' => $opt($p['image'] ?? null)]), $module['points']),
             ]);
         case 'quiz':
             return array_merge($module, ['questions' => $questions($module['questions'])]);
@@ -336,6 +343,50 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'panorama_image' => $panoramaImage,
                 'slides' => parseStationSlides($src, 0, STATION_MAX_PANORAMA_SLIDES, $prefix),
                 'questions' => parseStationQuestions($src, $prefix, false),
+            ];
+
+        case 'ar_discover':
+            $background = stationModuleEnum($src, 'background', ['panorama', 'camera'], $prefix, 'Hintergrund');
+            $panoramaImage = stationModuleMediaValue($src, 'panorama_image', $prefix);
+            if ($background === 'panorama' && $panoramaImage === null) {
+                fail("$prefix: Bitte ein 360°-Bild auswählen.");
+            }
+            $points = [];
+            $usedPointIds = [];
+            foreach (stationModuleList($src, 'points', 1, STATION_MAX_AR_POINTS, $prefix, 'Punkte') as $i => $point) {
+                $label = "$prefix: Punkt " . ($i + 1);
+                $pointId = $point['id'] ?? null;
+                if (!is_string($pointId) || preg_match('/^[a-zA-Z0-9_-]{1,20}$/', $pointId) !== 1) {
+                    fail("$label: Ungültige Punkt-ID.");
+                }
+                if (isset($usedPointIds[$pointId])) {
+                    fail("$label: Punkt-ID \"$pointId\" kommt doppelt vor.");
+                }
+                $usedPointIds[$pointId] = true;
+                $yaw = stationModuleNumber($point['yaw'] ?? null, "$label: Richtung (yaw)");
+                $pitch = stationModuleNumber($point['pitch'] ?? null, "$label: Höhe (pitch)");
+                if ($yaw < -180 || $yaw > 180 || $pitch < -85 || $pitch > 85) {
+                    fail("$label: Die Position liegt außerhalb des erlaubten Bereichs.");
+                }
+                $points[] = [
+                    'id' => $pointId,
+                    'yaw' => stationModuleNumberOut(round($yaw, 2)),
+                    'pitch' => stationModuleNumberOut(round($pitch, 2)),
+                    'size' => stationModuleEnum($point, 'size', ['small', 'medium', 'large'], $label, 'Größe'),
+                    'title_de' => stationModuleText($point, 'title_de', 80, $label, 'Titel (DE)', true),
+                    'title_en' => stationModuleText($point, 'title_en', 80, $label, 'Titel (EN)'),
+                    'text_de' => stationModuleText($point, 'text_de', 1000, $label, 'Text (DE)', true),
+                    'text_en' => stationModuleText($point, 'text_en', 1000, $label, 'Text (EN)'),
+                    'image' => stationModuleMediaValue($point, 'image', $label),
+                ];
+            }
+            return [
+                'background' => $background,
+                'panorama_image' => $panoramaImage,
+                'intro_de' => stationModuleText($src, 'intro_de', 500, $prefix, 'Einleitung (DE)'),
+                'intro_en' => stationModuleText($src, 'intro_en', 500, $prefix, 'Einleitung (EN)'),
+                'points' => $points,
+                'require_all' => ($src['require_all'] ?? false) === true,
             ];
 
         case 'quiz':

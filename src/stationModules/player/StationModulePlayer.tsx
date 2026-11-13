@@ -17,6 +17,7 @@ import { MODULE_PLAYERS } from './players';
 import { isModulePassed, PrimaryButton, type ModuleResult } from './ui';
 import { ModuleGate, ModuleNote } from './ModuleGate';
 import { moduleMissingContent, moduleStructureKey } from './previewSupport';
+import { MODULE_META } from '../meta';
 import { useDialogFocus } from '../../lib/useDialogFocus';
 import { isAndroidDevice, isArCapableDevice, isIOSDevice } from '../../lib/device';
 import { stationThemeProps } from '../../lib/stationTheme';
@@ -341,10 +342,12 @@ export function StationModulePlayer({
     <ModuleNote text={t('stationPreviewModuleBroken')} continueLabel={continueLabel} onContinue={goNext} />
   );
 
+  // Module mit WebGL-Fläche (immersive) nur überblenden: ein verschobenes Canvas würde ruckeln
+  const noSlide = reduceMotion || !!(current && (MODULE_META as Record<string, { immersive?: true } | undefined>)[current.type]?.immersive);
   const variants = {
-    enter: (d: 1 | -1) => ({ opacity: 0, x: reduceMotion ? 0 : d * 40 }),
+    enter: (d: 1 | -1) => ({ opacity: 0, x: noSlide ? 0 : d * 40 }),
     center: { opacity: 1, x: 0 },
-    exit: (d: 1 | -1) => ({ opacity: 0, x: reduceMotion ? 0 : d * -40 }),
+    exit: (d: 1 | -1) => ({ opacity: 0, x: noSlide ? 0 : d * -40 }),
   };
 
   return (

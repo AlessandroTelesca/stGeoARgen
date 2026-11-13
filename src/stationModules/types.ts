@@ -21,6 +21,7 @@ export type ModuleType =
   | 'slideshow'
   | 'before_after'
   | 'ar_panorama'
+  | 'ar_discover'
   | 'quiz'
   | 'estimate'
   | 'timeline'
@@ -35,6 +36,7 @@ export const MODULE_TYPES: readonly ModuleType[] = [
   'slideshow',
   'before_after',
   'ar_panorama',
+  'ar_discover',
   'quiz',
   'estimate',
   'timeline',
@@ -46,6 +48,9 @@ export const MODULE_TYPES: readonly ModuleType[] = [
 ];
 
 export const MAX_MODULES_PER_STATION = 12;
+
+/** Höchstzahl Punkte im Modul ar_discover (api/station_modules_lib.php: STATION_MAX_AR_POINTS) */
+export const MAX_AR_DISCOVER_POINTS = 12;
 
 /** Felder, die jedes Modul hat */
 interface ModuleBase {
@@ -124,6 +129,39 @@ export interface ArPanoramaModule<M = string> extends ModuleBase {
   panorama_image: M | null;
   slides: SlideItem<M>[]; // 0–9
   questions: QuizQuestion<M>[]; // 1–10
+}
+
+/** Entdeckbarer Punkt im AR-Entdecken: Richtung relativ zum Startblick, Info-Karte beim Anvisieren */
+export interface ArDiscoverPoint<M = string> {
+  /** Stabil (Reihenfolge ändert die ID nicht), /^[a-zA-Z0-9_-]{1,20}$/ */
+  id: string;
+  /** −180…180, positiv = rechts vom Startblick */
+  yaw: number;
+  /** −85…85, positiv = oben */
+  pitch: number;
+  /** Größe des Punkts und seines Trefferbereichs */
+  size: 'small' | 'medium' | 'large';
+  title_de: string; // max. 80
+  title_en: string | null;
+  text_de: string; // max. 1000
+  text_en: string | null;
+  image: M | null;
+}
+
+/**
+ * AR-Entdecken: 360°-Bild oder Live-Kamera mit frei platzierten Punkten. Ein Laser aus der Bildmitte;
+ * wer einen Punkt etwa 1,5 s anvisiert (oder antippt), öffnet seine Info. Mehrfach pro Station erlaubt.
+ */
+export interface ArDiscoverModule<M = string> extends ModuleBase {
+  type: 'ar_discover';
+  background: 'panorama' | 'camera';
+  /** Pflicht bei 'panorama'; bei 'camera' optionales Referenzbild (nur Editor, Desktop, Vorschau) */
+  panorama_image: M | null;
+  intro_de: string | null; // max. 500
+  intro_en: string | null;
+  points: ArDiscoverPoint<M>[]; // 1–12
+  /** true: Weiter erst, wenn alle Punkte entdeckt sind */
+  require_all: boolean;
 }
 
 /** Quiz: 1–10 Multiple-Choice-Fragen (Variante Wahr/Falsch = 2 Optionen) */
@@ -271,6 +309,7 @@ export type StationModule<M = string> =
   | SlideshowModule<M>
   | BeforeAfterModule<M>
   | ArPanoramaModule<M>
+  | ArDiscoverModule<M>
   | QuizModule<M>
   | EstimateModule
   | TimelineModule<M>
@@ -308,6 +347,12 @@ export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, k
         slides: module.slides.map(slide),
         questions: module.questions.map(question),
       };
+    case 'ar_discover':
+      return {
+        ...module,
+        panorama_image: opt(module.panorama_image, 'panorama'),
+        points: module.points.map((point) => ({ ...point, image: opt(point.image) })),
+      };
     case 'quiz':
       return { ...module, questions: module.questions.map(question) };
     case 'estimate':
@@ -330,6 +375,11 @@ export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, k
 /** Neue, kurze Modul-ID */
 export function newModuleId(): string {
   return `m-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
+}
+
+/** Neue, kurze Punkt-ID für ar_discover (passt zu /^[a-zA-Z0-9_-]{1,20}$/) */
+export function newArPointId(): string {
+  return `p-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
 }
 
 /** Text in der aktuellen Sprache (Englisch fällt auf Deutsch zurück) */

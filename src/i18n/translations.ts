@@ -20,6 +20,8 @@ import stationPreviewDeJson from './stationPreview.de.json';
 import stationPreviewEnJson from './stationPreview.en.json';
 import stationAccentDeJson from './stationAccent.de.json';
 import stationAccentEnJson from './stationAccent.en.json';
+import stationArDeJson from './stationAr.de.json';
+import stationArEnJson from './stationAr.en.json';
 import stationResultsDeJson from './stationResults.de.json';
 import stationResultsEnJson from './stationResults.en.json';
 import stationQuizSoundDeJson from './stationQuizSound.de.json';
@@ -39,6 +41,7 @@ const de = {
 	...stationAdminTourDeJson,
 	...stationPreviewDeJson,
 	...stationAccentDeJson,
+	...stationArDeJson,
 	...stationResultsDeJson,
 	...stationQuizSoundDeJson,
 };
@@ -57,6 +60,7 @@ const en: TranslationDict = {
 	...stationAdminTourEnJson,
 	...stationPreviewEnJson,
 	...stationAccentEnJson,
+	...stationArEnJson,
 	...stationResultsEnJson,
 	...stationQuizSoundEnJson,
 };
