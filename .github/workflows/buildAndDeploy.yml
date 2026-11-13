@@ -3,7 +3,8 @@ name: Build and Deploy
 # Ein Workflow für beide Umgebungen – die Datei ist auf release und develop identisch,
 # das Ziel ergibt sich aus dem Branch:
 #   release -> Produktion (Secrets FTP_*, Adminpanel aus)
-#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an)
+#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an). Nur das Frontend –
+#              es nutzt die Produktions-API (DEV_API_BASE_URL), deshalb wird api/ dort nicht hochgeladen.
 # Solange DEV_FTP_SERVER nicht gesetzt ist, wird develop nur gebaut und getestet, nicht deployt.
 
 on:
@@ -49,7 +50,6 @@ jobs:
                 echo "::notice::DEV_FTP_SERVER ist nicht gesetzt – develop wird nur gebaut, nicht deployt."
                 echo "deploy=false" >> "$GITHUB_OUTPUT"
               elif [ -z "$DEV_API_BASE_URL" ]; then
-                # Ohne eigene API würde die Entwicklungsseite gegen die Produktionsdatenbank laufen
                 echo "::error::DEV_API_BASE_URL (Repository-Variable) fehlt."
                 exit 1
               else
@@ -114,9 +114,11 @@ jobs:
           if [ "$TARGET" = production ]; then
             FTP_SERVER="$PROD_FTP_SERVER"; FTP_USERNAME="$PROD_FTP_USERNAME"; FTP_PORT="$PROD_FTP_PORT"
             export LFTP_PASSWORD="$PROD_FTP_PASSWORD"; REMOTE_DIR="."
+            UPLOAD_API="mirror --reverse --verbose --parallel=4 --exclude-glob .git* --exclude-glob *.sql --exclude-glob credentials.txt --exclude-glob uploads/stations/ api/ api/"
           else
             FTP_SERVER="$DEV_FTP_SERVER"; FTP_USERNAME="$DEV_FTP_USERNAME"; FTP_PORT="$DEV_FTP_PORT"
             export LFTP_PASSWORD="$DEV_FTP_PASSWORD"; REMOTE_DIR="$DEV_FTP_REMOTE_DIR"
+            UPLOAD_API=""  # develop nutzt die Produktions-API
           fi
           lftp -c "
             set cmd:fail-exit yes
@@ -127,7 +129,7 @@ jobs:
             set ssl:verify-certificate true
             open --env-password -u \"$FTP_USERNAME\" -p $FTP_PORT \"$FTP_SERVER\"
             cd \"$REMOTE_DIR\"
-            mirror --reverse --verbose --parallel=4 --exclude-glob .git* --exclude-glob *.sql --exclude-glob credentials.txt --exclude-glob uploads/stations/ api/ api/
+            $UPLOAD_API
             mirror --reverse --verbose --parallel=4 --exclude-glob index.html build/ ./
             put build/index.html -o index.html
           "
