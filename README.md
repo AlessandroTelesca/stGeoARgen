@@ -133,7 +133,7 @@ Neue API-Endpunkte:
 
 1. **Einmalig vor dem nächsten Deploy** in phpMyAdmin ausführen (beide idempotent): [api/migrate_user_sessions.sql](api/migrate_user_sessions.sql) (Session-Tokens; ohne die Tabelle schlagen Login und alle nutzerbezogenen Endpunkte fehl) und [api/migrate_point_awards.sql](api/migrate_point_awards.sql) (Punkte pro Station nur einmal je Konto; ohne die Tabelle schlägt das Speichern von Stationen fehl). Backend (`api/`) und Frontend immer zusammen ausliefern; alle Nutzer:innen müssen sich danach einmal neu anmelden.
 2. `npm run typecheck`, `npm test -- --run` und `npm run build` müssen fehlerfrei durchlaufen (der GitHub-Workflow prüft das ebenfalls).
-3. Geofencing ist in Produktion immer aktiv (100 m um die Station). Zum Testen am Schreibtisch lässt es sich nur im Dev-Server abschalten: `VITE_DISABLE_GEO=true` in `.env.local`.
+3. Geofencing ist in Produktion immer aktiv (100 m um die Station). Zum Testen am Schreibtisch lässt es sich mit `VITE_DISABLE_GEO=true` abschalten: lokal in `.env.local`, auf der Entwicklungs-Subdomain (develop-Branch) setzt es der Deploy-Workflow. Der Release-Build setzt es explizit auf `false`.
 
 ### Adding New Stations
 

@@ -3,7 +3,7 @@ name: Build and Deploy
 # Ein Workflow für beide Umgebungen – die Datei ist auf release und develop identisch,
 # das Ziel ergibt sich aus dem Branch:
 #   release -> Produktion (Secrets FTP_*, Adminpanel aus)
-#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an). Nur das Frontend –
+#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an, Geofencing aus). Nur das Frontend –
 #              es nutzt die Produktions-API (DEV_API_BASE_URL), deshalb wird api/ dort nicht hochgeladen.
 # Solange DEV_FTP_SERVER nicht gesetzt ist, wird develop nur gebaut und getestet, nicht deployt.
 
@@ -39,12 +39,14 @@ jobs:
               echo "name=production" >> "$GITHUB_OUTPUT"
               echo "deploy=true" >> "$GITHUB_OUTPUT"
               echo "admin_panel=false" >> "$GITHUB_OUTPUT"
+              echo "disable_geo=false" >> "$GITHUB_OUTPUT"
               # Leer = Standard aus src/services/api.ts (Produktions-API)
               echo "api_base_url=" >> "$GITHUB_OUTPUT"
               ;;
             develop)
               echo "name=development" >> "$GITHUB_OUTPUT"
               echo "admin_panel=true" >> "$GITHUB_OUTPUT"
+              echo "disable_geo=true" >> "$GITHUB_OUTPUT"
               echo "api_base_url=$DEV_API_BASE_URL" >> "$GITHUB_OUTPUT"
               if [ -z "$DEV_FTP_SERVER" ]; then
                 echo "::notice::DEV_FTP_SERVER ist nicht gesetzt – develop wird nur gebaut, nicht deployt."
@@ -60,6 +62,7 @@ jobs:
               echo "name=none" >> "$GITHUB_OUTPUT"
               echo "deploy=false" >> "$GITHUB_OUTPUT"
               echo "admin_panel=true" >> "$GITHUB_OUTPUT"
+              echo "disable_geo=false" >> "$GITHUB_OUTPUT"
               echo "api_base_url=" >> "$GITHUB_OUTPUT"
               ;;
           esac
@@ -84,6 +87,8 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ steps.target.outputs.api_base_url }}
           VITE_ENABLE_ADMIN_PANEL: ${{ steps.target.outputs.admin_panel }}
+          # develop: Geofencing aus, damit sich Stationen ohne Vor-Ort-Besuch testen lassen
+          VITE_DISABLE_GEO: ${{ steps.target.outputs.disable_geo }}
           VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
           VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}

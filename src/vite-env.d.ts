@@ -6,7 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET?: string;
   readonly VITE_EMAILJS_PUBLIC_KEY?: string;
   readonly VITE_SUPPORT_EMAIL?: string;
-  /** Nur im Dev-Server: 'true' schaltet das Geofencing für Tests ab */
+  /** 'true' schaltet das Geofencing für Tests ab (lokal bzw. develop-Deploy) */
   readonly VITE_DISABLE_GEO?: string;
   /** 'false' blendet das Adminpanel und dessen Pfade/Stationen aus (Release-Build) */
   readonly VITE_ENABLE_ADMIN_PANEL?: string;

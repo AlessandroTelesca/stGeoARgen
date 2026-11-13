@@ -55,9 +55,9 @@ interface ARComponentBaseProps {
 // Export Stations aus zentraler Config
 export const STATIONS = STATIONS_COORDINATES;
 
-// Geofencing ist in Produktion immer aktiv. Nur im Dev-Server lässt es sich
-// für Tests am Schreibtisch abschalten: VITE_DISABLE_GEO=true in .env.local
-const DISABLE_GEO = import.meta.env.DEV && import.meta.env.VITE_DISABLE_GEO === 'true';
+// Geofencing abschalten (Tests am Schreibtisch): VITE_DISABLE_GEO=true – lokal in .env.local, im
+// develop-Deploy setzt es der GitHub-Workflow. Der release-Build setzt es explizit auf 'false'.
+const DISABLE_GEO = import.meta.env.VITE_DISABLE_GEO === 'true';
 const MOCK_LOCATION = { lat: 48.0, lng: 11.0 };
 const MIN_SECONDS_BEFORE_COMPLETE = 30;
 
