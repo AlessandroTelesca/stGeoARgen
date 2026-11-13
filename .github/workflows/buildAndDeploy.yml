@@ -1,26 +1,68 @@
-name: Build and Deploy to GitHub Pages and Web Server
+name: Build and Deploy
+
+# Ein Workflow für beide Umgebungen – die Datei ist auf release und develop identisch,
+# das Ziel ergibt sich aus dem Branch:
+#   release -> Produktion (Secrets FTP_*, Adminpanel aus)
+#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an)
+# Solange DEV_FTP_SERVER nicht gesetzt ist, wird develop nur gebaut und getestet, nicht deployt.
 
 on:
   push:
     branches:
       - release
+      - develop
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Select deploy target
+        id: target
+        env:
+          DEV_FTP_SERVER: ${{ secrets.DEV_FTP_SERVER }}
+          DEV_API_BASE_URL: ${{ vars.DEV_API_BASE_URL }}
+        run: |
+          case "$GITHUB_REF_NAME" in
+            release)
+              echo "name=production" >> "$GITHUB_OUTPUT"
+              echo "deploy=true" >> "$GITHUB_OUTPUT"
+              echo "admin_panel=false" >> "$GITHUB_OUTPUT"
+              # Leer = Standard aus src/services/api.ts (Produktions-API)
+              echo "api_base_url=" >> "$GITHUB_OUTPUT"
+              ;;
+            develop)
+              echo "name=development" >> "$GITHUB_OUTPUT"
+              echo "admin_panel=true" >> "$GITHUB_OUTPUT"
+              echo "api_base_url=$DEV_API_BASE_URL" >> "$GITHUB_OUTPUT"
+              if [ -z "$DEV_FTP_SERVER" ]; then
+                echo "::notice::DEV_FTP_SERVER ist nicht gesetzt – develop wird nur gebaut, nicht deployt."
+                echo "deploy=false" >> "$GITHUB_OUTPUT"
+              elif [ -z "$DEV_API_BASE_URL" ]; then
+                # Ohne eigene API würde die Entwicklungsseite gegen die Produktionsdatenbank laufen
+                echo "::error::DEV_API_BASE_URL (Repository-Variable) fehlt."
+                exit 1
+              else
+                echo "deploy=true" >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              echo "name=none" >> "$GITHUB_OUTPUT"
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              echo "admin_panel=true" >> "$GITHUB_OUTPUT"
+              echo "api_base_url=" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -38,72 +80,44 @@ jobs:
         run: npm test -- --run
 
       - name: Build application
-        run: npm run build -- --base=/stGeoARgen/
-        env:
-          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
-          VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET }}
-          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
-          VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
-
-      - name: Create .nojekyll file
-        run: touch build/.nojekyll
-
-      - name: Create SPA fallback for GitHub Pages
-        run: cp build/index.html build/404.html
-
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v5.0.0
-        with:
-          path: 'build/'
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-
-  deploy-ftp:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application for FTP server
         run: npm run build
         env:
+          VITE_API_BASE_URL: ${{ steps.target.outputs.api_base_url }}
+          VITE_ENABLE_ADMIN_PANEL: ${{ steps.target.outputs.admin_panel }}
           VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
           VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
 
       - name: Install lftp
+        if: steps.target.outputs.deploy == 'true'
         run: sudo apt-get update && sudo apt-get install -y lftp
 
       # lftp instead of SamKirkland/FTP-Deploy-Action: that action's FTPS data channel gets reset by
       # ProFTPD (TLS session reuse). Nothing is ever deleted on the server; api goes first so a new
       # frontend never talks to an old API, and index.html goes last so it never references missing assets.
-      - name: Upload api and build via FTPS
+      - name: Upload api and build via FTPS (${{ steps.target.outputs.name }})
+        if: steps.target.outputs.deploy == 'true'
         env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_PORT: ${{ vars.FTP_PORT || 21 }}
+          TARGET: ${{ steps.target.outputs.name }}
+          PROD_FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          PROD_FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          PROD_FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PROD_FTP_PORT: ${{ vars.FTP_PORT || 21 }}
+          DEV_FTP_SERVER: ${{ secrets.DEV_FTP_SERVER }}
+          DEV_FTP_USERNAME: ${{ secrets.DEV_FTP_USERNAME }}
+          DEV_FTP_PASSWORD: ${{ secrets.DEV_FTP_PASSWORD }}
+          DEV_FTP_PORT: ${{ vars.DEV_FTP_PORT || 21 }}
+          # Optional: Unterordner auf dem FTP-Zugang, falls die Subdomain dort in einem Ordner liegt
+          DEV_FTP_REMOTE_DIR: ${{ vars.DEV_FTP_REMOTE_DIR || '.' }}
         run: |
+          if [ "$TARGET" = production ]; then
+            FTP_SERVER="$PROD_FTP_SERVER"; FTP_USERNAME="$PROD_FTP_USERNAME"; FTP_PORT="$PROD_FTP_PORT"
+            export LFTP_PASSWORD="$PROD_FTP_PASSWORD"; REMOTE_DIR="."
+          else
+            FTP_SERVER="$DEV_FTP_SERVER"; FTP_USERNAME="$DEV_FTP_USERNAME"; FTP_PORT="$DEV_FTP_PORT"
+            export LFTP_PASSWORD="$DEV_FTP_PASSWORD"; REMOTE_DIR="$DEV_FTP_REMOTE_DIR"
+          fi
           lftp -c "
             set cmd:fail-exit yes
             set net:timeout 30
@@ -112,6 +126,7 @@ jobs:
             set ftp:ssl-protect-data true
             set ssl:verify-certificate true
             open --env-password -u \"$FTP_USERNAME\" -p $FTP_PORT \"$FTP_SERVER\"
+            cd \"$REMOTE_DIR\"
             mirror --reverse --verbose --parallel=4 --exclude-glob .git* --exclude-glob *.sql --exclude-glob credentials.txt --exclude-glob uploads/stations/ api/ api/
             mirror --reverse --verbose --parallel=4 --exclude-glob index.html build/ ./
             put build/index.html -o index.html
