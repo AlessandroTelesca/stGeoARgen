@@ -3,7 +3,7 @@
  * 
  * API-URL kann ueber VITE_API_BASE_URL konfiguriert werden.
  */
-import type { QuizQuestion, StationModule } from '../stationModules/types';
+import { MODULE_TYPES, type ModuleType, type QuizQuestion, type StationModule } from '../stationModules/types';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://stgeoargen.iiius.de/api').replace(/\/+$/, '');
 
@@ -400,6 +400,8 @@ export interface CustomStation {
     long_description_en: string | null;
     /** Profilbild (Dateiname in api/uploads/stations/) – Listen und Titelbild */
     cover_image: string;
+    /** Akzentfarbe der Station (#rrggbb, kleingeschrieben); null → Standard-Tannengrün */
+    color: string | null;
     /** Ablauf der Station, wird beim Start der Reihe nach abgespielt */
     modules: StationModule[];
     points: number;
@@ -411,13 +413,19 @@ export interface CustomStation {
     sort_order: number;
     created_at: string;
     updated_at: string;
+    /** Nur Client: Anzahl verworfener Module unbekannten Typs (neuere Stationsdaten als diese App-Version) */
+    dropped_modules?: number;
 }
 
 /**
  * Daten zum Anlegen/Aktualisieren. Bildreferenzen sind vorhandene Dateinamen (werden behalten)
  * oder neue Dateien: `cover_image: 'new'` → `newCover`, in `modules` jedes `'new:N'` → `files[N]`.
  */
-export type CustomStationInput = Omit<CustomStation, 'id' | 'sort_order' | 'created_at' | 'updated_at'> & { id?: number };
+export type CustomStationInput = Omit<CustomStation, 'id' | 'sort_order' | 'created_at' | 'updated_at' | 'color' | 'dropped_modules'> & {
+    id?: number;
+    /** #rrggbb oder null (Standard); fehlend = null */
+    color?: string | null;
+};
 
 /** Felder älterer Stationen (vor den Modulen), aus denen `modules` abgeleitet wird */
 interface LegacyQuiz {
@@ -445,6 +453,7 @@ function legacyQuestion(q: LegacyQuiz): QuizQuestion {
         options_en: q.options_en ?? null,
         correct_answer: q.correct_answer,
         image: q.image ?? null,
+        audio: null,
         explanation_de: null,
         explanation_en: null,
     };
@@ -472,11 +481,22 @@ function legacyModules(s: LegacyStationFields): StationModule[] {
 }
 
 /** Serverdaten absichern: ein veralteter Server (ohne modules/published) darf die App nicht zum Absturz bringen. */
-function normalizeStation(s: Partial<CustomStation> & LegacyStationFields): CustomStation {
+export function normalizeStation(s: Partial<CustomStation> & LegacyStationFields): CustomStation {
+    const rawModules: unknown[] = Array.isArray(s.modules) ? s.modules : legacyModules(s);
+    // Nur bekannte Modultypen behalten: ein unbekannter Typ (neuere Daten) darf den Player nicht abstürzen lassen
+    const modules = rawModules.filter((m): m is StationModule => {
+        if (typeof m !== 'object' || m === null) return false;
+        const { id, type } = m as { id?: unknown; type?: unknown };
+        return typeof id === 'string' && MODULE_TYPES.includes(type as ModuleType);
+    });
+    const dropped = rawModules.length - modules.length;
+    const color = typeof s.color === 'string' && /^#[0-9a-f]{6}$/i.test(s.color) ? s.color.toLowerCase() : null;
     return {
         ...(s as CustomStation),
         cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
-        modules: Array.isArray(s.modules) ? s.modules : legacyModules(s),
+        color,
+        modules,
+        ...(dropped > 0 ? { dropped_modules: dropped } : {}),
         published: s.published !== false,
         sort_order: typeof s.sort_order === 'number' ? s.sort_order : 0,
     };

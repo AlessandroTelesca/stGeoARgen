@@ -109,6 +109,8 @@ export interface QuizQuestion<M = string> {
   correct_answer: number;
   /** Optionales Bild über der Frage */
   image: M | null;
+  /** Optionaler Ton als Frage (nur Modul 'quiz'); optional, damit Altdaten gültig bleiben */
+  audio?: M | null;
   /** Optionale Erklärung nach der richtigen Antwort (nur Modul 'quiz') */
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
@@ -128,6 +130,11 @@ export interface ArPanoramaModule<M = string> extends ModuleBase {
 export interface QuizModule<M = string> extends ModuleBase {
   type: 'quiz';
   questions: QuizQuestion<M>[];
+  /**
+   * Bestehensgrenze. Mindestanzahl auf Anhieb richtiger Antworten (1 … Fragenzahl).
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /** Schätzfrage: Zahl per Schieberegler schätzen, danach Auflösung */
@@ -145,6 +152,11 @@ export interface EstimateModule extends ModuleBase {
   unit_en: string | null;
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 export interface TimelineEntry<M = string> {
@@ -193,6 +205,11 @@ export interface OnsiteCodeModule<M = string> extends ModuleBase {
   /** Wird nach dem Lösen gezeigt */
   solution_de: string | null; // max. 1000
   solution_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /** Hörstück: Audio (MP3/M4A) mit optionalem Bild und Text zum Mitlesen */
@@ -225,6 +242,11 @@ export interface SequenceModule<M = string> extends ModuleBase {
   items: SequenceItem<M>[];
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /**
@@ -270,7 +292,7 @@ export type MediaKind = 'image' | 'panorama' | 'audio';
 export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, kind: MediaKind) => B): StationModule<B> {
   const opt = (media: A | null, kind: MediaKind = 'image'): B | null => (media === null ? null : map(media, kind));
   const slide = (s: SlideItem<A>): SlideItem<B> => ({ ...s, image: map(s.image, 'image') });
-  const question = (q: QuizQuestion<A>): QuizQuestion<B> => ({ ...q, image: opt(q.image) });
+  const question = (q: QuizQuestion<A>): QuizQuestion<B> => ({ ...q, image: opt(q.image), audio: opt(q.audio ?? null, 'audio') });
 
   switch (module.type) {
     case 'story':
