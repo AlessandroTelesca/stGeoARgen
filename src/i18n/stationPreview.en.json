@@ -1,4 +1,18 @@
 {
   "stationPreviewModuleBroken": "This part can't be shown right now.",
-  "stationPreviewModuleIncomplete": "This part isn't filled in yet."
+  "stationPreviewModuleIncomplete": "This part isn't filled in yet.",
+  "stationPreviewModeTry": "Try it",
+  "stationPreviewModeEdit": "Edit",
+  "stationPreviewModeLabel": "Preview mode",
+  "stationPreviewClickToEdit": "Click to edit",
+  "stationPreviewEditHere": "Edit this part",
+  "stationPreviewVisitorState": "Visitor is …",
+  "stationPreviewVisitor_in_range": "On site",
+  "stationPreviewVisitor_too_far": "Too far away",
+  "stationPreviewVisitor_needs_login": "Not signed in",
+  "stationPreviewVisitor_completed": "Completed",
+  "stationPreviewDemoUser": "Lena",
+  "stationPreviewErrorTooManyModules": "At most {max} parts per station.",
+  "stationPreviewErrorSingleton": "“{module}” can only be used once per station.",
+  "stationPreviewDroppedModules": "{count} part(s) come from a newer version and will be removed when you save."
 }

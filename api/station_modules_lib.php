@@ -109,6 +109,28 @@ function stationModuleNumberOut(float $number): int|float {
 }
 
 /**
+ * Bestehensgrenze eines Moduls: fehlend/null → null (Punkte immer); sonst ganze Zahl von 1 bis $max.
+ * Quiz: Mindestanzahl auf Anhieb richtiger Antworten ($max = Fragenzahl); übrige Typen: 1 = muss gelöst werden.
+ */
+function stationModulePassThreshold(array $src, int $max, string $prefix): ?int {
+    $value = $src['pass_threshold'] ?? null;
+    if (is_string($value)) {
+        $value = trim($value);
+    }
+    if ($value === null || $value === '') {
+        return null;
+    }
+    if (is_string($value) && is_numeric($value)) {
+        $value = $value + 0;
+    }
+    $isWhole = is_int($value) || (is_float($value) && is_finite($value) && floor($value) === $value);
+    if (!$isWhole || $value < 1 || $value > $max) {
+        fail("$prefix: Bestehensgrenze muss zwischen 1 und $max liegen.");
+    }
+    return (int) $value;
+}
+
+/**
  * Medienreferenz eines Felds (Dateiname oder "new:N"): leer/null → null; sonst String.
  * Gültigkeit prüft erst mapStationModuleMedia im Anschluss.
  */
@@ -317,7 +339,11 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
             ];
 
         case 'quiz':
-            return ['questions' => parseStationQuestions($src, $prefix, true)];
+            $questions = parseStationQuestions($src, $prefix, true);
+            return [
+                'questions' => $questions,
+                'pass_threshold' => stationModulePassThreshold($src, count($questions), $prefix),
+            ];
 
         case 'estimate':
             $min = stationModuleNumber($src['min'] ?? null, "$prefix: Minimum");
@@ -352,6 +378,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'unit_en' => stationModuleText($src, 'unit_en', 20, $prefix, 'Einheit (EN)'),
                 'explanation_de' => stationModuleText($src, 'explanation_de', 1000, $prefix, 'Erklärung (DE)'),
                 'explanation_en' => stationModuleText($src, 'explanation_en', 1000, $prefix, 'Erklärung (EN)'),
+                'pass_threshold' => stationModulePassThreshold($src, 1, $prefix),
             ];
 
         case 'timeline':
@@ -425,6 +452,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'image' => stationModuleMediaValue($src, 'image', $prefix),
                 'solution_de' => stationModuleText($src, 'solution_de', 1000, $prefix, 'Auflösung (DE)'),
                 'solution_en' => stationModuleText($src, 'solution_en', 1000, $prefix, 'Auflösung (EN)'),
+                'pass_threshold' => stationModulePassThreshold($src, 1, $prefix),
             ];
 
         case 'audio':
@@ -457,6 +485,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'items' => $items,
                 'explanation_de' => stationModuleText($src, 'explanation_de', 1000, $prefix, 'Erklärung (DE)'),
                 'explanation_en' => stationModuleText($src, 'explanation_en', 1000, $prefix, 'Erklärung (EN)'),
+                'pass_threshold' => stationModulePassThreshold($src, 1, $prefix),
             ];
 
         case 'photo':

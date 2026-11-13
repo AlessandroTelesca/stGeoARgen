@@ -3,7 +3,7 @@
   "stationAccentHint": "Färbt Buttons, Verlauf, Fortschritt und Kartenmarker dieser Station.",
   "stationAccentDefault": "Standard",
   "stationAccentCustom": "Eigene Farbe wählen",
-  "stationAccentPreviewTitle": "So startet deine Station",
+  "stationAccentPreviewTitle": "Bereit zum Start!",
   "stationAccentPreviewChip": "Teil 1 von 3",
   "stationAccentContrast": "Gut lesbar · Kontrast {ratio} : 1",
   "stationAccentDecimal": ",",

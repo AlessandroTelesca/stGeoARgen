@@ -3,7 +3,7 @@
   "stationAccentHint": "Colours this station's buttons, gradient, progress and map marker.",
   "stationAccentDefault": "Default",
   "stationAccentCustom": "Choose your own colour",
-  "stationAccentPreviewTitle": "This is how your station starts",
+  "stationAccentPreviewTitle": "Ready to start!",
   "stationAccentPreviewChip": "Part 1 of 3",
   "stationAccentContrast": "Easy to read · contrast {ratio} : 1",
   "stationAccentDecimal": ".",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { pickLang } from '../../types';
 import { Feedback, GlassCard, ModuleHeading, ModuleScreen, PrimaryButton, type ModulePlayerProps } from '../ui';
@@ -12,7 +12,7 @@ function decimalsOf(value: number): number {
 }
 
 /** Schätzfrage: Zahl per Regler schätzen, danach Auflösung mit Marker auf der Skala */
-export function EstimatePlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'estimate'>) {
+export function EstimatePlayer({ module, lang, continueLabel, onContinue, onResult }: ModulePlayerProps<'estimate'>) {
   const { t } = useLanguage();
   const { min, max, step, answer, tolerance } = module;
   const decimals = Math.max(decimalsOf(step), decimalsOf(min));
@@ -36,6 +36,16 @@ export function EstimatePlayer({ module, lang, continueLabel, onContinue }: Modu
   const diff = Number(Math.abs(value - answer).toFixed(6));
   const closeLimit = tolerance > 0 ? tolerance * 3 : range * 0.1;
   const rating = diff <= tolerance ? 'bullseye' : diff <= closeLimit ? 'close' : 'miss';
+  // Bestanden zählt nur der Volltreffer im Toleranzbereich („nah dran“ bleibt eine Anerkennung, ist aber kein Treffer)
+  const hit = rating === 'bullseye';
+  const reported = useRef(false);
+  const finish = () => {
+    if (!reported.current) {
+      reported.current = true;
+      onResult?.({ correct: hit ? 1 : 0, total: 1 });
+    }
+    onContinue();
+  };
   const pctOf = (v: number) => (range > 0 ? Math.min(100, Math.max(0, ((v - min) / range) * 100)) : 0);
   const toleranceLeft = pctOf(answer - tolerance);
   const toleranceRight = pctOf(answer + tolerance);
@@ -43,7 +53,7 @@ export function EstimatePlayer({ module, lang, continueLabel, onContinue }: Modu
   return (
     <ModuleScreen
       footer={
-        <PrimaryButton onClick={submitted ? onContinue : () => setSubmitted(true)}>
+        <PrimaryButton onClick={submitted ? finish : () => setSubmitted(true)}>
           {submitted ? continueLabel : t('modulePlayerSubmitEstimate')}
         </PrimaryButton>
       }

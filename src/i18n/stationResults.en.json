@@ -6,5 +6,12 @@
   "stationResultsSkip": "Continue without points",
   "stationResultsEndedTitle": "Station finished",
   "stationResultsEndedBody": "No points this time. You can retry the open task any time.",
-  "stationResultsRetryFailed": "Retry task"
+  "stationResultsRetryFailed": "Retry task",
+  "passThresholdToggle": "Points only if passed",
+  "passThresholdHint": "Visitors can retry as often as they like.",
+  "passThresholdCount": "at least {n} of {max} right on the first try",
+  "passThresholdSolve": "This task must be solved to earn points.",
+  "passThresholdTooHigh": "The pass mark is higher than the number of questions.",
+  "passThresholdSummary": "pass {n}/{max}",
+  "passThresholdOption": "{n} of {max}"
 }
