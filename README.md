@@ -150,7 +150,6 @@ Einrichtung auf dem PHP-Server:
 - `custom_stations`- und `custom_paths`-Tabelle aus [api/setup.sql](api/setup.sql) ausführen (legt auch den Pfad „Local Guide“ an).
 - Admin-Passwort setzen: Umgebungsvariable `ADMIN_PASSWORD` oder Zeile `'ADMIN_PASSWORD', '…'` in `api/credentials.txt`. Ohne Passwort ist die Verwaltung deaktiviert.
 - `api/uploads/` muss für PHP beschreibbar sein (Bilder landen in `api/uploads/stations/`; die mitgelieferte `.htaccess` verhindert Skriptausführung). PHP-Limits `upload_max_filesize`/`post_max_size` ggf. erhöhen (Bilder werden im Browser auf max. 1920 px verkleinert).
-- Optional: `'UPLOAD_DIR', '/absoluter/pfad/api/uploads/stations'` in `api/credentials.txt` lenkt die Ablage um. Die Entwicklungs-Subdomain nutzt so denselben Ordner wie die Produktion, da beide dieselbe Datenbank verwenden.
 
 **Mit AR-Erlebnis:** Edit [src/data/stationsConfig.ts](src/data/stationsConfig.ts) and `src/App.tsx` to add built-in stations with:
 - Geographic coordinates (latitude/longitude)
