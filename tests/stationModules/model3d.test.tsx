@@ -154,8 +154,8 @@ describe('modelSpace', () => {
   });
 
   test('clampNormalized begrenzt und rundet', () => {
-    expect(clampNormalized({ x: 3, y: -1, z: -2 })).toEqual({ x: 1, y: 0, z: -1 });
-    expect(clampNormalized({ x: 0.123456, y: 2, z: 0 })).toEqual({ x: 0.1235, y: 1.5, z: 0 });
+    expect(clampNormalized({ x: 6, y: -1, z: -2 })).toEqual({ x: 5, y: 0, z: -2 });
+    expect(clampNormalized({ x: 0.123456, y: 4, z: -7 })).toEqual({ x: 0.1235, y: 3, z: -5 });
   });
 
   test('Draufsicht: Rundreise Position ↔ Punkt, Begrenzung des Abstands', () => {

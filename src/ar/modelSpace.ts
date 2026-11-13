@@ -29,8 +29,12 @@ export interface ModelPlacement {
 const RAD = Math.PI / 180;
 const DEG = 180 / Math.PI;
 
-/** Zulässiger Bereich für Infopunkte im normierten Raum */
-export const NORMALIZED_LIMITS = { xz: 1, yMax: 1.5 } as const;
+/**
+ * Zulässiger Bereich für Infopunkte im normierten Raum (Einheit = Modellhöhe). Großzügig, weil breite,
+ * flache Modelle (z. B. eine Lok) weit über ±1 Modellhöhe hinausreichen. Gleiche Grenzen in
+ * api/station_modules_lib.php (model3d, info_points).
+ */
+export const NORMALIZED_LIMITS = { xz: 5, yMax: 3 } as const;
 
 /** Mittelpunkt der Modell-Unterkante in der Welt */
 export function modelOrigin({ yaw, distance_m, elevation_m }: Pick<ModelPlacement, 'yaw' | 'distance_m' | 'elevation_m'>): Vec3 {

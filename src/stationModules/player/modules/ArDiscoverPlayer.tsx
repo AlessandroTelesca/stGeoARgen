@@ -57,7 +57,9 @@ export function ArDiscoverPlayer({ module, lang, preview, continueLabel, onConti
   );
 
   // Kamera-Hintergrund gibt es nur mit Lagesensor am Handy; sonst Referenzbild bzw. neutraler Hintergrund
-  const cameraFallback = module.background === 'camera' && (preview || mode === 'drag');
+  // Rückfall auf Ziehen (Freigabe verweigert, kein Sensor): stehendes Kamerabild passt nicht mehr zum Blick
+  const [droppedToDrag, setDroppedToDrag] = useState(false);
+  const cameraFallback = module.background === 'camera' && (preview || mode === 'drag' || droppedToDrag);
   const background = module.background === 'panorama' ? 'panorama' : cameraFallback ? (module.panorama_image ? 'panorama' : 'neutral') : 'camera';
   const panoramaUrl = background === 'panorama' ? module.panorama_image : null;
 
@@ -69,6 +71,9 @@ export function ArDiscoverPlayer({ module, lang, preview, continueLabel, onConti
     panoramaUrl,
     reducedMotion: !!reduceMotion,
   });
+  useEffect(() => {
+    if (fellBackToDrag) setDroppedToDrag(true);
+  }, [fellBackToDrag]);
 
   const [found, setFound] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);

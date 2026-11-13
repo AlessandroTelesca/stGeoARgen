@@ -192,6 +192,26 @@ describe('StationModulePlayer', () => {
       expect(await screen.findByText('Aufbau 2')).toBeInTheDocument();
       expect(screen.getByText(/Teil 1 von 2/)).toBeInTheDocument();
     });
+
+    test('a skipped task passed later via the back button still completes the station', async () => {
+      const user = userEvent.setup();
+      const { onCompleteStation } = renderPlayer({ station: gated });
+
+      await user.click(screen.getByRole('button', { name: 'Ergebnis falsch' }));
+      await user.click(screen.getByRole('button', { name: 'Weiter' }));
+      await user.click(screen.getByRole('button', { name: 'Weiter ohne Punkte' }));
+      expect(await screen.findByText('Noch ein Text')).toBeInTheDocument();
+
+      // Zurück zur übersprungenen Aufgabe, diesmal bestanden
+      await user.click(screen.getByRole('button', { name: 'Zurück' }));
+      await user.click(await screen.findByRole('button', { name: 'Ergebnis richtig' }));
+      await user.click(screen.getByRole('button', { name: 'Weiter' }));
+      expect(await screen.findByText('Noch ein Text')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Station abschließen' }));
+      expect(screen.queryByText('Station beendet')).not.toBeInTheDocument();
+      expect(onCompleteStation).toHaveBeenCalledWith(1000);
+    });
   });
 
   test('embedded has no dialog role and ignores Escape', () => {

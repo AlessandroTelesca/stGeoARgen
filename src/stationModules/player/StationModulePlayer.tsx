@@ -164,7 +164,15 @@ export function StationModulePlayer({
       onClose();
       return;
     }
-    // Eine Aufgabe wurde übersprungen: keine Punkte, nur eine schlichte Endkarte
+    // Eine Aufgabe wurde übersprungen: keine Punkte, nur eine schlichte Endkarte – es sei denn, alle
+    // übersprungenen Aufgaben wurden inzwischen (über „Zurück“) doch noch bestanden
+    if (forfeitedRef.current) {
+      failedIdsRef.current = failedIdsRef.current.filter((id) => {
+        const m = modules.find((x) => x.id === id) as { pass_threshold?: number | null } | undefined;
+        return !!m && !isModulePassed(m.pass_threshold, resultsRef.current[id]);
+      });
+      forfeitedRef.current = failedIdsRef.current.length > 0;
+    }
     if (forfeitedRef.current) {
       setEnded(true);
       return;
@@ -315,7 +323,8 @@ export function StationModulePlayer({
     />
   );
 
-  if (isNativeAr && current && stage?.Native) {
+  // Offene Bestehens-Karte oder Endkarte gehen vor: die native AR-Oberfläche könnte sie nicht zeigen
+  if (isNativeAr && current && stage?.Native && !gate && !ended) {
     const Native = stage.Native;
     return (
       <div style={{ display: 'contents', ...theme.style }} className={theme.className}>

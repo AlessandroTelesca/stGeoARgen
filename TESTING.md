@@ -72,10 +72,14 @@ npm test:coverage -- --run
 
 ### Current Test Coverage
 
-**59 passing tests** across 18 test files covering:
-- 16 component test files
-- 1 utility test file
-- 1 basic test file
+**247 passing tests** across 43 test files (as of the station-modules-ar branch), covering:
+- Components (`tests/components/`) – incl. station module player, admin phone preview
+- Station modules (`tests/stationModules/`) – AR discovery, 3D model, sound quiz, pass thresholds, numeric answers, preview keys
+- AR core (`tests/ar/`) – angle conventions (verified against the three.js sphere), gaze selection, dwell timer, GLB header, input
+- Admin, services and lib (`tests/admin/`, `tests/services/`, `tests/lib/`) – station validation, data normalisation, accent colour contrast
+- SEO (`tests/seo/`)
+
+WebGL itself (AR stage, 3D model rendering) is not available in jsdom; those parts are covered by pure-logic tests and manual checks on devices.
 
 ## Writing New Tests
 

@@ -180,7 +180,7 @@ export interface ArDiscoverModule<M = string> extends ModuleBase {
 export interface ModelInfoPoint<M = string> {
   /** Stabil (Reihenfolge ändert die ID nicht), /^[a-zA-Z0-9_-]{1,20}$/ */
   id: string;
-  /** Bodenmitte des Modells = 0, geteilt durch die Modellhöhe: x/z −1…1, y 0…1.5 */
+  /** Bodenmitte des Modells = 0, geteilt durch die Modellhöhe: x/z −5…5, y 0…3 (siehe NORMALIZED_LIMITS) */
   x: number;
   y: number;
   z: number;

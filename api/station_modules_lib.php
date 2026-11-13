@@ -443,7 +443,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 $x = stationModuleNumber($point['x'] ?? null, "$label: Position x");
                 $y = stationModuleNumber($point['y'] ?? null, "$label: Position y");
                 $z = stationModuleNumber($point['z'] ?? null, "$label: Position z");
-                if ($x < -1 || $x > 1 || $y < 0 || $y > 1.5 || $z < -1 || $z > 1) {
+                if ($x < -5 || $x > 5 || $y < 0 || $y > 3 || $z < -5 || $z > 5) {
                     fail("$label: Die Position liegt außerhalb des Modells.");
                 }
                 $infoPoints[] = [

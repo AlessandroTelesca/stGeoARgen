@@ -32,10 +32,15 @@ export function ArSheet({ labelledBy, onClose, children }: ArSheetProps) {
     };
   }, []);
 
-  // Escape schon in der Capture-Phase abfangen: egal, wo der Fokus liegt, und ohne den Player-Wrapper zu erreichen
+  // Escape schon in der Capture-Phase abfangen, damit es den Player-Wrapper nicht erreicht
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // Nur, wenn der Fokus in dieser Karte liegt (oder nirgends): Escape im Admin-Formular neben der
+      // eingebetteten Vorschau bleibt unberührt, und beim Kartenwechsel schließt nur die aktive Karte
+      const active = document.activeElement;
+      const root = rootRef.current;
+      if (active && active !== document.body && root && !root.contains(active)) return;
       e.stopPropagation();
       onCloseRef.current();
     };

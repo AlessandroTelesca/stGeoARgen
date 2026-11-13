@@ -112,7 +112,7 @@ export function PanoramaPointCanvas({ imageUrl, points, selectedId, onSelect, on
       className="relative aspect-[2/1] w-full cursor-crosshair select-none overflow-hidden rounded-2xl bg-gradient-to-b from-gray-800 to-gray-900 outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
     >
       {imageUrl ? (
-        <img src={imageUrl} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+        <img src={imageUrl} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full object-fill" />
       ) : (
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           {/* Meridiane alle 30° */}
