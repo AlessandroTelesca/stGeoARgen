@@ -1,7 +1,8 @@
 import type { ComponentType } from 'react';
 import type { ModuleType, StationModule } from '../types';
 import type { ARChromeProps, PlayerStation } from './contract';
-import { ArPanoramaEmbedded, ArPanoramaPlaceholder } from './ArPanoramaStage';
+import { ArPanoramaEmbedded } from './ArPanoramaStage';
+import { ArPanoramaPlayer } from './modules/ArPanoramaLazy';
 
 /** Props der AR-Ansicht im Vollbild (Handy) */
 export interface ArStageNativeProps {
@@ -14,7 +15,7 @@ export interface ArStageNativeProps {
   onContinue: () => void;
 }
 
-/** Props des Platzhalters für Vorschau und Rechner */
+/** Props der Ansicht für Vorschau und Rechner */
 export interface ArStagePreviewProps {
   module: StationModule<string>;
   lang: 'de' | 'en';
@@ -31,6 +32,6 @@ export interface ArStage {
 export const AR_STAGES: Partial<Record<ModuleType, ArStage>> = {
   ar_panorama: {
     Native: ArPanoramaEmbedded as unknown as ComponentType<ArStageNativeProps>,
-    Preview: ArPanoramaPlaceholder as unknown as ComponentType<ArStagePreviewProps>,
+    Preview: ArPanoramaPlayer as unknown as ComponentType<ArStagePreviewProps>,
   },
 };

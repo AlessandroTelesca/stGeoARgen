@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Box,
   CircleHelp,
   Crosshair,
   GalleryHorizontal,
@@ -224,6 +225,38 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
       }),
     })),
   },
+  model3d: {
+    type: 'model3d',
+    icon: Box,
+    labelKey: 'moduleModel3d',
+    descriptionKey: 'moduleModel3dDesc',
+    category: 'discover',
+    immersive: true,
+    presets: (['camera', 'panorama'] as const).map((background) => ({
+      id: background,
+      labelKey: `presetModel3d_${background}`,
+      descriptionKey: `presetModel3d_${background}Desc`,
+      create: () => ({
+        ...base(),
+        type: 'model3d' as const,
+        model: null,
+        background,
+        panorama_image: null,
+        height_m: 2,
+        distance_m: 4,
+        elevation_m: -1.6,
+        yaw: 0,
+        rotation_deg: 0,
+        auto_rotate: 'slow' as const,
+        user_rotate: true,
+        caption_de: null,
+        caption_en: null,
+        text_de: null,
+        text_en: null,
+        info_points: [],
+      }),
+    })),
+  },
   hotspots: {
     type: 'hotspots',
     icon: Crosshair,
@@ -419,6 +452,7 @@ export const MODULE_ORDER: ModuleType[] = [
   'before_after',
   'ar_panorama',
   'ar_discover',
+  'model3d',
   'hotspots',
   'photo',
   'quiz',
@@ -427,9 +461,9 @@ export const MODULE_ORDER: ModuleType[] = [
   'sequence',
 ];
 
-/** Module mit AR-Bühne (WebGL, Kamera/360°-Bild): ar_panorama und ar_discover */
+/** Module mit AR-Bühne (WebGL, Kamera/360°-Bild): ar_panorama, ar_discover und model3d */
 export function isArModuleType(type: ModuleType): boolean {
-  return type === 'ar_panorama' || type === 'ar_discover';
+  return type === 'ar_panorama' || type === 'ar_discover' || type === 'model3d';
 }
 
 export function modulePreset<T extends ModuleType>(type: T, presetId?: string): ModulePreset<T> {

@@ -13,6 +13,7 @@ import { AudioPlayer } from './modules/AudioPlayer';
 import { SequencePlayer } from './modules/SequencePlayer';
 import { PhotoPlayer } from './modules/PhotoPlayer';
 import { ArDiscoverPlayer } from './modules/ArDiscoverLazy';
+import { Model3dPlayer } from './modules/Model3dLazy';
 
 /** Modultypen, die der Player selbst abspielt (ar_panorama behandelt die Bühne separat) */
 export type PlayableModuleType = Exclude<ModuleType, 'ar_panorama'>;
@@ -30,4 +31,5 @@ export const MODULE_PLAYERS: { [T in PlayableModuleType]: ComponentType<ModulePl
   sequence: SequencePlayer,
   photo: PhotoPlayer,
   ar_discover: ArDiscoverPlayer,
+  model3d: Model3dPlayer,
 };

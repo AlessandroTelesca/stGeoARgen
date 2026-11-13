@@ -146,6 +146,27 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
           <span className="absolute left-1/2 top-[42%] w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/35 border-t-white border-r-white" />
         </div>
       );
+    case 'model3d':
+      return (
+        <div className="relative w-full h-12 rounded-md overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+          {variant === 'panorama' ? (
+            <>
+              <span className="absolute inset-x-0 top-[62%] h-px bg-white/30" />
+              {[0.25, 0.5, 0.75].map((u) => <span key={u} className="absolute inset-y-0 w-px bg-white/15" style={{ left: `${u * 100}%` }} />)}
+            </>
+          ) : (
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">{Array.from({ length: 9 }, (_, i) => <span key={i} className="border border-white/10" />)}</div>
+          )}
+          {/* Würfel mit Drehpfeil darunter */}
+          <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <polygon points="24,6 36,12 24,18 12,12" className="fill-primary-lighter" />
+            <polygon points="12,12 24,18 24,33 12,27" className="fill-primary" />
+            <polygon points="24,18 36,12 36,27 24,33" className="fill-primary-darker" />
+            <path d="M9 38 Q24 46 39 38" className="fill-none stroke-white/70" strokeWidth="1.6" strokeLinecap="round" />
+            <polygon points="40.5,35 41,40.5 35.5,39" className="fill-white/70" />
+          </svg>
+        </div>
+      );
     case 'hotspots':
       return (
         <div className={`relative w-full h-12 rounded-md ${photo}`}>

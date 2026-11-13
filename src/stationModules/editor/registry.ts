@@ -4,6 +4,7 @@ import { audioEditor } from './AudioEditor';
 import { beforeAfterEditor } from './BeforeAfterEditor';
 import { estimateEditor } from './EstimateEditor';
 import { hotspotsEditor } from './HotspotsEditor';
+import { model3dEditor } from './Model3dEditor';
 import { onsiteCodeEditor } from './OnsiteCodeEditor';
 import { photoEditor } from './PhotoEditor';
 import { quizEditor } from './QuizEditor';
@@ -20,6 +21,7 @@ export const MODULE_EDITORS: ModuleEditorRegistry = {
   before_after: beforeAfterEditor,
   ar_panorama: arPanoramaEditor,
   ar_discover: arDiscoverEditor,
+  model3d: model3dEditor,
   quiz: quizEditor,
   estimate: estimateEditor,
   timeline: timelineEditor,

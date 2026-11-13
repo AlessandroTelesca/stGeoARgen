@@ -1,7 +1,7 @@
 <?php
 /**
  * Gemeinsame Helfer für die über die Stationsverwaltung angelegten Stationen und Pfade
- * (Tabellen custom_stations / custom_paths, Bilder und Audiodateien in api/uploads/stations/).
+ * (Tabellen custom_stations / custom_paths, Bilder, Audiodateien und 3D-Modelle in api/uploads/stations/).
  */
 
 require_once __DIR__ . '/config.php';
@@ -14,6 +14,16 @@ const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
 const STATION_MAX_PANORAMA_SLIDES = 9;
 const STATION_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const STATION_MAX_AUDIO_BYTES = 8 * 1024 * 1024;
+const STATION_MAX_MODEL_BYTES = 15 * 1024 * 1024;
+/** Größe des JSON-Chunks einer GLB-Datei, die isValidGlb noch liest */
+const STATION_MAX_GLB_JSON_BYTES = 2 * 1024 * 1024;
+/** glTF-Erweiterungen, die ein GLB voraussetzen darf (alle übrigen KHR_materials_* ebenfalls) */
+const STATION_GLB_ALLOWED_EXTENSIONS = [
+    'KHR_draco_mesh_compression',
+    'KHR_mesh_quantization',
+    'KHR_texture_transform',
+    'EXT_meshopt_compression',
+];
 const STATION_IMAGE_TYPES = [
     'image/jpeg' => 'jpg',
     'image/png'  => 'png',
@@ -280,8 +290,9 @@ function uploadedFiles(string $field): array {
 
 /**
  * Prüft und speichert die hochgeladenen Dateien der angegebenen Formularfelder.
- * $kindsByField: [feld => [Art je Datei in Upload-Reihenfolge: 'image' | 'audio']].
- * Bilder: finfo + getimagesize (JPG, PNG, WebP); Audio: nur Audio-MIME-Typen (MP3, M4A) und Größenlimit.
+ * $kindsByField: [feld => [Art je Datei in Upload-Reihenfolge: 'image' | 'audio' | 'model']].
+ * Bilder: finfo + getimagesize (JPG, PNG, WebP); Audio: nur Audio-MIME-Typen (MP3, M4A) und Größenlimit;
+ * 3D-Modelle: GLB nach isValidGlb (Header, JSON-Chunk, keine externen Dateien) und Größenlimit.
  * Gibt [feld => [neue Dateinamen in Upload-Reihenfolge]] zurück. Bei einem Fehler
  * werden alle in diesem Request gespeicherten Dateien gelöscht und mit 400 abgebrochen.
  */
@@ -295,28 +306,50 @@ function storeUploads(array $kindsByField): array {
 
     foreach ($kindsByField as $field => $kinds) {
         foreach (array_values(uploadedFiles($field)) as $index => $file) {
-            $isAudio = ($kinds[$index] ?? 'image') === 'audio';
-            $noun = $isAudio ? 'Audiodatei' : 'Bild';
+            $kind = $kinds[$index] ?? 'image';
+            switch ($kind) {
+                case 'audio':
+                    $noun = 'Audiodatei';
+                    $maxBytes = STATION_MAX_AUDIO_BYTES;
+                    break;
+                case 'model':
+                    $noun = '3D-Modell';
+                    $maxBytes = STATION_MAX_MODEL_BYTES;
+                    break;
+                default:
+                    $kind = 'image';
+                    $noun = 'Bild';
+                    $maxBytes = STATION_MAX_IMAGE_BYTES;
+                    break;
+            }
             $originalName = $file['name'];
-            $maxBytes = $isAudio ? STATION_MAX_AUDIO_BYTES : STATION_MAX_IMAGE_BYTES;
             $extension = null;
             $fail = null;
             if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > $maxBytes) {
-                $fail = "$noun \"$originalName\" ist zu groß.";
+                $fail = $kind === 'model' ? '3D-Modell ist zu groß (max. 15 MB).' : "$noun \"$originalName\" ist zu groß.";
             } elseif ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
                 $fail = "$noun \"$originalName\" konnte nicht hochgeladen werden.";
             } else {
-                $mime = $finfo->file($file['tmp_name']);
-                if ($isAudio) {
-                    $extension = STATION_AUDIO_TYPES[$mime] ?? null;
-                    if ($extension === null) {
-                        $fail = "Audiodatei \"$originalName\" hat kein unterstütztes Format (MP3, M4A).";
-                    }
-                } else {
-                    $extension = STATION_IMAGE_TYPES[$mime] ?? null;
-                    if ($extension === null || @getimagesize($file['tmp_name']) === false) {
-                        $fail = "Bild \"$originalName\" hat kein unterstütztes Format (JPG, PNG, WebP).";
-                    }
+                switch ($kind) {
+                    case 'audio':
+                        $extension = STATION_AUDIO_TYPES[$finfo->file($file['tmp_name'])] ?? null;
+                        if ($extension === null) {
+                            $fail = "Audiodatei \"$originalName\" hat kein unterstütztes Format (MP3, M4A).";
+                        }
+                        break;
+                    case 'model':
+                        if (isValidGlb($file['tmp_name'], (int) $file['size'])) {
+                            $extension = 'glb';
+                        } else {
+                            $fail = 'Ungültiges 3D-Modell (GLB).';
+                        }
+                        break;
+                    default:
+                        $extension = STATION_IMAGE_TYPES[$finfo->file($file['tmp_name'])] ?? null;
+                        if ($extension === null || @getimagesize($file['tmp_name']) === false) {
+                            $fail = "Bild \"$originalName\" hat kein unterstütztes Format (JPG, PNG, WebP).";
+                        }
+                        break;
                 }
             }
 
@@ -338,6 +371,74 @@ function storeUploads(array $kindsByField): array {
 }
 
 /**
+ * Prüft eine hochgeladene GLB-Datei (binäres glTF 2.0), ohne sie vollständig zu laden:
+ * - Header: Magic "glTF", Version 2, angegebene Länge = Dateigröße
+ * - erster Chunk ist der JSON-Chunk (höchstens STATION_MAX_GLB_JSON_BYTES) und enthält gültiges JSON
+ * - keine externen Dateien: weder buffers[*].uri noch images[*].uri sind gesetzt
+ * - extensionsRequired nur aus STATION_GLB_ALLOWED_EXTENSIONS oder KHR_materials_*
+ * $size ist die Dateigröße laut Upload.
+ */
+function isValidGlb(string $tmpPath, int $size): bool {
+    // 12 Byte Header + 8 Byte Chunk-Header + mindestens "{}"
+    if ($size < 22 || $size > STATION_MAX_MODEL_BYTES) {
+        return false;
+    }
+    $handle = @fopen($tmpPath, 'rb');
+    if ($handle === false) {
+        return false;
+    }
+    $header = fread($handle, 12);
+    $chunkHeader = $header !== false && strlen($header) === 12 ? fread($handle, 8) : false;
+    $json = false;
+    if ($header !== false && $chunkHeader !== false && strlen($chunkHeader) === 8) {
+        $head = unpack('a4magic/Vversion/Vlength', $header);
+        $chunk = unpack('Vlength/Vtype', $chunkHeader);
+        // 0x4E4F534A = "JSON" (little-endian)
+        $headerOk = $head['magic'] === 'glTF' && $head['version'] === 2 && $head['length'] === $size
+            && $chunk['type'] === 0x4E4F534A
+            && $chunk['length'] >= 2 && $chunk['length'] <= STATION_MAX_GLB_JSON_BYTES
+            && 20 + $chunk['length'] <= $size;
+        if ($headerOk) {
+            $json = fread($handle, $chunk['length']);
+            if ($json !== false && strlen($json) !== $chunk['length']) {
+                $json = false;
+            }
+        }
+    }
+    fclose($handle);
+    if ($json === false) {
+        return false;
+    }
+
+    $gltf = json_decode($json, true);
+    if (!is_array($gltf)) {
+        return false;
+    }
+    foreach (['buffers', 'images'] as $key) {
+        $items = $gltf[$key] ?? [];
+        if (!is_array($items)) {
+            return false;
+        }
+        foreach ($items as $item) {
+            if (!is_array($item) || isset($item['uri'])) {
+                return false;
+            }
+        }
+    }
+    $required = $gltf['extensionsRequired'] ?? [];
+    if (!is_array($required)) {
+        return false;
+    }
+    foreach ($required as $extension) {
+        if (!is_string($extension)
+            || (!in_array($extension, STATION_GLB_ALLOWED_EXTENSIONS, true) && !str_starts_with($extension, 'KHR_materials_'))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Wie storeUploads, aber alle Dateien der angegebenen Felder sind Bilder (z. B. das Profilbild im Feld "cover").
  * Gibt [feld => [neue Dateinamen in Upload-Reihenfolge]] zurück.
  */
@@ -350,7 +451,7 @@ function storeUploadedImages(array $fields): array {
 }
 
 /**
- * Löscht Bild- und Audiodateien aus dem Upload-Verzeichnis. Nur eigene, generierte
+ * Löscht Bild-, Audio- und Modelldateien aus dem Upload-Verzeichnis. Nur eigene, generierte
  * Dateinamen werden akzeptiert (kein Path-Traversal).
  */
 function deleteStationImages(array $filenames): void {
@@ -361,7 +462,7 @@ function deleteStationImages(array $filenames): void {
     }
 }
 
-/** Gültiger, selbst generierter Dateiname einer Bild- oder Audiodatei (Name bleibt aus Altlasten-Gründen). */
+/** Gültiger, selbst generierter Dateiname einer Bild-, Audio- oder Modelldatei (Name bleibt aus Altlasten-Gründen). */
 function isValidStationImageName($filename): bool {
-    return is_string($filename) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp|mp3|m4a)$/', $filename) === 1;
+    return is_string($filename) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp|mp3|m4a|glb)$/', $filename) === 1;
 }

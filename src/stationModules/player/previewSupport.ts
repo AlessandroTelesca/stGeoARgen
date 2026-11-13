@@ -12,6 +12,7 @@ export function moduleMissingContent(m: StationModule<string>): boolean {
     case 'hotspots': return m.image === '';
     case 'before_after': return m.before_image === '';
     case 'ar_discover': return m.points.length === 0 || (m.background === 'panorama' && !m.panorama_image);
+    case 'model3d': return m.model === '' || (m.background === 'panorama' && !m.panorama_image);
     default: return false;
   }
 }

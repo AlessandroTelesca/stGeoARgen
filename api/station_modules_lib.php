@@ -15,6 +15,7 @@ const STATION_MAX_TIMELINE_ENTRIES = 12;
 const STATION_MAX_HOTSPOTS = 8;
 const STATION_MAX_ONSITE_ANSWERS = 5;
 const STATION_MAX_AR_POINTS = 12;
+const STATION_MAX_MODEL_INFO_POINTS = 8;
 const STATION_MAX_SEQUENCE_ITEMS = 6;
 
 /** Modultyp → Name in Fehlermeldungen */
@@ -24,6 +25,7 @@ const STATION_MODULE_TYPES = [
     'before_after' => 'Vorher/Nachher',
     'ar_panorama'  => 'AR-Rundumblick',
     'ar_discover'  => 'AR-Entdecken',
+    'model3d'      => '3D-Modell',
     'quiz'         => 'Quiz',
     'estimate'     => 'Schätzfrage',
     'timeline'     => 'Zeitstrahl',
@@ -35,13 +37,17 @@ const STATION_MODULE_TYPES = [
 ];
 
 /**
- * Art einer Datei nach Endung: 'image' (jpg, png, webp), 'audio' (mp3, m4a) oder null.
+ * Art einer Datei nach Endung: 'image' (jpg, png, webp), 'audio' (mp3, m4a), 'model' (glb) oder null.
  */
 function stationFileKind($filename): ?string {
     if (!isValidStationImageName($filename)) {
         return null;
     }
-    return in_array(pathinfo($filename, PATHINFO_EXTENSION), ['mp3', 'm4a'], true) ? 'audio' : 'image';
+    $extension = pathinfo($filename, PATHINFO_EXTENSION);
+    if ($extension === 'glb') {
+        return 'model';
+    }
+    return in_array($extension, ['mp3', 'm4a'], true) ? 'audio' : 'image';
 }
 
 /**
@@ -111,6 +117,17 @@ function stationModuleNumberOut(float $number): int|float {
 }
 
 /**
+ * Zahl wie stationModuleNumber, zusätzlich zwischen $min und $max (einschließlich); sonst 400.
+ */
+function stationModuleNumberInRange($value, float $min, float $max, string $label): float {
+    $number = stationModuleNumber($value, $label);
+    if ($number < $min || $number > $max) {
+        fail("$label muss zwischen $min und $max liegen.");
+    }
+    return $number;
+}
+
+/**
  * Bestehensgrenze eines Moduls: fehlend/null → null (Punkte immer); sonst ganze Zahl von 1 bis $max.
  * Quiz: Mindestanzahl auf Anhieb richtiger Antworten ($max = Fragenzahl); übrige Typen: 1 = muss gelöst werden.
  */
@@ -150,7 +167,7 @@ function stationModuleMediaValue(array $src, string $key, string $prefix): ?stri
 /**
  * Wandelt alle Medienfelder eines geprüften Moduls um (Gegenstück zu mapModuleMedia in types.ts –
  * einzige Stelle, die weiß, wo in welchem Modultyp Medien stecken). $map(ref, art) mit art
- * 'image' | 'panorama' | 'audio' wird nur für gesetzte Felder aufgerufen.
+ * 'image' | 'panorama' | 'audio' | 'model' wird nur für gesetzte Felder aufgerufen.
  */
 function mapStationModuleMedia(array $module, callable $map): array {
     $opt = fn($value, string $kind = 'image') => $value === null ? null : $map($value, $kind);
@@ -178,6 +195,12 @@ function mapStationModuleMedia(array $module, callable $map): array {
             return array_merge($module, [
                 'panorama_image' => $opt($module['panorama_image'] ?? null, 'panorama'),
                 'points' => array_map(fn($p) => array_merge($p, ['image' => $opt($p['image'] ?? null)]), $module['points']),
+            ]);
+        case 'model3d':
+            return array_merge($module, [
+                'model' => $map($module['model'], 'model'),
+                'panorama_image' => $opt($module['panorama_image'] ?? null, 'panorama'),
+                'info_points' => array_map(fn($p) => array_merge($p, ['image' => $opt($p['image'] ?? null)]), $module['info_points']),
             ]);
         case 'quiz':
             return array_merge($module, ['questions' => $questions($module['questions'])]);
@@ -212,7 +235,7 @@ function resolveStationModuleMedia(array $modules, array $storedFiles): array {
 /**
  * Prüft das Modul-Array einer Anfrage; bricht bei Fehlern mit 400 und verständlicher Meldung ab.
  * $newFileCount = Anzahl hochgeladener Dateien in files[].
- * Rückgabe: { modules: [...neu aufgebaut aus den geprüften Feldern], newFiles: [N => 'image' | 'audio'] }
+ * Rückgabe: { modules: [...neu aufgebaut aus den geprüften Feldern], newFiles: [N => 'image' | 'audio' | 'model'] }
  * Medienwerte sind vorhandene Dateinamen (Herkunft prüft der Aufrufer) oder "new:N".
  */
 function parseStationModules($input, int $newFileCount): array {
@@ -265,7 +288,7 @@ function parseStationModules($input, int $newFileCount): array {
         $module = mapStationModuleMedia(
             $module,
             function ($ref, string $kind) use (&$newFiles, $newFileCount, $prefix) {
-                $expected = $kind === 'audio' ? 'audio' : 'image';
+                $expected = $kind === 'audio' || $kind === 'model' ? $kind : 'image';
                 if (preg_match('/^new:(\d+)$/', $ref, $m) === 1) {
                     $n = (int) $m[1];
                     if ($n >= $newFileCount || isset($newFiles[$n])) {
@@ -275,7 +298,8 @@ function parseStationModules($input, int $newFileCount): array {
                     return "new:$n";
                 }
                 if (stationFileKind($ref) !== $expected) {
-                    fail("$prefix: " . ($expected === 'audio' ? 'Ungültige Audiodatei.' : 'Ungültige Bildreferenz.'));
+                    $invalid = ['audio' => 'Ungültige Audiodatei.', 'model' => 'Ungültiges 3D-Modell.', 'image' => 'Ungültige Bildreferenz.'];
+                    fail("$prefix: " . $invalid[$expected]);
                 }
                 return $ref;
             }
@@ -387,6 +411,69 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'intro_en' => stationModuleText($src, 'intro_en', 500, $prefix, 'Einleitung (EN)'),
                 'points' => $points,
                 'require_all' => ($src['require_all'] ?? false) === true,
+            ];
+
+        case 'model3d':
+            $model = stationModuleMediaValue($src, 'model', $prefix);
+            if ($model === null) {
+                fail("$prefix: 3D-Modell fehlt.");
+            }
+            $background = stationModuleEnum($src, 'background', ['camera', 'panorama'], $prefix, 'Hintergrund');
+            $panoramaImage = stationModuleMediaValue($src, 'panorama_image', $prefix);
+            if ($background === 'panorama' && $panoramaImage === null) {
+                fail("$prefix: Bitte ein 360°-Bild auswählen.");
+            }
+            $height = stationModuleNumberInRange($src['height_m'] ?? null, 0.1, 50, "$prefix: Höhe des Modells");
+            $distance = stationModuleNumberInRange($src['distance_m'] ?? null, 1, 50, "$prefix: Abstand");
+            $elevation = stationModuleNumberInRange($src['elevation_m'] ?? null, -3, 20, "$prefix: Höhe über Augenhöhe");
+            $yaw = stationModuleNumberInRange($src['yaw'] ?? null, -180, 180, "$prefix: Richtung");
+            $rotation = stationModuleNumberInRange($src['rotation_deg'] ?? null, 0, 359.99, "$prefix: Startdrehung");
+            $infoPoints = [];
+            $usedPointIds = [];
+            foreach (stationModuleList($src, 'info_points', 0, STATION_MAX_MODEL_INFO_POINTS, $prefix, 'Infopunkte') as $i => $point) {
+                $label = "$prefix: Infopunkt " . ($i + 1);
+                $pointId = $point['id'] ?? null;
+                if (!is_string($pointId) || preg_match('/^[a-zA-Z0-9_-]{1,20}$/', $pointId) !== 1) {
+                    fail("$label: Ungültige Punkt-ID.");
+                }
+                if (isset($usedPointIds[$pointId])) {
+                    fail("$label: Punkt-ID \"$pointId\" kommt doppelt vor.");
+                }
+                $usedPointIds[$pointId] = true;
+                $x = stationModuleNumber($point['x'] ?? null, "$label: Position x");
+                $y = stationModuleNumber($point['y'] ?? null, "$label: Position y");
+                $z = stationModuleNumber($point['z'] ?? null, "$label: Position z");
+                if ($x < -1 || $x > 1 || $y < 0 || $y > 1.5 || $z < -1 || $z > 1) {
+                    fail("$label: Die Position liegt außerhalb des Modells.");
+                }
+                $infoPoints[] = [
+                    'id' => $pointId,
+                    'x' => stationModuleNumberOut(round($x, 4)),
+                    'y' => stationModuleNumberOut(round($y, 4)),
+                    'z' => stationModuleNumberOut(round($z, 4)),
+                    'title_de' => stationModuleText($point, 'title_de', 80, $label, 'Titel (DE)', true),
+                    'title_en' => stationModuleText($point, 'title_en', 80, $label, 'Titel (EN)'),
+                    'text_de' => stationModuleText($point, 'text_de', 1000, $label, 'Text (DE)', true),
+                    'text_en' => stationModuleText($point, 'text_en', 1000, $label, 'Text (EN)'),
+                    'image' => stationModuleMediaValue($point, 'image', $label),
+                ];
+            }
+            return [
+                'model' => $model,
+                'background' => $background,
+                'panorama_image' => $panoramaImage,
+                'height_m' => stationModuleNumberOut(round($height, 2)),
+                'distance_m' => stationModuleNumberOut(round($distance, 2)),
+                'elevation_m' => stationModuleNumberOut(round($elevation, 2)),
+                'yaw' => stationModuleNumberOut(round($yaw, 2)),
+                'rotation_deg' => stationModuleNumberOut(round($rotation, 2)),
+                'auto_rotate' => stationModuleEnum($src, 'auto_rotate', ['off', 'slow', 'normal'], $prefix, 'Automatische Drehung'),
+                'user_rotate' => ($src['user_rotate'] ?? true) === true,
+                'caption_de' => stationModuleText($src, 'caption_de', 80, $prefix, 'Beschriftung (DE)'),
+                'caption_en' => stationModuleText($src, 'caption_en', 80, $prefix, 'Beschriftung (EN)'),
+                'text_de' => stationModuleText($src, 'text_de', 1000, $prefix, 'Text (DE)'),
+                'text_en' => stationModuleText($src, 'text_en', 1000, $prefix, 'Text (EN)'),
+                'info_points' => $infoPoints,
             ];
 
         case 'quiz':

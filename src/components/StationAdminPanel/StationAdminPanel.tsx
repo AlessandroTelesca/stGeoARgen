@@ -20,6 +20,7 @@ import {
 } from '../../services/api';
 import { STATION_TEMPLATES, modulesFromTemplate } from '../../stationModules/meta';
 import type { MediaKind } from '../../stationModules/types';
+import { readGlbHeader } from '../../ar/glbHeader';
 import type { ARChromeProps } from '../../stationModules/player/contract';
 import { FieldError, MAX_PANORAMA_EDGE, prepareImage, type ImageItem } from './adminFormParts';
 import { Breadcrumbs, type Crumb } from './adminUi';
@@ -37,6 +38,7 @@ import { StationTemplatePicker } from './StationTemplatePicker';
 const ADMIN_SESSION_KEY = 'st-geoargen-admin-password';
 const BASE = '/admin/stations';
 const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
+const MAX_MODEL_BYTES = 15 * 1024 * 1024;
 
 /**
  * Ungespeicherte Stationsentwürfe und der Ausgangszustand neuer Stationen leben außerhalb der
@@ -238,6 +240,25 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
       }
       if (file.size > MAX_AUDIO_BYTES) {
         toast.error(t('adminAudioTooLarge'));
+        return null;
+      }
+      const url = URL.createObjectURL(file);
+      objectUrlStore.push(url);
+      return { kind: 'new', file, url };
+    }
+    if (kind === 'model') {
+      if (!/\.glb$/i.test(file.name)) {
+        toast.error(t('adminModelInvalid'));
+        return null;
+      }
+      if (file.size > MAX_MODEL_BYTES) {
+        toast.error(t('adminModelTooLarge'));
+        return null;
+      }
+      // Nur die ersten 12 Bytes: Magic 'glTF', Version 2, Länge (der Server prüft zusätzlich)
+      const header = await readGlbHeader(file).catch(() => ({ ok: false as const }));
+      if (!header.ok) {
+        toast.error(t('adminModelInvalid'));
         return null;
       }
       const url = URL.createObjectURL(file);
