@@ -44,6 +44,8 @@ jobs:
           VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
+          # Release: Adminpanel und dort angelegte Stationen ausblenden. Zum Aktivieren auf 'true' setzen.
+          VITE_ENABLE_ADMIN_PANEL: 'false'
 
       - name: Create .nojekyll file
         run: touch build/.nojekyll
@@ -90,6 +92,8 @@ jobs:
           VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID_PASSWORD_RESET }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
+          # Release: Adminpanel und dort angelegte Stationen ausblenden. Zum Aktivieren auf 'true' setzen.
+          VITE_ENABLE_ADMIN_PANEL: 'false'
 
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
