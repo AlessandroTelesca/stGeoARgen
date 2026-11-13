@@ -72,7 +72,9 @@ define('ADMIN_PASSWORD', resolveDbSetting('ADMIN_PASSWORD', $fileCredentials, ''
 $prodOrigin = rtrim(getenv('FRONTEND_URL') ?: 'https://stgeoargen.iiius.de', '/');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $isLocalDev = (bool) preg_match('#^http://(localhost|127\.0\.0\.1)(:\d+)?$#', $requestOrigin);
-$allowed_origin = $isLocalDev ? $requestOrigin : $prodOrigin;
+// Entwicklungs-Subdomain (develop-Branch): hat keine eigene API, sondern nutzt diese hier
+$isDevSite = $requestOrigin === 'https://geoar.iiius.de';
+$allowed_origin = ($isLocalDev || $isDevSite) ? $requestOrigin : $prodOrigin;
 header("Access-Control-Allow-Origin: $allowed_origin");
 header("Vary: Origin");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
