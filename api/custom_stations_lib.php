@@ -9,7 +9,10 @@ require_once __DIR__ . '/config.php';
 // station_modules_lib.php bindet deshalb nichts ein und wird nur über diese Datei geladen)
 require_once __DIR__ . '/station_modules_lib.php';
 
-const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
+// Ablage für hochgeladene Bilder/Audios. Über 'UPLOAD_DIR' (ENV oder credentials.txt, absoluter Pfad)
+// lässt sie sich umlenken – z. B. damit die Entwicklungs-Subdomain dieselben Dateien nutzt wie die
+// Produktion, weil beide dieselbe Datenbank verwenden.
+define('STATION_UPLOAD_DIR', rtrim(resolveDbSetting('UPLOAD_DIR', $fileCredentials, __DIR__ . '/uploads/stations'), '/'));
 const STATION_MAX_SLIDES = 10;
 // 360°-Stationen: 10 feste Plätze rund um die Kamera, einer davon fürs Quiz (CustomPanoramaQuizView.tsx)
 const STATION_MAX_PANORAMA_SLIDES = 9;
