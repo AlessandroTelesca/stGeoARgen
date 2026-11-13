@@ -131,7 +131,7 @@ function stationModuleMediaValue(array $src, string $key, string $prefix): ?stri
 function mapStationModuleMedia(array $module, callable $map): array {
     $opt = fn($value, string $kind = 'image') => $value === null ? null : $map($value, $kind);
     $slides = fn(array $list) => array_map(fn($s) => array_merge($s, ['image' => $map($s['image'], 'image')]), $list);
-    $questions = fn(array $list) => array_map(fn($q) => array_merge($q, ['image' => $opt($q['image'] ?? null)]), $list);
+    $questions = fn(array $list) => array_map(fn($q) => array_merge($q, ['image' => $opt($q['image'] ?? null), 'audio' => $opt($q['audio'] ?? null, 'audio')]), $list);
 
     switch ($module['type'] ?? null) {
         case 'story':
@@ -280,7 +280,8 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
         case 'before_after':
             $mode = stationModuleEnum($src, 'mode', ['slider', 'fade', 'camera'], $prefix, 'Modus');
             $beforeImage = stationModuleMediaValue($src, 'before_image', $prefix);
-            $afterImage = stationModuleMediaValue($src, 'after_image', $prefix);
+            // Im Kamera-Modus ist die Live-Kamera das „Nachher“: ein mitgeschicktes Bild wird verworfen
+            $afterImage = $mode === 'camera' ? null : stationModuleMediaValue($src, 'after_image', $prefix);
             $beforeLabel = stationModuleText($src, 'before_label_de', 40, $prefix, 'Beschriftung „Vorher“ (DE)', true);
             // Im Kamera-Modus gibt es kein „Nachher“-Bild, die Beschriftung ist dort ohne Bedeutung
             $afterLabel = stationModuleText($src, 'after_label_de', 40, $prefix, 'Beschriftung „Nachher“ (DE)', $mode !== 'camera') ?? '';
@@ -492,8 +493,8 @@ function parseStationSlides(array $src, int $min, int $max, string $prefix): arr
 }
 
 /**
- * Quizfragen (1–10) eines Moduls. Erklärungen gibt es nur im Modul 'quiz' ($withExplanation),
- * beim AR-Rundumblick werden sie auf null gesetzt.
+ * Quizfragen (1–10) eines Moduls. Erklärungen und Ton (Audiodatei als Frage) gibt es nur im
+ * Modul 'quiz' ($withExplanation), beim AR-Rundumblick werden sie auf null gesetzt.
  */
 function parseStationQuestions(array $src, string $prefix, bool $withExplanation): array {
     $questions = [];
@@ -501,6 +502,7 @@ function parseStationQuestions(array $src, string $prefix, bool $withExplanation
         $label = "$prefix: Frage " . ($i + 1);
         $parsed = parseQuizQuestion($question, $label);
         $parsed['image'] = stationModuleMediaValue($question, 'image', $label);
+        $parsed['audio'] = $withExplanation ? stationModuleMediaValue($question, 'audio', $label) : null;
         if (!$withExplanation) {
             $parsed['explanation_de'] = null;
             $parsed['explanation_en'] = null;

@@ -68,6 +68,7 @@ export function emptyQuestion(optionCount = 4): QuizQuestion<DraftMedia> {
     options_en: null,
     correct_answer: 0,
     image: null,
+    audio: null,
     explanation_de: null,
     explanation_en: null,
   };
@@ -230,6 +231,12 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
         labelKey: 'presetQuizRound',
         descriptionKey: 'presetQuizRoundDesc',
         create: () => ({ ...base(), type: 'quiz', questions: [emptyQuestion(), emptyQuestion(), emptyQuestion()] }),
+      },
+      {
+        id: 'sound',
+        labelKey: 'presetQuizSound',
+        descriptionKey: 'presetQuizSoundDesc',
+        create: () => ({ ...base(), type: 'quiz', questions: [emptyQuestion(3)] }),
       },
       {
         id: 'true_false',

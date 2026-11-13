@@ -1,4 +1,5 @@
-import { Check, Plus, X } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Music, Plus, X } from 'lucide-react';
 import { FieldError, type ImageItem } from '../../components/StationAdminPanel/adminFormParts';
 import { Input } from '../../components/ui/input';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -31,14 +32,49 @@ interface QuizQuestionsEditorProps {
   prepareMedia: (file: File, kind: MediaKind) => Promise<ImageItem | null>;
   /** Erklärung nach der richtigen Antwort (nur Modul „Quiz“) */
   withExplanation: boolean;
+  /** Ton als Frage (nur Modul „Quiz“, nicht im AR-Rundumblick) */
+  withAudio?: boolean;
   max: number;
 }
 
+/** Optionaler Ton einer Frage: erst ein dezenter Knopf, mit gesetztem Ton das offene Audiofeld */
+function QuestionAudioField({ value, onChange, prepareMedia }: {
+  value: DraftMedia;
+  onChange: (audio: DraftMedia) => void;
+  prepareMedia: (file: File, kind: MediaKind) => Promise<ImageItem | null>;
+}) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+
+  if (!open && !value) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dark"
+      >
+        <Music className="h-4 w-4" />
+        {t('moduleEditorAddQuestionSound')}
+      </button>
+    );
+  }
+  return (
+    <MediaField
+      label={t('moduleEditorQuestionSound')}
+      kind="audio"
+      optional
+      value={value}
+      onChange={onChange}
+      prepareMedia={prepareMedia}
+    />
+  );
+}
+
 /**
- * Quizfragen: je Frage optionales Bild, Frage, Antworten als Karten (richtige grün markiert) oder
+ * Quizfragen: je Frage optionaler Ton (nur Quiz), optionales Bild, Frage, Antworten als Karten (richtige grün markiert) oder
  * zwei große Wahr/Falsch-Kacheln. 2–6 Antworten, Englisch entweder komplett oder gar nicht.
  */
-export function QuizQuestionsEditor({ questions, onChange, lang, errors, errorPrefix, idPrefix, prepareMedia, withExplanation, max }: QuizQuestionsEditorProps) {
+export function QuizQuestionsEditor({ questions, onChange, lang, errors, errorPrefix, idPrefix, prepareMedia, withExplanation, withAudio = false, max }: QuizQuestionsEditorProps) {
   const { t } = useLanguage();
   const isEn = lang === 'en';
 
@@ -103,6 +139,14 @@ export function QuizQuestionsEditor({ questions, onChange, lang, errors, errorPr
                   removeDisabled={questions.length <= 1}
                 />
               </div>
+
+              {withAudio && (
+                <QuestionAudioField
+                  value={q.audio ?? null}
+                  onChange={(audio) => patch(qIndex, (prev) => ({ ...prev, audio }))}
+                  prepareMedia={prepareMedia}
+                />
+              )}
 
               <MediaField
                 label={t('moduleEditorQuestionImage')}

@@ -10,7 +10,6 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/station_modules_lib.php';
 
 const STATION_UPLOAD_DIR = __DIR__ . '/uploads/stations';
-const STATION_MAX_SLIDES = 10;
 // 360°-Stationen: 10 feste Plätze rund um die Kamera, einer davon fürs Quiz (CustomPanoramaQuizView.tsx)
 const STATION_MAX_PANORAMA_SLIDES = 9;
 const STATION_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -32,7 +31,6 @@ const STATION_AUDIO_TYPES = [
 const PATH_DIFFICULTIES = ['Einfach', 'Mittel', 'Schwer'];
 /** image_sequence: Bildfolge mit Texten (+ optionales Quiz); panorama_quiz: 360°-Bild mit Quiz (GyroARVisualizer) */
 const STATION_TYPES = ['image_sequence', 'panorama_quiz'];
-const STATION_MAX_QUIZ_QUESTIONS = 10;
 /** Fest im Frontend eingebaute Pfade – dürfen nicht als Custom-Pfad angelegt werden */
 const BUILTIN_PATH_IDS = ['tourist'];
 
@@ -240,6 +238,7 @@ function formatStationRow(array $row): array {
         'long_description_en' => $row['long_description_en'],
         'station_type' => in_array($row['station_type'] ?? null, STATION_TYPES, true) ? $row['station_type'] : 'image_sequence',
         'cover_image' => $row['cover_image'],
+        'color' => (isset($row['color']) && is_string($row['color']) && preg_match('/^#[0-9a-f]{6}$/i', $row['color'])) ? strtolower($row['color']) : null,
         'slides' => decodeStationSlides($row['slides']),
         'panorama_image' => isValidStationImageName($row['panorama_image'] ?? null) ? $row['panorama_image'] : null,
         'live_camera' => (bool) ($row['live_camera'] ?? false),
@@ -336,14 +335,6 @@ function storeUploads(array $kindsByField): array {
     }
 
     return $stored;
-}
-
-/**
- * Wie storeUploads für ein Feld; $kinds: Art je Datei ('image' | 'audio').
- * Gibt die neuen Dateinamen in Upload-Reihenfolge zurück.
- */
-function storeUploadedFiles(string $field, array $kinds): array {
-    return storeUploads([$field => $kinds])[$field];
 }
 
 /**

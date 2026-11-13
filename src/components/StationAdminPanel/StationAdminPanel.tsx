@@ -232,7 +232,7 @@ export function StationAdminPanel({ onDataChanged, onBack, arPath, arChrome }: S
   // ─── Medien für Editoren (Objekt-URLs leben so lange wie die Verwaltung, wegen gemerkter Entwürfe) ──
   const prepareMedia = useCallback(async (file: File, kind: MediaKind): Promise<ImageItem | null> => {
     if (kind === 'audio') {
-      if (!/\.(mp3|m4a)$/i.test(file.name) && !/^audio\/(mpeg|mp3|mp4|x-m4a|m4a|aac)$/.test(file.type)) {
+      if (!/\.(mp3|m4a)$/i.test(file.name) && !/^audio\/(mpeg|mp3|mp4|x-m4a|m4a)$/.test(file.type)) {
         toast.error(t('adminAudioFormat'));
         return null;
       }

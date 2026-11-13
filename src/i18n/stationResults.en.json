@@ -1,1 +1,10 @@
-{}
+{
+  "stationResultsGateTitle": "Almost there",
+  "stationResultsGateBody": "{correct} of {total} right on the first try – this station needs at least {threshold}.",
+  "stationResultsGateBodySingle": "Solve this task to earn the station's points.",
+  "stationResultsRetry": "Try again",
+  "stationResultsSkip": "Continue without points",
+  "stationResultsEndedTitle": "Station finished",
+  "stationResultsEndedBody": "No points this time. You can retry the open task any time.",
+  "stationResultsRetryFailed": "Retry task"
+}

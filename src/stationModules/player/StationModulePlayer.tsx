@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from 'react';
+import { Component, useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ChevronLeft, Layers, X } from 'lucide-react';
+import { ChevronLeft, Layers, RotateCcw, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ARTopBar } from '../../components/ARComponents/ARTopBar';
@@ -8,15 +8,18 @@ import { ARProgressBar, buildARProgress } from '../../components/ARComponents/AR
 import { ARProfileMenu } from '../../components/ARComponents/ARProfileMenu';
 import { ARStationCompletionDialog } from '../../components/ARComponents/ARStationCompletionDialog';
 import { calculateDistance } from '../../components/ARComponents/ARComponentBase';
-import { STATIONS_COORDINATES, type StationCoordinates } from '../../data/stationsConfig';
+import type { StationCoordinates } from '../../data/stationsConfig';
 import '../../components/ARComponents/ARComponents.css';
-import { MODULE_META } from '../meta';
-import { pickLang, type StationModule } from '../types';
+import type { StationModule } from '../types';
 import type { StationModulePlayerProps } from './contract';
-import { ArPanoramaEmbedded, ArPanoramaPlaceholder, isArCapableDevice } from './ArPanoramaStage';
+import { AR_STAGES } from './arStages';
 import { MODULE_PLAYERS } from './players';
-import { PrimaryButton } from './ui';
+import { isModulePassed, PrimaryButton, type ModuleResult } from './ui';
+import { ModuleGate, ModuleNote } from './ModuleGate';
+import { moduleMissingContent, moduleStructureKey } from './previewSupport';
 import { useDialogFocus } from '../../lib/useDialogFocus';
+import { isAndroidDevice, isArCapableDevice, isIOSDevice } from '../../lib/device';
+import { stationThemeProps } from '../../lib/stationTheme';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -32,8 +35,31 @@ type AnyModulePlayer = ComponentType<{
   preview: boolean;
   continueLabel: string;
   onContinue: () => void;
+  onResult?: (result: ModuleResult) => void;
   stationTitle?: string;
 }>;
+
+/** Fängt Fehler eines Moduls ab (echter Betrieb wie Vorschau); ein neuer `resetKey` setzt den Fehlerzustand zurück */
+class ModuleBoundary extends Component<{ resetKey: string; fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidUpdate(prev: { resetKey: string }) {
+    if (this.state.failed && prev.resetKey !== this.props.resetKey) this.setState({ failed: false });
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+/** Offene Bestehensgrenze: Ergebnis des Moduls, das nicht reichte */
+interface GateState {
+  moduleId: string;
+  correct: number;
+  total: number;
+  threshold: number;
+}
 
 const stageButtonClass =
   'w-11 h-11 rounded-full bg-white/12 border border-white/20 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition-colors pressable';
@@ -52,15 +78,24 @@ export function StationModulePlayer({
   isGuest,
   onCompleteStation,
   onClose,
+  embedded = false,
+  activeIndex,
+  onIndexChange,
+  portalContainer,
+  nextStations,
 }: StationModulePlayerProps) {
   const { t } = useLanguage();
   const reduceMotion = useReducedMotion();
   const modules = station.modules;
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
+  // Gesteuerter Modus (Admin-Vorschau): activeIndex von außen, sonst interner Zustand
+  const [internalIndex, setInternalIndex] = useState(0);
+  const index = activeIndex ?? internalIndex;
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isProgressCompact, setIsProgressCompact] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const upcoming = nextStations ?? [];
+  const showChrome = !preview || embedded;
+  const theme = stationThemeProps(station.color);
   const { progress, stations } = buildARProgress(arChrome.completedStations, arChrome.totalStations, arChrome.totalPoints);
 
   const startedAtRef = useRef(Date.now());
@@ -71,25 +106,76 @@ export function StationModulePlayer({
     nextStation: StationCoordinates | null;
     distanceToNext: number | null;
   } | null>(null);
-  // Tab bleibt im Player (Escape regelt der Tastatur-Effekt unten); aus, solange der Abschlussdialog offen ist
-  useDialogFocus(dialogRef, completion === null);
 
-  const safeIndex = Math.min(index, Math.max(modules.length - 1, 0));
+  // Bestehensgrenze: Ergebnisse je Modul, offene Karte, Wiederholungen, aufgegebene Station
+  const resultsRef = useRef<Record<string, ModuleResult>>({});
+  const [attempts, setAttempts] = useState<Record<string, number>>({});
+  const [gate, setGate] = useState<GateState | null>(null);
+  const [ended, setEnded] = useState(false);
+  const forfeitedRef = useRef(false);
+  const failedIdsRef = useRef<string[]>([]);
+
+  // Tab bleibt im Player (Escape regelt der Tastatur-Effekt unten); aus, solange ein Dialog oder eine Karte offen ist
+  // (eingebettet im Admin-Rahmen gibt es keinen Fokusfang)
+  useDialogFocus(dialogRef, !embedded && completion === null && gate === null && !ended);
+
+  const safeIndex = Math.max(0, Math.min(index, Math.max(modules.length - 1, 0)));
   const current = modules[safeIndex];
   const isLast = safeIndex === modules.length - 1;
+  const stage = current ? AR_STAGES[current.type] : undefined;
   // Auf dem Handy bringt der AR-Rundumblick seine eigene AR-Oberfläche mit und braucht den ganzen Bildschirm
-  const isNativeAr = !!current && current.type === 'ar_panorama' && !preview && isArCapableDevice();
+  const isNativeAr = !!stage?.Native && !preview && isArCapableDevice();
+
+  // Richtung aus dem Vergleich mit dem vorherigen Index, damit sie auch bei extern geändertem activeIndex stimmt
+  const prevIndexRef = useRef(safeIndex);
+  const directionRef = useRef<1 | -1>(1);
+  if (prevIndexRef.current !== safeIndex) {
+    directionRef.current = safeIndex > prevIndexRef.current ? 1 : -1;
+    prevIndexRef.current = safeIndex;
+  }
+  const direction = directionRef.current;
+
+  // Modulwechsel (auch von außen): offene Karten und der Demo-Abschluss der eingebetteten Vorschau gehören nicht mehr dazu
+  useEffect(() => {
+    setGate(null);
+    setEnded(false);
+    if (preview && embedded) setCompletion(null);
+  }, [safeIndex, preview, embedded]);
 
   const goTo = (next: number) => {
     if (next < 0 || next >= modules.length) return;
-    setDirection(next > safeIndex ? 1 : -1);
-    setIndex(next);
+    setInternalIndex(next);
+    onIndexChange?.(next);
+  };
+
+  const clearResult = (moduleId: string) => {
+    delete resultsRef.current[moduleId];
+  };
+
+  const retryModule = (moduleId: string) => {
+    clearResult(moduleId);
+    setAttempts((a) => ({ ...a, [moduleId]: (a[moduleId] ?? 0) + 1 }));
   };
 
   /** Nach dem letzten Modul: Vorschau und Gast schließen nur, sonst Station abschließen */
   const finishStation = () => {
     if (finishedRef.current) {
       onClose();
+      return;
+    }
+    // Eine Aufgabe wurde übersprungen: keine Punkte, nur eine schlichte Endkarte
+    if (forfeitedRef.current) {
+      setEnded(true);
+      return;
+    }
+    // Eingebettete Vorschau: Abschlussdialog mit Demo-Werten, ohne Punkte und ohne Standort
+    if (preview && embedded) {
+      setCompletion({
+        durationSeconds: Math.floor((Date.now() - startedAtRef.current) / 1000),
+        remainingStations: Math.max(0, (arChrome.totalStations || 1) - (arChrome.completedStations + 1)),
+        nextStation: upcoming[0] ?? null,
+        distanceToNext: null,
+      });
       return;
     }
     if (preview) {
@@ -108,21 +194,20 @@ export function StationModulePlayer({
     finishedRef.current = true;
     // Wie ARComponentBase: Stand VOR dem Abschluss merken (die Zähler in arChrome springen danach weiter)
     const remainingStations = Math.max(0, (arChrome.totalStations || 1) - (arChrome.completedStations + 1));
-    const nextStations = STATIONS_COORDINATES.filter((_, i) => i >= progress.current - 1).slice(1);
     setCompletion({
       durationSeconds: Math.floor((Date.now() - startedAtRef.current) / 1000),
       remainingStations,
-      nextStation: nextStations[0] ?? null,
+      nextStation: upcoming[0] ?? null,
       distanceToNext: null,
     });
     onCompleteStation?.(station.id);
 
-    if (nextStations.length > 0 && navigator.geolocation) {
+    if (upcoming.length > 0 && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
-          let nearest = nextStations[0];
+          let nearest = upcoming[0];
           let minDistance = Infinity;
-          for (const next of nextStations) {
+          for (const next of upcoming) {
             const distance = calculateDistance(coords.latitude, coords.longitude, next.lat, next.lng);
             if (distance < minDistance) {
               minDistance = distance;
@@ -138,9 +223,45 @@ export function StationModulePlayer({
     }
   };
 
-  const goNext = () => {
+  /** Weiter zum nächsten Modul bzw. Stationsabschluss (ohne Prüfung der Bestehensgrenze) */
+  const advance = () => {
     if (isLast) finishStation();
     else goTo(safeIndex + 1);
+  };
+
+  const goNext = () => {
+    const threshold = (current as { pass_threshold?: number | null } | undefined)?.pass_threshold;
+    if (current && threshold != null && !isModulePassed(threshold, resultsRef.current[current.id])) {
+      const result = resultsRef.current[current.id];
+      setGate({ moduleId: current.id, correct: result?.correct ?? 0, total: result?.total ?? 0, threshold });
+      return;
+    }
+    advance();
+  };
+
+  const retryGate = () => {
+    if (!gate) return;
+    retryModule(gate.moduleId);
+    setGate(null);
+  };
+
+  const skipGate = () => {
+    if (gate && !failedIdsRef.current.includes(gate.moduleId)) failedIdsRef.current.push(gate.moduleId);
+    forfeitedRef.current = true;
+    setGate(null);
+    advance();
+  };
+
+  /** Endkarte: zum ersten nicht bestandenen Modul zurück, Station zählt wieder */
+  const retryFailed = () => {
+    const firstIndex = modules.findIndex((m) => failedIdsRef.current.includes(m.id));
+    const target = modules[firstIndex];
+    forfeitedRef.current = false;
+    failedIdsRef.current = [];
+    setEnded(false);
+    if (!target) return;
+    retryModule(target.id);
+    goTo(firstIndex);
   };
 
   const navigateToNextStation = () => {
@@ -150,9 +271,9 @@ export function StationModulePlayer({
       return;
     }
     setCompletion(null);
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    if (isIOSDevice()) {
       window.location.href = `maps://maps.apple.com/?daddr=${next.lat},${next.lng}&dirflg=w`;
-    } else if (/Android/.test(navigator.userAgent)) {
+    } else if (isAndroidDevice()) {
       window.location.href = `google.navigation:q=${next.lat},${next.lng}&mode=w`;
     } else {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${next.lat},${next.lng}&travelmode=walking`, '_blank');
@@ -160,7 +281,7 @@ export function StationModulePlayer({
   };
 
   useEffect(() => {
-    if (isNativeAr) return;
+    if (isNativeAr || embedded) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (profileMenuOpen) setProfileMenuOpen(false);
@@ -188,13 +309,16 @@ export function StationModulePlayer({
       onNavigateHome={onClose}
       onNavigateToNextStation={navigateToNextStation}
       onClose={onClose}
+      container={embedded ? portalContainer : undefined}
+      themeColor={station.color}
     />
   );
 
-  if (isNativeAr && current?.type === 'ar_panorama') {
+  if (isNativeAr && current && stage?.Native) {
+    const Native = stage.Native;
     return (
-      <>
-        <ArPanoramaEmbedded
+      <div style={{ display: 'contents', ...theme.style }} className={theme.className}>
+        <Native
           key={current.id}
           station={station}
           module={current}
@@ -205,11 +329,17 @@ export function StationModulePlayer({
           onContinue={goNext}
         />
         {completionDialog}
-      </>
+      </div>
     );
   }
 
-  const Player = current && current.type !== 'ar_panorama' ? (MODULE_PLAYERS[current.type] as unknown as AnyModulePlayer) : null;
+  const Player = current ? ((MODULE_PLAYERS as Record<string, unknown>)[current.type] as AnyModulePlayer | undefined) : undefined;
+  const Preview = stage?.Preview;
+  // Neuer Schlüssel baut den Player neu auf (Wiederholung; in der Vorschau auch bei Strukturänderungen im Editor)
+  const playerKey = current ? `${current.id}:${attempts[current.id] ?? 0}:${preview ? moduleStructureKey(current) : ''}` : '';
+  const brokenNote = (
+    <ModuleNote text={t('stationPreviewModuleBroken')} continueLabel={continueLabel} onContinue={goNext} />
+  );
 
   const variants = {
     enter: (d: 1 | -1) => ({ opacity: 0, x: reduceMotion ? 0 : d * 40 }),
@@ -221,20 +351,25 @@ export function StationModulePlayer({
     <>
       <motion.div
         ref={dialogRef}
-        className="fixed inset-0 z-[60] bg-black text-white flex flex-col"
-        role="dialog"
-        aria-modal="true"
+        className={`fixed inset-0 z-[60] bg-black text-white flex flex-col${theme.className ? ` ${theme.className}` : ''}`}
+        role={embedded ? 'region' : 'dialog'}
+        aria-modal={embedded ? undefined : true}
         aria-label={station.title}
-        style={{ '--module-footer-pad': preview ? FOOTER_PAD_SAFE : isProgressCompact ? FOOTER_PAD_COMPACT : FOOTER_PAD_NORMAL } as CSSProperties}
+        style={
+          {
+            '--module-footer-pad': !showChrome ? FOOTER_PAD_SAFE : isProgressCompact ? FOOTER_PAD_COMPACT : FOOTER_PAD_NORMAL,
+            ...theme.style,
+          } as CSSProperties
+        }
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.24 }}
       >
-        {/* Kopf: in der Vorschau am oberen Rand, sonst unter der ARTopBar (gleicher Abstand wie das Profilmenü) */}
+        {/* Kopf: ohne AR-Chrome am oberen Rand, sonst unter der ARTopBar (gleicher Abstand wie das Profilmenü) */}
         <div
           className="px-4 pb-3 flex-shrink-0"
-          style={{ paddingTop: preview ? 'max(16px, env(safe-area-inset-top, 0px))' : 'calc(max(14px, env(safe-area-inset-top, 0px)) + 72px)' }}
+          style={{ paddingTop: !showChrome ? 'max(16px, env(safe-area-inset-top, 0px))' : 'calc(max(14px, env(safe-area-inset-top, 0px)) + 72px)' }}
         >
           {modules.length > 0 && (
             <div className="flex gap-1" aria-hidden="true">
@@ -245,7 +380,7 @@ export function StationModulePlayer({
           )}
           <div className="mt-3 flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              {preview && (
+              {preview && !embedded && (
                 <span className="mb-1.5 inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold">
                   {t('stationPlayerPreview')}
                 </span>
@@ -262,7 +397,7 @@ export function StationModulePlayer({
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
-            {preview && (
+            {preview && !embedded && (
               <button type="button" onClick={onClose} aria-label={t('close')} className={stageButtonClass}>
                 <X className="w-5 h-5" />
               </button>
@@ -272,7 +407,29 @@ export function StationModulePlayer({
 
         {/* Aktuelles Modul */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
-          {current ? (
+          {gate || ended ? (
+            gate ? (
+              <ModuleGate
+                icon={<RotateCcw className="w-7 h-7" />}
+                title={t('stationResultsGateTitle')}
+                body={gate.total > 1 ? t('stationResultsGateBody', { correct: gate.correct, total: gate.total, threshold: gate.threshold }) : t('stationResultsGateBodySingle')}
+                primaryLabel={t('stationResultsRetry')}
+                onPrimary={retryGate}
+                secondaryLabel={t('stationResultsSkip')}
+                onSecondary={skipGate}
+              />
+            ) : (
+              <ModuleGate
+                icon={<Layers className="w-7 h-7" />}
+                title={t('stationResultsEndedTitle')}
+                body={t('stationResultsEndedBody')}
+                primaryLabel={t('stationResultsRetryFailed')}
+                onPrimary={retryFailed}
+                secondaryLabel={t('close')}
+                onSecondary={onClose}
+              />
+            )
+          ) : current ? (
             <AnimatePresence initial={false} custom={direction} mode="popLayout">
               <motion.div
                 key={current.id}
@@ -284,10 +441,33 @@ export function StationModulePlayer({
                 transition={{ duration: 0.3, ease }}
                 className="absolute inset-0"
               >
-                {current.type === 'ar_panorama' ? (
-                  <ArPanoramaPlaceholder module={current} lang={lang} continueLabel={continueLabel} onContinue={goNext} />
+                {preview && moduleMissingContent(current) ? (
+                  <ModuleNote text={t('stationPreviewModuleIncomplete')} continueLabel={continueLabel} onContinue={goNext} />
                 ) : (
-                  Player && <Player module={current} lang={lang} preview={preview} continueLabel={continueLabel} onContinue={goNext} stationTitle={station.title} />
+                  <ModuleBoundary resetKey={playerKey} fallback={brokenNote}>
+                    {stage ? (
+                      Preview ? (
+                        <Preview key={playerKey} module={current} lang={lang} continueLabel={continueLabel} onContinue={goNext} />
+                      ) : (
+                        brokenNote
+                      )
+                    ) : Player ? (
+                      <Player
+                        key={playerKey}
+                        module={current}
+                        lang={lang}
+                        preview={preview}
+                        continueLabel={continueLabel}
+                        onContinue={goNext}
+                        onResult={(r) => {
+                          resultsRef.current[current.id] = r;
+                        }}
+                        stationTitle={station.title}
+                      />
+                    ) : (
+                      brokenNote
+                    )}
+                  </ModuleBoundary>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -304,8 +484,8 @@ export function StationModulePlayer({
           )}
         </div>
 
-        {/* Gleiche AR-Oberfläche wie in den AR-Stationen – gehört zur echten Station, nicht zur Vorschau */}
-        {!preview && (
+        {/* Gleiche AR-Oberfläche wie in den AR-Stationen – in der eingebetteten Vorschau mit Demo-Werten */}
+        {showChrome && (
           <div className="ar-ui-overlay">
             <ARTopBar
               onNavigateHome={onClose}

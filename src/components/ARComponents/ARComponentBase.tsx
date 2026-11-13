@@ -140,15 +140,26 @@ const GEO_ERROR_KEYS = {
 } as const;
 
 // Custom Hook für Station Proximity Check
-export const useStationProximity = (stationLat: number, stationLng: number, radiusMeters: number = 50) => {
+export const useStationProximity = (
+  stationLat: number,
+  stationLng: number,
+  radiusMeters: number = 50,
+  options: { enabled?: boolean } = {}
+) => {
   const { t } = useLanguage();
+  // Aus (z. B. Vorschau im Admin): kein Abo, keine Position, kein Fehler
+  const enabled = options.enabled !== false;
   const [state, setState] = useState<GeoState>(() => (DISABLE_GEO ? { position: MOCK_LOCATION, error: null } : geoState));
 
   useEffect(() => {
-    if (DISABLE_GEO) return;
+    if (DISABLE_GEO || !enabled) return;
     setState(geoState);
     return subscribeGeo(() => setState(geoState));
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) {
+    return { userLocation: null, distance: null, locationError: null, isWithinRadius: false };
+  }
 
   const userLocation = state.position;
   const distance = DISABLE_GEO

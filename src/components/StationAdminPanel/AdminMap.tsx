@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ensureContrast, normalizeHex } from '../../lib/stationTheme';
 
 /**
  * Karte der Stationsverwaltung (Leaflet + OpenStreetMap, nur im Admin-Bereich geladen).
@@ -17,6 +18,8 @@ export interface MapMarker {
   label: string;
   title: string;
   published: boolean;
+  /** Akzentfarbe der Station (#rrggbb); nur veröffentlichte, nicht aktive Marker tragen sie */
+  color?: string | null;
 }
 
 interface AdminMapProps {
@@ -38,18 +41,21 @@ interface AdminMapProps {
 /** Ortsmitte St. Georgen als Startpunkt, wenn noch nichts gesetzt ist */
 const DEFAULT_CENTER: L.LatLngTuple = [48.1258, 8.3333];
 
-function markerIcon(label: string, variant: 'published' | 'draft' | 'active' | 'edit'): L.DivIcon {
+function markerIcon(label: string, variant: 'published' | 'draft' | 'active' | 'edit', color?: string | null): L.DivIcon {
   const styles = {
     published: 'bg-primary text-white border-white',
     draft: 'bg-card text-muted-foreground border-border-strong border-dashed',
     active: 'bg-gold text-gold-foreground border-white scale-110',
     edit: 'bg-gold text-gold-foreground border-white scale-110',
   }[variant];
+  // Hex ist per Regex (normalizeHex) validiert und damit im HTML-String sicher
+  const hex = variant === 'published' ? normalizeHex(color) : null;
+  const theme = hex ? ` station-theme" style="--station-accent:${ensureContrast(hex)}` : '';
   return L.divIcon({
     className: '',
     iconSize: [34, 34],
     iconAnchor: [17, 17],
-    html: `<span class="flex w-[34px] h-[34px] items-center justify-center rounded-full border-2 text-[13px] font-extrabold tabular-nums shadow-md ${styles}">${label}</span>`,
+    html: `<span class="flex w-[34px] h-[34px] items-center justify-center rounded-full border-2 text-[13px] font-extrabold tabular-nums shadow-md ${styles}${theme}">${label}</span>`,
   });
 }
 
@@ -109,7 +115,7 @@ export function AdminMap({ markers, showRoute = false, activeId = null, onMarker
     }
     others.forEach((m) => {
       const marker = L.marker([m.lat, m.lng], {
-        icon: markerIcon(m.label, m.id === activeId ? 'active' : m.published ? 'published' : 'draft'),
+        icon: markerIcon(m.label, m.id === activeId ? 'active' : m.published ? 'published' : 'draft', m.color),
         title: m.title,
         keyboard: true,
         riseOnHover: true,

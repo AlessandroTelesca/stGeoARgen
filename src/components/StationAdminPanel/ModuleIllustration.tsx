@@ -150,6 +150,26 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
           </div>
         );
       }
+      if (variant === 'sound') {
+        return (
+          <div className="w-full">
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+                <span className="ml-0.5 w-0 h-0 border-y-[4px] border-y-transparent border-l-[6px] border-l-primary" />
+              </span>
+              <div className="flex items-center gap-[2px] h-4">
+                {[4, 8, 13, 8, 4].map((h, i) => (
+                  <span key={i} className="w-[2px] rounded-full bg-white/60" style={{ height: `${h}px` }} />
+                ))}
+              </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              <span className="block h-2.5 rounded bg-white/12 border border-white/20" />
+              <span className="block h-2.5 rounded bg-primary border border-primary-lighter" />
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="w-full space-y-1">
           {variant === 'round' && (

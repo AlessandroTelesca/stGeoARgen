@@ -36,12 +36,14 @@ import type { ModuleEditorProps, ModuleErrors } from '../../stationModules/edito
 import { LocalizedInput, LocalizedTextarea } from '../../stationModules/editor/fields';
 import { StationModulePlayer } from '../../stationModules/player/StationModulePlayer';
 import { setUnsavedGuard } from '../../lib/unsavedChanges';
+import { ensureContrast } from '../../lib/stationTheme';
 import { useDialogFocus } from '../../lib/useDialogFocus';
 import { LanguageOverride } from '../../contexts/LanguageContext';
 import type { ARChromeProps } from '../../stationModules/player/contract';
 import { FieldError, FormSection, SubmitFeedback, inputClass, useScrollToFirstError, type ImageItem } from './adminFormParts';
 import { ConfirmDialog, DraftChip, ease } from './adminUi';
 import { AdminMap, type MapMarker } from './AdminMap';
+import { AccentColorField } from './AccentColorField';
 import { ModuleLibrary } from './ModuleLibrary';
 import { PhonePreview, STATION_PAGE } from './PhonePreview';
 
@@ -59,6 +61,8 @@ export interface StationDraft {
   longitude: string;
   cover: ImageItem | null;
   published: boolean;
+  /** Akzentfarbe (#rrggbb); null = Standard (Tannengrün) */
+  color: string | null;
   modules: DraftModule[];
 }
 
@@ -91,6 +95,7 @@ export function draftFromStation(station: CustomStation): StationDraft {
     longitude: String(station.longitude),
     cover: station.cover_image ? existing(station.cover_image) : null,
     published: station.published,
+    color: station.color ?? null,
     modules: station.modules.map((m) => mapModuleMedia<string, DraftMedia>(m, (file) => (file ? existing(file) : null))),
   };
 }
@@ -109,6 +114,7 @@ export function emptyStationDraft(pathId: string, modules: DraftModule[], defaul
     longitude: '',
     cover: null,
     published: false,
+    color: null,
     modules,
   };
 }
@@ -306,7 +312,7 @@ export function StationEditor({
   const ownIndex = station ? pathStations.findIndex((s) => s.id === station.id) : -1;
   const ownLabel = String((ownIndex >= 0 ? ownIndex : pathStations.length) + 1);
   const mapMarkers: MapMarker[] = useMemo(
-    () => pathStations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published })),
+    () => pathStations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published, color: s.color })),
     [pathStations]
   );
   const mapEditable = useMemo(
@@ -498,6 +504,7 @@ export function StationEditor({
       latitude: lat!,
       longitude: lng!,
       published: draft.published,
+      color: draft.color ? ensureContrast(draft.color) : null,
     };
 
     setSaving(true);
@@ -681,6 +688,7 @@ export function StationEditor({
                 hint={t('adminLongDescriptionHint')}
                 error={errors.longDescriptionDe}
               />
+              <AccentColorField value={draft.color} onChange={(color) => update((prev) => ({ ...prev, color }))} />
             </div>
           </section>
 
@@ -1106,7 +1114,7 @@ export function StationEditor({
       {previewOpen && createPortal(
         <LanguageOverride language={lang}>
         <StationModulePlayer
-          station={{ id: station?.id ?? 0, title: title || t('adminNewStation'), latitude: lat ?? 0, longitude: lng ?? 0, points: Number(draft.points) || 0, modules: previewModules }}
+          station={{ id: station?.id ?? 0, title: title || t('adminNewStation'), latitude: lat ?? 0, longitude: lng ?? 0, points: Number(draft.points) || 0, color: draft.color, modules: previewModules }}
           lang={lang}
           arChrome={arChrome}
           preview

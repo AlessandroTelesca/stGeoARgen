@@ -1,1 +1,10 @@
-{}
+{
+  "stationResultsGateTitle": "Fast geschafft",
+  "stationResultsGateBody": "{correct} von {total} auf Anhieb richtig – für diese Station brauchst du mindestens {threshold}.",
+  "stationResultsGateBodySingle": "Diese Aufgabe musst du lösen, um die Punkte der Station zu bekommen.",
+  "stationResultsRetry": "Nochmal versuchen",
+  "stationResultsSkip": "Weiter ohne Punkte",
+  "stationResultsEndedTitle": "Station beendet",
+  "stationResultsEndedBody": "Diesmal gibt es keine Punkte. Du kannst die offene Aufgabe jederzeit wiederholen.",
+  "stationResultsRetryFailed": "Aufgabe wiederholen"
+}

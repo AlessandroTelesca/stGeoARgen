@@ -4,6 +4,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Trophy } from 'lucide-react';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { stationThemeProps } from '../lib/stationTheme';
 
 interface StationCardProps {
   id: number;
@@ -16,10 +17,13 @@ interface StationCardProps {
   onClick: () => void;
   latitude: number;
   longitude: number;
+  /** Akzentfarbe der Station (#rrggbb); null/fehlt → Standardfarbe */
+  color?: string | null;
 }
 
-export function StationCard({ title, description, imageUrl, status, points, onClick, latitude, longitude }: StationCardProps) {
+export function StationCard({ title, description, imageUrl, status, points, onClick, latitude, longitude, color }: StationCardProps) {
   const { t } = useLanguage();
+  const theme = stationThemeProps(color);
   const isLocked = false; // Stations are never locked - user can start anywhere
   const isCompleted = status === 'completed';
   
@@ -32,7 +36,8 @@ export function StationCard({ title, description, imageUrl, status, points, onCl
       onClick={onClick}
       className={`w-full text-left bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
         isInRange && !isCompleted ? 'border-2 border-primary ring-2 ring-primary/20' : 'border border-border'
-      }`}
+      } ${theme.className ?? ''}`}
+      style={theme.style}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
     >

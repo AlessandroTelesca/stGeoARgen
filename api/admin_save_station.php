@@ -7,6 +7,7 @@
  *     { id?, path_id, title_de, title_en?, description_de, description_en?,
  *       long_description_de, long_description_en?, points, latitude, longitude,
  *       published: bool (Standard false = Entwurf),
+ *       color: Akzentfarbe als Hex "#rrggbb" | null (Standardfarbe der App),
  *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover"),
  *       modules: [...] }   – 1 bis 12 Module in Abspielreihenfolge, Format und Grenzen siehe
  *                            src/stationModules/types.ts (Prüfung: api/station_modules_lib.php).
@@ -74,6 +75,16 @@ if (isset($input['published'])) {
     $published = filter_var($input['published'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     if ($published === null) {
         fail('Ungültiger Wert für „Veröffentlicht“.');
+    }
+}
+
+// Akzentfarbe: leer → Standardfarbe der App, sonst Hex #rrggbb
+$color = null;
+$colorRaw = $input['color'] ?? null;
+if ($colorRaw !== null && $colorRaw !== '') {
+    $color = is_string($colorRaw) ? strtolower(trim($colorRaw)) : '';
+    if (!preg_match('/^#[0-9a-f]{6}$/', $color)) {
+        fail('Ungültige Akzentfarbe.');
     }
 }
 
@@ -172,6 +183,7 @@ try {
         ':sort_order' => $sortOrder,
         ':station_type' => $hasPanorama ? 'panorama_quiz' : 'image_sequence',
         ':cover_image' => $coverImage,
+        ':color' => $color,
         ':points' => $points,
         ':latitude' => $latitude,
         ':longitude' => $longitude,
@@ -183,12 +195,12 @@ try {
             "INSERT INTO custom_stations
                (path_id, title_de, title_en, description_de, description_en, long_description_de, long_description_en,
                 modules, published, sort_order,
-                station_type, cover_image, slides, panorama_image, live_camera, quiz_questions,
+                station_type, cover_image, color, slides, panorama_image, live_camera, quiz_questions,
                 points, latitude, longitude, quiz_question_de, quiz_question_en, quiz_options_de, quiz_options_en, quiz_correct_answer)
              VALUES
                (:path_id, :title_de, :title_en, :description_de, :description_en, :long_description_de, :long_description_en,
                 :modules, :published, :sort_order,
-                :station_type, :cover_image, '[]', NULL, 0, NULL,
+                :station_type, :cover_image, :color, '[]', NULL, 0, NULL,
                 :points, :latitude, :longitude, NULL, NULL, NULL, NULL, NULL)"
         )->execute($params);
         $id = (int) $db->lastInsertId();
@@ -199,7 +211,7 @@ try {
                description_de = :description_de, description_en = :description_en,
                long_description_de = :long_description_de, long_description_en = :long_description_en,
                modules = :modules, published = :published, sort_order = COALESCE(:sort_order, sort_order),
-               station_type = :station_type, cover_image = :cover_image, slides = '[]',
+               station_type = :station_type, cover_image = :cover_image, color = :color, slides = '[]',
                panorama_image = NULL, live_camera = 0, quiz_questions = NULL,
                points = :points, latitude = :latitude, longitude = :longitude,
                quiz_question_de = NULL, quiz_question_en = NULL,

@@ -8,6 +8,7 @@ import { MobileOnlyNotice } from '../MobileOnlyNotice';
 import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import type { ARInitOptions } from '../../../ARbackend/ARVisualizer';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { isIOSDevice } from '../../../lib/device';
 
 // Gleiche Abstände und Glas-Optik wie das Quiz im Phonomuseum
 const QUIZ_UI_SAFE_VERTICAL_GAP = 88;
@@ -382,7 +383,7 @@ export const CustomPanoramaQuizView = ({
   embedded,
 }: CustomPanoramaQuizViewProps) => {
   const { t } = useLanguage();
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isIOS = isIOSDevice();
   const isAndroid = /Android/.test(navigator.userAgent);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);

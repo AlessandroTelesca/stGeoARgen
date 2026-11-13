@@ -16,6 +16,7 @@ function QuizEditor({ module, onChange, lang, errors, prepareMedia }: ModuleEdit
       idPrefix={`${module.id}-quiz`}
       prepareMedia={prepareMedia}
       withExplanation
+      withAudio
       max={MAX_QUIZ_QUESTIONS}
     />
   );

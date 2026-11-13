@@ -1,1 +1,22 @@
-{}
+{
+  "stationAccentLabel": "Accent colour",
+  "stationAccentHint": "Colours this station's buttons, gradient, progress and map marker.",
+  "stationAccentDefault": "Default",
+  "stationAccentCustom": "Choose your own colour",
+  "stationAccentPreviewTitle": "This is how your station starts",
+  "stationAccentPreviewChip": "Part 1 of 3",
+  "stationAccentContrast": "Easy to read · contrast {ratio} : 1",
+  "stationAccentDecimal": ".",
+  "stationAccentAdjusted": "This colour is too light for white text. We automatically use a darker shade.",
+  "stationAccentWarnRed": "Red looks like an error message in the app. Better pick a different hue.",
+  "stationAccentWarnGold": "Gold stands for points and rewards in the app. Better pick a different hue.",
+  "stationAccentWarnDark": "Very dark colours are hard to see on the black station stage.",
+  "stationAccent_tannengruen": "Fir green",
+  "stationAccent_moos": "Moss",
+  "stationAccent_tannenschatten": "Fir shade",
+  "stationAccent_petrol": "Petrol",
+  "stationAccent_seeblau": "Lake blue",
+  "stationAccent_heidelbeere": "Bilberry",
+  "stationAccent_uhrmacherholz": "Clockmaker's wood",
+  "stationAccent_basalt": "Basalt"
+}

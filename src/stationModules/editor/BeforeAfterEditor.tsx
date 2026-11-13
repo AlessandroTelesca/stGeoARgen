@@ -200,7 +200,7 @@ function BeforeAfterEditor({ module, onChange, lang, errors, prepareMedia }: Mod
             id={`${id}-after-label`}
             label={t('moduleEditorSideLabel')}
             lang={lang}
-            required
+            required={!camera}
             de={module.after_label_de}
             en={module.after_label_en}
             onChange={(de, en) => onChange((prev) => ({ ...prev, after_label_de: de, after_label_en: en }))}
@@ -236,7 +236,7 @@ function validate(module: DraftModuleOfType<'before_after'>, t: Translate): Modu
   if (!module.before_image) errors.before_image = t('moduleErrorImageRequired');
   if (module.mode !== 'camera' && !module.after_image) errors.after_image = t('moduleErrorImageRequired');
   if (isBlank(module.before_label_de)) errors.before_label_de = t('moduleErrorRequired');
-  if (isBlank(module.after_label_de)) errors.after_label_de = t('moduleErrorRequired');
+  if (module.mode !== 'camera' && isBlank(module.after_label_de)) errors.after_label_de = t('moduleErrorRequired');
   return errors;
 }
 

@@ -20,10 +20,8 @@ const CustomPanoramaQuizView = lazy(() =>
 
 type ArPanoramaModule = ModuleOfType<'ar_panorama', string>;
 
-/** Gleiche Geräteprüfung wie CustomPanoramaQuizView */
-export function isArCapableDevice(): boolean {
-  return /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-}
+// Gleiche Geräteprüfung wie CustomPanoramaQuizView (liegt jetzt in lib/device.ts)
+export { isArCapableDevice } from '../../lib/device';
 
 /** Daten für die AR-Ansicht in der aktuellen Sprache */
 function buildPanoramaStation(station: PlayerStation, module: ArPanoramaModule, lang: 'de' | 'en'): PanoramaQuizStation {
