@@ -4,7 +4,6 @@ import { useReducedMotion } from 'motion/react';
 import { X } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { dirFromYawPitch } from '../../../ar/angles';
-import { DragInput } from '../../../ar/inputs';
 import { useArStage } from '../../../ar/useArStage';
 import {
   PANEL_YAWS_DEG,
@@ -20,7 +19,7 @@ import type { ModuleOfType } from '../../types';
 import { ArPanoramaPlaceholder } from '../ArPanoramaStage';
 import { Feedback, PrimaryButton } from '../ui';
 import { buildPanoramaContent } from './panoramaContent';
-import { panelStageYaw, panelStartYaw } from './panoramaLayout';
+import { panelStageYaw } from './panoramaLayout';
 
 /** Dauer des Hinweises „Ziehen zum Umsehen“ */
 const DRAG_HINT_MS = 4000;
@@ -58,8 +57,6 @@ export function ArPanoramaPlayer({ module, lang, continueLabel, onContinue }: Ar
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const withPanorama = module.background === 'panorama' && !!module.panorama_image;
-  const withPanoramaRef = useRef(withPanorama);
-  withPanoramaRef.current = withPanorama;
 
   const { session, status, error } = useArStage(containerRef, {
     enabled: true,
@@ -80,19 +77,11 @@ export function ArPanoramaPlayer({ module, lang, continueLabel, onContinue }: Ar
   const [dragHint, setDragHint] = useState(true);
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
 
-  // Start: auf die erste Tafel schauen wie am Handy (die Eingabe der Bühne beginnt bei yaw 0)
-  useEffect(() => {
-    if (!session) return;
-    const input = new DragInput({ reducedMotion: !!reduceMotion });
-    session.setInput(input);
-    input.setYawPitch(panelStartYaw(withPanoramaRef.current), 0);
-  }, [session]);
-
   // Frame-Callback: Tafeln an ihren festen Plätzen im Raum auf den Bildschirm projizieren
   useEffect(() => {
     if (!session) return;
     const world = new THREE.Vector3();
-    const dirs = Array.from({ length: quizSlot + 1 }, (_, slot) => dirFromYawPitch(panelStageYaw(slot, withPanorama), 0));
+    const dirs = Array.from({ length: quizSlot + 1 }, (_, slot) => dirFromYawPitch(panelStageYaw(slot), 0));
     let sizeKey = '';
     let startForward: THREE.Vector3 | null = null;
     let movedReported = false;
@@ -132,7 +121,7 @@ export function ArPanoramaPlayer({ module, lang, continueLabel, onContinue }: Ar
       }
     });
     return off;
-  }, [session, quizSlot, withPanorama]);
+  }, [session, quizSlot]);
 
   // Hinweis läuft nach einigen Sekunden von selbst aus
   useEffect(() => {

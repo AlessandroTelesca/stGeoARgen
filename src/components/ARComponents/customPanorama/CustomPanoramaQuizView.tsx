@@ -185,7 +185,8 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     await super.init();
 
     // Ohne Hintergrund ist die Station nicht nutzbar → Fehler an die Startkarte weitergeben
-    if (this.panoramaUrl) this.setPanoramaBackground(await this.loadPanoramaTexture(this.panoramaUrl));
+    // Bild richtig herum (Bildmitte = Startblick), gleiche Kugel wie der Desktop-/Vorschau-Player
+    if (this.panoramaUrl) this.setPanoramaBackground(await this.loadPanoramaTexture(this.panoramaUrl), { correctOrientation: true });
     else await this.startLiveCamera();
 
     if (this.camera) {

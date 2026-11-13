@@ -6,7 +6,8 @@ import { createPanoramaSphere } from '../../src/ar/panoramaSphere';
 import { wrapDeg } from '../../src/ar/angles';
 import { AR_STAGES } from '../../src/stationModules/player/arStages';
 import { ArPanoramaPlaceholder } from '../../src/stationModules/player/ArPanoramaStage';
-import { panelStageYaw, panelStartYaw, yawLegacyToStage } from '../../src/stationModules/player/modules/panoramaLayout';
+import { panelStageYaw, panelStartYaw } from '../../src/stationModules/player/modules/panoramaLayout';
+import { GyroARVisualizer } from '../../src/ARbackend/GyroARVisualizer';
 import { buildPanoramaContent } from '../../src/stationModules/player/modules/panoramaContent';
 import { PANEL_YAWS_DEG, panoramaPanelWidth } from '../../src/components/ARComponents/customPanorama/PanoramaPanels';
 import { usePanoramaQuiz } from '../../src/components/ARComponents/customPanorama/usePanoramaQuiz';
@@ -28,35 +29,36 @@ function equatorYaw(mesh: THREE.Mesh, u: number): number {
 }
 
 describe('ar_panorama: Plätze der Tafeln', () => {
-  test('Umrechnung trifft für jeden Platz dieselbe Bildstelle wie die Handy-Kugel', () => {
-    // Handy: GyroARVisualizer.setPanoramaBackground (SphereGeometry, BackSide, ohne Spiegelung/Drehung)
-    const legacy = new THREE.Mesh(new THREE.SphereGeometry(120, 64, 32));
+  /** Hintergrund-Kugel, die GyroARVisualizer.setPanoramaBackground anlegt (ohne Renderer/Sensoren) */
+  function gyroBackdrop(options?: { correctOrientation?: boolean }): THREE.Mesh {
+    const viz = Object.create(GyroARVisualizer.prototype) as GyroARVisualizer & { scene: THREE.Scene };
+    viz.scene = new THREE.Scene();
+    viz.setPanoramaBackground(new THREE.Texture(), options);
+    return viz.scene.getObjectByName('PanoramaBackdrop') as THREE.Mesh;
+  }
+
+  test('Handy-Rundumblick nutzt dieselbe, nicht gespiegelte Kugel wie der Desktop-Player', () => {
+    const phone = gyroBackdrop({ correctOrientation: true });
     const stage = createPanoramaSphere(new THREE.Texture());
     for (const u of [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
-      const legacyYaw = equatorYaw(legacy, u);
-      const stageYaw = equatorYaw(stage, u);
-      expect(wrapDeg(yawLegacyToStage(legacyYaw) - stageYaw)).toBeCloseTo(0, 5);
+      expect(wrapDeg(equatorYaw(phone, u) - equatorYaw(stage, u))).toBeCloseTo(0, 5);
     }
+    // Bildmitte vorn, Bild wächst nach rechts (nicht seitenverkehrt)
+    expect(wrapDeg(equatorYaw(phone, 0.5))).toBeCloseTo(0, 5);
+    expect(wrapDeg(equatorYaw(phone, 0.75))).toBeCloseTo(90, 5);
   });
 
-  test('Handy: Bildspalte u = 0,75 liegt vorn, Spalten wachsen gegen den Uhrzeigersinn', () => {
-    const legacy = new THREE.Mesh(new THREE.SphereGeometry(120, 64, 32));
+  test('fest eingebaute Stationen behalten die bisherige Kugel (u = 0,75 vorn)', () => {
+    const legacy = gyroBackdrop();
     expect(wrapDeg(equatorYaw(legacy, 0.75))).toBeCloseTo(0, 5);
     expect(wrapDeg(equatorYaw(legacy, 0.5))).toBeCloseTo(90, 5);
   });
 
-  test('mit Bild: erste Tafel bei yaw 90, die weiteren laufen nach links', () => {
-    expect(panelStageYaw(0, true)).toBeCloseTo(90);
-    expect(panelStageYaw(1, true)).toBeCloseTo(54);
-    expect(panelStageYaw(3, true)).toBeCloseTo(-18);
-    expect(panelStartYaw(true)).toBeCloseTo(90);
-  });
-
-  test('ohne Bild: Tafeln im Uhrzeigersinn ab dem Startblick', () => {
-    expect([0, 1, 2].map((slot) => panelStageYaw(slot, false))).toEqual([0, 36, 72]);
-    expect(panelStageYaw(5, false)).toBeCloseTo(180);
-    expect(panelStageYaw(6, false)).toBeCloseTo(-144);
-    expect(panelStartYaw(false)).toBe(0);
+  test('Tafeln im Uhrzeigersinn ab dem Startblick, Start auf der ersten Tafel', () => {
+    expect([0, 1, 2].map((slot) => panelStageYaw(slot))).toEqual([0, 36, 72]);
+    expect(panelStageYaw(5)).toBeCloseTo(180);
+    expect(panelStageYaw(6)).toBeCloseTo(-144);
+    expect(panelStartYaw()).toBe(0);
   });
 
   test('zehn Plätze, gleichmäßig im Abstand von 36 Grad', () => {

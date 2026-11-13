@@ -192,7 +192,7 @@ Einrichtung auf dem PHP-Server:
 
 ## Bekannte Einschränkungen
 
-- **AR-Rundumblick auf dem Handy:** Der bisherige Player (`CustomPanoramaQuizView` mit `GyroARVisualizer`) zeigt 360°-Bilder seitenverkehrt, weil die Kugel mit `BackSide` ohne Spiegelkorrektur gerendert wird. Der neue Desktop-/Vorschau-Player zeigt sie richtig herum und platziert die Tafeln an derselben Bildstelle ([src/stationModules/player/modules/panoramaLayout.ts](src/stationModules/player/modules/panoramaLayout.ts)). Die Umstellung des Handy-Players steht aus.
+- **360°-Hintergründe der fest eingebauten Stationen** (Bahnhof, Glockenspiel, Phonomuseum, Schwarzes Tor): `GyroARVisualizer.setPanoramaBackground` rendert die Kugel standardmäßig mit `BackSide` ohne Spiegelkorrektur, das Bild erscheint von innen seitenverkehrt. Marker und Hotspots dieser Stationen sind darauf abgestimmt, deshalb bleibt es dort so. Der AR-Rundumblick aus der Stationsverwaltung nutzt `setPanoramaBackground(…, { correctOrientation: true })` und damit dieselbe Kugel wie der AR-Kern ([src/ar/panoramaSphere.ts](src/ar/panoramaSphere.ts)): Bild richtig herum, Bildmitte = Startblick, Tafeln auf Handy und Rechner an derselben Bildstelle.
 
 ## Resources
 
