@@ -1,0 +1,22 @@
+{
+  "stationAccentLabel": "Akzentfarbe",
+  "stationAccentHint": "Färbt Buttons, Verlauf, Fortschritt und Kartenmarker dieser Station.",
+  "stationAccentDefault": "Standard",
+  "stationAccentCustom": "Eigene Farbe wählen",
+  "stationAccentPreviewTitle": "Bereit zum Start!",
+  "stationAccentPreviewChip": "Teil 1 von 3",
+  "stationAccentContrast": "Gut lesbar · Kontrast {ratio} : 1",
+  "stationAccentDecimal": ",",
+  "stationAccentAdjusted": "Diese Farbe ist zu hell für weiße Schrift. Wir verwenden automatisch eine dunklere Variante.",
+  "stationAccentWarnRed": "Rot wirkt in der App wie eine Fehlermeldung. Wähle besser einen anderen Farbton.",
+  "stationAccentWarnGold": "Gold steht in der App für Punkte und Belohnungen. Wähle besser einen anderen Farbton.",
+  "stationAccentWarnDark": "Sehr dunkle Farben sind auf der schwarzen Stationsbühne kaum zu sehen.",
+  "stationAccent_tannengruen": "Tannengrün",
+  "stationAccent_moos": "Moos",
+  "stationAccent_tannenschatten": "Tannenschatten",
+  "stationAccent_petrol": "Petrol",
+  "stationAccent_seeblau": "Seeblau",
+  "stationAccent_heidelbeere": "Heidelbeere",
+  "stationAccent_uhrmacherholz": "Uhrmacherholz",
+  "stationAccent_basalt": "Basalt"
+}

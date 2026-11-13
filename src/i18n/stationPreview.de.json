@@ -1,0 +1,18 @@
+{
+  "stationPreviewModuleBroken": "Dieser Teil kann gerade nicht angezeigt werden.",
+  "stationPreviewModuleIncomplete": "Dieser Teil ist noch nicht fertig ausgefüllt.",
+  "stationPreviewModeTry": "Ausprobieren",
+  "stationPreviewModeEdit": "Bearbeiten",
+  "stationPreviewModeLabel": "Modus der Vorschau",
+  "stationPreviewClickToEdit": "Klicken zum Bearbeiten",
+  "stationPreviewEditHere": "Diesen Teil bearbeiten",
+  "stationPreviewVisitorState": "Besucher:in ist …",
+  "stationPreviewVisitor_in_range": "Vor Ort",
+  "stationPreviewVisitor_too_far": "Zu weit weg",
+  "stationPreviewVisitor_needs_login": "Nicht angemeldet",
+  "stationPreviewVisitor_completed": "Erledigt",
+  "stationPreviewDemoUser": "Lena",
+  "stationPreviewErrorTooManyModules": "Höchstens {max} Teile pro Station.",
+  "stationPreviewErrorSingleton": "„{module}“ kann nur einmal pro Station vorkommen.",
+  "stationPreviewDroppedModules": "{count} Teil(e) stammen aus einer neueren Version und werden beim Speichern entfernt."
+}

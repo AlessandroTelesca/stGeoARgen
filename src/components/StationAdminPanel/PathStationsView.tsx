@@ -44,7 +44,7 @@ export function PathStationsView({
   const [deleting, setDeleting] = useState(false);
 
   const markers: MapMarker[] = useMemo(
-    () => stations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published })),
+    () => stations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published, color: s.color })),
     [stations]
   );
 

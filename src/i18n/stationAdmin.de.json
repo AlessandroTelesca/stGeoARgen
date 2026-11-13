@@ -63,7 +63,7 @@
   "adminPublishedLabel": "Für Besucher:innen sichtbar",
   "adminPublishedOnHint": "Die Station erscheint in der App, sobald ihr Pfad veröffentlicht ist.",
   "adminPublishedOffHint": "Entwurf – nur in der Verwaltung sichtbar.",
-  "adminArModuleHint": "Der AR-Rundumblick funktioniert nur auf dem Handy vor Ort.",
+  "adminArModuleHint": "AR-Module (Rundumblick, Entdecken) wirken am besten auf dem Handy vor Ort. Am Computer und in der Vorschau kannst du dich mit der Maus umsehen.",
   "adminDeleteStation": "Station löschen",
   "adminDeleteStationTitle": "Station löschen?",
   "adminDeleteStationText": "„{name}“ wird mit allen Bildern und Tonaufnahmen endgültig gelöscht.",

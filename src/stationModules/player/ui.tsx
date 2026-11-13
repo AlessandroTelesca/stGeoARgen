@@ -9,6 +9,19 @@ import type { ModuleOfType, ModuleType } from '../types';
  * Jeder Player baut sich aus <ModuleScreen> + diesen Bausteinen, damit alle Module gleich wirken.
  */
 
+/** Ergebnis eines Moduls mit richtig/falsch (Quiz, Schätzfrage, Rätsel, Reihenfolge) */
+export interface ModuleResult {
+  correct: number;
+  total: number;
+}
+
+/** Bestehensgrenze erfüllt? Ohne Grenze immer; mit Grenze aber ohne Ergebnis nie */
+export function isModulePassed(threshold: number | null | undefined, result: ModuleResult | undefined): boolean {
+  if (threshold == null) return true;
+  if (!result) return false;
+  return result.correct >= threshold;
+}
+
 export interface ModulePlayerProps<T extends ModuleType> {
   /** Modul mit fertigen Medien-URLs */
   module: ModuleOfType<T, string>;
@@ -17,6 +30,8 @@ export interface ModulePlayerProps<T extends ModuleType> {
   continueLabel: string;
   /** Modul fertig → nächstes Modul bzw. Stationsabschluss */
   onContinue: () => void;
+  /** Ergebnis vor onContinue melden (Quiz, Schätzfrage, Rätsel, Reihenfolge) */
+  onResult?: (result: ModuleResult) => void;
   /** Vorschau in der Stationsverwaltung: nichts wird gespeichert, Kamera/Standort optional */
   preview: boolean;
   /** Name der Station in der aktuellen Sprache (z. B. Beschriftung im Fotomoment) */

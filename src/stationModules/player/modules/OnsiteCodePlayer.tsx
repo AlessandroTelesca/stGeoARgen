@@ -1,19 +1,14 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { pickLang } from '../../types';
 import { Feedback, GlassCard, ModuleHeading, ModuleScreen, ModuleText, PrimaryButton, SecondaryButton, StageImage, type ModulePlayerProps } from '../ui';
+import { answersMatch } from './onsiteAnswer';
 import { FOCUS_RING, Reveal } from './shared';
 
 type Status = 'open' | 'solved' | 'revealed';
 
-/** Vergleichsform: ohne Rand und Mehrfach-Leerzeichen, klein geschrieben; Zahlen zusätzlich ohne Leerzeichen/Punkte/Kommas */
-function normalize(value: string, numeric: boolean): string {
-  const base = value.trim().toLowerCase().replace(/\s+/g, ' ');
-  return numeric ? base.replace(/[\s.,]/g, '') : base;
-}
-
 /** Vor-Ort-Rätsel: Antwort eingeben, bei Fehlversuchen Hinweis und Auflösung */
-export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'onsite_code'>) {
+export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue, onResult }: ModulePlayerProps<'onsite_code'>) {
   const { t } = useLanguage();
   const [value, setValue] = useState('');
   const [attempts, setAttempts] = useState(0);
@@ -28,9 +23,18 @@ export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue }: Mo
 
   const check = () => {
     if (done || value.trim() === '') return;
-    const given = normalize(value, numeric);
-    if (module.answers.some((a) => normalize(a, numeric) === given)) setStatus('solved');
+    if (answersMatch(value, module.answers, numeric)) setStatus('solved');
     else setAttempts((n) => n + 1);
+  };
+
+  // Ergebnis einmal pro Durchlauf melden: gelöst = 1, Lösung aufgedeckt = 0
+  const reported = useRef(false);
+  const finish = () => {
+    if (!reported.current) {
+      reported.current = true;
+      onResult?.({ correct: status === 'solved' ? 1 : 0, total: 1 });
+    }
+    onContinue();
   };
 
   const onSubmit = (e: FormEvent) => {
@@ -42,7 +46,7 @@ export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue }: Mo
     <ModuleScreen
       footer={
         done ? (
-          <PrimaryButton onClick={onContinue}>{continueLabel}</PrimaryButton>
+          <PrimaryButton onClick={finish}>{continueLabel}</PrimaryButton>
         ) : (
           <>
             {attempts >= 1 && hint && (
@@ -66,7 +70,7 @@ export function OnsiteCodePlayer({ module, lang, continueLabel, onContinue }: Mo
       <form onSubmit={onSubmit}>
         <input
           type="text"
-          inputMode={numeric ? 'numeric' : 'text'}
+          inputMode={numeric ? 'decimal' : 'text'}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"

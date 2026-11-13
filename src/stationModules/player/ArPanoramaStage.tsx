@@ -3,6 +3,7 @@ import { Camera, CircleHelp, Images, Orbit } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { MODULE_META } from '../meta';
 import { pickLang, type ModuleOfType } from '../types';
+import { buildPanoramaContent } from './modules/panoramaContent';
 import type { PanoramaQuizStation } from '../../components/ARComponents/customPanorama/CustomPanoramaQuizView';
 import type { ARChromeProps, PlayerStation } from './contract';
 import { GlassCard, ModuleHeading, ModuleScreen, ModuleText, PrimaryButton, StageImage } from './ui';
@@ -10,7 +11,8 @@ import { GlassCard, ModuleHeading, ModuleScreen, ModuleText, PrimaryButton, Stag
 /**
  * Das Modul „AR-Rundumblick“ auf der Bühne. Auf dem Handy übernimmt die vorhandene AR-Ansicht
  * (Kamera/360°-Bild, Gyroskop) den ganzen Bildschirm, am Rechner und in der Vorschau zeigt die Bühne
- * einen Platzhalter mit Inhaltsangabe.
+ * den Player auf dem AR-Kern (modules/ArPanoramaPlayer, Blick per Ziehen). Der Platzhalter mit
+ * Inhaltsangabe bleibt als Rückfall, wenn WebGL nicht verfügbar ist.
  */
 
 // three.js erst laden, wenn eine Station tatsächlich einen AR-Rundumblick abspielt
@@ -20,10 +22,8 @@ const CustomPanoramaQuizView = lazy(() =>
 
 type ArPanoramaModule = ModuleOfType<'ar_panorama', string>;
 
-/** Gleiche Geräteprüfung wie CustomPanoramaQuizView */
-export function isArCapableDevice(): boolean {
-  return /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-}
+// Gleiche Geräteprüfung wie CustomPanoramaQuizView (liegt jetzt in lib/device.ts)
+export { isArCapableDevice } from '../../lib/device';
 
 /** Daten für die AR-Ansicht in der aktuellen Sprache */
 function buildPanoramaStation(station: PlayerStation, module: ArPanoramaModule, lang: 'de' | 'en'): PanoramaQuizStation {
@@ -33,18 +33,7 @@ function buildPanoramaStation(station: PlayerStation, module: ArPanoramaModule, 
     description: '',
     latitude: station.latitude,
     longitude: station.longitude,
-    // null → Live-Kamerabild als Hintergrund
-    panoramaUrl: module.background === 'panorama' ? module.panorama_image : null,
-    slides: module.slides.map((slide) => ({
-      imageUrl: slide.image,
-      text: pickLang(lang, slide.text_de, slide.text_en),
-    })),
-    questions: module.questions.map((q) => ({
-      question: pickLang(lang, q.question_de, q.question_en),
-      options: (lang === 'en' && q.options_en) || q.options_de,
-      correctAnswer: q.correct_answer,
-      imageUrl: q.image ?? undefined,
-    })),
+    ...buildPanoramaContent(module, lang),
   };
 }
 
@@ -94,7 +83,7 @@ interface ArPanoramaPlaceholderProps {
   onContinue: () => void;
 }
 
-/** Platzhalter für Vorschau und Rechner: sagt, was der AR-Rundumblick vor Ort zeigt */
+/** Platzhalter (Rückfall ohne WebGL): sagt, was der AR-Rundumblick vor Ort zeigt */
 export function ArPanoramaPlaceholder({ module, lang, continueLabel, onContinue }: ArPanoramaPlaceholderProps) {
   const { t } = useLanguage();
   const title = pickLang(lang, module.title_de, module.title_en) ?? t(MODULE_META.ar_panorama.labelKey);

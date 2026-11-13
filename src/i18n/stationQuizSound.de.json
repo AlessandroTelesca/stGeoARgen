@@ -1,0 +1,10 @@
+{
+  "presetQuizSound": "Klang-Quiz",
+  "presetQuizSoundDesc": "Ein Ton wird abgespielt, die Antwort wird erraten",
+  "moduleEditorQuestionSound": "Ton zur Frage",
+  "moduleEditorAddQuestionSound": "Ton hinzufügen",
+  "quizSoundPlay": "Ton abspielen",
+  "quizSoundPause": "Pause",
+  "quizSoundReplay": "Nochmal anhören",
+  "quizSoundError": "Ton konnte nicht geladen werden."
+}

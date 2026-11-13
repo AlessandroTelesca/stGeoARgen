@@ -3,16 +3,20 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { pickLang } from '../../types';
 import { ChoiceButton, Feedback, GlassCard, ModuleHeading, ModuleScreen, PrimaryButton, StageImage, type ChoiceState, type ModulePlayerProps } from '../ui';
+import { QuestionSound } from './QuestionSound';
 import { Reveal } from './shared';
 
 /** Quiz: Fragen nacheinander, falsche Antworten werden markiert, bis die richtige gewählt ist */
-export function QuizPlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'quiz'>) {
+export function QuizPlayer({ module, lang, continueLabel, onContinue, onResult }: ModulePlayerProps<'quiz'>) {
   const { t } = useLanguage();
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [wrong, setWrong] = useState<number[]>([]);
   const [solved, setSolved] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
+  // Fragen, die auf Anhieb richtig waren (vor der richtigen Antwort keine falsche gewählt)
+  const firstTryCorrect = useRef(0);
+  const reported = useRef(false);
 
   const questions = module.questions;
   const question = questions[index];
@@ -28,12 +32,18 @@ export function QuizPlayer({ module, lang, continueLabel, onContinue }: ModulePl
 
   const choose = (i: number) => {
     if (solved || wrong.includes(i)) return;
-    if (i === question.correct_answer) setSolved(true);
-    else setWrong((w) => [...w, i]);
+    if (i === question.correct_answer) {
+      if (wrong.length === 0) firstTryCorrect.current += 1;
+      setSolved(true);
+    } else setWrong((w) => [...w, i]);
   };
 
   const next = () => {
     if (isLast) {
+      if (!reported.current) {
+        reported.current = true;
+        onResult?.({ correct: firstTryCorrect.current, total: questions.length });
+      }
       onContinue();
       return;
     }
@@ -66,6 +76,7 @@ export function QuizPlayer({ module, lang, continueLabel, onContinue }: ModulePl
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
       >
+        {question.audio && <QuestionSound key={index} src={question.audio} />}
         {question.image && <StageImage src={question.image} className="aspect-[4/3] mb-4" />}
         <GlassCard className="mb-4">
           <p className="text-[17px] font-bold leading-snug text-white whitespace-pre-line">{pickLang(lang, question.question_de, question.question_en)}</p>

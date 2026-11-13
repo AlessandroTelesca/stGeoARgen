@@ -218,10 +218,37 @@
 
   /* Markenverlauf für Hero-Flächen (Tannengrün → Tiefgrün) */
   .brand-gradient {
+    /* Fallback für Browser ohne color-mix (Safari < 16.2): nur der lineare Verlauf */
+    background: linear-gradient(140deg, var(--primary-light) 0%, var(--primary) 45%, var(--primary-dark) 100%);
     background:
-      radial-gradient(120% 90% at 100% 0%, rgba(74, 222, 128, 0.22) 0%, transparent 55%),
-      radial-gradient(90% 80% at 0% 100%, rgba(3, 30, 4, 0.55) 0%, transparent 60%),
-      linear-gradient(140deg, #0f7a13 0%, #0C690F 45%, #074a09 100%);
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, color-mix(in oklab, var(--primary-lighter), white 40%) 22%, transparent) 0%, transparent 55%),
+      radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--primary-darker) 55%, transparent) 0%, transparent 60%),
+      linear-gradient(140deg, var(--primary-light) 0%, var(--primary) 45%, var(--primary-dark) 100%);
+  }
+
+  /*
+   * Akzentfarbe einer Station: überschreibt die Primär-Tokens für alles darunter.
+   * --station-accent setzt stationThemeProps (src/lib/stationTheme.ts, kontrastgeprüft).
+   * Ohne color-mix-Unterstützung gilt nur die Grundfarbe, die abgeleiteten Töne bleiben Tannengrün.
+   */
+  .station-theme {
+    --primary: var(--station-accent);
+    --accent: var(--station-accent);
+    --ring: var(--station-accent);
+  }
+  @supports (color: color-mix(in oklab, red, red)) {
+    .station-theme {
+      --secondary-foreground: var(--station-accent);
+      --sidebar-primary: var(--station-accent);
+      --primary-light: color-mix(in oklab, var(--station-accent), white 14%);
+      --primary-lighter: color-mix(in oklab, var(--station-accent), white 28%);
+      --primary-dark: color-mix(in oklab, var(--station-accent), black 25%);
+      --primary-darker: color-mix(in oklab, var(--station-accent), black 45%);
+      --primary-soft: color-mix(in oklab, var(--station-accent) 10%, white);
+      --primary-soft-strong: color-mix(in oklab, var(--station-accent) 20%, white);
+      --shadow-primary: 0 10px 24px -8px color-mix(in srgb, var(--station-accent) 55%, transparent);
+      --shadow-primary-light: 0 0 0 3px color-mix(in srgb, var(--station-accent) 30%, transparent);
+    }
   }
 
   /* Feine Höhenlinien-Textur (Schwarzwald-Topografie) */

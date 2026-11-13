@@ -1,0 +1,10 @@
+{
+  "presetQuizSound": "Sound quiz",
+  "presetQuizSoundDesc": "A sound plays and the answer is guessed",
+  "moduleEditorQuestionSound": "Sound for the question",
+  "moduleEditorAddQuestionSound": "Add sound",
+  "quizSoundPlay": "Play sound",
+  "quizSoundPause": "Pause",
+  "quizSoundReplay": "Listen again",
+  "quizSoundError": "Sound couldn't be loaded."
+}
