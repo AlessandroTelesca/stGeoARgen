@@ -34,6 +34,8 @@ interface DashboardProps {
 }
 
 const ease = [0.16, 1, 0.3, 1] as const;
+/** Weiche Kurve für Höhenänderungen: gleichmäßig auf- und zuklappen statt Schnappen mit langem Auslauf */
+const smooth = [0.32, 0.72, 0, 1] as const;
 
 /** Titel + Stations-Spur eines Themenpfads auf der Reise-Karte. */
 function JourneyPathTrack({ path, isLoggedIn, showCount = false }: { path: Path; isLoggedIn: boolean; showCount?: boolean }) {
@@ -140,7 +142,6 @@ export function Dashboard({ paths, totalPoints, lastProgressPathId, onPathSelect
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.08, ease }}
         >
-          <div className="topo-texture pointer-events-none absolute inset-0" aria-hidden="true" />
           <img
             src={asset('/Logo.svg')}
             alt=""
@@ -199,17 +200,35 @@ export function Dashboard({ paths, totalPoints, lastProgressPathId, onPathSelect
                 className="mx-auto flex items-center gap-1.5 rounded-full bg-white/15 border border-white/20 px-3 py-1.5 text-xs font-semibold hover:bg-white/25 transition-colors"
               >
                 {showOtherPaths ? t('hideOtherPaths') : t('showOtherPaths')}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showOtherPaths ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 transition-transform duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${showOtherPaths ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence initial={false}>
                 {showOtherPaths && (
                   <motion.div
                     id="journey-other-paths"
-                    className="overflow-hidden -mx-4 -mb-4"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.35, ease }}
+                    className="overflow-hidden -mx-4"
+                    // marginBottom wird mitanimiert, sonst springt die Karte beim Schließen am Ende um 16px
+                    initial={{ height: 0, marginBottom: 0, opacity: 0 }}
+                    animate={{
+                      height: 'auto',
+                      marginBottom: -16,
+                      opacity: 1,
+                      transition: {
+                        height: { duration: 0.45, ease: smooth },
+                        marginBottom: { duration: 0.45, ease: smooth },
+                        opacity: { duration: 0.25, delay: 0.1, ease: 'easeOut' },
+                      },
+                    }}
+                    exit={{
+                      height: 0,
+                      marginBottom: 0,
+                      opacity: 0,
+                      transition: {
+                        height: { duration: 0.38, ease: smooth },
+                        marginBottom: { duration: 0.38, ease: smooth },
+                        opacity: { duration: 0.18, ease: 'easeIn' },
+                      },
+                    }}
                   >
                     <div className="px-4 pt-5 pb-4 space-y-5">
                       {otherPaths.map(path => (
