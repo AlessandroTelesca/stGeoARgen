@@ -63,7 +63,7 @@
   "adminPublishedLabel": "Visible to visitors",
   "adminPublishedOnHint": "The station appears in the app once its path is published.",
   "adminPublishedOffHint": "Draft – only visible here.",
-  "adminArModuleHint": "The AR look-around only works on a phone on site.",
+  "adminArModuleHint": "AR parts (look-around, discovery) work best on a phone on site. On a computer and in the preview you can look around with the mouse.",
   "adminDeleteStation": "Delete station",
   "adminDeleteStationTitle": "Delete station?",
   "adminDeleteStationText": "“{name}” will be deleted permanently, including all pictures and recordings.",

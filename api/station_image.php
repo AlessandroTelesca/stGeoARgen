@@ -1,13 +1,13 @@
 <?php
 /**
- * station_image.php – Liefert ein Stationsbild bzw. eine Audiodatei aus api/uploads/stations/ mit den
+ * station_image.php – Liefert ein Stationsbild, eine Audiodatei bzw. ein 3D-Modell (GLB) aus api/uploads/stations/ mit den
  * CORS-Headern aus config.php aus. Nötig, weil nginx (Plesk) statische Dateien direkt ausliefert und
  * uploads/.htaccess ignoriert – ohne CORS-Header scheitert z. B. die 360°-Textur (WebGL)
  * beim Laden von localhost oder GitHub Pages.
  *
  * Unterstützt HTTP Range (ein Bereich pro Anfrage): iOS Safari spielt Audio ohne Range-Antworten nicht ab.
  *
- * GET station_image.php?file=<32 hex>.<jpg|png|webp|mp3|m4a>
+ * GET station_image.php?file=<32 hex>.<jpg|png|webp|mp3|m4a|glb>
  */
 
 require_once __DIR__ . '/custom_stations_lib.php';
@@ -18,6 +18,7 @@ const STATION_MEDIA_MIME_TYPES = [
     'webp' => 'image/webp',
     'mp3'  => 'audio/mpeg',
     'm4a'  => 'audio/mp4',
+    'glb'  => 'model/gltf-binary',
 ];
 const STATION_STREAM_CHUNK_BYTES = 65536;
 

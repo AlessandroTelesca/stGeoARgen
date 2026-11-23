@@ -1,0 +1,144 @@
+/*
+ * AR-Bühne: Laser, Zielkreis, Marker. Farben nur aus Tokens (folgen der Stations-Akzentfarbe).
+ * --ar-laser: helle Tönung der Primärfarbe, auf Kamera- und Panoramabildern gut sichtbar.
+ */
+.ar-reticle {
+  --ar-laser: var(--primary-lighter);
+  --ar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+@supports (color: color-mix(in oklab, red, red)) {
+  .ar-reticle {
+    --ar-laser: color-mix(in oklab, var(--primary-lighter), white 55%);
+  }
+}
+
+/* Strahl: unten breit, zum Zielkreis hin spitz; ohne Ziel blass und zum Ende hin ausgefranst („ins Leere“) */
+.ar-reticle__beam-glow {
+  width: 14px;
+  filter: drop-shadow(0 0 6px var(--ar-laser));
+  opacity: 0.55;
+  transition: opacity 200ms var(--ar-ease), width 200ms var(--ar-ease);
+}
+.ar-reticle__beam {
+  clip-path: polygon(0% 100%, 100% 100%, 58% 0%, 42% 0%);
+  background: linear-gradient(to top, transparent 0%, var(--ar-laser) 35%, white 100%);
+  -webkit-mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
+  mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
+}
+.ar-reticle[data-aiming='true'] .ar-reticle__beam-glow {
+  opacity: 1;
+  width: 18px;
+}
+.ar-reticle[data-aiming='true'] .ar-reticle__beam {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* Zielkreis */
+.ar-reticle__target {
+  transition: scale 200ms var(--ar-ease);
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.45));
+}
+/* eigenständige scale-Eigenschaft: die Zentrierung (Tailwind translate) bleibt unberührt */
+.ar-reticle[data-aiming='true'] .ar-reticle__target {
+  scale: 1.12;
+}
+.ar-reticle__track {
+  stroke: rgb(255 255 255 / 0.4);
+}
+.ar-reticle__progress {
+  stroke: white;
+}
+.ar-reticle__dot {
+  fill: white;
+}
+.ar-reticle[data-aiming='true'] .ar-reticle__dot {
+  fill: var(--ar-laser);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-reticle__beam-glow,
+  .ar-reticle__target {
+    transition: none;
+  }
+  .ar-reticle[data-aiming='true'] .ar-reticle__target {
+    scale: 1;
+  }
+}
+
+/* Entdeckbare Punkte: weißer Kern mit Nummer, Halo in der Laserfarbe; gefunden = Primärfläche mit Häkchen */
+.ar-marker {
+  --ar-laser: var(--primary-lighter);
+  --ar-marker-size: 40px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+@supports (color: color-mix(in oklab, red, red)) {
+  .ar-marker {
+    --ar-laser: color-mix(in oklab, var(--primary-lighter), white 55%);
+  }
+}
+.ar-marker[data-size='small'] { --ar-marker-size: 32px; }
+.ar-marker[data-size='large'] { --ar-marker-size: 48px; }
+.ar-marker[data-visible='false'] {
+  visibility: hidden;
+}
+.ar-marker:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 2px;
+}
+.ar-marker__halo,
+.ar-marker__core {
+  grid-area: 1 / 1;
+  border-radius: 9999px;
+}
+.ar-marker__halo {
+  width: calc(var(--ar-marker-size) + 14px);
+  height: calc(var(--ar-marker-size) + 14px);
+  border: 2px solid var(--ar-laser);
+  opacity: 0.7;
+  animation: ar-marker-breathe 2.4s ease-in-out infinite;
+}
+.ar-marker__core {
+  width: var(--ar-marker-size);
+  height: var(--ar-marker-size);
+  display: grid;
+  place-items: center;
+  background: white;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms, color 200ms;
+}
+.ar-marker[data-aimed='true'] .ar-marker__core {
+  transform: scale(1.18);
+}
+.ar-marker[data-aimed='true'] .ar-marker__halo {
+  animation: none;
+  opacity: 1;
+  border-width: 3px;
+}
+.ar-marker[data-found='true'] .ar-marker__core {
+  background: var(--primary);
+  color: white;
+}
+.ar-marker[data-found='true'] .ar-marker__halo {
+  animation: none;
+  opacity: 0;
+}
+@keyframes ar-marker-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.12); opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar-marker__halo { animation: none; }
+  .ar-marker__core { transition: none; }
+  .ar-marker[data-aimed='true'] .ar-marker__core { transform: none; }
+}

@@ -16,6 +16,8 @@ interface Station {
   points: number;
   latitude: number;
   longitude: number;
+  /** Akzentfarbe der Station (#rrggbb); null/fehlt → Standardfarbe */
+  color?: string | null;
 }
 
 interface PathViewProps {
@@ -181,6 +183,7 @@ export function PathView({
                     {...station}
                     latitude={station.latitude}
                     longitude={station.longitude}
+                    color={station.color}
                     onClick={() => onStationClick(station.id)}
                   />
                 </motion.div>

@@ -21,6 +21,8 @@ export type ModuleType =
   | 'slideshow'
   | 'before_after'
   | 'ar_panorama'
+  | 'ar_discover'
+  | 'model3d'
   | 'quiz'
   | 'estimate'
   | 'timeline'
@@ -35,6 +37,8 @@ export const MODULE_TYPES: readonly ModuleType[] = [
   'slideshow',
   'before_after',
   'ar_panorama',
+  'ar_discover',
+  'model3d',
   'quiz',
   'estimate',
   'timeline',
@@ -46,6 +50,19 @@ export const MODULE_TYPES: readonly ModuleType[] = [
 ];
 
 export const MAX_MODULES_PER_STATION = 12;
+
+/** Höchstzahl Punkte im Modul ar_discover (api/station_modules_lib.php: STATION_MAX_AR_POINTS) */
+export const MAX_AR_DISCOVER_POINTS = 12;
+
+/** Höchstzahl Infopunkte im Modul model3d (api/station_modules_lib.php: STATION_MAX_MODEL_INFO_POINTS) */
+export const MAX_MODEL_INFO_POINTS = 8;
+
+/** Zahlenbereiche von model3d (api/station_modules_lib.php prüft dieselben Grenzen) */
+export const MODEL3D_LIMITS = {
+  height_m: { min: 0.1, max: 50 },
+  distance_m: { min: 1, max: 50 },
+  elevation_m: { min: -3, max: 20 },
+} as const;
 
 /** Felder, die jedes Modul hat */
 interface ModuleBase {
@@ -109,6 +126,8 @@ export interface QuizQuestion<M = string> {
   correct_answer: number;
   /** Optionales Bild über der Frage */
   image: M | null;
+  /** Optionaler Ton als Frage (nur Modul 'quiz'); optional, damit Altdaten gültig bleiben */
+  audio?: M | null;
   /** Optionale Erklärung nach der richtigen Antwort (nur Modul 'quiz') */
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
@@ -124,10 +143,96 @@ export interface ArPanoramaModule<M = string> extends ModuleBase {
   questions: QuizQuestion<M>[]; // 1–10
 }
 
+/** Entdeckbarer Punkt im AR-Entdecken: Richtung relativ zum Startblick, Info-Karte beim Anvisieren */
+export interface ArDiscoverPoint<M = string> {
+  /** Stabil (Reihenfolge ändert die ID nicht), /^[a-zA-Z0-9_-]{1,20}$/ */
+  id: string;
+  /** −180…180, positiv = rechts vom Startblick */
+  yaw: number;
+  /** −85…85, positiv = oben */
+  pitch: number;
+  /** Größe des Punkts und seines Trefferbereichs */
+  size: 'small' | 'medium' | 'large';
+  title_de: string; // max. 80
+  title_en: string | null;
+  text_de: string; // max. 1000
+  text_en: string | null;
+  image: M | null;
+}
+
+/**
+ * AR-Entdecken: 360°-Bild oder Live-Kamera mit frei platzierten Punkten. Ein Laser aus der Bildmitte;
+ * wer einen Punkt etwa 1,5 s anvisiert (oder antippt), öffnet seine Info. Mehrfach pro Station erlaubt.
+ */
+export interface ArDiscoverModule<M = string> extends ModuleBase {
+  type: 'ar_discover';
+  background: 'panorama' | 'camera';
+  /** Pflicht bei 'panorama'; bei 'camera' optionales Referenzbild (nur Editor, Desktop, Vorschau) */
+  panorama_image: M | null;
+  intro_de: string | null; // max. 500
+  intro_en: string | null;
+  points: ArDiscoverPoint<M>[]; // 1–12
+  /** true: Weiter erst, wenn alle Punkte entdeckt sind */
+  require_all: boolean;
+}
+
+/** Infopunkt am 3D-Modell; Position im normierten Modellraum (siehe src/ar/modelSpace.ts) */
+export interface ModelInfoPoint<M = string> {
+  /** Stabil (Reihenfolge ändert die ID nicht), /^[a-zA-Z0-9_-]{1,20}$/ */
+  id: string;
+  /** Bodenmitte des Modells = 0, geteilt durch die Modellhöhe: x/z −5…5, y 0…3 (siehe NORMALIZED_LIMITS) */
+  x: number;
+  y: number;
+  z: number;
+  title_de: string; // max. 80
+  title_en: string | null;
+  text_de: string; // max. 1000
+  text_en: string | null;
+  image: M | null;
+}
+
+/**
+ * 3D-Modell: GLB im Kamerabild oder vor einem 360°-Bild. Besucher:innen sehen sich per Lagesensor
+ * (Handy) bzw. Ziehen (Desktop) um und drehen das Modell per Wischen oder Buttons. Optional öffnen
+ * Infopunkte am Modell (Laser + Verweilen oder Antippen) eine Info-Karte. Mehrfach pro Station erlaubt.
+ */
+export interface Model3dModule<M = string> extends ModuleBase {
+  type: 'model3d';
+  /** GLB-Datei, Pflicht */
+  model: M;
+  background: 'camera' | 'panorama';
+  /** Pflicht bei 'panorama'; bei 'camera' optionales Referenzbild (nur Editor, Desktop, Vorschau) */
+  panorama_image: M | null;
+  /** 0,1–50: Höhe des Modells in Metern */
+  height_m: number;
+  /** 1–50: Abstand von den Besucher:innen in Metern */
+  distance_m: number;
+  /** −3–20: Höhe der Modell-Unterkante relativ zur Augenhöhe (Boden ≈ −1,6) */
+  elevation_m: number;
+  /** −180…180: Richtung, in der das Modell steht (Konvention src/ar/angles.ts) */
+  yaw: number;
+  /** 0–359: Startdrehung um die eigene Hochachse */
+  rotation_deg: number;
+  auto_rotate: 'off' | 'slow' | 'normal';
+  user_rotate: boolean;
+  /** Beschriftung über dem Modell */
+  caption_de: string | null; // max. 80
+  caption_en: string | null;
+  /** „Mehr erfahren“ */
+  text_de: string | null; // max. 1000
+  text_en: string | null;
+  info_points: ModelInfoPoint<M>[]; // 0–8
+}
+
 /** Quiz: 1–10 Multiple-Choice-Fragen (Variante Wahr/Falsch = 2 Optionen) */
 export interface QuizModule<M = string> extends ModuleBase {
   type: 'quiz';
   questions: QuizQuestion<M>[];
+  /**
+   * Bestehensgrenze. Mindestanzahl auf Anhieb richtiger Antworten (1 … Fragenzahl).
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /** Schätzfrage: Zahl per Schieberegler schätzen, danach Auflösung */
@@ -145,6 +250,11 @@ export interface EstimateModule extends ModuleBase {
   unit_en: string | null;
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 export interface TimelineEntry<M = string> {
@@ -193,6 +303,11 @@ export interface OnsiteCodeModule<M = string> extends ModuleBase {
   /** Wird nach dem Lösen gezeigt */
   solution_de: string | null; // max. 1000
   solution_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /** Hörstück: Audio (MP3/M4A) mit optionalem Bild und Text zum Mitlesen */
@@ -225,6 +340,11 @@ export interface SequenceModule<M = string> extends ModuleBase {
   items: SequenceItem<M>[];
   explanation_de: string | null; // max. 1000
   explanation_en: string | null;
+  /**
+   * Bestehensgrenze. Nur 1 = muss gelöst werden.
+   * null/fehlend = keine Grenze.
+   */
+  pass_threshold?: number | null;
 }
 
 /**
@@ -249,6 +369,8 @@ export type StationModule<M = string> =
   | SlideshowModule<M>
   | BeforeAfterModule<M>
   | ArPanoramaModule<M>
+  | ArDiscoverModule<M>
+  | Model3dModule<M>
   | QuizModule<M>
   | EstimateModule
   | TimelineModule<M>
@@ -261,7 +383,7 @@ export type StationModule<M = string> =
 export type ModuleOfType<T extends ModuleType, M = string> = Extract<StationModule<M>, { type: T }>;
 
 /** Welche Art Datei ein Medienfeld erwartet (Upload-Filter, Serverprüfung) */
-export type MediaKind = 'image' | 'panorama' | 'audio';
+export type MediaKind = 'image' | 'panorama' | 'audio' | 'model';
 
 /**
  * Wandelt alle Medienfelder eines Moduls um (Dateiname ↔ ImageItem ↔ URL).
@@ -270,7 +392,7 @@ export type MediaKind = 'image' | 'panorama' | 'audio';
 export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, kind: MediaKind) => B): StationModule<B> {
   const opt = (media: A | null, kind: MediaKind = 'image'): B | null => (media === null ? null : map(media, kind));
   const slide = (s: SlideItem<A>): SlideItem<B> => ({ ...s, image: map(s.image, 'image') });
-  const question = (q: QuizQuestion<A>): QuizQuestion<B> => ({ ...q, image: opt(q.image) });
+  const question = (q: QuizQuestion<A>): QuizQuestion<B> => ({ ...q, image: opt(q.image), audio: opt(q.audio ?? null, 'audio') });
 
   switch (module.type) {
     case 'story':
@@ -285,6 +407,19 @@ export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, k
         panorama_image: opt(module.panorama_image, 'panorama'),
         slides: module.slides.map(slide),
         questions: module.questions.map(question),
+      };
+    case 'ar_discover':
+      return {
+        ...module,
+        panorama_image: opt(module.panorama_image, 'panorama'),
+        points: module.points.map((point) => ({ ...point, image: opt(point.image) })),
+      };
+    case 'model3d':
+      return {
+        ...module,
+        model: map(module.model, 'model'),
+        panorama_image: opt(module.panorama_image, 'panorama'),
+        info_points: module.info_points.map((point) => ({ ...point, image: opt(point.image) })),
       };
     case 'quiz':
       return { ...module, questions: module.questions.map(question) };
@@ -308,6 +443,11 @@ export function mapModuleMedia<A, B>(module: StationModule<A>, map: (media: A, k
 /** Neue, kurze Modul-ID */
 export function newModuleId(): string {
   return `m-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
+}
+
+/** Neue, kurze Punkt-ID für ar_discover und model3d (passt zu /^[a-zA-Z0-9_-]{1,20}$/) */
+export function newArPointId(): string {
+  return `p-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
 }
 
 /** Text in der aktuellen Sprache (Englisch fällt auf Deutsch zurück) */

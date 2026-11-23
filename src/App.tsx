@@ -23,8 +23,9 @@ import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ARProximityGate } from './components/ARComponents/ARProximityGate';
 import type { ARChromeProps, PlayerStation } from './stationModules/player/contract';
+import { isArModuleType } from './stationModules/meta';
 import { mapModuleMedia } from './stationModules/types';
-import { getStationCoordinates } from './data/stationsConfig';
+import { getStationCoordinates, type StationCoordinates } from './data/stationsConfig';
 import { PathCompletionCelebration } from './components/PathCompletionCelebration';
 import { PostOnboardingLoginPrompt } from './components/PostOnboardingLoginPrompt';
 import { ARLoginGuard } from './components/ARLoginGuard';
@@ -88,6 +89,8 @@ interface Station {
   arRoute?: string;
   /** Station aus der Stationsverwaltung enthält das Modul „AR-Rundumblick“ */
   hasArModule?: boolean;
+  /** Akzentfarbe der Station (#rrggbb); null/fehlt → Standardfarbe */
+  color?: string | null;
 }
 
 interface Path {
@@ -746,7 +749,8 @@ export default function App() {
             longDescription: (isEn && c.long_description_en) || c.long_description_de,
             imageUrl: c.cover_image ? customStationImageUrl(c.cover_image) : '',
             arRoute: `${CUSTOM_AR_ROUTE_PREFIX}${c.id}`,
-            hasArModule: c.modules.some((m) => m.type === 'ar_panorama'),
+            hasArModule: c.modules.some((m) => isArModuleType(m.type)),
+            color: c.color,
             status: previousStatus.get(c.id) ?? 'available',
             points: c.points,
             latitude: c.latitude,
@@ -1133,9 +1137,26 @@ export default function App() {
       latitude: customArRaw.latitude,
       longitude: customArRaw.longitude,
       points: customArRaw.points,
+      color: customArRaw.color,
       modules: customArRaw.modules.map((m) => mapModuleMedia(m, (file) => customStationImageUrl(file))),
     };
   }, [customArRaw, language]);
+
+  // Pfad der Custom-Station: Fortschritt im Pfad und nächste offene Stationen (erst die folgenden, dann die davor)
+  const customArPath = customArStationId !== null
+    ? paths.find((path) => path.stations.some((s) => s.id === customArStationId))
+    : undefined;
+  const customArNextStations = useMemo((): StationCoordinates[] => {
+    if (!customArPath || customArStationId === null) return [];
+    const currentIndex = customArPath.stations.findIndex((s) => s.id === customArStationId);
+    const ordered = [
+      ...customArPath.stations.slice(currentIndex + 1),
+      ...customArPath.stations.slice(0, currentIndex),
+    ];
+    return ordered
+      .filter((s) => s.status !== 'completed')
+      .map((s) => ({ id: s.id, name: s.title, lat: s.latitude, lng: s.longitude }));
+  }, [customArPath, customArStationId]);
 
   // Unbekannte oder gelöschte Station unter /ar/station/<id> → zurück zur Startseite
   useEffect(() => {
@@ -1201,6 +1222,13 @@ export default function App() {
     totalStations: paths.reduce((sum, p) => sum + p.stations.length, 0),
     totalPoints,
   };
+  const customArChrome: ARChromeProps = customArPath
+    ? {
+        ...arChrome,
+        completedStations: getPathProgress(customArPath).completedStations,
+        totalStations: customArPath.stations.length,
+      }
+    : arChrome;
   const customArPathData = paths.find((path) => path.id === AR_PATH_ID);
 
   const renderARViewWithGate = (arContent: ReactNode) => {
@@ -1620,7 +1648,8 @@ export default function App() {
             <StationModulePlayer
               station={customArPlayerStation}
               lang={language}
-              arChrome={arChrome}
+              arChrome={customArChrome}
+              nextStations={customArNextStations}
               canComplete={!!username && !allowGuestStationStart && customArStation?.status !== 'completed'}
               isGuest={allowGuestStationStart && !username}
               onCompleteStation={(stationId) => handleStationComplete(stationId)}

@@ -30,20 +30,24 @@ import {
   type CustomStationInput,
 } from '../../services/api';
 import { MAX_MODULES_PER_STATION, mapModuleMedia, pickLang, type MediaKind, type StationModule } from '../../stationModules/types';
-import { MODULE_META, type DraftMedia, type DraftModule } from '../../stationModules/meta';
+import { MODULE_META, isArModuleType, type DraftMedia, type DraftModule } from '../../stationModules/meta';
 import { MODULE_EDITORS } from '../../stationModules/editor/registry';
 import type { ModuleEditorProps, ModuleErrors } from '../../stationModules/editor/types';
 import { LocalizedInput, LocalizedTextarea } from '../../stationModules/editor/fields';
 import { StationModulePlayer } from '../../stationModules/player/StationModulePlayer';
 import { setUnsavedGuard } from '../../lib/unsavedChanges';
+import { ensureContrast } from '../../lib/stationTheme';
 import { useDialogFocus } from '../../lib/useDialogFocus';
 import { LanguageOverride } from '../../contexts/LanguageContext';
 import type { ARChromeProps } from '../../stationModules/player/contract';
 import { FieldError, FormSection, SubmitFeedback, inputClass, useScrollToFirstError, type ImageItem } from './adminFormParts';
 import { ConfirmDialog, DraftChip, ease } from './adminUi';
 import { AdminMap, type MapMarker } from './AdminMap';
+import { AccentColorField } from './AccentColorField';
 import { ModuleLibrary } from './ModuleLibrary';
 import { PhonePreview, STATION_PAGE } from './PhonePreview';
+import { validateStationDraft, type BaseErrors } from './stationValidation';
+import type { StationCoordinates } from '../../data/stationsConfig';
 
 /** Formularzustand einer Station (bleibt beim Wechseln zwischen Seiten der Verwaltung erhalten) */
 export interface StationDraft {
@@ -59,10 +63,10 @@ export interface StationDraft {
   longitude: string;
   cover: ImageItem | null;
   published: boolean;
+  /** Akzentfarbe (#rrggbb); null = Standard (Tannengrün) */
+  color: string | null;
   modules: DraftModule[];
 }
-
-type BaseErrors = Partial<Record<'pathId' | 'titleDe' | 'descriptionDe' | 'longDescriptionDe' | 'points' | 'location' | 'cover' | 'modules', string>>;
 
 /** Reihenfolge für die Fehlerliste über dem Speichern-Button */
 const BASE_ERROR_LABELS: Record<keyof BaseErrors, string> = {
@@ -91,6 +95,7 @@ export function draftFromStation(station: CustomStation): StationDraft {
     longitude: String(station.longitude),
     cover: station.cover_image ? existing(station.cover_image) : null,
     published: station.published,
+    color: station.color ?? null,
     modules: station.modules.map((m) => mapModuleMedia<string, DraftMedia>(m, (file) => (file ? existing(file) : null))),
   };
 }
@@ -109,6 +114,7 @@ export function emptyStationDraft(pathId: string, modules: DraftModule[], defaul
     longitude: '',
     cover: null,
     published: false,
+    color: null,
     modules,
   };
 }
@@ -189,6 +195,8 @@ function contentSummary(module: DraftModule, lang: 'de' | 'en'): string | null {
 /** Vor dem Speichern: leere Eingabezeilen aus Vorlagen entfernen */
 function sanitizeModule(module: DraftModule): DraftModule {
   if (module.type === 'onsite_code') return { ...module, answers: module.answers.map((a) => a.trim()).filter(Boolean) };
+  // Kamera-Modus braucht kein Nachher-Bild: ein früher gewähltes Bild nicht mitspeichern
+  if (module.type === 'before_after' && module.mode === 'camera') return { ...module, after_image: null };
   return module;
 }
 
@@ -196,7 +204,7 @@ function sanitizeModule(module: DraftModule): DraftModule {
 function moduleThumb(module: DraftModule): string | null {
   let url = null as string | null;
   mapModuleMedia(module, (item, kind) => {
-    if (!url && item && kind !== 'audio') url = item.url;
+    if (!url && item && (kind === 'image' || kind === 'panorama')) url = item.url;
     return item;
   });
   return url;
@@ -295,7 +303,7 @@ export function StationEditor({
   const isEn = lang === 'en';
   const lat = parseCoordinate(draft.latitude);
   const lng = parseCoordinate(draft.longitude);
-  const hasArModule = draft.modules.some((m) => m.type === 'ar_panorama');
+  const hasArModule = draft.modules.some((m) => isArModuleType(m.type));
   const title = pickLang(lang, draft.titleDe, draft.titleEn);
 
   // Andere Stationen im gewählten Pfad als Kartenkontext, nummeriert in Pfadreihenfolge
@@ -306,7 +314,7 @@ export function StationEditor({
   const ownIndex = station ? pathStations.findIndex((s) => s.id === station.id) : -1;
   const ownLabel = String((ownIndex >= 0 ? ownIndex : pathStations.length) + 1);
   const mapMarkers: MapMarker[] = useMemo(
-    () => pathStations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published })),
+    () => pathStations.map((s, i) => ({ id: s.id, lat: s.latitude, lng: s.longitude, label: String(i + 1), title: s.title_de, published: s.published, color: s.color })),
     [pathStations]
   );
   const mapEditable = useMemo(
@@ -327,7 +335,8 @@ export function StationEditor({
     () => draft.modules.map((m) => mapModuleMedia<DraftMedia, string>(m, (item) => item?.url ?? '') as StationModule<string>),
     [draft.modules]
   );
-  const safeActiveIndex = activeIndex === STATION_PAGE || draft.modules.length === 0 ? STATION_PAGE : Math.min(activeIndex, draft.modules.length - 1);
+  // Auch ohne Module darf der Player (leer) gezeigt werden, wenn auf der Stationsseite „Start“ gedrückt wird
+  const safeActiveIndex = activeIndex === STATION_PAGE ? STATION_PAGE : Math.max(0, Math.min(activeIndex, draft.modules.length - 1));
 
   /** Aus der Vorschau zum passenden Teil des Formulars springen */
   const editFromPreview = (index: number) => {
@@ -355,7 +364,35 @@ export function StationEditor({
     longDescription: pickLang(lang, draft.longDescriptionDe, draft.longDescriptionEn),
     coverUrl: draft.cover?.url ?? null,
     points: Number(draft.points) || 0,
+    color: draft.color,
+    latitude: lat,
+    longitude: lng,
+    hasArModule,
   };
+
+  // Demo-Werte für die AR-Oberfläche in der Vorschau: Fortschritt entlang des Pfads, Station an ihrer Stelle
+  const demoChrome: ARChromeProps = useMemo(() => {
+    const noop = () => {};
+    const completed = ownIndex >= 0 ? ownIndex : pathStations.length;
+    return {
+      username: t('stationPreviewDemoUser'),
+      onNavigateHome: noop,
+      onLogin: noop,
+      onLogout: noop,
+      onNavigateProfile: noop,
+      onRegister: noop,
+      completedStations: completed,
+      totalStations: pathStations.length + (ownIndex >= 0 ? 0 : 1),
+      totalPoints: pathStations.slice(0, completed).reduce((sum, s) => sum + s.points, 0),
+    };
+  }, [ownIndex, pathStations, t]);
+  // Stationen nach der bearbeiteten im Pfad (nur veröffentlichte, wie bei Besucher:innen) für den Abschlussdialog
+  const nextStations: StationCoordinates[] = useMemo(
+    () => (ownIndex >= 0 ? pathStations.slice(ownIndex + 1) : [])
+      .filter((s) => s.published)
+      .map((s) => ({ id: s.id, name: pickLang(lang, s.title_de, s.title_en), lat: s.latitude, lng: s.longitude })),
+    [ownIndex, pathStations, lang]
+  );
 
   // ─── Module ───────────────────────────────────────────────────────────────
   const setModule = (id: string, apply: (prev: DraftModule) => DraftModule) => {
@@ -442,24 +479,7 @@ export function StationEditor({
   };
 
   // ─── Prüfen + Speichern ───────────────────────────────────────────────────
-  const validate = (): { base: BaseErrors; modules: Record<string, ModuleErrors> } => {
-    const base: BaseErrors = {};
-    if (!paths.some((p) => p.id === draft.pathId)) base.pathId = t('stationEditorErrorPath');
-    if (!draft.titleDe.trim()) base.titleDe = t('stationEditorErrorRequired');
-    if (!draft.descriptionDe.trim()) base.descriptionDe = t('stationEditorErrorRequired');
-    if (!draft.longDescriptionDe.trim()) base.longDescriptionDe = t('stationEditorErrorRequired');
-    if (!/^\d+$/.test(draft.points.trim()) || Number(draft.points) > 1000) base.points = t('stationEditorErrorPoints');
-    if (lat === null || lat < -90 || lat > 90 || lng === null || lng < -180 || lng > 180) base.location = t('adminErrorLocation');
-    if (!draft.cover) base.cover = t('stationEditorErrorCover');
-    if (draft.modules.length === 0) base.modules = t('adminErrorNoModules');
-    const modules: Record<string, ModuleErrors> = {};
-    draft.modules.forEach((m) => {
-      const definition = MODULE_EDITORS[m.type] as unknown as { validate: (module: DraftModule, translate: typeof t) => ModuleErrors };
-      const result = definition.validate(m, t);
-      if (Object.keys(result).length > 0) modules[m.id] = result;
-    });
-    return { base, modules };
-  };
+  const validate = () => validateStationDraft(draft, { paths, lat, lng, t });
 
   const handleSave = async (e?: FormEvent): Promise<boolean> => {
     e?.preventDefault();
@@ -498,6 +518,7 @@ export function StationEditor({
       latitude: lat!,
       longitude: lng!,
       published: draft.published,
+      color: draft.color ? ensureContrast(draft.color) : null,
     };
 
     setSaving(true);
@@ -597,6 +618,13 @@ export function StationEditor({
         </motion.div>
       )}
 
+      {(station?.dropped_modules ?? 0) > 0 && (
+        <div className="mb-4 rounded-2xl bg-gold-soft border border-gold/25 px-4 py-3 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-gold flex-shrink-0" />
+          <p className="flex-1 text-sm text-gold-foreground">{t('stationPreviewDroppedModules', { count: station?.dropped_modules ?? 0 })}</p>
+        </div>
+      )}
+
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] lg:gap-6 xl:gap-8 lg:items-start">
         <form ref={formRef} onSubmit={handleSave} className="space-y-5 min-w-0" noValidate>
           {/* Sichtbarkeit – oben, weil sie entscheidet, ob Besucher:innen die Station sehen */}
@@ -681,6 +709,7 @@ export function StationEditor({
                 hint={t('adminLongDescriptionHint')}
                 error={errors.longDescriptionDe}
               />
+              <AccentColorField value={draft.color} onChange={(color) => update((prev) => ({ ...prev, color }))} />
             </div>
           </section>
 
@@ -972,6 +1001,8 @@ export function StationEditor({
             onEdit={editFromPreview}
             onPlay={() => setPreviewOpen(true)}
             lang={lang}
+            chrome={demoChrome}
+            nextStations={nextStations}
           />
         </aside>
       </div>
@@ -1071,7 +1102,9 @@ export function StationEditor({
                   setPreviewOpen(true);
                 }}
                 lang={lang}
-                reservedHeight={250}
+                reservedHeight={310}
+                chrome={demoChrome}
+                nextStations={nextStations}
               />
             </motion.div>
           </motion.div>
@@ -1106,12 +1139,13 @@ export function StationEditor({
       {previewOpen && createPortal(
         <LanguageOverride language={lang}>
         <StationModulePlayer
-          station={{ id: station?.id ?? 0, title: title || t('adminNewStation'), latitude: lat ?? 0, longitude: lng ?? 0, points: Number(draft.points) || 0, modules: previewModules }}
+          station={{ id: station?.id ?? 0, title: title || t('adminNewStation'), latitude: lat ?? 0, longitude: lng ?? 0, points: Number(draft.points) || 0, color: draft.color, modules: previewModules }}
           lang={lang}
           arChrome={arChrome}
           preview
           canComplete={false}
           isGuest={false}
+          nextStations={nextStations}
           onClose={() => setPreviewOpen(false)}
         />
         </LanguageOverride>,
