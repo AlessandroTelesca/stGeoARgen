@@ -246,7 +246,7 @@ export function BeforeAfterPlayer({ module, lang, continueLabel, onContinue }: M
         />
       )}
       {module.mode === 'camera' && (
-        <CameraCompare before={module.before_image} beforeLabel={beforeLabel} afterLabel={afterLabel} aspect={aspect} />
+        <CameraCompare before={module.before_image} beforeLabel={beforeLabel} afterLabel={afterLabel || t('moduleEditorSideAfter')} aspect={aspect} />
       )}
       {/* Fehlt bei slider/fade das zweite Bild (sollte die Validierung verhindern), zeigt die Ansicht nur das alte Foto */}
       {module.mode !== 'camera' && !after && (

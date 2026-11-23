@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { BackLink } from './PageHeader';
 import { asset } from '../lib/asset';
+import { stationThemeProps } from '../lib/stationTheme';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -19,6 +20,8 @@ interface Station {
   pathId: string;
   latitude: number;
   longitude: number;
+  /** Akzentfarbe der Station (#rrggbb); null/fehlt → Standardfarbe */
+  color?: string | null;
 }
 
 interface StationsViewProps {
@@ -34,6 +37,7 @@ interface StationsViewProps {
       points: number;
       latitude: number;
       longitude: number;
+      color?: string | null;
     }>;
   }>;
   onStationClick: (pathId: string, stationId: number) => void;
@@ -54,6 +58,7 @@ export function StationsView({ paths, onStationClick, isLoggedIn, onBack }: Stat
       pathId: path.id,
       latitude: station.latitude,
       longitude: station.longitude,
+      color: station.color,
     }))
   );
 
@@ -186,12 +191,14 @@ function StationItem({ station, index, isLoggedIn, onStationClick }: StationItem
   const displayStatus: Station['status'] = isLoggedIn ? station.status : 'locked';
   const isLocked = displayStatus === 'locked';
   const isCompleted = displayStatus === 'completed';
+  const theme = stationThemeProps(station.color);
 
   return (
     <motion.button
       onClick={() => !isLocked && onStationClick(station.pathId, station.id)}
       disabled={isLocked}
-      className={`group w-full surface-card p-3 text-left transition-shadow ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md'}`}
+      className={`group w-full surface-card p-3 text-left transition-shadow ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md'} ${theme.className ?? ''}`}
+      style={theme.style}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 + index * 0.05, duration: 0.4, ease }}

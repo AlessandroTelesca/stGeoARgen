@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, X } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -44,7 +44,7 @@ function Thumb({ src, size }: { src: string; size: string }) {
 }
 
 /** Reihenfolge: Einträge der Reihe nach antippen (kein Ziehen), prüfen, falsche neu setzen */
-export function SequencePlayer({ module, lang, continueLabel, onContinue }: ModulePlayerProps<'sequence'>) {
+export function SequencePlayer({ module, lang, continueLabel, onContinue, onResult }: ModulePlayerProps<'sequence'>) {
   const { t } = useLanguage();
   const reduce = useReducedMotion();
   const count = module.items.length;
@@ -106,11 +106,21 @@ export function SequencePlayer({ module, lang, continueLabel, onContinue }: Modu
     setStatus('revealed');
   };
 
+  // Ergebnis einmal pro Durchlauf melden: selbst gelöst = 1, Lösung aufgedeckt = 0
+  const reported = useRef(false);
+  const finish = () => {
+    if (!reported.current) {
+      reported.current = true;
+      onResult?.({ correct: status === 'solved' ? 1 : 0, total: 1 });
+    }
+    onContinue();
+  };
+
   const correctCount = locked.filter(Boolean).length;
   const layoutProps = reduce ? {} : { layout: true, transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] as const } };
 
   const footer = done ? (
-    <PrimaryButton onClick={onContinue}>{continueLabel}</PrimaryButton>
+    <PrimaryButton onClick={finish}>{continueLabel}</PrimaryButton>
   ) : status === 'checked' ? (
     <>
       {attempts >= MAX_ATTEMPTS_BEFORE_SOLUTION && (

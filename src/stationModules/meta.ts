@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Box,
   CircleHelp,
   Crosshair,
   GalleryHorizontal,
@@ -10,6 +11,7 @@ import {
   Camera,
   ListOrdered,
   Orbit,
+  ScanEye,
   SquareSplitHorizontal,
   type LucideIcon,
 } from 'lucide-react';
@@ -55,6 +57,8 @@ export interface ModuleMeta<T extends ModuleType = ModuleType> {
   category: ModuleCategory;
   /** Darf höchstens einmal pro Station vorkommen */
   singleton?: boolean;
+  /** Füllt den Modulbereich der Bühne ganz aus (WebGL-Fläche): keine Slide-Animation, Vorschau baut nur bei Strukturänderung neu auf */
+  immersive?: true;
   presets: ModulePreset<T>[];
 }
 
@@ -68,6 +72,7 @@ export function emptyQuestion(optionCount = 4): QuizQuestion<DraftMedia> {
     options_en: null,
     correct_answer: 0,
     image: null,
+    audio: null,
     explanation_de: null,
     explanation_en: null,
   };
@@ -197,6 +202,61 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
       }),
     })),
   },
+  ar_discover: {
+    type: 'ar_discover',
+    icon: ScanEye,
+    labelKey: 'moduleArDiscover',
+    descriptionKey: 'moduleArDiscoverDesc',
+    category: 'discover',
+    immersive: true,
+    presets: (['panorama', 'camera'] as const).map((background) => ({
+      id: background,
+      labelKey: `presetArDiscover_${background}`,
+      descriptionKey: `presetArDiscover_${background}Desc`,
+      create: () => ({
+        ...base(),
+        type: 'ar_discover' as const,
+        background,
+        panorama_image: null,
+        intro_de: null,
+        intro_en: null,
+        require_all: false,
+        points: [],
+      }),
+    })),
+  },
+  model3d: {
+    type: 'model3d',
+    icon: Box,
+    labelKey: 'moduleModel3d',
+    descriptionKey: 'moduleModel3dDesc',
+    category: 'discover',
+    immersive: true,
+    presets: (['camera', 'panorama'] as const).map((background) => ({
+      id: background,
+      labelKey: `presetModel3d_${background}`,
+      descriptionKey: `presetModel3d_${background}Desc`,
+      create: () => ({
+        ...base(),
+        type: 'model3d' as const,
+        model: null,
+        background,
+        panorama_image: null,
+        height_m: 2,
+        distance_m: 4,
+        elevation_m: -1.6,
+        yaw: 0,
+        rotation_deg: 0,
+        auto_rotate: 'slow' as const,
+        user_rotate: true,
+        caption_de: null,
+        caption_en: null,
+        text_de: null,
+        text_en: null,
+        info_points: [],
+      }),
+    })),
+  },
   hotspots: {
     type: 'hotspots',
     icon: Crosshair,
@@ -230,6 +290,12 @@ export const MODULE_META: { [T in ModuleType]: ModuleMeta<T> } = {
         labelKey: 'presetQuizRound',
         descriptionKey: 'presetQuizRoundDesc',
         create: () => ({ ...base(), type: 'quiz', questions: [emptyQuestion(), emptyQuestion(), emptyQuestion()] }),
+      },
+      {
+        id: 'sound',
+        labelKey: 'presetQuizSound',
+        descriptionKey: 'presetQuizSoundDesc',
+        create: () => ({ ...base(), type: 'quiz', questions: [emptyQuestion(3)] }),
       },
       {
         id: 'true_false',
@@ -385,6 +451,8 @@ export const MODULE_ORDER: ModuleType[] = [
   'timeline',
   'before_after',
   'ar_panorama',
+  'ar_discover',
+  'model3d',
   'hotspots',
   'photo',
   'quiz',
@@ -392,6 +460,11 @@ export const MODULE_ORDER: ModuleType[] = [
   'onsite_code',
   'sequence',
 ];
+
+/** Module mit AR-Bühne (WebGL, Kamera/360°-Bild): ar_panorama, ar_discover und model3d */
+export function isArModuleType(type: ModuleType): boolean {
+  return type === 'ar_panorama' || type === 'ar_discover' || type === 'model3d';
+}
 
 export function modulePreset<T extends ModuleType>(type: T, presetId?: string): ModulePreset<T> {
   const presets = MODULE_META[type].presets as ModulePreset<T>[];
@@ -441,7 +514,7 @@ export const STATION_TEMPLATES: StationTemplate[] = [
     id: 'discover',
     labelKey: 'templateDiscover',
     descriptionKey: 'templateDiscoverDesc',
-    modules: [{ type: 'hotspots' }, { type: 'quiz', preset: 'true_false' }],
+    modules: [{ type: 'ar_discover', preset: 'panorama' }, { type: 'quiz', preset: 'true_false' }],
   },
 ];
 

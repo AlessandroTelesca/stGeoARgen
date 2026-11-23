@@ -1,4 +1,5 @@
 import type { StationModule } from '../types';
+import type { StationCoordinates } from '../../data/stationsConfig';
 
 /** Daten für die AR-Oberfläche (Top-Bar, Profilmenü, Fortschrittsleiste) wie in den AR-Stationen */
 export interface ARChromeProps {
@@ -20,6 +21,8 @@ export interface PlayerStation {
   latitude: number;
   longitude: number;
   points: number;
+  /** Akzentfarbe der Station (#rrggbb); null → Standard-Tannengrün */
+  color?: string | null;
   modules: StationModule<string>[];
 }
 
@@ -37,4 +40,13 @@ export interface StationModulePlayerProps {
   onCompleteStation?: (stationId: number) => void;
   /** Player verlassen (Schließen-Button, nach dem Abschluss, Ende der Vorschau) */
   onClose: () => void;
+  /** Im Admin-Handyrahmen eingebettet: kein Fokusfang, kein globales Escape, keine Dialog-Rolle */
+  embedded?: boolean;
+  /** Gesteuerter Modus: aktuelles Modul von außen vorgeben (zusammen mit onIndexChange) */
+  activeIndex?: number;
+  onIndexChange?: (index: number) => void;
+  /** Ziel für Dialoge im eingebetteten Modus */
+  portalContainer?: HTMLElement | null;
+  /** Nächste Stationen im aktuellen Pfad (für den Abschlussdialog) */
+  nextStations?: StationCoordinates[];
 }

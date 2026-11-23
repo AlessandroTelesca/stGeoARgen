@@ -1,22 +1,43 @@
-import { Component, useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
-import { Home, Orbit, Pencil, Play, Smartphone, Trophy } from 'lucide-react';
+import { Component, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Home, Hand, Pencil, Play, Smartphone } from 'lucide-react';
 import { LanguageOverride, useLanguage } from '../../contexts/LanguageContext';
 import { MODULE_META } from '../../stationModules/meta';
-import { MODULE_PLAYERS } from '../../stationModules/player/players';
-import type { ModulePlayerProps } from '../../stationModules/player/ui';
-import { pickLang, type StationModule } from '../../stationModules/types';
+import { StationModulePlayer } from '../../stationModules/player/StationModulePlayer';
+import type { StationModulePlayerProps } from '../../stationModules/player/contract';
+import type { StationCoordinates } from '../../data/stationsConfig';
+import type { StationModule } from '../../stationModules/types';
+import { stableHash } from '../../lib/stableHash';
+import { StationDetail } from '../StationDetail';
 
 /**
- * Live-Vorschau des Stationseditors: zeigt die Station so, wie sie auf dem Handy erscheint –
- * erst die Stationsseite, dann jedes Modul mit den echten Playern, bei jeder Eingabe aktualisiert
- * und komplett in der Sprache der gerade bearbeiteten Texte. Antippen springt zum passenden Feld.
+ * Live-Vorschau des Stationseditors: zeigt die ECHTEN App-Komponenten (Stationsseite und Modul-Player)
+ * in einem Handyrahmen, bei jeder Eingabe aktualisiert und komplett in der Sprache der gerade
+ * bearbeiteten Texte. „Ausprobieren“ lässt alles bedienen, „Bearbeiten“ springt per Klick zum passenden Feld.
  */
 
 /** -1 = Stationsseite, 0… = Modul */
 export const STATION_PAGE = -1;
 
+type PreviewMode = 'try' | 'edit';
+type VisitorState = 'in_range' | 'too_far' | 'needs_login' | 'completed';
+
+const VISITOR_STATES: VisitorState[] = ['in_range', 'too_far', 'needs_login', 'completed'];
+const MODE_STORAGE_KEY = 'stationPreviewMode';
+
 interface PhonePreviewProps {
-  station: { title: string; description: string; longDescription: string; coverUrl: string | null; points: number };
+  station: {
+    title: string;
+    description: string;
+    longDescription: string;
+    coverUrl: string | null;
+    points: number;
+    /** Akzentfarbe (#rrggbb); null = Standard */
+    color: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    /** Station enthält das Modul „AR-Rundumblick“ */
+    hasArModule: boolean;
+  };
   /** Module mit Vorschau-URLs (fehlende Pflichtmedien als leere URL) */
   modules: StationModule<string>[];
   activeIndex: number;
@@ -26,139 +47,55 @@ interface PhonePreviewProps {
   /** Ganze Station im Vollbild abspielen */
   onPlay?: () => void;
   lang: 'de' | 'en';
+  /** Demo-Werte für die AR-Oberfläche (Top-Bar, Fortschritt) */
+  chrome: StationModulePlayerProps['arChrome'];
+  /** Nächste Stationen im Pfad (für den Abschlussdialog) */
+  nextStations?: StationCoordinates[];
   className?: string;
   /** Höhe, die neben dem Handy für anderes gebraucht wird (Seitenleiste: Kopf, Aktionsleiste; Fenster: weniger) */
   reservedHeight?: number;
 }
 
-/** Fängt Fehler halb ausgefüllter Module ab, statt die Seite abstürzen zu lassen */
-class PreviewBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+/** Fängt Fehler halb ausgefüllter Inhalte ab; ein neuer `resetKey` (Inhalt geändert) setzt den Fehlerzustand zurück */
+class PreviewBoundary extends Component<{ resetKey: string; fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  componentDidUpdate(prev: { resetKey: string }) {
+    if (this.state.failed && prev.resetKey !== this.props.resetKey) this.setState({ failed: false });
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
 
-/** Sind Listen leer, die ein Player zum Anzeigen braucht? */
-function isEmptyModule(module: StationModule<string>): boolean {
-  switch (module.type) {
-    case 'slideshow': return module.slides.length === 0;
-    case 'quiz': return module.questions.length === 0;
-    case 'timeline': return module.entries.length === 0;
-    case 'audio': return module.audio === '';
-    case 'hotspots': return module.image === '';
-    case 'before_after': return module.before_image === '';
-    default: return false;
-  }
-}
-
-function PreviewNote({ icon, text }: { icon: ReactNode; text: string }) {
+function PreviewNote({ text }: { text: string }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3 px-8 text-center text-white/75">
-      <span className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white">{icon}</span>
-      <p className="text-sm leading-relaxed">{text}</p>
+    <div className="h-full bg-background text-foreground flex flex-col items-center justify-center gap-3 px-8 text-center">
+      <span className="w-12 h-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center"><Smartphone className="w-6 h-6" /></span>
+      <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
 }
 
-/** Stationsseite wie in der App (StationDetail): Titelbild, Titel, Punkte, Beschreibung, Start */
-function StationPagePreview({ station, onEdit }: { station: PhonePreviewProps['station']; onEdit: () => void }) {
-  const { t } = useLanguage();
-  return (
-    <button type="button" onClick={onEdit} className="flex flex-col justify-start w-full h-full text-left bg-background text-foreground overflow-y-auto" aria-label={t('adminPreviewEditStationPage')}>
-      <div className="relative flex-shrink-0 h-[42%] bg-muted">
-        {station.coverUrl ? (
-          <img src={station.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 brand-gradient"><div className="topo-texture absolute inset-0" /></div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/0 to-black/70" />
-        <span className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/35 backdrop-blur-md border border-white/20 px-3.5 py-2 text-white text-sm font-bold tabular-nums">
-          <Trophy className="w-4 h-4 text-gold-bright" />
-          {station.points} {t('points')}
-        </span>
-        <p className={`absolute inset-x-0 bottom-0 px-5 pb-10 text-[30px] leading-[1.1] font-extrabold tracking-tight text-white drop-shadow-sm ${station.title ? '' : 'opacity-60'}`}>
-          {station.title || t('stationEditorNamePlaceholder')}
-        </p>
-      </div>
-      <div className="relative -mt-6 rounded-t-[28px] bg-background px-5 pt-6 pb-8 space-y-5">
-        <p className={`text-[15px] leading-relaxed text-gray-700 whitespace-pre-line line-clamp-[9] ${station.longDescription ? '' : 'italic text-muted-foreground'}`}>
-          {station.longDescription || t('stationEditorLongDescriptionPlaceholder')}
-        </p>
-        <div className="brand-gradient rounded-[24px] p-6 text-white text-center shadow-lg">
-          <p className="font-bold text-xl">{t('stationPlayerReady')}</p>
-          <span className="mt-5 w-full min-h-[56px] rounded-2xl bg-white text-primary font-extrabold flex items-center justify-center gap-2 shadow-lg">
-            <Play className="w-5 h-5" fill="currentColor" />
-            {t('stationPlayerStart')}
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function PhoneScreen({ station, modules, activeIndex, onSelect, onEdit, lang }: PhonePreviewProps) {
-  const { t } = useLanguage();
-  const module = activeIndex >= 0 ? modules[activeIndex] : undefined;
-  const isLast = activeIndex === modules.length - 1;
-
-  if (activeIndex === STATION_PAGE) {
-    return <StationPagePreview station={station} onEdit={() => onEdit(STATION_PAGE)} />;
+function readStoredMode(): PreviewMode {
+  try {
+    return localStorage.getItem(MODE_STORAGE_KEY) === 'edit' ? 'edit' : 'try';
+  } catch {
+    return 'try';
   }
-
-  let content: ReactNode;
-  if (!module) {
-    content = <PreviewNote icon={<Smartphone className="w-6 h-6" />} text={t('adminPreviewEmpty')} />;
-  } else if (module.type === 'ar_panorama') {
-    content = <PreviewNote icon={<Orbit className="w-6 h-6" />} text={t('adminPreviewArPanorama')} />;
-  } else if (isEmptyModule(module)) {
-    content = <PreviewNote icon={<Smartphone className="w-6 h-6" />} text={t('adminPreviewIncomplete')} />;
-  } else {
-    const Player = MODULE_PLAYERS[module.type] as unknown as ComponentType<ModulePlayerProps<typeof module.type>>;
-    content = (
-      <PreviewBoundary key={`${module.id}-${JSON.stringify(module).length}`} fallback={<PreviewNote icon={<Smartphone className="w-6 h-6" />} text={t('adminPreviewIncomplete')} />}>
-        <Player
-          key={module.id}
-          module={module as never}
-          lang={lang}
-          preview
-          continueLabel={isLast ? t('stationPlayerFinish') : t('stationImageSequenceNext')}
-          onContinue={() => onSelect(isLast ? STATION_PAGE : activeIndex + 1)}
-          stationTitle={station.title}
-        />
-      </PreviewBoundary>
-    );
-  }
-
-  return (
-    <div className="h-full bg-black text-white flex flex-col" style={{ '--module-footer-pad': '18px' } as CSSProperties}>
-      <div className="px-4 pt-4 pb-2 flex-shrink-0">
-        <div className="flex gap-1" aria-hidden="true">
-          {modules.map((m, i) => (
-            <span key={m.id} className={`h-1 flex-1 rounded-full transition-colors ${i <= activeIndex ? 'bg-white' : 'bg-white/25'}`} />
-          ))}
-        </div>
-        <p className="mt-2.5 text-sm font-bold truncate">{station.title || t('adminNewStation')}</p>
-        {module && (
-          <p className="text-sm text-white/80 tabular-nums truncate">
-            {t('stationPlayerPart', { current: activeIndex + 1, total: modules.length })}
-          </p>
-        )}
-      </div>
-      <div className="flex-1 min-h-0">{content}</div>
-    </div>
-  );
 }
 
 /** Logische Bildschirmgröße eines typischen Handys – die Vorschau rendert in echter Größe und skaliert */
 const SCREEN_WIDTH = 390;
 const SCREEN_HEIGHT = 844;
 
-/** Bildschirm in echten Handy-Pixeln, per transform auf die Rahmenbreite skaliert (maßstabsgetreu) */
-function ScaledScreen({ children }: { children: ReactNode }) {
+/**
+ * Bildschirm in echten Handy-Pixeln, per transform auf die Rahmenbreite skaliert (maßstabsgetreu).
+ * Der transform-Vorfahr macht auch position:fixed-Kinder (Vollbild-Komponenten) relativ zum Bildschirm.
+ */
+function ScaledScreen({ children, overlay, screenRef }: { children: ReactNode; overlay?: ReactNode; screenRef: (el: HTMLDivElement | null) => void }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.7);
   useEffect(() => {
@@ -173,30 +110,177 @@ function ScaledScreen({ children }: { children: ReactNode }) {
   return (
     <div ref={boxRef} className="relative rounded-[34px] overflow-hidden isolate" style={{ aspectRatio: `${SCREEN_WIDTH} / ${SCREEN_HEIGHT}` }}>
       <div
+        ref={screenRef}
         className="absolute left-0 top-0 origin-top-left"
-        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, transform: `scale(${scale})` }}
+        style={{
+          width: SCREEN_WIDTH,
+          height: SCREEN_HEIGHT,
+          transform: `scale(${scale})`,
+          // Wie auf dem echten Handy: 1dvh der Bildschirmhöhe und Abstand der Modul-Buttons über der Leiste
+          '--app-dvh': `${SCREEN_HEIGHT / 100}px`,
+          '--module-footer-pad': '18px',
+        } as CSSProperties}
       >
         {children}
       </div>
+      {overlay}
+    </div>
+  );
+}
+
+/** Umschalter Ausprobieren / Bearbeiten über dem Handy */
+function ModeSwitch({ value, onChange }: { value: PreviewMode; onChange: (mode: PreviewMode) => void }) {
+  const { t } = useLanguage();
+  const options: { id: PreviewMode; label: string; icon: ReactNode }[] = [
+    { id: 'try', label: t('stationPreviewModeTry'), icon: <Hand className="w-4 h-4" /> },
+    { id: 'edit', label: t('stationPreviewModeEdit'), icon: <Pencil className="w-4 h-4" /> },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1" role="radiogroup" aria-label={t('stationPreviewModeLabel')}>
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          role="radio"
+          aria-checked={value === option.id}
+          onClick={() => onChange(option.id)}
+          className={`h-10 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-colors ${value === option.id ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          {option.icon}
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }
 
 export function PhonePreview(props: PhonePreviewProps) {
   const { t } = useLanguage();
-  const { modules, activeIndex, onSelect, onEdit, onPlay, lang, className = '', reservedHeight = 390 } = props;
+  const { station, modules, activeIndex, onSelect, onEdit, onPlay, lang, chrome, nextStations, className = '', reservedHeight = 450 } = props;
+  const [mode, setMode] = useState<PreviewMode>(readStoredMode);
+  const [visitorState, setVisitorState] = useState<VisitorState>('in_range');
+  const [screenEl, setScreenEl] = useState<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const editing = mode === 'edit';
+  const onStationPage = activeIndex === STATION_PAGE;
+
+  const changeMode = (next: PreviewMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem(MODE_STORAGE_KEY, next);
+    } catch {
+      // Speicher nicht verfügbar: Modus gilt nur für diese Sitzung
+    }
+  };
+
+  // Im Bearbeiten-Modus ist der Bildschirminhalt nicht bedienbar (React 18 kennt `inert` nicht als Attribut)
+  useEffect(() => {
+    contentRef.current?.toggleAttribute('inert', editing);
+  }, [editing]);
+
+  // Ändert sich Station oder Inhalt, bekommt eine zuvor abgestürzte Vorschau eine neue Chance
+  const resetKey = useMemo(() => stableHash(JSON.stringify({ station, modules })), [station, modules]);
+
+  const incomplete = <PreviewNote text={t('adminPreviewIncomplete')} />;
+  const title = station.title || t('adminNewStation');
 
   return (
     <figure className={`m-0 ${className}`}>
+      <div className="mx-auto mb-3 max-w-[300px]">
+        <ModeSwitch value={mode} onChange={changeMode} />
+      </div>
+
+      {/* Besucherzustand – nur auf der Stationsseite relevant (Standort, Anmeldung, erledigt) */}
+      {onStationPage && (
+        <div role="group" aria-labelledby="phone-preview-visitor" className="mx-auto mb-3 max-w-[300px] flex flex-wrap items-center justify-center gap-1.5">
+          <p id="phone-preview-visitor" className="w-full text-center text-xs font-semibold text-muted-foreground">{t('stationPreviewVisitorState')}</p>
+          {VISITOR_STATES.map((state) => (
+            <button
+              key={state}
+              type="button"
+              aria-pressed={visitorState === state}
+              onClick={() => setVisitorState(state)}
+              className={`min-h-[32px] px-3 rounded-full text-xs font-bold transition-colors ${visitorState === state ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/40'}`}
+            >
+              {t(`stationPreviewVisitor_${state}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Handy-Rahmen – Inhalt in der Sprache der bearbeiteten Texte */}
       <div
         className="relative mx-auto w-full rounded-[44px] bg-gray-900 p-2.5 shadow-2xl"
-        // Nie höher als der Bildschirm (Platz für Kopf und Modulleiste): Breite aus der Höhe ableiten
+        // Nie höher als der Bildschirm (Platz für Kopf, Umschalter und Modulleiste): Breite aus der Höhe ableiten
         style={{ maxWidth: `min(300px, calc((100dvh - ${reservedHeight}px) * 0.47))`, minWidth: '220px' }}
       >
-        <ScaledScreen>
+        <ScaledScreen
+          screenRef={setScreenEl}
+          overlay={editing && (
+            <button
+              type="button"
+              onClick={() => onEdit(activeIndex)}
+              aria-label={t('stationPreviewEditHere')}
+              className="absolute inset-0 z-10 rounded-[34px] cursor-pointer focus-visible:outline-none hover:ring-2 focus-visible:ring-2 ring-primary/60 ring-inset"
+            >
+              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full bg-card/95 px-3 py-1.5 text-xs font-bold text-primary shadow-md">
+                <Pencil className="w-3.5 h-3.5" />
+                {t('stationPreviewClickToEdit')}
+              </span>
+            </button>
+          )}
+        >
           <LanguageOverride language={lang}>
-            <PhoneScreen {...props} />
+            <div ref={contentRef} className="h-full">
+              <PreviewBoundary resetKey={resetKey} fallback={incomplete}>
+                {onStationPage ? (
+                  <StationDetail
+                    preview={{ state: visitorState, onStart: () => onSelect(0) }}
+                    station={{
+                      id: 0,
+                      title,
+                      description: station.description,
+                      longDescription: station.longDescription,
+                      imageUrl: station.coverUrl ?? '',
+                      points: station.points,
+                      status: visitorState === 'completed' ? 'completed' : 'available',
+                      latitude: station.latitude ?? 0,
+                      longitude: station.longitude ?? 0,
+                      // Kennzeichnet eine Station aus der Stationsverwaltung (Texte der Modul-Bühne)
+                      arRoute: 'preview',
+                      hasArModule: station.hasArModule,
+                      color: station.color,
+                    }}
+                    onClose={() => {}}
+                    onComplete={() => {}}
+                    isLoggedIn={visitorState !== 'needs_login'}
+                  />
+                ) : (
+                  <StationModulePlayer
+                    embedded
+                    preview
+                    station={{
+                      id: 0,
+                      title,
+                      latitude: station.latitude ?? 0,
+                      longitude: station.longitude ?? 0,
+                      points: station.points,
+                      color: station.color,
+                      modules,
+                    }}
+                    lang={lang}
+                    activeIndex={activeIndex}
+                    onIndexChange={onSelect}
+                    onClose={() => onSelect(STATION_PAGE)}
+                    arChrome={chrome}
+                    portalContainer={screenEl}
+                    nextStations={nextStations}
+                    canComplete={false}
+                    isGuest={false}
+                  />
+                )}
+              </PreviewBoundary>
+            </div>
           </LanguageOverride>
         </ScaledScreen>
       </div>
@@ -208,9 +292,9 @@ export function PhonePreview(props: PhonePreviewProps) {
             <button
               type="button"
               onClick={() => onSelect(STATION_PAGE)}
-              aria-current={activeIndex === STATION_PAGE ? 'step' : undefined}
+              aria-current={onStationPage ? 'step' : undefined}
               title={t('adminPreviewStationPage')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${activeIndex === STATION_PAGE ? 'bg-primary text-white shadow-primary' : 'bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/40'}`}
+              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${onStationPage ? 'bg-primary text-white shadow-primary' : 'bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/40'}`}
             >
               <Home className="w-4 h-4" />
               <span className="sr-only">{t('adminPreviewStationPage')}</span>
@@ -244,7 +328,7 @@ export function PhonePreview(props: PhonePreviewProps) {
           className="min-h-[44px] px-4 rounded-full bg-card border border-border text-sm font-bold text-primary flex items-center gap-2 hover:border-primary/40 transition-colors pressable"
         >
           <Pencil className="w-4 h-4" />
-          {activeIndex === STATION_PAGE ? t('adminPreviewEditStationPage') : t('adminPreviewEditModule')}
+          {onStationPage ? t('adminPreviewEditStationPage') : t('adminPreviewEditModule')}
         </button>
         {onPlay && modules.length > 0 && (
           <button

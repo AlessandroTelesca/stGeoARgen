@@ -124,6 +124,49 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
           ))}
         </div>
       );
+    case 'ar_discover':
+      return (
+        <div className="relative w-full h-12 rounded-md overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+          {variant === 'camera' ? (
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">{Array.from({ length: 9 }, (_, i) => <span key={i} className="border border-white/10" />)}</div>
+          ) : (
+            <>
+              <span className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
+              {[0.25, 0.5, 0.75].map((u) => <span key={u} className="absolute inset-y-0 w-px bg-white/15" style={{ left: `${u * 100}%` }} />)}
+            </>
+          )}
+          {/* Punkte: einer entdeckt (Häkchen), zwei offen */}
+          <span className="absolute left-[14%] top-[28%] w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-1 ring-white flex items-center justify-center">
+            <span className="w-1.5 h-[3px] -mt-px -rotate-45 border-b border-l border-white" />
+          </span>
+          <span className="absolute left-[78%] top-[30%] w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+          <span className="absolute left-[62%] top-[72%] w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+          {/* Laser von unten zum Zielkreis mit halb gefülltem Ring */}
+          <span className="absolute left-1/2 bottom-0 w-0.5 h-[40%] -translate-x-1/2 bg-gradient-to-t from-transparent to-white" />
+          <span className="absolute left-1/2 top-[42%] w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/35 border-t-white border-r-white" />
+        </div>
+      );
+    case 'model3d':
+      return (
+        <div className="relative w-full h-12 rounded-md overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+          {variant === 'panorama' ? (
+            <>
+              <span className="absolute inset-x-0 top-[62%] h-px bg-white/30" />
+              {[0.25, 0.5, 0.75].map((u) => <span key={u} className="absolute inset-y-0 w-px bg-white/15" style={{ left: `${u * 100}%` }} />)}
+            </>
+          ) : (
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">{Array.from({ length: 9 }, (_, i) => <span key={i} className="border border-white/10" />)}</div>
+          )}
+          {/* Würfel mit Drehpfeil darunter */}
+          <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <polygon points="24,6 36,12 24,18 12,12" className="fill-primary-lighter" />
+            <polygon points="12,12 24,18 24,33 12,27" className="fill-primary" />
+            <polygon points="24,18 36,12 36,27 24,33" className="fill-primary-darker" />
+            <path d="M9 38 Q24 46 39 38" className="fill-none stroke-white/70" strokeWidth="1.6" strokeLinecap="round" />
+            <polygon points="40.5,35 41,40.5 35.5,39" className="fill-white/70" />
+          </svg>
+        </div>
+      );
     case 'hotspots':
       return (
         <div className={`relative w-full h-12 rounded-md ${photo}`}>
@@ -146,6 +189,26 @@ function Sketch({ type, variant }: { type: ModuleType; variant?: string }) {
             <div className="mt-1.5 grid grid-cols-2 gap-1">
               <span className="h-5 rounded-md bg-primary border border-primary-lighter" />
               <span className="h-5 rounded-md bg-white/12 border border-white/20" />
+            </div>
+          </div>
+        );
+      }
+      if (variant === 'sound') {
+        return (
+          <div className="w-full">
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+                <span className="ml-0.5 w-0 h-0 border-y-[4px] border-y-transparent border-l-[6px] border-l-primary" />
+              </span>
+              <div className="flex items-center gap-[2px] h-4">
+                {[4, 8, 13, 8, 4].map((h, i) => (
+                  <span key={i} className="w-[2px] rounded-full bg-white/60" style={{ height: `${h}px` }} />
+                ))}
+              </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              <span className="block h-2.5 rounded bg-white/12 border border-white/20" />
+              <span className="block h-2.5 rounded bg-primary border border-primary-lighter" />
             </div>
           </div>
         );

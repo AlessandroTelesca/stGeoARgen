@@ -185,6 +185,7 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 -- quiz_options_*: JSON-Array mit Antwortoptionen
 -- station_type: 'image_sequence' = Bildfolge mit Texten (+ optional eine Quizfrage in quiz_*),
 --               'panorama_quiz'  = 360°-Bild (panorama_image) mit Quiz (quiz_questions, JSON-Array)
+-- color: optionale Akzentfarbe der Station als Hex (#rrggbb, Kleinbuchstaben); NULL = Standardfarbe der App
 -- live_camera: nur panorama_quiz – 1 = Live-Kamerabild statt 360°-Bild als Hintergrund (panorama_image dann optional)
 -- modules: JSON-Array der Module der Station (siehe src/stationModules/types.ts). NULL = ältere Station:
 --          das Frontend leitet die Module dann aus den alten Spalten (station_type, slides, quiz_* …) ab.
@@ -192,8 +193,8 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 --          Moduldateien (Bilder, Audio) liegen wie die übrigen Dateien in api/uploads/stations/.
 -- published: 1 = veröffentlicht (in der App sichtbar), 0 = Entwurf (nur in der Stationsverwaltung)
 -- sort_order: Reihenfolge der Stationen innerhalb ihres Pfads (aufsteigend)
--- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql, api/migrate_live_camera.sql
--- und api/migrate_station_modules.sql ausführen.
+-- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql, api/migrate_live_camera.sql,
+-- api/migrate_station_modules.sql und api/migrate_station_color.sql ausführen.
 CREATE TABLE IF NOT EXISTS `custom_stations` (
   `id`                   INT NOT NULL AUTO_INCREMENT,
   `path_id`              VARCHAR(100) NOT NULL,
@@ -208,6 +209,7 @@ CREATE TABLE IF NOT EXISTS `custom_stations` (
   `modules`              MEDIUMTEXT DEFAULT NULL,
   `station_type`         ENUM('image_sequence', 'panorama_quiz') NOT NULL DEFAULT 'image_sequence',
   `cover_image`          VARCHAR(64) NOT NULL,
+  `color`                VARCHAR(7) NULL DEFAULT NULL,
   `slides`               MEDIUMTEXT NOT NULL,
   `panorama_image`       VARCHAR(64) DEFAULT NULL,
   `live_camera`          TINYINT(1) NOT NULL DEFAULT 0,

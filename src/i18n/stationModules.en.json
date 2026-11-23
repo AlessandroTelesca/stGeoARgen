@@ -63,7 +63,7 @@
   "templateRiddle": "Riddle station",
   "templateRiddleDesc": "Georgi sets an on-site task, followed by an estimation question.",
   "templateDiscover": "Discover",
-  "templateDiscoverDesc": "A picture with info points and a true-or-false question.",
+  "templateDiscoverDesc": "360° view with points to discover with the laser, plus a true-or-false question.",
   "templateBlank": "Blank station",
   "templateBlankDesc": "Put the modules together yourself.",
   "moduleSequence": "Order it",

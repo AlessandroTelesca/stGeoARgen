@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationProximity } from './ARComponents/ARComponentBase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GuestWarningDialog } from './GuestWarningDialog';
+import { stationThemeProps } from '../lib/stationTheme';
 
 interface StationDetailProps {
   station: {
@@ -26,6 +27,8 @@ interface StationDetailProps {
     arRoute?: string;
     /** Station aus der Stationsverwaltung enthält das Modul „AR-Rundumblick“ */
     hasArModule?: boolean;
+    /** Akzentfarbe der Station (#rrggbb); null → Standard-Tannengrün */
+    color?: string | null;
   };
   onClose: () => void;
   onComplete: (stationId: number) => void;
@@ -35,7 +38,16 @@ interface StationDetailProps {
   onEnableGuestStart?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToRegister?: () => void;
+  /** Vorschau im Admin-Handyrahmen: feste Zustände statt Standort/Login, Start ruft onStart */
+  preview?: {
+    state: 'in_range' | 'too_far' | 'needs_login' | 'completed';
+    onStart: () => void;
+  };
 }
+
+/** Feste Entfernung der Vorschau-Zustände (in Metern) */
+const PREVIEW_DISTANCE_TOO_FAR = 240;
+const PREVIEW_DISTANCE_IN_RANGE = 40;
 
 // Station ID to AR Route mapping
 const STATION_AR_ROUTES: Record<number, string> = {
@@ -46,35 +58,46 @@ const STATION_AR_ROUTES: Record<number, string> = {
   5: '/klosterweiher',   // Aussichtspunkt Hörnle
 };
 
-export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister }: StationDetailProps) {
+export function StationDetail({ station, onClose, onComplete, isLoggedIn, requireLoginForAR = true, allowGuestARStart = false, onEnableGuestStart, onNavigateToLogin, onNavigateToRegister, preview }: StationDetailProps) {
   const [showGeorgi, setShowGeorgi] = useState(true);
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const isCompleted = station.status === 'completed';
+  const isCompleted = preview ? preview.state === 'completed' : station.status === 'completed';
+  const theme = stationThemeProps(station.color);
 
   // Proximity check - only for stations with AR routes
   const RADIUS_METERS = 100;
   const arRoute = STATION_AR_ROUTES[station.id] ?? station.arRoute;
-  const hasARRoute = !!arRoute;
+  const hasARRoute = !!arRoute || !!preview;
   // Gleiche Login-Regeln für alle Stationen (AR und Stationsverwaltung): ohne Login erst Login-Karte,
   // als Gast darf man die Station erleben, schließt sie aber nicht ab (wie der AR-Abschlussbutton)
-  const needsLogin = requireLoginForAR && isLoggedIn === false;
+  const needsLogin = preview ? preview.state === 'needs_login' : requireLoginForAR && isLoggedIn === false;
   // Stationen aus der Stationsverwaltung ohne AR-Rundumblick sind kein „AR-Erlebnis“
   const isModuleStation = station.arRoute !== undefined && !station.hasArModule;
-  const { distance, isWithinRadius, locationError } = useStationProximity(
-    station.latitude,
-    station.longitude,
-    RADIUS_METERS
-  );
+  const proximity = useStationProximity(station.latitude, station.longitude, RADIUS_METERS, { enabled: !preview });
+  const locationError = proximity.locationError;
+  const isWithinRadius = preview ? preview.state === 'in_range' || preview.state === 'completed' : proximity.isWithinRadius;
+  const distance = preview
+    ? preview.state === 'too_far'
+      ? PREVIEW_DISTANCE_TOO_FAR
+      : preview.state === 'in_range'
+        ? PREVIEW_DISTANCE_IN_RANGE
+        : null
+    : proximity.distance;
 
   const handleNavigateToStation = () => {
+    if (preview) return;
     // Open Google Maps with directions to the station
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
     window.open(mapsUrl, '_blank');
   };
 
   const handleStartARExperience = () => {
+    if (preview) {
+      preview.onStart();
+      return;
+    }
     // Navigate to AR view - proximity check happens there
     if (arRoute) {
       // XR availability decides between the XR and non-XR Klosterweiher experience
@@ -92,20 +115,27 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
 
   return (
     <motion.div
-      className="fixed inset-0 bg-background z-50 overflow-y-auto overscroll-contain"
-      initial={{ y: '100%' }}
+      className={`fixed inset-0 bg-background z-50 overflow-y-auto overscroll-contain${theme.className ? ` ${theme.className}` : ''}`}
+      style={theme.style}
+      initial={preview ? false : { y: '100%' }}
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 34, stiffness: 320 }}
     >
       {/* Hero */}
-      <div className="relative h-[clamp(260px,42dvh,380px)] overflow-hidden">
-        <ImageWithFallback
-          src={station.imageUrl}
-          alt={station.title}
-          fetchPriority="high"
-          className="w-full h-full object-cover"
-        />
+      <div className="relative h-[clamp(260px,calc(var(--app-dvh,1dvh)*42),380px)] overflow-hidden">
+        {station.imageUrl ? (
+          <ImageWithFallback
+            src={station.imageUrl}
+            alt={station.title}
+            fetchPriority="high"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 brand-gradient">
+            <div className="topo-texture absolute inset-0" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/0 to-black/70" aria-hidden="true" />
 
         <div
@@ -146,7 +176,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {needsLogin && (
             <motion.div
               className="surface-card p-6 text-center"
-              initial={{ opacity: 0, y: 12 }}
+              initial={preview ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <span className="w-14 h-14 rounded-2xl bg-primary-soft text-primary mx-auto mb-4 flex items-center justify-center">
@@ -187,7 +217,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {!needsLogin && hasARRoute && locationError && !isCompleted && (
             <motion.div
               className="rounded-[24px] bg-gold-soft border border-gold/25 p-5"
-              initial={{ opacity: 0, y: 12 }}
+              initial={preview ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-start gap-3">
@@ -215,7 +245,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {!needsLogin && hasARRoute && !locationError && distance !== null && !isWithinRadius && !isCompleted && (
             <motion.div
               className="relative overflow-hidden rounded-[24px] bg-gray-900 text-white p-6 text-center shadow-lg"
-              initial={{ opacity: 0, y: 12 }}
+              initial={preview ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="topo-texture absolute inset-0 opacity-60" aria-hidden="true" />
@@ -249,7 +279,7 @@ export function StationDetail({ station, onClose, onComplete, isLoggedIn, requir
           {!needsLogin && hasARRoute && !locationError && isWithinRadius && !isCompleted && (
             <motion.div
               className="brand-gradient relative overflow-hidden text-white rounded-[24px] p-6 text-center shadow-lg"
-              initial={{ opacity: 0, y: 12 }}
+              initial={preview ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="topo-texture absolute inset-0" aria-hidden="true" />

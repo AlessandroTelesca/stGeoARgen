@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { DraftMedia, DraftModuleOfType } from '../meta';
 import type { SequenceItem } from '../types';
 import { AddButton, InfoNote, ListItemControls, LocalizedInput, LocalizedTextarea, MediaField, moveItem } from './fields';
+import { PassThresholdField } from './PassThresholdField';
 import type { ModuleEditorDefinition, ModuleEditorProps, ModuleErrors } from './types';
 import { countLabel, isBlank, type Translate } from './validation';
 
@@ -164,6 +165,13 @@ function SequenceEditor({ module, onChange, lang, errors, prepareMedia }: Module
         rows={3}
         placeholder={t('moduleSeqExplanationPlaceholder')}
         error={errors.explanation_de}
+      />
+
+      <PassThresholdField
+        value={module.pass_threshold}
+        onChange={(pass_threshold) => onChange((prev) => ({ ...prev, pass_threshold }))}
+        max={1}
+        kind="solve"
       />
     </div>
   );

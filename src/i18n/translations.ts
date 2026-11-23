@@ -16,6 +16,16 @@ import stationModulesExtraDeJson from './stationModulesExtra.de.json';
 import stationModulesExtraEnJson from './stationModulesExtra.en.json';
 import stationAdminTourDeJson from './stationAdminTour.de.json';
 import stationAdminTourEnJson from './stationAdminTour.en.json';
+import stationPreviewDeJson from './stationPreview.de.json';
+import stationPreviewEnJson from './stationPreview.en.json';
+import stationAccentDeJson from './stationAccent.de.json';
+import stationAccentEnJson from './stationAccent.en.json';
+import stationArDeJson from './stationAr.de.json';
+import stationArEnJson from './stationAr.en.json';
+import stationResultsDeJson from './stationResults.de.json';
+import stationResultsEnJson from './stationResults.en.json';
+import stationQuizSoundDeJson from './stationQuizSound.de.json';
+import stationQuizSoundEnJson from './stationQuizSound.en.json';
 
 export type Language = 'de' | 'en';
 
@@ -29,6 +39,11 @@ const de = {
 	...stationAdminDeJson,
 	...stationModulesExtraDeJson,
 	...stationAdminTourDeJson,
+	...stationPreviewDeJson,
+	...stationAccentDeJson,
+	...stationArDeJson,
+	...stationResultsDeJson,
+	...stationQuizSoundDeJson,
 };
 
 export type TranslationDict = typeof de;
@@ -43,6 +58,11 @@ const en: TranslationDict = {
 	...stationAdminEnJson,
 	...stationModulesExtraEnJson,
 	...stationAdminTourEnJson,
+	...stationPreviewEnJson,
+	...stationAccentEnJson,
+	...stationArEnJson,
+	...stationResultsEnJson,
+	...stationQuizSoundEnJson,
 };
 
 export const translations: Record<Language, TranslationDict> = { de, en };

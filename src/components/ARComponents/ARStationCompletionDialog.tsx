@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Home, Navigation, Clock, MapPin, Trophy, X, Flag } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { stationThemeProps } from '../../lib/stationTheme';
 
 interface ARStationCompletionDialogProps {
     isOpen: boolean;
@@ -20,12 +21,16 @@ interface ARStationCompletionDialogProps {
     onClose?: () => void;
     /** DOM-Overlay-Root der AR-Ansicht; nur während einer WebXR-Sitzung Portal-Ziel */
     overlayRoot?: HTMLElement | null;
+    /** Portal-Ziel statt document.body (z. B. Handyrahmen der Admin-Vorschau); ein XR-Overlay hat Vorrang */
+    container?: HTMLElement | null;
+    /** Akzentfarbe der Station (#rrggbb); null → Standard-Tannengrün */
+    themeColor?: string | null;
 }
 
 // Im Body liegt der Dialog über jeder Stations-UI, egal welchen Stapelkontext
 // die Station aufbaut. In einer WebXR-Sitzung ist aber nur der DOM-Overlay-Root
-// sichtbar, dann muss er dort bleiben.
-function resolvePortalTarget(overlayRoot?: HTMLElement | null): HTMLElement {
+// sichtbar, dann muss er dort bleiben. Sonst gilt `container`, zuletzt der Body.
+function resolvePortalTarget(overlayRoot?: HTMLElement | null, container?: HTMLElement | null): HTMLElement {
     if (overlayRoot) {
         try {
             if (overlayRoot.matches(':xr-overlay')) return overlayRoot;
@@ -33,7 +38,7 @@ function resolvePortalTarget(overlayRoot?: HTMLElement | null): HTMLElement {
             // Browser ohne :xr-overlay-Unterstützung
         }
     }
-    return document.body;
+    return container ?? document.body;
 }
 
 function formatDuration(seconds: number): string {
@@ -62,8 +67,11 @@ export const ARStationCompletionDialog = ({
     onNavigateToNextStation,
     onClose,
     overlayRoot,
+    container,
+    themeColor,
 }: ARStationCompletionDialogProps) => {
     const { t } = useLanguage();
+    const theme = stationThemeProps(themeColor);
     const completedCount = totalStations - remainingStations;
 
     const stats = [
@@ -99,8 +107,8 @@ export const ARStationCompletionDialog = ({
                     />
 
                     <motion.div
-                        className="fixed inset-0 z-[40010] flex items-end sm:items-center justify-center p-4"
-                        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
+                        className={`fixed inset-0 z-[40010] flex items-end sm:items-center justify-center p-4${theme.className ? ` ${theme.className}` : ''}`}
+                        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))', ...theme.style }}
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 30, opacity: 0 }}
@@ -190,6 +198,6 @@ export const ARStationCompletionDialog = ({
                 </>
             )}
         </AnimatePresence>,
-        resolvePortalTarget(overlayRoot)
+        resolvePortalTarget(overlayRoot, container)
     );
 };

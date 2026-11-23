@@ -2,6 +2,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { DraftModuleOfType } from '../meta';
 import { pickLang } from '../types';
 import { LocalizedInput, LocalizedTextarea, NumberField } from './fields';
+import { PassThresholdField } from './PassThresholdField';
 import type { ModuleEditorDefinition, ModuleEditorProps, ModuleErrors } from './types';
 import { formatNumber, isBlank, type Translate } from './validation';
 
@@ -118,6 +119,13 @@ function EstimateEditor({ module, onChange, lang, errors }: ModuleEditorProps<'e
         rows={3}
         placeholder={t('moduleEditorExplanationPlaceholder')}
         error={errors.explanation_de}
+      />
+
+      <PassThresholdField
+        value={module.pass_threshold}
+        onChange={(pass_threshold) => onChange((prev) => ({ ...prev, pass_threshold }))}
+        max={1}
+        kind="solve"
       />
     </div>
   );

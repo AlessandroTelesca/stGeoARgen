@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, Check, ImagePlus, Info, Music, Orbit, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Box, Check, ImagePlus, Info, Music, Orbit, Plus, Trash2 } from 'lucide-react';
 import { FieldLabel } from '../../components/AuthShell';
 import { FieldError, inputClass, type ImageItem } from '../../components/StationAdminPanel/adminFormParts';
 import { Input } from '../../components/ui/input';
@@ -172,21 +172,23 @@ interface MediaFieldProps {
 
 const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
 const AUDIO_ACCEPT = 'audio/mpeg,audio/mp4,audio/x-m4a,.mp3,.m4a';
+const MODEL_ACCEPT = '.glb,model/gltf-binary';
 
 function mediaFileName(item: ImageItem): string {
   return item.kind === 'new' ? item.file.name : item.filename;
 }
 
-/** Einzelne Datei wählen, ersetzen und (wenn optional) entfernen – Bild, 360°-Bild oder Audio */
+/** Einzelne Datei wählen, ersetzen und (wenn optional) entfernen – Bild, 360°-Bild, Audio oder 3D-Modell (GLB) */
 export function MediaField({ label, kind, value, onChange, prepareMedia, optional, error, aspect, hint, renderPreview }: MediaFieldProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const labelId = useId();
   const [busy, setBusy] = useState(false);
   const isAudio = kind === 'audio';
-  const Icon = isAudio ? Music : kind === 'panorama' ? Orbit : ImagePlus;
+  const isModel = kind === 'model';
+  const Icon = isAudio ? Music : isModel ? Box : kind === 'panorama' ? Orbit : ImagePlus;
   const previewAspect = aspect ?? (kind === 'panorama' ? 'aspect-[2/1]' : 'aspect-[4/3]');
-  const kindKey = kind === 'audio' ? 'Audio' : kind === 'panorama' ? 'Panorama' : 'Image';
-  const formats = isAudio ? t('moduleEditorAudioFormats') : kind === 'panorama' ? 'JPG, PNG, WebP · 2:1' : 'JPG, PNG, WebP';
+  const kindKey = isAudio ? 'Audio' : isModel ? 'Model' : kind === 'panorama' ? 'Panorama' : 'Image';
+  const formats = isAudio ? t('moduleEditorAudioFormats') : isModel ? t('adminModelFormat') : kind === 'panorama' ? 'JPG, PNG, WebP · 2:1' : 'JPG, PNG, WebP';
   const duration = useAudioDuration(isAudio && value ? value.url : null);
 
   const handleFile = async (input: HTMLInputElement) => {
@@ -205,7 +207,7 @@ export function MediaField({ label, kind, value, onChange, prepareMedia, optiona
   const input = (
     <input
       type="file"
-      accept={isAudio ? AUDIO_ACCEPT : IMAGE_ACCEPT}
+      accept={isAudio ? AUDIO_ACCEPT : isModel ? MODEL_ACCEPT : IMAGE_ACCEPT}
       className="sr-only"
       disabled={busy}
       aria-labelledby={labelId}
@@ -222,9 +224,24 @@ export function MediaField({ label, kind, value, onChange, prepareMedia, optiona
         {optional && ` (${t('stationEditorOptional')})`}
       </p>
       <div className="space-y-2.5">
-        {value && !isAudio && (renderPreview ? renderPreview(value) : (
+        {value && !isAudio && !isModel && (renderPreview ? renderPreview(value) : (
           <div className={`rounded-2xl overflow-hidden bg-muted ${previewAspect}`}>
             <img src={value.url} alt="" className="w-full h-full object-cover" />
+          </div>
+        ))}
+        {value && isModel && (renderPreview ? renderPreview(value) : (
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <Box className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold">{mediaFileName(value)}</p>
+              {value.kind === 'new' && (
+                <p className="text-xs tabular-nums text-muted-foreground">
+                  {t('model3dStatSize', { size: (value.file.size / (1024 * 1024)).toLocaleString(language === 'de' ? 'de-DE' : 'en-US', { maximumFractionDigits: 1 }) })}
+                </p>
+              )}
+            </div>
           </div>
         ))}
         {value && isAudio && (

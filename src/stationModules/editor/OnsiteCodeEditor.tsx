@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/input';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { DraftModuleOfType } from '../meta';
 import { LocalizedTextarea, MediaField, OptionCards } from './fields';
+import { PassThresholdField } from './PassThresholdField';
 import type { ModuleEditorDefinition, ModuleEditorProps, ModuleErrors } from './types';
 import { isBlank, type Translate } from './validation';
 
@@ -163,6 +164,13 @@ function OnsiteCodeEditor({ module, onChange, lang, errors, prepareMedia }: Modu
         rows={3}
         placeholder={t('moduleEditorSolutionPlaceholder')}
         error={errors.solution_de}
+      />
+
+      <PassThresholdField
+        value={module.pass_threshold}
+        onChange={(pass_threshold) => onChange((prev) => ({ ...prev, pass_threshold }))}
+        max={1}
+        kind="solve"
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ARInitOptions, ARSession, ARVisualizer } from './ARVisualizer';
+import { createPanoramaSphere } from '../ar/panoramaSphere';
 
 export class GyroARVisualizer extends ARVisualizer implements ARSession {
 	private readonly initOptions: ARInitOptions;
@@ -70,7 +71,12 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		return super.loadGLTFModelWithAnimations(url, options);
 	}
 
-	public setPanoramaBackground(texture: THREE.Texture | null): void {
+	/**
+	 * 360°-Hintergrund. Standard (fest eingebaute Stationen): BackSide-Kugel ohne Spiegelkorrektur – das Bild
+	 * erscheint von innen seitenverkehrt, Marker und Hotspots dieser Stationen sind darauf abgestimmt.
+	 * `correctOrientation`: Kugel des AR-Kerns (src/ar/panoramaSphere.ts) – Bild richtig herum, Bildmitte vorn.
+	 */
+	public setPanoramaBackground(texture: THREE.Texture | null, options: { correctOrientation?: boolean } = {}): void {
 		if (!this.scene) return;
 
 		if (this.panoramaBackdrop) {
@@ -81,6 +87,14 @@ export class GyroARVisualizer extends ARVisualizer implements ARSession {
 		if (!texture) return;
 
 		texture.needsUpdate = true;
+
+		if (options.correctOrientation) {
+			const sphere = createPanoramaSphere(texture, 120);
+			sphere.name = 'PanoramaBackdrop';
+			this.scene.add(sphere);
+			this.panoramaBackdrop = sphere;
+			return;
+		}
 
 		const geometry = new THREE.SphereGeometry(120, 64, 32);
 		const material = new THREE.MeshBasicMaterial({
