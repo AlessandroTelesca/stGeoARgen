@@ -3,8 +3,9 @@ name: Build and Deploy
 # Ein Workflow für beide Umgebungen – die Datei ist auf release und develop identisch,
 # das Ziel ergibt sich aus dem Branch:
 #   release -> Produktion (Secrets FTP_*, Adminpanel aus)
-#   develop -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an, Geofencing aus). Nur das Frontend –
+#   develop, dev/* -> Entwicklungs-Subdomain (Secrets DEV_FTP_*, Adminpanel an, Geofencing aus). Nur das Frontend –
 #              es nutzt die Produktions-API (DEV_API_BASE_URL), deshalb wird api/ dort nicht hochgeladen.
+#              Alle teilen sich eine Subdomain: der zuletzt deployte Branch ist zu sehen.
 # Solange DEV_FTP_SERVER nicht gesetzt ist, wird develop nur gebaut und getestet, nicht deployt.
 
 on:
@@ -12,13 +13,15 @@ on:
     branches:
       - release
       - develop
+      - 'dev/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-${{ github.ref_name }}
+  # develop und dev/* landen auf derselben Subdomain → eine gemeinsame Warteschlange
+  group: deploy-${{ github.ref_name == 'release' && 'production' || (github.ref_name == 'develop' || startsWith(github.ref_name, 'dev/')) && 'development' || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -43,7 +46,7 @@ jobs:
               # Leer = Standard aus src/services/api.ts (Produktions-API)
               echo "api_base_url=" >> "$GITHUB_OUTPUT"
               ;;
-            develop)
+            develop|dev/*)
               echo "name=development" >> "$GITHUB_OUTPUT"
               echo "admin_panel=true" >> "$GITHUB_OUTPUT"
               echo "disable_geo=true" >> "$GITHUB_OUTPUT"
