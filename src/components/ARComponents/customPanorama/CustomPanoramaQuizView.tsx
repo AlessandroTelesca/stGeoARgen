@@ -9,6 +9,7 @@ import { GyroARVisualizer } from '../../../ARbackend/GyroARVisualizer';
 import type { ARInitOptions } from '../../../ARbackend/ARVisualizer';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { isIOSDevice } from '../../../lib/device';
+import { CompassHeading, compassYawCorrection, headingDelta, type CompassReading } from '../../../ar/compass';
 import {
   PANEL_HALF_ANGLE_DEG,
   PANEL_WIDTH_VAR,
@@ -43,6 +44,8 @@ export interface PanoramaQuizStation {
   /** Optionale Bilder mit Text; hängen zusammen mit dem Quiz rundum um die Kamera */
   slides: { imageUrl: string; text: string }[];
   questions: PanoramaQuizQuestion[];
+  /** Kompassrichtung der ersten Tafel (Grad ab Nord); null/fehlt → erste Tafel liegt im Startblick */
+  heading?: number | null;
 }
 
 interface CustomPanoramaQuizViewProps {
@@ -110,13 +113,18 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   private readonly forward = new THREE.Vector3();
   private readonly up = new THREE.Vector3();
   private cameraStream: MediaStream | null = null;
-  // Lage aus deviceorientation (null bis zum ersten Messwert)
+  // Rohlage aus deviceorientation (null bis zum ersten Messwert) und daraus die gedrehte Ziellage der Kamera
+  private rawQuaternion: THREE.Quaternion | null = null;
   private sensorQuaternion: THREE.Quaternion | null = null;
+  /** Drehung um die Hochachse (Grad), die die Rohlage in die Tafel-Welt bringt */
+  private yawCorrectionDeg = 0;
+  private compass: CompassHeading | null = null;
+  private compassAligned = false;
   private readonly orientationEuler = new THREE.Euler();
   private readonly screenQuaternion = new THREE.Quaternion();
   /** Gerät flach liegend → Kamera schaut nach vorn statt nach unten (-90° um X) */
   private readonly deviceToCamera = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
-  /** Dreht die erste Blickrichtung auf yaw 0 (Platz des ersten Panels) */
+  /** Dreht die erste Blickrichtung (bzw. mit Kompass: die Richtung heading) auf yaw 0 (Platz des ersten Panels) */
   private readonly startYawCorrection = new THREE.Quaternion();
   private readonly orientationSmoothing = 0.2;
 
@@ -124,7 +132,9 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     container: HTMLDivElement,
     private readonly video: HTMLVideoElement,
     private readonly panoramaUrl: string | null,
-    options: ARInitOptions = {}
+    options: ARInitOptions = {},
+    /** Kompassrichtung der ersten Tafel; null → relativ zum Startblick */
+    private readonly heading: number | null = null
   ) {
     super(container, video, options);
   }
@@ -200,6 +210,13 @@ class CustomPanoramaARSession extends GyroARVisualizer {
     }
 
     window.addEventListener('deviceorientation', this.handleOrientation, true);
+
+    // Mit Kompassrichtung: Tafeln auf echte Himmelsrichtungen ausrichten (Freigabe hat super.init() schon geholt)
+    if (this.heading !== null) {
+      this.compass = new CompassHeading({ smoothing: 0.9 });
+      this.compass.onChange(this.handleCompass);
+      this.compass.start();
+    }
   }
 
   /** Blickrichtung im Uhrzeigersinn [0, 360) einer Kameralage; unabhängig vom seitlichen Kippen */
@@ -222,17 +239,41 @@ class CustomPanoramaARSession extends GyroARVisualizer {
   private readonly handleOrientation = (event: DeviceOrientationEvent): void => {
     if (event.alpha == null || event.beta == null || event.gamma == null) return;
     const d = THREE.MathUtils.DEG2RAD;
-    const q = this.sensorQuaternion ?? new THREE.Quaternion();
+    const first = this.rawQuaternion === null;
+    const q = this.rawQuaternion ?? new THREE.Quaternion();
     this.orientationEuler.set(event.beta * d, event.alpha * d, -event.gamma * d, 'YXZ');
     q.setFromEuler(this.orientationEuler).multiply(this.deviceToCamera);
     q.multiply(this.screenQuaternion.setFromAxisAngle(LOCAL_Z, -screenAngleDeg() * d));
-    if (!this.sensorQuaternion) {
-      // alpha hat keinen festen Bezug (Kompass bzw. Startlage) → erste Blickrichtung wird yaw 0
-      this.startYawCorrection.setFromAxisAngle(WORLD_UP, this.yawOf(q) * d);
-      this.sensorQuaternion = q;
-    }
-    q.premultiply(this.startYawCorrection);
+    this.rawQuaternion = q;
+    // alpha hat keinen festen Bezug (Kompass bzw. Startlage) → erste Blickrichtung wird yaw 0,
+    // bis der Kompass (falls vorhanden) die echte Richtung liefert
+    if (first && !this.compassAligned) this.yawCorrectionDeg = this.yawOf(q);
+    this.applyYawCorrection();
   };
+
+  /**
+   * Kompass-Messung: beim ersten Wert Tafel-Welt so drehen, dass Blick nach `heading` die erste
+   * Tafel trifft; danach nur sanft nachführen, falls die Sensorlage gegenüber dem Kompass wegdriftet.
+   */
+  private readonly handleCompass = (reading: CompassReading): void => {
+    if (this.heading === null || !this.rawQuaternion) return;
+    const target = compassYawCorrection(this.yawOf(this.rawQuaternion), reading.heading, this.heading);
+    if (!this.compassAligned) {
+      this.compassAligned = true;
+      this.yawCorrectionDeg = target;
+    } else {
+      const error = headingDelta(target, this.yawCorrectionDeg);
+      if (Math.abs(error) < 2) return;
+      this.yawCorrectionDeg = (this.yawCorrectionDeg + error * 0.05 + 360) % 360;
+    }
+    this.applyYawCorrection();
+  };
+
+  private applyYawCorrection(): void {
+    if (!this.rawQuaternion) return;
+    this.startYawCorrection.setFromAxisAngle(WORLD_UP, this.yawCorrectionDeg * THREE.MathUtils.DEG2RAD);
+    this.sensorQuaternion = (this.sensorQuaternion ?? new THREE.Quaternion()).copy(this.rawQuaternion).premultiply(this.startYawCorrection);
+  }
 
   protected updateCameraFromGyro(): void {
     if (!this.camera || !this.sensorQuaternion) return;
@@ -272,6 +313,10 @@ class CustomPanoramaARSession extends GyroARVisualizer {
 
   stop(): void {
     window.removeEventListener('deviceorientation', this.handleOrientation, true);
+    this.compass?.stop();
+    this.compass = null;
+    this.compassAligned = false;
+    this.rawQuaternion = null;
     this.sensorQuaternion = null;
     this.setPanelAnchors(null, []);
     this.cameraStream?.getTracks().forEach((track) => track.stop());
@@ -413,9 +458,13 @@ export const CustomPanoramaQuizView = ({
     setStartError(null);
     let session: CustomPanoramaARSession | null = null;
     try {
-      session = new CustomPanoramaARSession(containerRef.current, videoRef.current, station.panoramaUrl, {
-        onError: (e) => console.error('[CustomPanoramaQuizView] AR init failed', e),
-      });
+      session = new CustomPanoramaARSession(
+        containerRef.current,
+        videoRef.current,
+        station.panoramaUrl,
+        { onError: (e) => console.error('[CustomPanoramaQuizView] AR init failed', e) },
+        station.heading ?? null
+      );
       await session.init();
       sessionRef.current = session;
       setHasStarted(true);

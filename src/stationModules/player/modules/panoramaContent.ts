@@ -8,6 +8,8 @@ export function buildPanoramaContent(module: ArPanoramaModule, lang: 'de' | 'en'
   return {
     // null → Live-Kamerabild als Hintergrund
     panoramaUrl: module.background === 'panorama' ? module.panorama_image : null,
+    // Kompassrichtung der ersten Tafel; null → Tafeln relativ zum Startblick
+    heading: module.heading ?? null,
     slides: module.slides.map((slide) => ({
       imageUrl: slide.image,
       text: pickLang(lang, slide.text_de, slide.text_en),

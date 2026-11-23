@@ -114,6 +114,8 @@ export interface BeforeAfterModule<M = string> extends ModuleBase {
   after_label_en: string | null;
   text_de: string | null; // max. 2000
   text_en: string | null;
+  /** Kompass-Blickrichtung des alten Fotos (0–359.9°, im Uhrzeigersinn ab Nord); null/fehlt = ohne Kompass */
+  heading?: number | null;
 }
 
 /** Quizfrage – gleiches Format wie bisher (custom_stations.quiz_questions) */
@@ -141,6 +143,11 @@ export interface ArPanoramaModule<M = string> extends ModuleBase {
   panorama_image: M | null;
   slides: SlideItem<M>[]; // 0–9
   questions: QuizQuestion<M>[]; // 1–10
+  /**
+   * Kompassrichtung der ersten Tafel (0–359.9°, im Uhrzeigersinn ab Nord), die weiteren folgen im
+   * Uhrzeigersinn. null/fehlt = Tafeln relativ zum Startblick (auch, wenn das Gerät keinen Kompass hat)
+   */
+  heading?: number | null;
 }
 
 /** Entdeckbarer Punkt im AR-Entdecken: Richtung relativ zum Startblick, Info-Karte beim Anvisieren */

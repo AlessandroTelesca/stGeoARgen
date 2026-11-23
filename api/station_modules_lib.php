@@ -116,6 +116,16 @@ function stationModuleNumberOut(float $number): int|float {
     return floor($number) === $number ? (int) $number : $number;
 }
 
+/** Optionale Kompassrichtung (0 bis unter 360°, im Uhrzeigersinn ab Nord); fehlt/null → null */
+function stationModuleHeading(array $src, string $prefix): int|float|null {
+    $value = $src['heading'] ?? null;
+    if ($value === null) {
+        return null;
+    }
+    $heading = stationModuleNumberInRange($value, 0, 359.9, "$prefix: Kompassrichtung");
+    return stationModuleNumberOut(round($heading, 1));
+}
+
 /**
  * Zahl wie stationModuleNumber, zusätzlich zwischen $min und $max (einschließlich); sonst 400.
  */
@@ -354,6 +364,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'after_label_en' => stationModuleText($src, 'after_label_en', 40, $prefix, 'Beschriftung „Nachher“ (EN)'),
                 'text_de' => stationModuleText($src, 'text_de', 2000, $prefix, 'Text (DE)'),
                 'text_en' => stationModuleText($src, 'text_en', 2000, $prefix, 'Text (EN)'),
+                'heading' => stationModuleHeading($src, $prefix),
             ];
 
         case 'ar_panorama':
@@ -367,6 +378,7 @@ function parseStationModuleBody(string $type, array $src, string $prefix): array
                 'panorama_image' => $panoramaImage,
                 'slides' => parseStationSlides($src, 0, STATION_MAX_PANORAMA_SLIDES, $prefix),
                 'questions' => parseStationQuestions($src, $prefix, false),
+                'heading' => stationModuleHeading($src, $prefix),
             ];
 
         case 'ar_discover':

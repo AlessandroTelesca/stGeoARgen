@@ -3,6 +3,7 @@ import { Camera, ChevronsLeftRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { pickLang } from '../../types';
 import { Feedback, GlassCard, ModuleHeading, ModuleScreen, ModuleText, PrimaryButton, SecondaryButton, type ModulePlayerProps } from '../ui';
+import { CompassGuide } from './CompassGuide';
 import { FOCUS_RING, RangeSlider, aspectBoxStyle, useNaturalAspect } from './shared';
 
 const FALLBACK_ASPECT = 4 / 3;
@@ -224,6 +225,8 @@ export function BeforeAfterPlayer({ module, lang, continueLabel, onContinue }: M
   return (
     <ModuleScreen footer={<PrimaryButton onClick={onContinue}>{continueLabel}</PrimaryButton>}>
       <ModuleHeading title={title} />
+
+      {module.heading != null && Number.isFinite(module.heading) && <CompassGuide heading={module.heading} />}
 
       {module.mode === 'slider' && after && (
         <CompareSlider

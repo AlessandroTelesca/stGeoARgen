@@ -41,7 +41,30 @@ export function headingFromOrientation(alpha: number, beta: number, gamma: numbe
   return normalizeHeading(yawFromQuaternionStable(scratchQ));
 }
 
-type CompassEvent = DeviceOrientationEvent & { webkitCompassHeading?: number; webkitCompassAccuracy?: number };
+/** Drehung von `current` nach `target` in Grad (−180, 180]: positiv = nach rechts drehen */
+export function headingDelta(target: number, current: number): number {
+  const d = normalizeHeading(target - current);
+  return d > 180 ? d - 360 : d;
+}
+
+export const COMPASS_DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+export type CompassDirection = (typeof COMPASS_DIRECTIONS)[number];
+
+/** Nächste der acht Himmelsrichtungen (N, NE, …) */
+export function compassDirection(heading: number): CompassDirection {
+  return COMPASS_DIRECTIONS[Math.round(normalizeHeading(heading) / 45) % 8];
+}
+
+/**
+ * Drehung (Grad, um die Hochachse) für eine Kamera mit beliebigem yaw-Bezug, damit Blick in
+ * Kompassrichtung `targetHeading` zu yaw 0 wird. `rawYaw` = yaw der Rohlage, `compassHeading` =
+ * Kompass-Richtung im selben Moment. Angewendet wie bisher die Startkorrektur: neuer yaw = rawYaw − Ergebnis.
+ */
+export function compassYawCorrection(rawYaw: number, compassHeading: number, targetHeading: number): number {
+  return normalizeHeading(rawYaw - headingDelta(compassHeading, targetHeading));
+}
+
+type CompassEvent =DeviceOrientationEvent & { webkitCompassHeading?: number; webkitCompassAccuracy?: number };
 
 export type CompassSource = 'absolute' | 'webkit';
 

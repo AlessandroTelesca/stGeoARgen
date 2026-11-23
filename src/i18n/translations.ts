@@ -26,6 +26,8 @@ import stationResultsDeJson from './stationResults.de.json';
 import stationResultsEnJson from './stationResults.en.json';
 import stationQuizSoundDeJson from './stationQuizSound.de.json';
 import stationQuizSoundEnJson from './stationQuizSound.en.json';
+import stationCompassDeJson from './stationCompass.de.json';
+import stationCompassEnJson from './stationCompass.en.json';
 
 export type Language = 'de' | 'en';
 
@@ -44,6 +46,7 @@ const de = {
 	...stationArDeJson,
 	...stationResultsDeJson,
 	...stationQuizSoundDeJson,
+	...stationCompassDeJson,
 };
 
 export type TranslationDict = typeof de;
@@ -63,6 +66,7 @@ const en: TranslationDict = {
 	...stationArEnJson,
 	...stationResultsEnJson,
 	...stationQuizSoundEnJson,
+	...stationCompassEnJson,
 };
 
 export const translations: Record<Language, TranslationDict> = { de, en };

@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { DraftModuleOfType } from '../meta';
 import { pickLang } from '../types';
 import { InfoNote, LocalizedInput, LocalizedTextarea, MediaField, OptionCards } from './fields';
+import { HeadingField, headingSummary, validateHeading } from './HeadingField';
 import type { ModuleEditorDefinition, ModuleEditorProps, ModuleErrors } from './types';
 import { isBlank, type Translate } from './validation';
 
@@ -227,6 +228,14 @@ function BeforeAfterEditor({ module, onChange, lang, errors, prepareMedia }: Mod
         placeholder={t('moduleEditorBeforeAfterTextPlaceholder')}
         error={errors.text_de}
       />
+
+      <HeadingField
+        id={id}
+        hint={t('compassEditorBeforeAfterHint')}
+        value={module.heading}
+        onChange={(heading) => onChange((prev) => ({ ...prev, heading }))}
+        error={errors.heading}
+      />
     </div>
   );
 }
@@ -237,11 +246,13 @@ function validate(module: DraftModuleOfType<'before_after'>, t: Translate): Modu
   if (module.mode !== 'camera' && !module.after_image) errors.after_image = t('moduleErrorImageRequired');
   if (isBlank(module.before_label_de)) errors.before_label_de = t('moduleErrorRequired');
   if (module.mode !== 'camera' && isBlank(module.after_label_de)) errors.after_label_de = t('moduleErrorRequired');
+  const heading = validateHeading(module.heading, t);
+  if (heading) errors.heading = heading;
   return errors;
 }
 
 function summary(module: DraftModuleOfType<'before_after'>, t: Translate): string {
-  return t(`moduleEditorMode_${module.mode}`);
+  return [t(`moduleEditorMode_${module.mode}`), headingSummary(module.heading, t)].filter(Boolean).join(' · ');
 }
 
 export const beforeAfterEditor: ModuleEditorDefinition<'before_after'> = { Editor: BeforeAfterEditor, validate, summary };

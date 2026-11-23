@@ -2,6 +2,7 @@ import { Camera, CircleHelp, Orbit } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { DraftModuleOfType } from '../meta';
 import { EditorSection, MediaField, OptionCards } from './fields';
+import { HeadingField, headingSummary, validateHeading } from './HeadingField';
 import { QuizQuestionsEditor } from './QuizQuestionsEditor';
 import { SlidesEditor } from './SlidesEditor';
 import type { ModuleEditorDefinition, ModuleEditorProps, ModuleErrors } from './types';
@@ -16,7 +17,7 @@ type Background = DraftModuleOfType<'ar_panorama'>['background'];
 const BACKGROUNDS: Background[] = ['camera', 'panorama'];
 
 /** Draufsicht: Wo hängen Bilder und Quiz rundum? Oben = Blickrichtung beim Start, im Uhrzeigersinn. */
-function RingDiagram({ slides }: { slides: DraftModuleOfType<'ar_panorama'>['slides'] }) {
+function RingDiagram({ slides, heading }: { slides: DraftModuleOfType<'ar_panorama'>['slides']; heading?: number | null }) {
   const { t } = useLanguage();
   const nodes = [...slides.map((slide, i) => ({ kind: 'slide' as const, url: slide.image?.url ?? null, n: i + 1 })), { kind: 'quiz' as const, url: null, n: 0 }];
 
@@ -27,6 +28,16 @@ function RingDiagram({ slides }: { slides: DraftModuleOfType<'ar_panorama'>['sli
         <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card text-muted-foreground shadow-xs">
           <Orbit className="h-5 w-5" aria-hidden="true" />
         </span>
+        {/* Mit Kompass: Norden liegt um −heading gegen die Blickrichtung oben verdreht */}
+        {heading !== null && heading !== undefined && Number.isFinite(heading) && (
+          <span
+            className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-white"
+            style={{ left: `${50 + 49 * Math.sin((-heading * Math.PI) / 180)}%`, top: `${50 - 49 * Math.cos((-heading * Math.PI) / 180)}%` }}
+            aria-hidden="true"
+          >
+            {t('compassDir_N')}
+          </span>
+        )}
         {nodes.map((node, slot) => {
           const rad = (slot * SLOT_STEP_DEG * Math.PI) / 180;
           const left = 50 + 36 * Math.sin(rad);
@@ -93,7 +104,15 @@ function ArPanoramaEditor({ module, onChange, lang, errors, prepareMedia }: Modu
         />
       )}
 
-      <RingDiagram slides={module.slides} />
+      <RingDiagram slides={module.slides} heading={module.heading} />
+
+      <HeadingField
+        id={id}
+        hint={t('compassEditorPanoramaHint')}
+        value={module.heading}
+        onChange={(heading) => onChange((prev) => ({ ...prev, heading }))}
+        error={errors.heading}
+      />
 
       <EditorSection title={t('moduleEditorPanoramaSlides')}>
         <SlidesEditor
@@ -128,6 +147,8 @@ function ArPanoramaEditor({ module, onChange, lang, errors, prepareMedia }: Modu
 function validate(module: DraftModuleOfType<'ar_panorama'>, t: Translate): ModuleErrors {
   const errors: ModuleErrors = {};
   if (module.background === 'panorama' && !module.panorama_image) errors.panorama_image = t('moduleErrorPanoramaRequired');
+  const heading = validateHeading(module.heading, t);
+  if (heading) errors.heading = heading;
   return {
     ...errors,
     ...validateSlides(module.slides, t, 'slides'),
@@ -139,6 +160,8 @@ function summary(module: DraftModuleOfType<'ar_panorama'>, t: Translate): string
   const parts = [t(`moduleEditorBackground_${module.background}`)];
   if (module.slides.length > 0) parts.push(countLabel(t, 'moduleSummaryImages', module.slides.length));
   parts.push(countLabel(t, 'moduleSummaryQuestions', module.questions.length));
+  const heading = headingSummary(module.heading, t);
+  if (heading) parts.push(heading);
   return parts.join(' · ');
 }
 

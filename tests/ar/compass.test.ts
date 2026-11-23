@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CompassHeading, headingFromOrientation, normalizeHeading } from '../../src/ar/compass';
+import {
+  CompassHeading,
+  compassDirection,
+  compassYawCorrection,
+  headingDelta,
+  headingFromOrientation,
+  normalizeHeading,
+} from '../../src/ar/compass';
 
 /** Kleinster Winkelabstand in Grad (0..180) */
 function angDiff(a: number, b: number): number {
@@ -26,6 +33,47 @@ describe('normalizeHeading', () => {
     expect(normalizeHeading(360)).toBe(0);
     expect(normalizeHeading(-90)).toBe(270);
     expect(normalizeHeading(725)).toBe(5);
+  });
+});
+
+describe('headingDelta', () => {
+  it('kürzester Weg, positiv = nach rechts', () => {
+    expect(headingDelta(90, 0)).toBe(90);
+    expect(headingDelta(0, 90)).toBe(-90);
+    expect(headingDelta(10, 350)).toBe(20);
+    expect(headingDelta(350, 10)).toBe(-20);
+    expect(headingDelta(180, 0)).toBe(180);
+  });
+});
+
+describe('compassDirection', () => {
+  it('rundet auf die nächste der acht Himmelsrichtungen', () => {
+    expect(compassDirection(0)).toBe('N');
+    expect(compassDirection(22)).toBe('N');
+    expect(compassDirection(23)).toBe('NE');
+    expect(compassDirection(90)).toBe('E');
+    expect(compassDirection(200)).toBe('S');
+    expect(compassDirection(337.6)).toBe('N');
+    expect(compassDirection(-45)).toBe('NW');
+  });
+});
+
+describe('compassYawCorrection', () => {
+  // neuer yaw = rawYaw − Korrektur
+  const corrected = (rawYaw: number, compass: number, target: number) => normalizeHeading(rawYaw - compassYawCorrection(rawYaw, compass, target));
+
+  it('Blick in die Zielrichtung wird yaw 0, egal welcher Rohbezug', () => {
+    expect(corrected(123, 45, 45)).toBeCloseTo(0);
+    expect(corrected(0, 270, 270)).toBeCloseTo(0);
+  });
+
+  it('36° rechts vom Ziel → yaw 36 (zweite Tafel)', () => {
+    expect(corrected(200, 81, 45)).toBeCloseTo(36);
+    expect(corrected(10, 9, 333)).toBeCloseTo(36);
+  });
+
+  it('links vom Ziel → yaw nahe 360 (links)', () => {
+    expect(corrected(50, 35, 45)).toBeCloseTo(350);
   });
 });
 
