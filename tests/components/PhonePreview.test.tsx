@@ -58,6 +58,8 @@ function renderPreview(props: Partial<React.ComponentProps<typeof PhonePreview>>
 describe('PhonePreview', () => {
   beforeEach(() => {
     vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+    // Der Vorschaumodus wird in localStorage gemerkt; sonst startet ein Test im Modus des vorherigen.
+    try { localStorage.clear(); } catch { /* localStorage nicht verfügbar (z. B. Node ≥ 25 ohne --localstorage-file) */ }
   });
   afterEach(() => {
     vi.unstubAllGlobals();
