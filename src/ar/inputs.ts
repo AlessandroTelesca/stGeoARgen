@@ -16,7 +16,7 @@ const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const LOCAL_Z = new THREE.Vector3(0, 0, 1);
 
 /** Bildschirmdrehung (0, 90, 180, 270) – deviceorientation liefert Werte immer im Gerätesystem */
-function screenAngleDeg(): number {
+export function screenAngleDeg(): number {
   if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.angle === 'number') {
     return screen.orientation.angle;
   }
