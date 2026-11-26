@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 -- quiz_options_*: JSON-Array mit Antwortoptionen
 -- station_type: 'image_sequence' = Bildfolge mit Texten (+ optional eine Quizfrage in quiz_*),
 --               'panorama_quiz'  = 360°-Bild (panorama_image) mit Quiz (quiz_questions, JSON-Array)
--- color: optionale Akzentfarbe der Station als Hex (#rrggbb, Kleinbuchstaben); NULL = Standardfarbe der App
+-- color: nicht mehr genutzt – die Farbe kommt vom Pfad (custom_paths.color); Spalte bleibt zur Sicherheit bestehen
 -- live_camera: nur panorama_quiz – 1 = Live-Kamerabild statt 360°-Bild als Hintergrund (panorama_image dann optional)
 -- modules: JSON-Array der Module der Station (siehe src/stationModules/types.ts). NULL = ältere Station:
 --          das Frontend leitet die Module dann aus den alten Spalten (station_type, slides, quiz_* …) ab.
@@ -194,7 +194,8 @@ CREATE TABLE IF NOT EXISTS `glockenspiel_melodies` (
 -- published: 1 = veröffentlicht (in der App sichtbar), 0 = Entwurf (nur in der Stationsverwaltung)
 -- sort_order: Reihenfolge der Stationen innerhalb ihres Pfads (aufsteigend)
 -- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_panorama_stations.sql, api/migrate_live_camera.sql,
--- api/migrate_station_modules.sql und api/migrate_station_color.sql ausführen.
+-- api/migrate_station_modules.sql und api/migrate_station_color.sql ausführen
+-- (die Farbe liegt inzwischen am Pfad: danach api/migrate_path_color.sql, siehe custom_paths).
 CREATE TABLE IF NOT EXISTS `custom_stations` (
   `id`                   INT NOT NULL AUTO_INCREMENT,
   `path_id`              VARCHAR(100) NOT NULL,
@@ -234,9 +235,11 @@ CREATE TABLE IF NOT EXISTS `custom_stations` (
 -- id: aus dem Namen erzeugter Kurzname (z. B. 'local-guide'); bleibt nach dem Anlegen unverändert,
 --     weil user_progress.path_id und custom_stations.path_id darauf verweisen.
 -- cover_image: optionales Pfadbild (Dateiname in api/uploads/stations/)
+-- color: optionale Akzentfarbe des Pfads als Hex (#rrggbb, Kleinbuchstaben), gilt für alle seine Stationen;
+--        NULL = Standardfarbe der App
 -- published: 1 = veröffentlicht, 0 = Entwurf (Pfad und seine Stationen nur in der Stationsverwaltung sichtbar)
 -- sort_order: Reihenfolge der Pfade (aufsteigend)
--- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_station_modules.sql ausführen.
+-- Bestehende Tabelle ohne diese Spalten: einmalig api/migrate_station_modules.sql und api/migrate_path_color.sql ausführen.
 -- Idempotent – kann auf einer bestehenden DB erneut ausgeführt werden.
 CREATE TABLE IF NOT EXISTS `custom_paths` (
   `id`              VARCHAR(100) NOT NULL,
@@ -247,6 +250,7 @@ CREATE TABLE IF NOT EXISTS `custom_paths` (
   `difficulty`      ENUM('Einfach', 'Mittel', 'Schwer') NOT NULL DEFAULT 'Einfach',
   `estimated_time`  VARCHAR(50) NOT NULL DEFAULT '',
   `cover_image`     VARCHAR(64) DEFAULT NULL,
+  `color`           VARCHAR(7) NULL DEFAULT NULL,
   `published`       TINYINT(1) NOT NULL DEFAULT 1,
   `sort_order`      INT NOT NULL DEFAULT 0,
   `created_at`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

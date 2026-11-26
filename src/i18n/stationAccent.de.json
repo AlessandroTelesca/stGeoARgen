@@ -1,6 +1,7 @@
 {
   "stationAccentLabel": "Akzentfarbe",
-  "stationAccentHint": "Färbt Buttons, Verlauf, Fortschritt und Kartenmarker dieser Station.",
+  "stationAccentHint": "Färbt Buttons, Verlauf, Fortschritt und Kartenmarker aller Stationen dieses Pfads.",
+  "stationAccentFromPath": "Die Akzentfarbe kommt vom Pfad und gilt für alle seine Stationen. Ändern lässt sie sich beim Bearbeiten des Pfads.",
   "stationAccentDefault": "Standard",
   "stationAccentCustom": "Eigene Farbe wählen",
   "stationAccentPreviewTitle": "Bereit zum Start!",

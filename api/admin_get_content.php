@@ -19,7 +19,7 @@ requireAdmin();
 try {
     $db = getDB();
     $paths = $db->query('SELECT * FROM custom_paths ORDER BY sort_order ASC, created_at ASC, id ASC')->fetchAll();
-    $stations = $db->query('SELECT * FROM custom_stations ORDER BY path_id ASC, sort_order ASC, id ASC')->fetchAll();
+    $stations = $db->query('SELECT s.*, p.color AS path_color FROM custom_stations s LEFT JOIN custom_paths p ON p.id = s.path_id ORDER BY s.path_id ASC, s.sort_order ASC, s.id ASC')->fetchAll();
 
     sendResponse([
         'success' => true,

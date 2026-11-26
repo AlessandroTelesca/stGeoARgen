@@ -4,7 +4,7 @@
  * Sortiert nach sort_order, created_at.
  *
  * Response: { success, paths: [{ id, title_de, title_en, description_de, description_en,
- *                                difficulty, estimated_time, cover_image, published, sort_order,
+ *                                difficulty, estimated_time, cover_image, color, published, sort_order,
  *                                created_at, updated_at }] }
  */
 

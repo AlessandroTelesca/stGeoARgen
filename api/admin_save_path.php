@@ -6,6 +6,9 @@
  *   path  – JSON:
  *     { id?, title_de, title_en?, description_de, description_en?, difficulty, estimated_time,
  *       cover_image: vorhandener Dateiname | "new" (Datei im Feld "cover") | null (kein Bild),
+ *       color?: Akzentfarbe des Pfads als Hex "#rrggbb" | null | "" (Standardfarbe der App);
+ *               gilt für alle Stationen des Pfads; fehlt der Schlüssel, bleibt die Farbe
+ *               eines bestehenden Pfads unverändert (ältere Clients), ein neuer Pfad bekommt die Standardfarbe,
  *       published?: bool – fehlt der Wert, ist ein neuer Pfad ein Entwurf (false) und ein
  *                          bestehender bleibt unverändert }
  *   cover – neues Pfadbild (JPG/PNG/WebP), nur bei cover_image = "new"
@@ -48,6 +51,17 @@ $estimatedTime = optionalText($input, 'estimated_time', 50, 'Dauer') ?? '';
 $difficulty = (string) ($input['difficulty'] ?? '');
 if (!in_array($difficulty, PATH_DIFFICULTIES, true)) {
     fail('Ungültige Schwierigkeit.');
+}
+
+// Akzentfarbe: null/"" → Standardfarbe der App (NULL), sonst Hex #rrggbb; Schlüssel fehlt → unverändert lassen
+$keepColor = !array_key_exists('color', $input);
+$color = null;
+$colorRaw = $input['color'] ?? null;
+if ($colorRaw !== null && $colorRaw !== '') {
+    $color = is_string($colorRaw) ? strtolower(trim($colorRaw)) : '';
+    if (!preg_match('/^#[0-9a-f]{6}$/', $color)) {
+        fail('Ungültige Akzentfarbe.');
+    }
 }
 
 $coverRef = $input['cover_image'] ?? null;
@@ -121,22 +135,26 @@ $params = [
     ':difficulty' => $difficulty,
     ':estimated_time' => $estimatedTime,
     ':cover_image' => $coverImage,
+    ':color' => $color,
 ];
 
 try {
     if ($isNew) {
         $sortOrder = (int) $db->query('SELECT COALESCE(MAX(sort_order), -1) + 1 FROM custom_paths')->fetchColumn();
         $db->prepare(
-            'INSERT INTO custom_paths (id, title_de, title_en, description_de, description_en, difficulty, estimated_time, cover_image, published, sort_order)
-             VALUES (:id, :title_de, :title_en, :description_de, :description_en, :difficulty, :estimated_time, :cover_image, :published, :sort_order)'
+            'INSERT INTO custom_paths (id, title_de, title_en, description_de, description_en, difficulty, estimated_time, cover_image, color, published, sort_order)
+             VALUES (:id, :title_de, :title_en, :description_de, :description_en, :difficulty, :estimated_time, :cover_image, :color, :published, :sort_order)'
         )->execute($params + [':published' => $published ? 1 : 0, ':sort_order' => $sortOrder]);
     } else {
         $db->prepare(
             'UPDATE custom_paths SET title_de = :title_de, title_en = :title_en, description_de = :description_de,
                description_en = :description_en, difficulty = :difficulty, estimated_time = :estimated_time,
-               cover_image = :cover_image, published = COALESCE(:published, published)
+               cover_image = :cover_image, color = CASE WHEN :keep_color = 1 THEN color ELSE :color END, published = COALESCE(:published, published)
              WHERE id = :id'
-        )->execute($params + [':published' => $published === null ? null : ($published ? 1 : 0)]);
+        )->execute($params + [
+            ':published' => $published === null ? null : ($published ? 1 : 0),
+            ':keep_color' => $keepColor ? 1 : 0,
+        ]);
     }
 
     if ($previousCover !== null && $previousCover !== $coverImage) {
