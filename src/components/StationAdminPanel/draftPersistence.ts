@@ -63,9 +63,9 @@ export async function loadPersistedDrafts(track: (url: string) => void): Promise
       cursorRequest.onsuccess = () => {
         const cursor = cursorRequest.result;
         if (!cursor) return;
-        const stored = cursor.value as StationDraft;
-        // Ältere Entwürfe kennen noch keine Akzentfarbe
-        result[String(cursor.key)] = refreshUrls({ ...stored, color: stored.color ?? null }, track);
+        // Ältere Entwürfe tragen noch eine eigene Akzentfarbe – die gilt jetzt für den ganzen Pfad
+        const { color: _legacyColor, ...stored } = cursor.value as StationDraft & { color?: unknown };
+        result[String(cursor.key)] = refreshUrls(stored, track);
         cursor.continue();
       };
       tx.oncomplete = () => resolve();

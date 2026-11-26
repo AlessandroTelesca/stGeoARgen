@@ -74,7 +74,15 @@ function optionalText(array $input, string $key, int $maxLength, string $label):
 }
 
 /**
+ * Gültige Akzentfarbe (Hex #rrggbb, Kleinbuchstaben) oder null = Standardfarbe der App.
+ */
+function validAccentColor($value): ?string {
+    return (is_string($value) && preg_match('/^#[0-9a-f]{6}$/i', $value)) ? strtolower($value) : null;
+}
+
+/**
  * Wandelt eine custom_paths-Zeile in das API-Format um.
+ * color: Akzentfarbe des Pfads (gilt für alle seine Stationen).
  */
 function formatPathRow(array $row): array {
     return [
@@ -86,6 +94,7 @@ function formatPathRow(array $row): array {
         'difficulty' => $row['difficulty'],
         'estimated_time' => $row['estimated_time'],
         'cover_image' => isValidStationImageName($row['cover_image']) ? $row['cover_image'] : null,
+        'color' => validAccentColor($row['color'] ?? null),
         'published' => (bool) ($row['published'] ?? 1),
         'sort_order' => (int) ($row['sort_order'] ?? 0),
         'created_at' => $row['created_at'],
@@ -218,6 +227,9 @@ function decodeQuizQuestions(?string $json): array {
 
 /**
  * Wandelt eine DB-Zeile in das API-Format um.
+ * Erwartet die Pfadfarbe als path_color (SELECT s.*, p.color AS path_color … LEFT JOIN custom_paths p);
+ * sie erscheint im Feld color. Fehlt sie (z. B. fest eingebauter Pfad), ist color null.
+ * Die alte Spalte custom_stations.color wird nicht mehr gelesen.
  */
 function formatStationRow(array $row): array {
     $quiz = null;
@@ -248,7 +260,7 @@ function formatStationRow(array $row): array {
         'long_description_en' => $row['long_description_en'],
         'station_type' => in_array($row['station_type'] ?? null, STATION_TYPES, true) ? $row['station_type'] : 'image_sequence',
         'cover_image' => $row['cover_image'],
-        'color' => (isset($row['color']) && is_string($row['color']) && preg_match('/^#[0-9a-f]{6}$/i', $row['color'])) ? strtolower($row['color']) : null,
+        'color' => validAccentColor($row['path_color'] ?? null),
         'slides' => decodeStationSlides($row['slides']),
         'panorama_image' => isValidStationImageName($row['panorama_image'] ?? null) ? $row['panorama_image'] : null,
         'live_camera' => (bool) ($row['live_camera'] ?? false),

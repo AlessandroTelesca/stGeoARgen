@@ -18,6 +18,8 @@ import {
 import { FieldError, FormSection, LanguageTabs, SubmitFeedback, inputClass, prepareImage, useScrollToFirstError, type ImageItem } from './adminFormParts';
 import { DraftChip } from './adminUi';
 import { setUnsavedGuard } from '../../lib/unsavedChanges';
+import { ensureContrast } from '../../lib/stationTheme';
+import { AccentColorField } from './AccentColorField';
 
 const DIFFICULTIES: PathDifficulty[] = ['Einfach', 'Mittel', 'Schwer'];
 
@@ -42,6 +44,8 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
   const [descriptionEn, setDescriptionEn] = useState(path?.description_en ?? '');
   const [difficulty, setDifficulty] = useState<PathDifficulty>(path?.difficulty ?? 'Einfach');
   const [estimatedTime, setEstimatedTime] = useState(path?.estimated_time ?? '');
+  /** Akzentfarbe des Pfads (#rrggbb), gilt für alle seine Stationen; null = Standard (Tannengrün) */
+  const [color, setColor] = useState<string | null>(path?.color ?? null);
   // Neue Pfade starten als Entwurf, damit sie erst mit Stationen sichtbar werden
   const [published, setPublished] = useState(path?.published ?? false);
   const [cover, setCover] = useState<ImageItem | null>(
@@ -66,7 +70,7 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
     titleDe !== (path?.title_de ?? '') || titleEn !== (path?.title_en ?? '') ||
     descriptionDe !== (path?.description_de ?? '') || descriptionEn !== (path?.description_en ?? '') ||
     difficulty !== (path?.difficulty ?? 'Einfach') || estimatedTime !== (path?.estimated_time ?? '') ||
-    published !== (path?.published ?? false) ||
+    published !== (path?.published ?? false) || color !== (path?.color ?? null) ||
     (cover?.kind === 'new') || (cover === null) !== !path?.cover_image
   );
   const saveRef = useRef<() => Promise<boolean>>(async () => false);
@@ -123,6 +127,7 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
       difficulty,
       estimated_time: estimatedTime.trim(),
       cover_image: cover === null ? null : cover.kind === 'existing' ? cover.filename : 'new',
+      color: color ? ensureContrast(color) : null,
       published,
     };
 
@@ -250,6 +255,9 @@ export function PathAdminForm({ path, adminPassword, onSaved, onCancel }: PathAd
                 maxLength={50}
                 className={inputClass()}
               />
+            </div>
+            <div className="border-t border-border pt-5">
+              <AccentColorField value={color} onChange={setColor} />
             </div>
           </FormSection>
 

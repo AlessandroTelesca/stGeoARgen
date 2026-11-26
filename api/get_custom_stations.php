@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 try {
     $placeholders = implode(', ', array_fill(0, count(BUILTIN_PATH_IDS), '?'));
     $stmt = getDB()->prepare(
-        "SELECT s.* FROM custom_stations s
+        "SELECT s.*, p.color AS path_color FROM custom_stations s
          LEFT JOIN custom_paths p ON p.id = s.path_id
          WHERE s.published = 1 AND (s.path_id IN ($placeholders) OR p.published = 1)
          ORDER BY s.sort_order ASC, s.id ASC"

@@ -400,7 +400,7 @@ export interface CustomStation {
     long_description_en: string | null;
     /** Profilbild (Dateiname in api/uploads/stations/) – Listen und Titelbild */
     cover_image: string;
-    /** Akzentfarbe der Station (#rrggbb, kleingeschrieben); null → Standard-Tannengrün */
+    /** Akzentfarbe des Pfads der Station (#rrggbb, kleingeschrieben; vom Server mitgeliefert, nur lesen); null → Standard-Tannengrün */
     color: string | null;
     /** Ablauf der Station, wird beim Start der Reihe nach abgespielt */
     modules: StationModule[];
@@ -423,9 +423,12 @@ export interface CustomStation {
  */
 export type CustomStationInput = Omit<CustomStation, 'id' | 'sort_order' | 'created_at' | 'updated_at' | 'color' | 'dropped_modules'> & {
     id?: number;
-    /** #rrggbb oder null (Standard); fehlend = null */
-    color?: string | null;
 };
+
+/** Akzentfarbe aus Serverdaten: nur #rrggbb (kleingeschrieben), alles andere → null */
+function normalizeColor(v: unknown): string | null {
+    return typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null;
+}
 
 /** Felder älterer Stationen (vor den Modulen), aus denen `modules` abgeleitet wird */
 interface LegacyQuiz {
@@ -490,7 +493,7 @@ export function normalizeStation(s: Partial<CustomStation> & LegacyStationFields
         return typeof id === 'string' && MODULE_TYPES.includes(type as ModuleType);
     });
     const dropped = rawModules.length - modules.length;
-    const color = typeof s.color === 'string' && /^#[0-9a-f]{6}$/i.test(s.color) ? s.color.toLowerCase() : null;
+    const color = normalizeColor(s.color);
     return {
         ...(s as CustomStation),
         cover_image: typeof s.cover_image === 'string' ? s.cover_image : '',
@@ -596,6 +599,8 @@ export interface CustomPath {
     estimated_time: string;
     /** Optionales Pfadbild (Dateiname in api/uploads/stations/) */
     cover_image: string | null;
+    /** Akzentfarbe des Pfads und aller seiner Stationen (#rrggbb, kleingeschrieben); null → Standard-Tannengrün */
+    color: string | null;
     /** false = Entwurf: Pfad und seine Stationen sind nur in der Stationsverwaltung sichtbar */
     published: boolean;
     /** Position in der Pfadliste (aufsteigend) */
@@ -610,6 +615,8 @@ export type CustomPathInput = Omit<CustomPath, 'id' | 'sort_order' | 'created_at
 function normalizePath(p: Partial<CustomPath>): CustomPath {
     return {
         ...(p as CustomPath),
+        // Ältere Server ohne Pfadfarbe liefern kein Feld → Standardfarbe
+        color: normalizeColor(p.color),
         published: p.published !== false,
         sort_order: typeof p.sort_order === 'number' ? p.sort_order : 0,
     };

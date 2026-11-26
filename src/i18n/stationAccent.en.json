@@ -1,6 +1,7 @@
 {
   "stationAccentLabel": "Accent colour",
-  "stationAccentHint": "Colours this station's buttons, gradient, progress and map marker.",
+  "stationAccentHint": "Colours the buttons, gradient, progress and map markers of every station on this path.",
+  "stationAccentFromPath": "The accent colour is set by the path and applies to all its stations. Change it when editing the path.",
   "stationAccentDefault": "Default",
   "stationAccentCustom": "Choose your own colour",
   "stationAccentPreviewTitle": "Ready to start!",
